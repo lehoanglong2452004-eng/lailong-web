@@ -6,6 +6,7 @@
 
 import { COL_MS } from "./market.js";
 import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js";
+import { T, alpha } from "./theme.js";
 
 const AXIS_W = 72, BOOK_W = 96, LIQ_W = 64, TIME_H = 20, PANE_H = 74;
 
@@ -73,9 +74,9 @@ export class Heatmap {
     if (!this.cv.offsetParent) return; // đang ẩn (trang khác hoặc chế độ nến)
     const ctx = this.ctx, L = this._L = this.L;
     if (L.ph < 20 || L.pw < 20) return;
-    ctx.fillStyle = "#090c16"; ctx.fillRect(0, 0, L.w, L.h);
+    ctx.fillStyle = T.bg; ctx.fillRect(0, 0, L.w, L.h);
     if (!this._initScale()) {
-      ctx.fillStyle = "#7d8899"; ctx.font = "14px Segoe UI, sans-serif"; ctx.textAlign = "center";
+      ctx.fillStyle = T.muted; ctx.font = "14px Segoe UI, sans-serif"; ctx.textAlign = "center";
       ctx.fillText("Đang chờ dữ liệu sổ lệnh...", L.pw / 2, L.ph / 2); return;
     }
     const cols = this.m.cols, t0 = this.tAt(0), t1 = this.tAt(L.pw);
@@ -105,7 +106,8 @@ export class Heatmap {
     const img = this._img, data = img.data, row = this._row, g = this.m.grid;
     data.fill(0); for (let k = 3; k < data.length; k += 4) data[k] = 255;
     // nền
-    for (let k = 0; k < data.length; k += 4) { data[k] = 9; data[k + 1] = 12; data[k + 2] = 22; }
+    const bgn = parseInt(T.bg.slice(1), 16), br = (bgn >> 16) & 255, bgc = (bgn >> 8) & 255, bb0 = bgn & 255;
+    for (let k = 0; k < data.length; k += 4) { data[k] = br; data[k + 1] = bgc; data[k + 2] = bb0; }
     if (!g || i1 < 0) { this.offCtx.putImageData(img, 0, 0); this.ctx.drawImage(this.off, 0, 0, L.pw, L.ph); return; }
     // mức tham chiếu màu: phân vị 97% của khối lượng trong vùng nhìn thấy
     const sample = [], stepI = Math.max(1, Math.floor((i1 - i0 + 1) / 60));
@@ -147,7 +149,7 @@ export class Heatmap {
   // đường giá mua tốt nhất / bán tốt nhất theo thời gian
   _bbo(cols, i0, i1) {
     const ctx = this.ctx;
-    for (const [key, col] of [["bb", "#1fd18a"], ["ba", "#ff5a5f"]]) {
+    for (const [key, col] of [["bb", T.up], ["ba", T.down]]) {
       ctx.strokeStyle = col; ctx.lineWidth = 1.3; ctx.beginPath(); let on = false, py = 0;
       for (let i = Math.max(0, i0); i <= i1; i++) {
         const c = cols[i]; if (c[key] == null) { on = false; continue; }
@@ -173,7 +175,7 @@ export class Heatmap {
     if (!maxV) return;
     const rMax = Math.min(26, Math.max(8, 30 * Math.sqrt(120 / this.msPerPx) / 2));
     for (const e of groups.values()) {
-      for (const [v, pv, fill] of [[e.sv, e.spv, "rgba(255,70,80,0.62)"], [e.bv, e.bpv, "rgba(40,220,130,0.62)"]]) {
+      for (const [v, pv, fill] of [[e.sv, e.spv, alpha(T.down, 0.62)], [e.bv, e.bpv, alpha(T.up, 0.62)]]) {
         if (!v) continue;
         if (this.show.bigOnly && v < this.m.bigTrade) continue;
         const r = Math.max(1.5, Math.sqrt(v / maxV) * rMax), y = this.yOf(pv / v);
@@ -205,11 +207,11 @@ export class Heatmap {
     const ctx = this.ctx, dec = decimalsFor(this.m.tick || this.m.grid);
     for (const lv of this.levels) {
       const y = Math.round(this.yOf(lv.price)) + 0.5; if (y < 0 || y > L.ph) continue;
-      const col = lv.kind === "support" ? "rgba(31,209,138," : "rgba(255,90,95,";
+      const base = lv.kind === "support" ? T.up : T.down;
       const a = 0.35 + 0.5 * (lv.strength || 50) / 100;
-      ctx.strokeStyle = col + a.toFixed(2) + ")"; ctx.lineWidth = lv.strength > 70 ? 2 : 1; ctx.setLineDash(lv.broken ? [3, 4] : []);
+      ctx.strokeStyle = alpha(base, a.toFixed(2)); ctx.lineWidth = lv.strength > 70 ? 2 : 1; ctx.setLineDash(lv.broken ? [3, 4] : []);
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]);
-      ctx.font = `10px ${MONO}`; ctx.textAlign = "left"; ctx.fillStyle = col + "0.95)";
+      ctx.font = `10px ${MONO}`; ctx.textAlign = "left"; ctx.fillStyle = alpha(base, 0.95);
       ctx.fillText(`${lv.kind === "support" ? "HT" : "KC"} ${lv.price.toFixed(dec)} · chạm ${lv.touches} · test ${lv.tests}`, 6, y - 3);
     }
   }
@@ -219,11 +221,11 @@ export class Heatmap {
     for (const z of this.zones) {
       const ya = this.yOf(z.high), yb = this.yOf(z.low); if (yb < 0 || ya > L.ph) continue;
       const xa = Math.max(0, this.xOf(z.t));
-      ctx.fillStyle = z.side === "buy" ? "rgba(40,220,130,0.10)" : "rgba(255,70,80,0.10)";
+      ctx.fillStyle = z.side === "buy" ? alpha(T.up, 0.10) : alpha(T.down, 0.10);
       ctx.fillRect(xa, ya, L.pw - xa, Math.max(2, yb - ya));
-      ctx.strokeStyle = z.side === "buy" ? "rgba(40,220,130,0.45)" : "rgba(255,70,80,0.45)"; ctx.lineWidth = 1;
+      ctx.strokeStyle = z.side === "buy" ? alpha(T.up, 0.45) : alpha(T.down, 0.45); ctx.lineWidth = 1;
       ctx.strokeRect(xa + 0.5, ya + 0.5, L.pw - xa - 1, Math.max(2, yb - ya));
-      ctx.fillStyle = "#c9d1dc"; ctx.font = `10px ${MONO}`; ctx.textAlign = "left";
+      ctx.fillStyle = T.text; ctx.font = `10px ${MONO}`; ctx.textAlign = "left";
       ctx.fillText(`KL bất thường ${z.z.toFixed(1)}σ`, xa + 4, ya + 11);
     }
   }
@@ -236,10 +238,10 @@ export class Heatmap {
       ctx.font = "11px Segoe UI, sans-serif"; const tw = ctx.measureText(text).width + 10;
       ctx.fillStyle = color; ctx.fillRect(L.pw - tw - 4, y - 8, tw, 16); ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.fillText(text, L.pw - tw + 1, y + 4);
     };
-    for (const o of this.orders) line(o.price, o.side === "buy" ? "#1fb57a" : "#e5484d", `${o.side === "buy" ? "MUA" : "BÁN"} ${+o.remaining.toFixed(6)} @ ${o.price.toFixed(dec)} · trước: ${fmtVol(o.queueAhead || 0)}`, [5, 4]);
+    for (const o of this.orders) line(o.price, o.side === "buy" ? T.up : T.down, `${o.side === "buy" ? "MUA" : "BÁN"} ${+o.remaining.toFixed(6)} @ ${o.price.toFixed(dec)} · trước: ${fmtVol(o.queueAhead || 0)}`, [5, 4]);
     const p = this.position;
     if (p && p.qty) {
-      line(p.avg, p.qty > 0 ? "#1fb57a" : "#e5484d", `${p.qty > 0 ? "LONG" : "SHORT"} ${+Math.abs(p.qty).toFixed(6)} · ${p.upnl >= 0 ? "+" : ""}${p.upnl.toFixed(2)} USDT`, []);
+      line(p.avg, p.qty > 0 ? T.up : T.down, `${p.qty > 0 ? "LONG" : "SHORT"} ${+Math.abs(p.qty).toFixed(6)} · ${p.upnl >= 0 ? "+" : ""}${p.upnl.toFixed(2)} USDT`, []);
       if (p.liq > 0) line(p.liq, "#a8711a", `Thanh lý ${p.liq.toFixed(dec)}`, [2, 3]);
     }
   }
@@ -247,8 +249,8 @@ export class Heatmap {
   // ô dưới: khối lượng mua/bán theo thời gian và CVD
   _pane(cols, i0, i1, L) {
     const ctx = this.ctx, top = L.paneTop, H = PANE_H - 4, mid = top + H / 2 + 2;
-    ctx.fillStyle = "#0d111b"; ctx.fillRect(0, top, L.pw, PANE_H);
-    ctx.strokeStyle = "#1d2430"; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.stroke();
+    ctx.fillStyle = T.panel; ctx.fillRect(0, top, L.pw, PANE_H);
+    ctx.strokeStyle = T.line; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.stroke();
     const bucketPx = Math.max(3, COL_MS / this.msPerPx), groups = new Map();
     for (let i = Math.max(0, i0); i <= i1; i++) {
       const c = cols[i], gx = Math.floor(this.xOf(c.t) / bucketPx), e = groups.get(gx) || { b: 0, s: 0 };
@@ -257,8 +259,8 @@ export class Heatmap {
     let maxV = 0; for (const e of groups.values()) maxV = Math.max(maxV, e.b, e.s);
     if (maxV) for (const [gx, e] of groups) {
       const x = gx * bucketPx, bw = Math.max(1, bucketPx - 1);
-      ctx.fillStyle = "rgba(40,220,130,0.7)"; ctx.fillRect(x, mid - e.b / maxV * (H / 2 - 2), bw, e.b / maxV * (H / 2 - 2));
-      ctx.fillStyle = "rgba(255,70,80,0.7)"; ctx.fillRect(x, mid, bw, e.s / maxV * (H / 2 - 2));
+      ctx.fillStyle = alpha(T.up, 0.7); ctx.fillRect(x, mid - e.b / maxV * (H / 2 - 2), bw, e.b / maxV * (H / 2 - 2));
+      ctx.fillStyle = alpha(T.down, 0.7); ctx.fillRect(x, mid, bw, e.s / maxV * (H / 2 - 2));
     }
     // CVD trong vùng nhìn thấy
     let cum = 0, lo = 0, hi = 0; const pts = [];
@@ -268,14 +270,14 @@ export class Heatmap {
       pts.forEach(([x, v], k) => { const y = top + 4 + (hi - v) / (hi - lo) * (H - 6); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
       ctx.stroke();
     }
-    ctx.fillStyle = "#7d8899"; ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left";
+    ctx.fillStyle = T.muted; ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left";
     ctx.fillText("Mua / bán chủ động", 6, top + 13); ctx.fillStyle = "#f5c542"; ctx.fillText(`CVD ${cum >= 0 ? "+" : ""}${fmtVol(cum)}`, 130, top + 13);
   }
 
   // cột sổ lệnh hiện tại bên phải
   _book(L) {
     const ctx = this.ctx, { bids, asks } = this.m.book.sorted(), g = this.m.grid || this.m.tick || 1;
-    ctx.fillStyle = "#0d111b"; ctx.fillRect(L.bookX, 0, L.bookW, L.ph);
+    ctx.fillStyle = T.panel; ctx.fillRect(L.bookX, 0, L.bookW, L.ph);
     const agg = new Map(); let maxQ = 0;
     for (const [side, list] of [["bid", bids], ["ask", asks]]) for (const [p, q] of list) {
       const y = this.yOf(p); if (y < -10 || y > L.ph + 10) continue;
@@ -284,19 +286,19 @@ export class Heatmap {
     const gpx = Math.max(1, g * this.pxPerPrice);
     for (const [k, e] of agg) {
       const y = this.yOf(k * g) - gpx / 2, wpx = e.q / maxQ * (L.bookW - 6);
-      ctx.fillStyle = e.side === "bid" ? "rgba(31,181,122,0.75)" : "rgba(229,72,77,0.75)";
+      ctx.fillStyle = e.side === "bid" ? alpha(T.up, 0.75) : alpha(T.down, 0.75);
       ctx.fillRect(L.bookX + 2, y, wpx, Math.max(1, gpx - (gpx > 3 ? 1 : 0)));
-      if (gpx >= 11 && e.q > maxQ * 0.15) { ctx.fillStyle = "#e9eef5"; ctx.font = `10px ${MONO}`; ctx.textAlign = "right"; ctx.fillText(fmtVol(e.q), L.bookX + L.bookW - 4, y + gpx / 2 + 3); }
+      if (gpx >= 11 && e.q > maxQ * 0.15) { ctx.fillStyle = T.text; ctx.font = `10px ${MONO}`; ctx.textAlign = "right"; ctx.fillText(fmtVol(e.q), L.bookX + L.bookW - 4, y + gpx / 2 + 3); }
     }
-    ctx.fillStyle = "#7d8899"; ctx.font = "10px Segoe UI, sans-serif"; ctx.textAlign = "center";
+    ctx.fillStyle = T.muted; ctx.font = "10px Segoe UI, sans-serif"; ctx.textAlign = "center";
     ctx.fillText("Sổ lệnh", L.bookX + L.bookW / 2, L.ph - 4);
   }
 
   // bản đồ thanh lý ước tính từ open interest
   _liqMap(L) {
     const ctx = this.ctx, m = this.liqMap, x0 = L.liqX, LW = L.liqW;
-    ctx.fillStyle = "#0b0f18"; ctx.fillRect(x0, 0, LW, L.ph);
-    ctx.strokeStyle = "#1d2430"; ctx.beginPath(); ctx.moveTo(x0 + 0.5, 0); ctx.lineTo(x0 + 0.5, L.ph); ctx.stroke();
+    ctx.fillStyle = T.panel; ctx.fillRect(x0, 0, LW, L.ph);
+    ctx.strokeStyle = T.line; ctx.beginPath(); ctx.moveTo(x0 + 0.5, 0); ctx.lineTo(x0 + 0.5, L.ph); ctx.stroke();
     const rows = new Map(), rowPx = 3;
     for (const [list, side] of [[m.longs, "l"], [m.shorts, "s"]]) for (const b of list) {
       const y = this.yOf(b.price + m.step / 2); if (y < 0 || y > L.ph) continue;
@@ -308,33 +310,33 @@ export class Heatmap {
       ctx.fillStyle = e.l >= e.s ? `rgba(255,61,242,${a.toFixed(2)})` : `rgba(255,212,0,${a.toFixed(2)})`;
       ctx.fillRect(x0 + LW - 2 - wpx, k * rowPx, wpx, rowPx - 0.5);
     }
-    ctx.fillStyle = "#7d8899"; ctx.font = "10px Segoe UI, sans-serif"; ctx.textAlign = "center";
+    ctx.fillStyle = T.muted; ctx.font = "10px Segoe UI, sans-serif"; ctx.textAlign = "center";
     if (LW > 50) ctx.fillText("Thanh lý ƯT", x0 + LW / 2, L.ph - 4);
   }
 
   _axes(L) {
     const ctx = this.ctx, x0 = L.axisX, dec = decimalsFor(this.m.tick || this.m.grid), AXIS_W = L.axisW;
-    ctx.fillStyle = "#0f1218"; ctx.fillRect(x0, 0, AXIS_W, L.h); ctx.fillRect(0, L.timeTop, L.w, TIME_H);
-    ctx.strokeStyle = "#262e3b"; ctx.beginPath(); ctx.moveTo(x0 + 0.5, 0); ctx.lineTo(x0 + 0.5, L.h); ctx.moveTo(0, L.timeTop + 0.5); ctx.lineTo(L.w, L.timeTop + 0.5); ctx.stroke();
+    ctx.fillStyle = T.bg; ctx.fillRect(x0, 0, AXIS_W, L.h); ctx.fillRect(0, L.timeTop, L.w, TIME_H);
+    ctx.strokeStyle = T.line; ctx.beginPath(); ctx.moveTo(x0 + 0.5, 0); ctx.lineTo(x0 + 0.5, L.h); ctx.moveTo(0, L.timeTop + 0.5); ctx.lineTo(L.w, L.timeTop + 0.5); ctx.stroke();
     const range = L.ph / this.pxPerPrice, raw = range / Math.max(3, L.ph / 50), e = Math.pow(10, Math.floor(Math.log10(raw)));
     const st = [1, 2, 2.5, 5, 10].map(k => k * e).find(s => s >= raw);
-    ctx.font = `11px ${MONO}`; ctx.fillStyle = "#7d8899"; ctx.textAlign = "left";
+    ctx.font = `11px ${MONO}`; ctx.fillStyle = T.muted; ctx.textAlign = "left";
     for (let p = Math.ceil(this.pAt(L.ph) / st) * st; p <= this.pAt(0); p += st) {
       const y = this.yOf(p); ctx.fillText(p.toFixed(Math.max(dec, decimalsFor(st))), x0 + 6, y + 4);
-      ctx.fillStyle = "rgba(255,255,255,0.04)"; ctx.fillRect(0, Math.round(y), L.pw, 1); ctx.fillStyle = "#7d8899";
+      ctx.fillStyle = alpha(T.text, 0.05); ctx.fillRect(0, Math.round(y), L.pw, 1); ctx.fillStyle = T.muted;
     }
     const last = this.m.last;
     if (last) {
-      const y = this.yOf(last.p), col = last.side === "buy" ? "#1fb57a" : "#e5484d";
+      const y = this.yOf(last.p), col = last.side === "buy" ? T.up : T.down;
       ctx.fillStyle = col; ctx.fillRect(x0 + 1, y - 9, AXIS_W - 1, 18); ctx.fillStyle = "#fff"; ctx.fillText(last.p.toFixed(dec), x0 + 6, y + 4);
     }
     // trục thời gian
     const spanMs = L.pw * this.msPerPx, steps = [1e3, 5e3, 10e3, 15e3, 30e3, 60e3, 120e3, 300e3, 600e3, 900e3, 1800e3, 3600e3];
     const tStep = steps.find(s => s / this.msPerPx >= 90) || 3600e3;
-    ctx.fillStyle = "#7d8899"; ctx.textAlign = "center";
+    ctx.fillStyle = T.muted; ctx.textAlign = "center";
     for (let t = Math.ceil(this.tAt(0) / tStep) * tStep; t < this.tAt(L.pw); t += tStep) {
       const x = this.xOf(t); ctx.fillText(fmtTime(t), x, L.timeTop + 14);
-      ctx.fillStyle = "rgba(255,255,255,0.04)"; ctx.fillRect(Math.round(x), 0, 1, L.ph); ctx.fillStyle = "#7d8899";
+      ctx.fillStyle = alpha(T.text, 0.05); ctx.fillRect(Math.round(x), 0, 1, L.ph); ctx.fillStyle = T.muted;
     }
     void spanMs;
   }
@@ -350,14 +352,32 @@ export class Heatmap {
     ctx.fillStyle = "#3a4558"; ctx.fillRect(L.axisX + 1, m.y - 9, AXIS_W - 1, 18);
     ctx.fillStyle = "#fff"; ctx.font = `11px ${MONO}`; ctx.textAlign = "left"; ctx.fillText(p.toFixed(dec), L.axisX + 6, m.y + 4);
     ctx.fillStyle = "#3a4558"; ctx.fillRect(m.x - 34, L.timeTop + 1, 68, TIME_H - 2); ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.fillText(fmtTime(t), m.x, L.timeTop + 14);
-    if (size !== null) { const txt = `Chờ: ${fmtVol(size)}`; ctx.fillStyle = "rgba(15,18,24,0.85)"; ctx.fillRect(m.x + 10, m.y + 8, ctx.measureText(txt).width + 10, 18); ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.fillText(txt, m.x + 15, m.y + 21); }
+    if (size !== null) { const txt = `Chờ: ${fmtVol(size)}`; ctx.fillStyle = alpha(T.bg, 0.85); ctx.fillRect(m.x + 10, m.y + 8, ctx.measureText(txt).width + 10, 18); ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.fillText(txt, m.x + 15, m.y + 21); }
   }
 
   _legend() {
     const ctx = this.ctx, m = this.m, dec = decimalsFor(m.tick || m.grid);
     const txt = `${m.symbol} · ${this.opts.exchangeName ? this.opts.exchangeName() : m.exchange} · tầng giá ${m.grid ? m.grid.toFixed(decimalsFor(m.grid)) : "-"}${m.last ? " · giá " + m.last.p.toFixed(dec) : ""}${this.follow ? "" : " · đang xem lại (bấm đúp để theo dõi)"}`;
-    ctx.font = "12px Segoe UI, sans-serif"; ctx.fillStyle = "rgba(9,12,22,0.8)"; ctx.fillRect(4, 4, ctx.measureText(txt).width + 12, 20);
-    ctx.fillStyle = "#d8dee9"; ctx.textAlign = "left"; ctx.fillText(txt, 10, 18);
+    ctx.font = "12px Segoe UI, sans-serif"; ctx.fillStyle = alpha(T.bg, 0.8); ctx.fillRect(4, 4, ctx.measureText(txt).width + 12, 20);
+    ctx.fillStyle = T.text; ctx.textAlign = "left"; ctx.fillText(txt, 10, 18);
+  }
+
+  // Chú thích cho đối tượng dưới con trỏ
+  hitTest(x, y) {
+    const L = this._L; if (!L || this.pCenter === null) return null;
+    const dec = decimalsFor(this.m.tick || this.m.grid);
+    if (x > L.bookX && x < L.bookX + L.bookW && y < L.ph) return "Sổ lệnh hiện tại: thanh xanh là lệnh chờ mua, thanh đỏ là lệnh chờ bán tại mỗi mức giá.";
+    if (this.show.liqMap && this.liqMap && x > L.liqX && x < L.axisX && y < L.ph) return `Bản đồ thanh lý ước tính quanh ${this.pAt(y).toFixed(dec)}: hồng là vùng long có thể bị thanh lý, vàng là vùng short. Ước tính từ open interest, không phải dữ liệu thật.`;
+    if (y > L.paneTop && y < L.timeTop && x < L.pw) return "Cột xanh: khối lượng mua chủ động, cột đỏ: bán chủ động theo thời gian. Đường vàng là CVD (mua trừ bán cộng dồn) trong vùng đang xem.";
+    if (x > L.pw || y > L.ph) return null;
+    const cols = this.m.cols, t = this.tAt(x), i0 = lowerBound(cols, t - 4 * this.msPerPx - COL_MS), i1 = lowerBound(cols, t + 4 * this.msPerPx);
+    for (let i = Math.max(0, i0); i < Math.min(cols.length, i1 + 1); i++) {
+      for (const l of cols[i].liq || []) if (Math.abs(this.yOf(l.p) - y) < 10) return `Lệnh thanh lý thật: ${l.side === "long" ? "LONG bị thanh lý (bị bán cưỡng bức)" : "SHORT bị thanh lý (bị mua cưỡng bức)"} ${fmtVol(l.q)} tại ${l.p.toFixed(dec)}, giá trị ${fmtUsd(l.p * l.q)}, lúc ${fmtTime(l.t)}.`;
+      for (const b of cols[i].big || []) if (Math.abs(this.yOf(b.p) - y) < 10) return `Lệnh lớn: ${b.side === "buy" ? "MUA" : "BÁN"} chủ động ${fmtVol(b.q)} tại ${b.p.toFixed(dec)} (${fmtUsd(b.p * b.q)}), thuộc nhóm 0,5% lệnh to nhất kể từ lúc mở trang.`;
+    }
+    if (this.show.levels) for (const lv of this.levels) if (Math.abs(y - this.yOf(lv.price)) < 4) return `${lv.kind === "support" ? "Hỗ trợ" : "Kháng cự"} ${lv.price.toFixed(dec)} (khung nến đang chọn): chạm ${lv.touches} lần, bị test ${lv.tests} lần, độ mạnh ${Math.round(lv.strength)}/100.`;
+    if (this.show.zones) for (const z of this.zones) if (y >= this.yOf(z.high) && y <= this.yOf(z.low)) return `Vùng khối lượng bất thường ${z.low.toFixed(dec)} – ${z.high.toFixed(dec)} (${z.z.toFixed(1)}σ), phe ${z.side === "buy" ? "mua" : "bán"} chủ động chiếm ưu thế, chưa bị xuyên qua.`;
+    return "Màu nền là lượng lệnh chờ tại mức giá đó theo thời gian: xanh đậm là mỏng, vàng/trắng là tường thanh khoản dày. Bong bóng là lệnh khớp.";
   }
 
   _bind() {

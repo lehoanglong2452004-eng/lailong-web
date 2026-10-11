@@ -52,7 +52,8 @@ export class MarketState {
     this.cols = []; this._col = null;
     this.trades = []; this.liqs = [];
     this.bars = []; this.fpStep = 0;
-    this.last = null; this.cvd = 0;
+    this.last = null; this.cvd = 0; this.liveStart = null;
+    this.tradedAt = new Map(); // khối lượng đã khớp tại từng mức giá kể từ lúc mở trang: [bán, mua]
     this.sizes = []; this.bigTrade = Infinity; // ngưỡng "lệnh lớn": phân vị 99,5%
     this.listeners = new Set();
   }
@@ -82,6 +83,7 @@ export class MarketState {
     const now = Date.now();
     for (const t of list) {
       this.trades.push(t); this.last = t;
+      if (this.tick) { const k = Math.round(t.p / this.tick), e = this.tradedAt.get(k) || [0, 0]; e[t.side === "buy" ? 1 : 0] += t.q; this.tradedAt.set(k, e); }
       const col = this._ensureCol(now);
       if (t.side === "buy") { col.bv += t.q; col.bpv += t.p * t.q; } else { col.sv += t.q; col.spv += t.p * t.q; }
       col.hi = Math.max(col.hi, t.p); col.lo = Math.min(col.lo, t.p);
@@ -154,6 +156,7 @@ export class MarketState {
 
   _barTrade(tr) {
     if (!this.bars.length || !this.fpStep) return;
+    if (this.liveStart === null) this.liveStart = tr.t; // mốc nối giữa dữ liệu lịch sử và trực tiếp
     const ms = this.intervalMs, bt = Math.floor(tr.t / ms) * ms;
     let b = this.bars[this.bars.length - 1];
     if (bt < b.t) return;
@@ -163,7 +166,9 @@ export class MarketState {
       if (this.bars.length > 20000) this.bars.shift();
       this.emit("newbar");
     }
-    if (!b.fp) { b.fp = new Map(); b.live = true; } // nến đang chạy lúc mở trang: footprint chỉ có từ lúc này
+    // nến đang chạy lúc mở trang: bỏ phần ước tính, dựng lại từ lệnh khớp thật
+    // (phần trước lúc mở trang được bù bằng dữ liệu lịch sử nếu sàn cho tải)
+    if (!b.fp || b.fpApprox) { b.fp = new Map(); b.fpApprox = false; b.live = true; }
     b.h = Math.max(b.h, tr.p); b.l = Math.min(b.l, tr.p); b.c = tr.p; b.v += tr.q;
     if (tr.side === "buy") b.bv = (b.bv || 0) + tr.q;
     b.d += tr.side === "buy" ? tr.q : -tr.q;

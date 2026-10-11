@@ -4,11 +4,12 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, decimalsFor, pad2, MONO, fitCanvas } from "./util.js";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js";
 import { cvd as cvdOf } from "./analytics.js";
+import { T, alpha } from "./theme.js";
 
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
-const C = { bg: "#0f1218", grid: "#1a202b", axis: "#7d8899", text: "#d8dee9", up: "#1fb57a", down: "#e5484d", poc: "#f5d524" };
+const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
 
 export class FlowChart {
   constructor(canvas, opts = {}) {
@@ -134,20 +135,21 @@ export class FlowChart {
       const kLo = Math.floor(b.l / rowStep + 1e-9), kHi = Math.floor(b.h / rowStep + 1e-9), strip = Math.min(6, w * 0.08);
       for (let k = kLo; k <= kHi; k++) {
         const r = rows.get(k) || [0, 0], tot = r[0] + r[1], yTop = this.yOf((k + 1) * rowStep), hgt = this.yOf(k * rowStep) - yTop;
-        const a = maxTot ? 0.08 + 0.55 * tot / maxTot : 0.05;
-        ctx.fillStyle = (r[1] >= r[0] ? "rgba(31,181,122," : "rgba(229,72,77,") + a.toFixed(3) + ")";
+        const a = (maxTot ? 0.08 + 0.55 * tot / maxTot : 0.05) * (b.fpApprox ? 0.75 : 1);
+        ctx.fillStyle = alpha(r[1] >= r[0] ? T.up : T.down, a.toFixed(3));
         ctx.fillRect(x0 + strip + 1, yTop + 0.5, w - strip - 1, Math.max(1, hgt - 1));
         if (k === pocK) { ctx.strokeStyle = C.poc; ctx.lineWidth = 1; ctx.strokeRect(x0 + strip + 1.5, yTop + 1, w - strip - 2, Math.max(1, hgt - 2)); }
         if (showText && tot > 0) {
           const cx = x0 + strip + (w - strip) / 2, buyImb = r[1] >= 3 * r[0] && r[1] > 0, sellImb = r[0] >= 3 * r[1] && r[0] > 0;
-          ctx.textAlign = "right"; ctx.fillStyle = sellImb ? "#ff7b7f" : C.text; ctx.fillText(fmtVol(r[0]), cx - 5, yTop + hgt / 2);
+          ctx.textAlign = "right"; ctx.fillStyle = sellImb ? T.down : C.text; ctx.fillText(fmtVol(r[0]), cx - 5, yTop + hgt / 2);
           ctx.textAlign = "center"; ctx.fillStyle = C.axis; ctx.fillText("x", cx, yTop + hgt / 2);
-          ctx.textAlign = "left"; ctx.fillStyle = buyImb ? "#5ff0b0" : C.text; ctx.fillText(fmtVol(r[1]), cx + 5, yTop + hgt / 2);
+          ctx.textAlign = "left"; ctx.fillStyle = buyImb ? T.up : C.text; ctx.fillText(fmtVol(r[1]), cx + 5, yTop + hgt / 2);
         }
       }
       const col = up ? C.up : C.down, yo = this.yOf(Math.max(b.o, b.c)), yc = this.yOf(Math.min(b.o, b.c));
       ctx.fillStyle = col; ctx.fillRect(x0, yo, strip, Math.max(1, yc - yo));
-      ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, this.yOf((kHi + 1) * rowStep) + 0.5, w - 1, this.yOf(kLo * rowStep) - this.yOf((kHi + 1) * rowStep) - 1);
+      ctx.strokeStyle = col; ctx.lineWidth = 1; if (b.fpApprox) ctx.setLineDash([3, 3]); // nét đứt: footprint ước tính
+      ctx.strokeRect(x0 + 0.5, this.yOf((kHi + 1) * rowStep) + 0.5, w - 1, this.yOf(kLo * rowStep) - this.yOf((kHi + 1) * rowStep) - 1); ctx.setLineDash([]);
     }
   }
 
@@ -175,10 +177,10 @@ export class FlowChart {
     const ctx = this.ctx, dec = decimalsFor(this.info.tick || this.step);
     for (const lv of this.levels) {
       const y = Math.round(this.yOf(lv.price)) + 0.5; if (y < 0 || y > L.priceH) continue;
-      const col = lv.kind === "support" ? "rgba(31,209,138," : "rgba(255,90,95,", a = 0.35 + 0.5 * (lv.strength || 50) / 100;
-      ctx.strokeStyle = col + a.toFixed(2) + ")"; ctx.lineWidth = lv.strength > 70 ? 2 : 1; ctx.setLineDash(lv.broken ? [3, 4] : []);
+      const base = lv.kind === "support" ? T.up : T.down, a = 0.35 + 0.5 * (lv.strength || 50) / 100;
+      ctx.strokeStyle = alpha(base, a.toFixed(2)); ctx.lineWidth = lv.strength > 70 ? 2 : 1; ctx.setLineDash(lv.broken ? [3, 4] : []);
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]);
-      ctx.font = `10px ${MONO}`; ctx.textAlign = "right"; ctx.fillStyle = col + "0.95)"; ctx.textBaseline = "alphabetic";
+      ctx.font = `10px ${MONO}`; ctx.textAlign = "right"; ctx.fillStyle = alpha(base, 0.95); ctx.textBaseline = "alphabetic";
       ctx.fillText(`${lv.kind === "support" ? "HT" : "KC"} ${lv.price.toFixed(dec)} · chạm ${lv.touches} · test ${lv.tests} · ${Math.round(lv.strength)}đ`, L.pw - 8, y - 3);
     }
   }
@@ -190,9 +192,9 @@ export class FlowChart {
       const end = z.endT != null && idx.has(z.endT) ? this.xOf(idx.get(z.endT)) : L.pw;
       const xa = this.xOf(i) - this.sp / 2, ya = this.yOf(z.high), yb = this.yOf(z.low);
       if (end < 0) continue;
-      ctx.fillStyle = z.side === "buy" ? "rgba(40,220,130,0.09)" : "rgba(255,70,80,0.09)";
+      ctx.fillStyle = z.side === "buy" ? alpha(T.up, 0.09) : alpha(T.down, 0.09);
       ctx.fillRect(xa, ya, end - xa, Math.max(2, yb - ya));
-      ctx.strokeStyle = z.side === "buy" ? "rgba(40,220,130,0.4)" : "rgba(255,70,80,0.4)"; ctx.lineWidth = 1;
+      ctx.strokeStyle = z.side === "buy" ? alpha(T.up, 0.4) : alpha(T.down, 0.4); ctx.lineWidth = 1;
       ctx.strokeRect(xa + 0.5, ya + 0.5, end - xa, Math.max(2, yb - ya));
     }
     void first;
@@ -250,13 +252,13 @@ export class FlowChart {
       if (mk.t < t0 || mk.t > t1) continue;
       const i = idx.get(mk.t); if (i === undefined) continue;
       const x = this.xOf(i), y = this.yOf(mk.price), up = mk.dir > 0, s = 6;
-      ctx.fillStyle = mk.exit ? "#d8dee9" : up ? C.up : C.down; ctx.beginPath();
+      ctx.fillStyle = mk.exit ? T.text : up ? C.up : C.down; ctx.beginPath();
       if (mk.exit) { ctx.rect(x - 3.5, y - 3.5, 7, 7); }
       else if (up) { ctx.moveTo(x, y - s); ctx.lineTo(x + s, y + s); ctx.lineTo(x - s, y + s); }
       else { ctx.moveTo(x, y + s); ctx.lineTo(x + s, y - s); ctx.lineTo(x - s, y - s); }
       ctx.closePath(); ctx.fill();
       if (mk.link) { // nối điểm vào và ra
-        const j = idx.get(mk.link.t); if (j !== undefined) { ctx.strokeStyle = mk.link.win ? "rgba(31,181,122,0.7)" : "rgba(229,72,77,0.7)"; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(this.xOf(j), this.yOf(mk.link.price)); ctx.stroke(); ctx.setLineDash([]); }
+        const j = idx.get(mk.link.t); if (j !== undefined) { ctx.strokeStyle = mk.link.win ? alpha(T.up, 0.7) : alpha(T.down, 0.7); ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(this.xOf(j), this.yOf(mk.link.price)); ctx.stroke(); ctx.setLineDash([]); }
       }
     }
   }
@@ -280,12 +282,12 @@ export class FlowChart {
   _delta(first, last, L) {
     const ctx = this.ctx, top = L.deltaTop, H = L.deltaH, mid = top + H / 2; let maxD = 0;
     for (let i = first; i <= last; i++) maxD = Math.max(maxD, Math.abs(this.bars[i].d || 0));
-    ctx.fillStyle = "#121722"; ctx.fillRect(0, top, L.pw, H);
+    ctx.fillStyle = T.panel; ctx.fillRect(0, top, L.pw, H);
     ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.moveTo(0, mid + 0.5); ctx.lineTo(L.pw, mid + 0.5); ctx.stroke();
     const bw = Math.max(1, Math.min(this.sp * 0.7, this.sp - 2));
     if (maxD) for (let i = first; i <= last; i++) {
       const d = this.bars[i].d || 0, hh = Math.abs(d) / maxD * (H / 2 - 3), x = this.xOf(i);
-      ctx.fillStyle = d >= 0 ? "rgba(31,181,122,0.75)" : "rgba(229,72,77,0.75)";
+      ctx.fillStyle = d >= 0 ? alpha(T.up, 0.75) : alpha(T.down, 0.75);
       ctx.fillRect(Math.round(x - bw / 2), d >= 0 ? mid - hh : mid, Math.round(bw), Math.max(1, hh));
       if (this.type === "box" && this.sp >= 50) { ctx.fillStyle = d >= 0 ? C.up : C.down; ctx.font = `10px ${MONO}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText((d >= 0 ? "+" : "") + fmtVol(d), x, d >= 0 ? mid + 7 : mid - 7); }
     }
@@ -296,7 +298,7 @@ export class FlowChart {
   _cvdPane(first, last, L) {
     const ctx = this.ctx, top = L.cvdTop, H = L.cvdH;
     if (!this._cvd) this._cvd = cvdOf(this.bars);
-    ctx.fillStyle = "#0d111b"; ctx.fillRect(0, top, L.pw, H);
+    ctx.fillStyle = T.panel; ctx.fillRect(0, top, L.pw, H);
     ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.stroke();
     const series = [];
     if (this.show.cvd) series.push([this._cvd, "#f5c542", "CVD"]);
@@ -318,7 +320,7 @@ export class FlowChart {
   _axes(first, last, L) {
     const ctx = this.ctx, dec = Math.max(decimalsFor(this._tickStep || this.step), 0);
     ctx.fillStyle = C.bg; ctx.fillRect(L.pw, 0, AXIS_W, L.h); ctx.fillRect(0, L.ph, L.w, TIME_H);
-    ctx.strokeStyle = "#262e3b"; ctx.beginPath(); ctx.moveTo(L.pw + 0.5, 0); ctx.lineTo(L.pw + 0.5, L.ph); ctx.moveTo(0, L.ph + 0.5); ctx.lineTo(L.w, L.ph + 0.5); ctx.stroke();
+    ctx.strokeStyle = T.line; ctx.beginPath(); ctx.moveTo(L.pw + 0.5, 0); ctx.lineTo(L.pw + 0.5, L.ph); ctx.moveTo(0, L.ph + 0.5); ctx.lineTo(L.w, L.ph + 0.5); ctx.stroke();
     ctx.fillStyle = C.axis; ctx.font = `11px ${MONO}`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
     for (const p of this._ticks()) { const y = this.yOf(p); if (y > 6 && y < L.priceH - 6) ctx.fillText(p.toFixed(dec), L.pw + 6, y); }
     const b = this.bars[this.bars.length - 1], y = this.yOf(b.c), col = b.c >= b.o ? C.up : C.down;
@@ -356,9 +358,28 @@ export class FlowChart {
     const parts = [[`${this.info.symbol || ""} · ${this.info.exchangeName || ""} · ${this.info.interval || ""}   `, C.text], ["O ", C.axis], [b.o.toFixed(dec) + "  ", col], ["H ", C.axis], [b.h.toFixed(dec) + "  ", col], ["L ", C.axis], [b.l.toFixed(dec) + "  ", col], ["C ", C.axis], [b.c.toFixed(dec) + "  ", col], ["KL ", C.axis], [fmtVol(b.v) + "  ", C.text], ["Δ ", C.axis], [(b.d >= 0 ? "+" : "") + fmtVol(b.d || 0) + "  ", (b.d || 0) >= 0 ? C.up : C.down]];
     if (b.liqL || b.liqS) parts.push(["Thanh lý L/S ", C.axis], [`${fmtUsd((b.liqL || 0) * b.c)} / ${fmtUsd((b.liqS || 0) * b.c)}`, "#ffd400"]);
     ctx.font = `12px ${MONO}`; ctx.textBaseline = "top"; ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(15,18,24,0.8)"; ctx.fillRect(4, 4, Math.min(L.pw - 8, 900), 20);
+    ctx.fillStyle = alpha(T.bg, 0.8); ctx.fillRect(4, 4, Math.min(L.pw - 8, 900), 20);
     let x = 8; for (const [t, c] of parts) { ctx.fillStyle = c; ctx.fillText(t, x, 8); x += ctx.measureText(t).width; }
-    if (this.type === "box") { ctx.fillStyle = C.axis; ctx.fillText(`Tầng giá ${this._rowStepUsed.toFixed(decimalsFor(this._rowStepUsed))} · footprint chỉ có từ lúc mở trang`, 8, 28); }
+    if (this.type === "box") { ctx.fillStyle = C.axis; ctx.fillText(`Tầng giá ${this._rowStepUsed.toFixed(decimalsFor(this._rowStepUsed))} · viền liền: từ từng lệnh khớp thật · viền nét đứt: ước tính từ nến nhỏ hơn${this.fpProgress ? " · " + this.fpProgress : ""}`, 8, 28); }
+  }
+
+  // Chú thích cho đối tượng dưới con trỏ (mức giá, vùng, thanh lý, lệnh backtest)
+  hitTest(x, y) {
+    const L = this._L; if (!L || !this.bars.length || x > L.pw || y > L.priceH) return null;
+    const dec = decimalsFor(this.info.tick || this.step), i = Math.min(this.bars.length - 1, Math.max(0, this.iAt(x))), b = this.bars[i];
+    if (this.show.liq && (b.liqL || b.liqS)) {
+      if (b.liqL && Math.abs(y - (this.yOf(b.l) + 10)) < 10) return `Long bị thanh lý trong nến này: ${fmtVol(b.liqL)} (${fmtUsd(b.liqL * b.c)}). Người mua dùng đòn bẩy bị sàn bán cưỡng bức.`;
+      if (b.liqS && Math.abs(y - (this.yOf(b.h) - 10)) < 10) return `Short bị thanh lý trong nến này: ${fmtVol(b.liqS)} (${fmtUsd(b.liqS * b.c)}). Người bán khống bị sàn mua cưỡng bức.`;
+    }
+    for (const mk of this.markers) if (mk.t === b.t && Math.abs(y - this.yOf(mk.price)) < 8) return mk.exit ? `Thoát lệnh tại ${mk.price.toFixed(dec)}` : `Vào lệnh ${mk.dir > 0 ? "LONG" : "SHORT"} tại ${mk.price.toFixed(dec)}`;
+    if (this.show.levels) for (const lv of this.levels) if (Math.abs(y - this.yOf(lv.price)) < 4) return `${lv.kind === "support" ? "Hỗ trợ" : "Kháng cự"} ${lv.price.toFixed(dec)}: chạm ${lv.touches} lần, bị test ${lv.tests} lần, độ mạnh ${Math.round(lv.strength)}/100${lv.flipped ? ", đã đảo vai" : lv.broken ? ", đã bị phá (nét đứt)" : ", còn giữ"}.`;
+    if (this.show.zones) for (const z of this.zones) if (y >= this.yOf(z.high) && y <= this.yOf(z.low) && b.t >= z.t) return `Vùng khối lượng bất thường ${z.low.toFixed(dec)} – ${z.high.toFixed(dec)}: khối lượng cao hơn bình thường ${z.z.toFixed(1)} độ lệch chuẩn, phe ${z.side === "buy" ? "mua" : "bán"} chủ động chiếm ưu thế.`;
+    const d = b.d != null ? b.d : (typeof b.bv === "number" ? 2 * b.bv - b.v : null), chg = b.o ? (b.c / b.o - 1) * 100 : 0;
+    const candle = `Nến ${fmtTime(b.t)} (${this.info.interval || ""}): mở ${b.o.toFixed(dec)} · cao ${b.h.toFixed(dec)} · thấp ${b.l.toFixed(dec)} · đóng ${b.c.toFixed(dec)} (${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%). ` +
+      `${b.c >= b.o ? "Nến xanh: giá đóng cửa cao hơn giá mở cửa." : "Nến đỏ: giá đóng cửa thấp hơn giá mở cửa."} Thân nến là đoạn mở → đóng, râu là giá cao nhất/thấp nhất. ` +
+      `Khối lượng ${fmtVol(b.v)}${d != null ? `, delta (mua − bán chủ động) ${d >= 0 ? "+" : ""}${fmtVol(d)}${this.info.deltaApprox ? " (ước tính)" : ""}` : ""}.`;
+    if (this.type === "box" && b.fp) return (b.fpApprox ? "Footprint ước tính: chia khối lượng mua/bán của các nến nhỏ hơn lên khoảng giá (viền nét đứt). " : "Footprint thật từ từng lệnh khớp: số bên trái là bán chủ động, bên phải là mua chủ động tại mỗi mức giá; khung vàng là mức giá khớp nhiều nhất. ") + candle;
+    return candle;
   }
 
   _bind() {
@@ -401,7 +422,7 @@ export function drawEquity(canvas, equity, capital) {
   ctx.strokeStyle = C.grid; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(padL, Y(capital)); ctx.lineTo(w - padR, Y(capital)); ctx.stroke(); ctx.setLineDash([]);
   ctx.beginPath(); equity.forEach((p, i) => (i ? ctx.lineTo(X(i), Y(p.eq)) : ctx.moveTo(X(i), Y(p.eq))));
   ctx.strokeStyle = equity[n - 1].eq >= capital ? C.up : C.down; ctx.lineWidth = 1.6; ctx.stroke();
-  ctx.fillStyle = "rgba(229,72,77,0.35)"; ctx.beginPath(); ctx.moveTo(X(0), ddTop);
+  ctx.fillStyle = alpha(T.down, 0.35); ctx.beginPath(); ctx.moveTo(X(0), ddTop);
   dd.forEach((v, i) => ctx.lineTo(X(i), ddTop + v / minDD * ddH)); ctx.lineTo(X(n - 1), ddTop); ctx.closePath(); ctx.fill();
   ctx.fillStyle = C.axis; ctx.font = `11px ${MONO}`; ctx.textAlign = "left";
   ctx.fillText(hi.toFixed(0), w - padR + 6, 14); ctx.fillText(lo.toFixed(0), w - padR + 6, eqH + 8); ctx.fillText(minDD.toFixed(1) + "%", w - padR + 6, ddTop + ddH);

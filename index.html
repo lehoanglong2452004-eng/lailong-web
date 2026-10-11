@@ -4,26 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lai Long Quant</title>
-<meta name="description" content="Order flow, bookmap, thanh lý, hỗ trợ/kháng cự, xu hướng, động lượng, biến động và backtest cho crypto futures.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230f1218'/%3E%3Cpath d='M3 12V4h2v6h4v2zM10 12V4h2v6h2v2z' fill='%232f8cff'/%3E%3C/svg%3E">
+<meta name="description" content="Phân tích định lượng thuần giá và khối lượng cho crypto futures: bookmap, footprint, sổ lệnh, thanh lý, hỗ trợ/kháng cự, xu hướng, động lượng, biến động và backtest.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%23000'/%3E%3Cpath d='M3 12V4h2v6h4v2zM10 12V4h2v6h2v2z' fill='%23ff9f1c'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <header class="menubar">
-  <div class="brand">LAI LONG <span>Quant</span></div>
+  <div class="brand">LAI LONG <span>QUANT</span></div>
   <nav class="seg views" id="views">
-    <button data-view="terminal" class="on">Terminal</button>
-    <button data-view="analysis">Phân tích</button>
-    <button data-view="backtest">Backtest</button>
+    <button data-view="terminal" class="on" data-tip="Bookmap, footprint, nến và sổ lệnh trực tiếp">Terminal</button>
+    <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hỗ trợ/kháng cự, thanh lý theo nhiều khung">Phân tích</button>
+    <button data-view="backtest" data-tip="Kiểm tra chiến lược trên dữ liệu lịch sử">Backtest</button>
   </nav>
-  <label class="field">Sàn <select id="exchange"></select></label>
-  <label class="field">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
+  <label class="field" data-tip="Sàn lấy dữ liệu. Giả lập: dữ liệu ngẫu nhiên để thử giao diện">Sàn <select id="exchange"></select></label>
+  <label class="field" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
   <datalist id="symbolList"></datalist>
-  <div class="seg" id="intervals"></div>
+  <div class="seg" id="intervals" data-tip="Khung thời gian của mỗi nến"></div>
   <div class="spacer"></div>
-  <div class="pill mode" title="Lệnh khớp theo sổ lệnh và giao dịch thật nhưng không dùng tiền thật">GIẢ LẬP</div>
-  <div class="pill" id="connPill"><i></i><span>Đang kết nối</span></div>
-  <button id="fullscreenBtn" class="icon" title="Toàn màn hình">⛶</button>
+  <div class="pill" id="connPill" data-tip="Trạng thái kết nối dữ liệu trực tiếp với sàn"><i></i><span>Đang kết nối</span></div>
+  <button id="glossBtn" class="tool" data-tip="Mở danh sách giải thích thuật ngữ">? Giải thích</button>
+  <button id="themeBtn" class="tool" data-tip="Đổi màu giao diện">Màu sắc</button>
+  <button id="fullscreenBtn" class="icon" data-tip="Toàn màn hình (Esc để thoát)">⛶</button>
 </header>
 
 <!-- ============ TERMINAL ============ -->
@@ -31,73 +32,63 @@
   <section class="panel chart-panel" id="mainPanel">
     <div class="panel-head">
       <div class="seg" id="chartMode">
-        <button data-mode="heat" class="on">Bookmap</button>
-        <button data-mode="box">Footprint</button>
-        <button data-mode="candle">Nến</button>
+        <button data-mode="heat" class="on" data-g="bookmap">Bookmap</button>
+        <button data-mode="box" data-g="footprint">Footprint</button>
+        <button data-mode="candle" data-tip="Nến giá kèm hồ sơ khối lượng, delta, CVD và OI. Rê chuột lên nến để xem ý nghĩa">Nến</button>
       </div>
       <div class="dropdown">
-        <button id="layerBtn">Lớp hiển thị ▾</button>
+        <button id="layerBtn" data-tip="Bật/tắt các lớp dữ liệu vẽ trên biểu đồ">Lớp hiển thị ▾</button>
         <div class="menu" id="layerMenu">
-          <label><input type="checkbox" data-layer="levels" checked> Hỗ trợ / kháng cự đã test</label>
-          <label><input type="checkbox" data-layer="zones" checked> Vùng khối lượng bất thường</label>
-          <label><input type="checkbox" data-layer="liq" checked> Lệnh thanh lý thật</label>
-          <label><input type="checkbox" data-layer="liqMap" checked> Bản đồ thanh lý ước tính</label>
-          <label><input type="checkbox" data-layer="bubbles" checked> Bong bóng khớp lệnh (Bookmap)</label>
-          <label><input type="checkbox" data-layer="bigOnly"> Chỉ hiện lệnh lớn (Bookmap)</label>
-          <label><input type="checkbox" data-layer="profile" checked> Hồ sơ khối lượng (nến)</label>
-          <label><input type="checkbox" data-layer="delta" checked> Delta (nến)</label>
-          <label><input type="checkbox" data-layer="cvd" checked> CVD + open interest (nến)</label>
+          <label data-g="sr-level"><input type="checkbox" data-layer="levels" checked> Hỗ trợ / kháng cự đã test</label>
+          <label data-g="abnormal-volume"><input type="checkbox" data-layer="zones" checked> Vùng khối lượng bất thường</label>
+          <label data-g="liquidation"><input type="checkbox" data-layer="liq" checked> Lệnh thanh lý thật</label>
+          <label data-g="liq-map"><input type="checkbox" data-layer="liqMap" checked> Bản đồ thanh lý ước tính</label>
+          <label data-g="trade-bubble"><input type="checkbox" data-layer="bubbles" checked> Bong bóng khớp lệnh (Bookmap)</label>
+          <label data-g="big-trade"><input type="checkbox" data-layer="bigOnly"> Chỉ hiện lệnh lớn (Bookmap)</label>
+          <label data-g="volume-profile"><input type="checkbox" data-layer="profile" checked> Hồ sơ khối lượng (nến)</label>
+          <label data-g="delta"><input type="checkbox" data-layer="delta" checked> Delta (nến)</label>
+          <label data-g="cvd-oi-combo"><input type="checkbox" data-layer="cvd" checked> CVD + open interest (nến)</label>
         </div>
       </div>
-      <label class="field small" id="contrastBox" title="Độ tương phản bản đồ nhiệt">Tương phản <input type="range" id="contrast" min="0.3" max="4" step="0.1" value="1"></label>
-      <label class="field small" id="rowBox" hidden>Tầng giá
+      <label class="field small" id="contrastBox" data-g="contrast">Tương phản <input type="range" id="contrast" min="0.3" max="4" step="0.1" value="1"></label>
+      <label class="field small" id="rowBox" hidden data-tip="Gộp bao nhiêu bước giá vào một dòng của footprint">Tầng giá
         <select id="rowSize"><option value="auto" selected>Tự động</option><option>1</option><option>2</option><option>5</option><option>10</option><option>20</option><option>50</option></select>
       </label>
-      <span class="hint" id="chartHint">Lăn chuột: phóng thời gian · Ctrl + lăn: phóng giá · Kéo: di chuyển · Bấm đúp: theo dõi</span>
+      <span class="hint" id="chartHint"></span>
       <div class="spacer"></div>
-      <button class="icon max" data-max="mainPanel" title="Phóng to khung này">⤢</button>
+      <button class="icon max" data-max="mainPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">⤢</button>
     </div>
     <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas></div>
     <div class="signalbar" id="signalbar"></div>
   </section>
 
-  <aside class="right">
-    <section class="panel dom-panel" id="domPanel">
-      <div class="panel-head">
-        <span class="title">Sổ lệnh</span>
-        <select id="domMult" title="Gộp mức giá"><option value="1">x1</option><option value="2">x2</option><option value="5">x5</option><option value="10">x10</option><option value="50">x50</option></select>
-        <div class="spacer"></div>
-        <button class="icon" id="domCenter" title="Căn giữa giá hiện tại">◎</button>
-      </div>
-      <div class="dom-cols"><span>Khớp</span><span>Đang chờ</span><span>Giá</span><span>Của tôi</span></div>
-      <div class="dom-wrap"><canvas id="dom"></canvas></div>
-      <div class="dom-hint">Chuột trái: MUA limit · Chuột phải: BÁN limit</div>
-    </section>
-    <section class="panel ticket">
-      <div class="seg full" id="orderType"><button data-otype="limit" class="on">Limit</button><button data-otype="market">Market</button></div>
-      <label class="row" id="priceRow">Giá <input type="number" id="tPrice" step="any"></label>
-      <label class="row">Vốn ký quỹ (USDT) <input type="number" id="tMargin" min="0" step="any" value="100"></label>
-      <div class="row lev"><span>Đòn bẩy</span><input type="range" id="tLevRange" min="1" max="125" value="10"><input type="number" id="tLev" min="1" max="125" value="10"><b>x</b></div>
-      <label class="row">Khối lượng <input type="number" id="tQty" min="0" step="any"><em id="tCoin">BTC</em></label>
-      <div class="pcts" id="pcts"><button data-pct="10">10%</button><button data-pct="25">25%</button><button data-pct="50">50%</button><button data-pct="100">100%</button></div>
-      <div class="summary" id="tSummary"></div>
-      <div class="buysell"><button class="buy" id="buyBtn">MUA / LONG</button><button class="sell" id="sellBtn">BÁN / SHORT</button></div>
-      <div class="buysell small"><button id="cancelAllBtn">Huỷ tất cả</button><button id="closePosBtn">Đóng vị thế</button></div>
-      <div class="account" id="account"></div>
-    </section>
-  </aside>
+  <div class="splitter v" id="splitV" data-tip="Kéo để đổi độ rộng sổ lệnh. Bấm đúp để về mặc định"></div>
+
+  <section class="panel dom-panel" id="domPanel">
+    <div class="panel-head">
+      <span class="title" data-g="dom">Sổ lệnh</span>
+      <select id="domMult" data-tip="Gộp nhiều bước giá vào một dòng"><option value="1">x1</option><option value="2">x2</option><option value="5">x5</option><option value="10">x10</option><option value="50">x50</option></select>
+      <div class="spacer"></div>
+      <button class="icon" id="domCenter" data-tip="Căn giữa giá hiện tại">◎</button>
+      <button class="icon max" data-max="domPanel" data-tip="Phóng to sổ lệnh">⤢</button>
+    </div>
+    <div class="dom-cols">
+      <span data-g="trade-bubble">Khớp 60s</span><span data-tip="Tổng khối lượng đã khớp tại mỗi giá kể từ lúc mở trang: đỏ là bán chủ động, xanh là mua chủ động">Đã khớp</span><span data-tip="Lệnh chờ mua (bid) tại mỗi giá">Chờ mua</span><span>Giá</span><span data-tip="Lệnh chờ bán (ask) tại mỗi giá">Chờ bán</span>
+    </div>
+    <div class="dom-wrap"><canvas id="dom"></canvas></div>
+    <div class="dom-hint">Lăn chuột: cuộn giá · Bấm đúp: về giá hiện tại</div>
+  </section>
+
+  <div class="splitter h" id="splitH" data-tip="Kéo để đổi chiều cao khung dưới. Bấm đúp để về mặc định"></div>
 
   <section class="panel bottom" id="bottomPanel">
     <div class="panel-head tabs" id="tabs">
-      <button data-tab="positions" class="on">Vị thế <b id="posCount"></b></button>
-      <button data-tab="orders">Lệnh chờ <b id="ordCount"></b></button>
-      <button data-tab="fills">Khớp lệnh</button>
-      <button data-tab="liqs">Thanh lý</button>
-      <button data-tab="big">Lệnh lớn</button>
-      <button data-tab="symbols">Danh sách mã</button>
-      <button data-tab="logs">Nhật ký</button>
+      <button data-tab="liqs" class="on" data-g="liq-windows">Thanh lý</button>
+      <button data-tab="big" data-g="big-trade">Lệnh lớn</button>
+      <button data-tab="symbols" data-tip="Tất cả mã của sàn, sắp theo khối lượng 24 giờ. Bấm để chuyển mã">Danh sách mã</button>
+      <button data-tab="logs" data-tip="Nhật ký kết nối và tải dữ liệu">Nhật ký</button>
       <div class="spacer"></div>
-      <button class="icon max" data-max="bottomPanel" title="Phóng to khung này">⤢</button>
+      <button class="icon max" data-max="bottomPanel" data-tip="Phóng to khung này">⤢</button>
     </div>
     <div class="tab-body" id="tabBody"></div>
   </section>
@@ -107,30 +98,32 @@
 <main class="view analysis" id="view-analysis" hidden>
   <div class="cards">
     <section class="card wide">
-      <h3>Xu hướng, động lượng và độ biến động theo khung thời gian</h3>
+      <h3>Xu hướng, động lượng và độ biến động theo khung thời gian <button class="q" data-g="mtf">?</button></h3>
       <div id="mtfTable" class="tablewrap"></div>
-      <p class="note">Xu hướng: độ dốc hồi quy giá so với ATR và cấu trúc đỉnh/đáy. Động lượng: tốc độ thay đổi giá và tỷ lệ mua/bán chủ động. Biến động: biến động thực tế năm hoá, so với lịch sử của chính mã này.</p>
+    </section>
+    <section class="card wide">
+      <h3>Thanh lý theo khung thời gian <button class="q" data-g="liq-windows">?</button> <small id="liqInfo"></small></h3>
+      <div id="liqWindows" class="tablewrap"></div>
+      <div class="liqgrid">
+        <div id="liqStats"></div>
+        <div class="mini"><canvas id="liqCanvas"></canvas></div>
+      </div>
+      <p class="note">Hồng: vùng long sẽ bị thanh lý. Vàng: vùng short sẽ bị thanh lý. Bản đồ là ước tính từ thay đổi open interest và các mức đòn bẩy phổ biến; số liệu trong bảng là lệnh thanh lý thật sàn công bố.</p>
     </section>
     <section class="card">
-      <h3>Hỗ trợ / kháng cự đã được test <small id="srInfo"></small></h3>
+      <h3>Hỗ trợ / kháng cự đã được test <button class="q" data-g="sr-level">?</button> <small id="srInfo"></small></h3>
       <div id="srTable" class="tablewrap"></div>
     </section>
     <section class="card">
-      <h3>Vùng khối lượng bất thường</h3>
+      <h3>Vùng khối lượng bất thường <button class="q" data-g="abnormal-volume">?</button></h3>
       <div id="zoneTable" class="tablewrap"></div>
     </section>
     <section class="card">
-      <h3>Thanh lý</h3>
-      <div id="liqStats"></div>
-      <div class="mini"><canvas id="liqCanvas"></canvas></div>
-      <p class="note">Hồng: vùng long sẽ bị thanh lý. Vàng: vùng short sẽ bị thanh lý. Bản đồ là ước tính từ thay đổi open interest và các mức đòn bẩy phổ biến; chấm thanh lý trên chart là lệnh thanh lý thật sàn công bố.</p>
-    </section>
-    <section class="card">
-      <h3>Hồ sơ khối lượng</h3>
+      <h3>Hồ sơ khối lượng <button class="q" data-g="volume-profile">?</button></h3>
       <div id="vpStats"></div>
     </section>
     <section class="card">
-      <h3>Biến động quyền chọn (Deribit DVOL)</h3>
+      <h3>Biến động quyền chọn (Deribit DVOL) <button class="q" data-g="dvol">?</button></h3>
       <div id="dvolStats"></div>
       <div class="mini"><canvas id="dvolCanvas"></canvas></div>
     </section>
@@ -140,21 +133,22 @@
 <!-- ============ BACKTEST ============ -->
 <main class="view backtest" id="view-backtest" hidden>
   <aside class="panel btform">
-    <div class="panel-head"><span class="title">Thiết lập backtest</span></div>
+    <div class="panel-head"><span class="title">Thiết lập backtest</span><div class="spacer"></div><button class="q" data-g="backtest">?</button></div>
     <div class="formbody">
       <label class="row">Chiến lược <select id="btStrategy"></select></label>
       <p class="note" id="btDesc"></p>
       <div id="btParams"></div>
       <hr>
-      <label class="row">Khung nến <select id="btInterval"><option>5m</option><option>15m</option><option selected>1h</option><option>4h</option><option>1d</option></select></label>
-      <label class="row">Số nến <input type="number" id="btBars" value="5000" min="200" max="20000" step="100"></label>
-      <label class="row">Vốn ban đầu (USDT) <input type="number" id="btCapital" value="10000" min="10" step="any"></label>
-      <label class="row">Rủi ro mỗi lệnh (%) <input type="number" id="btRisk" value="1" min="0.1" max="20" step="0.1"></label>
-      <label class="row">Đòn bẩy tối đa <input type="number" id="btLev" value="20" min="1" max="125"></label>
-      <label class="row">Phí taker (%) <input type="number" id="btFee" value="0.05" min="0" step="0.01"></label>
-      <label class="row">Trượt giá (bps) <input type="number" id="btSlip" value="2" min="0" step="0.5"></label>
+      <label class="row" data-tip="Khung nến dùng để chạy backtest">Khung nến <select id="btInterval"><option>5m</option><option>15m</option><option selected>1h</option><option>4h</option><option>1d</option></select></label>
+      <label class="row" data-tip="Số nến lịch sử tải về. Càng nhiều nến càng đáng tin">Số nến <input type="number" id="btBars" value="5000" min="200" max="20000" step="100"></label>
+      <label class="row" data-tip="Số tiền giả định lúc bắt đầu">Vốn ban đầu (USDT) <input type="number" id="btCapital" value="10000" min="10" step="any"></label>
+      <label class="row" data-g="bt-risk">Rủi ro mỗi lệnh (%) <input type="number" id="btRisk" value="1" min="0.1" max="20" step="0.1"></label>
+      <label class="row" data-g="bt-leverage">Đòn bẩy tối đa <input type="number" id="btLev" value="20" min="1" max="125"></label>
+      <label class="row" data-g="bt-fee">Phí taker (%) <input type="number" id="btFee" value="0.05" min="0" step="0.01"></label>
+      <label class="row" data-g="bt-slippage">Trượt giá (bps) <input type="number" id="btSlip" value="2" min="0" step="0.5"></label>
       <button class="primary" id="btRun">Chạy backtest</button>
       <p class="note" id="btStatus"></p>
+      <p class="note">Rê chuột lên từng ô để xem ý nghĩa, hoặc bấm <b>? Giải thích</b> ở trên cùng.</p>
     </div>
   </aside>
   <section class="btresult">
@@ -166,6 +160,27 @@
   </section>
 </main>
 
+<!-- ============ GIẢI THÍCH THUẬT NGỮ ============ -->
+<aside class="drawer" id="glossary" hidden>
+  <div class="drawer-head">
+    <span class="title">Giải thích thuật ngữ</span>
+    <input id="glossSearch" placeholder="Tìm: CVD, OI, độ lệch..." spellcheck="false">
+    <button class="icon" id="glossClose" data-tip="Đóng">✕</button>
+  </div>
+  <div class="drawer-body" id="glossBody"></div>
+</aside>
+
+<!-- ============ MÀU SẮC ============ -->
+<aside class="popover" id="themePanel" hidden>
+  <div class="drawer-head"><span class="title">Màu giao diện</span><div class="spacer"></div><button class="icon" id="themeClose" data-tip="Đóng">✕</button></div>
+  <div class="pop-body">
+    <div class="presets" id="themePresets"></div>
+    <div class="colors" id="themeColors"></div>
+    <p class="note">Màu được lưu trên trình duyệt này. Bấm một mẫu có sẵn để quay lại.</p>
+  </div>
+</aside>
+
+<div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
 <script type="module" src="js/app.js"></script>
 </body>

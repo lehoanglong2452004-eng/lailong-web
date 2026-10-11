@@ -203,6 +203,21 @@ const okx = {
     }
     return dedupe(out);
   },
+  // lệnh thanh lý đã xảy ra (OKX cho tải lại khoảng vài ngày gần nhất)
+  async liqHistory(symbol, info, from) {
+    const inst = okxInst(symbol), uly = inst.replace("-SWAP", ""), cv = (info && info.ctVal) || 1, out = [];
+    let after = "";
+    for (let guard = 0; guard < 10; guard++) {
+      const r = await getJson(`${OKX_REST}/api/v5/public/liquidation-orders?instType=SWAP&uly=${uly}&state=filled&limit=100${after ? "&after=" + after : ""}`);
+      const det = (r.data || []).flatMap(d => d.details || []);
+      if (!det.length) break;
+      for (const x of det) out.push({ p: num(x.bkPx), q: num(x.sz) * cv, side: x.posSide === "short" || (x.posSide === "net" && x.side === "buy") ? "short" : "long", t: num(x.ts) });
+      const first = Math.min(...det.map(x => num(x.ts)));
+      if (first <= from || String(first) === after) break;
+      after = String(first); await sleep(150);
+    }
+    return out.filter(x => x.t >= from).sort((a, b) => a.t - b.t);
+  },
   connect(symbol, info, book, h) {
     const inst = okxInst(symbol), cv = info.ctVal || 1;
     const ws = openSocket(OKX_WS, {
