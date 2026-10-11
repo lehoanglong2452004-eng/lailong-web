@@ -184,7 +184,7 @@ body { min-height: 100vh; }
 .btform .row input, .btform .row select { width: 140px; }
 .btform hr { border: 0; border-top: 1px solid var(--line); width: 100%; }
 .primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; padding: 8px; margin-top: 6px; }
-.btresult { display: grid; grid-template-rows: auto 220px minmax(260px, 1fr) 220px; gap: 4px; min-height: 0; overflow: auto; }
+.btresult { display: grid; grid-template-rows: auto auto 220px minmax(260px, 1fr) 220px; gap: 4px; min-height: 0; overflow: auto; }
 .statgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px; }
 .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; }
 .stat span { display: block; color: var(--muted); font-size: 11px; }
@@ -195,7 +195,7 @@ body { min-height: 100vh; }
   .menubar .hint, .panel-head .hint { display: none; }
   .cards { grid-template-columns: 1fr; }
   .backtest { grid-template-columns: 1fr; overflow: auto; }
-  .btresult { grid-template-rows: auto 200px 320px 260px; overflow: visible; }
+  .btresult { grid-template-rows: auto auto 200px 320px 260px; overflow: visible; }
   .workspace { grid-template-rows: 62vh auto 300px; }
 }
 [hidden] { display: none !important; }

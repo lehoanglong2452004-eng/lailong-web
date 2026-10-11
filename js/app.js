@@ -6,7 +6,7 @@ import { Heatmap } from "./heatmap.js";
 import { FlowChart, drawEquity } from "./flowchart.js";
 import { Dom } from "./dom.js";
 import { PaperBroker } from "./paper.js";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js";
 import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js";
 import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js";
 
@@ -318,15 +318,15 @@ $("btRun").onclick = async () => {
     status.textContent = `Đang chạy trên ${bars.length} nến...`; await new Promise(r => setTimeout(r, 30));
     const capital = +$("btCapital").value || 10000;
     const res = runBacktest(bars, id, params, { capital, riskPct: +$("btRisk").value, maxLeverage: +$("btLev").value, feeRate: +$("btFee").value / 100, slippageBps: +$("btSlip").value, intervalMs: INTERVALS[tf] });
-    renderBacktest(res, bars, tf, capital);
+    renderBacktest(res, bars, tf, capital, id, params);
     status.textContent = `Xong: ${bars.length} nến từ ${fmtDate(bars[0].t)} đến ${fmtDate(bars[bars.length - 1].t)}. Lệnh vào ở giá mở cửa nến sau tín hiệu, đã tính phí và trượt giá.`;
   } catch (e) { status.textContent = `Lỗi: ${e.message}`; }
   $("btRun").disabled = false;
 };
-function renderBacktest(res, bars, tf, capital) {
+function renderBacktest(res, bars, tf, capital, id, params) {
   const s = res.stats, card = (k, v, cls = "") => `<div class="stat"><span>${k}</span><b class="${cls}">${v}</b></div>`;
   $("btStats").innerHTML = card("Lợi nhuận ròng", `${s.netProfit >= 0 ? "+" : ""}${s.netProfit.toFixed(2)} (${fmtPct(s.netPct)})`, s.netProfit >= 0 ? "pos" : "neg") +
-    card("Số lệnh", `${s.trades} (L ${s.longs} / S ${s.shorts})`) + card("Tỷ lệ thắng", s.trades ? (s.winRate * (s.winRate <= 1 ? 100 : 1)).toFixed(1) + "%" : "-") +
+    card("Số lệnh", `${s.trades} (L ${s.longs} / S ${s.shorts})`) + card("Tỷ lệ thắng", s.trades ? s.winRate.toFixed(1) + "%" : "-") +
     card("Profit factor", isFinite(s.profitFactor) ? s.profitFactor.toFixed(2) : "∞") + card("R trung bình", s.trades ? s.avgR.toFixed(2) : "-") +
     card("Kỳ vọng mỗi lệnh", s.trades ? s.expectancy.toFixed(2) + " USDT" : "-") + card("Sụt giảm tối đa", s.maxDrawdownPct.toFixed(2) + "%", "neg") +
     card("Sharpe (năm hoá)", isFinite(s.sharpe) ? s.sharpe.toFixed(2) : "-") + card("Giữ lệnh trung bình", s.trades ? s.avgBars.toFixed(1) + " nến" : "-") +
@@ -339,7 +339,20 @@ function renderBacktest(res, bars, tf, capital) {
     const dir = t.side === "long" ? 1 : -1;
     markers.push({ t: t.entryT, price: t.entryPx, dir, link: { t: t.exitT, price: t.exitPx, win: t.pnl > 0 } }, { t: t.exitT, price: t.exitPx, dir, exit: true });
   }
-  btChart.setOverlays({ markers, levels: [], zones: [] });
+  btChart.setOverlays({ markers, levels: [], zones: [], lines: [] });
+  const box = $("btVwap"); box.hidden = id !== "vwapTouch";
+  if (id === "vwapTouch") {
+    const w = STRATEGIES.vwapTouch.vwap(bars, params), anchor = ["ngày", "tuần", `cuộn ${params.rollLen} nến`][Math.round(params.anchor)] || "ngày";
+    const resets = Math.round(params.anchor) === 2 ? null : bars.map((b, i) => i > 0 && (Math.round(params.anchor) === 1 ? Math.floor((b.t / 864e5 + 3) / 7) !== Math.floor((bars[i - 1].t / 864e5 + 3) / 7) : Math.floor(b.t / 864e5) !== Math.floor(bars[i - 1].t / 864e5)));
+    btChart.setOverlays({ lines: [{ values: w, color: "#c678dd", name: `VWAP ${anchor}`, resets }] });
+    const horizon = 12, rx = vwapReactions(bars, w, { tolAtr: params.tolAtr, horizon, moveAtr: 1 });
+    const row = (name, g) => `<tr><td class="t">${name}</td><td>${g.touches}</td><td class="pos">${g.bounce} (${isFinite(g.bouncePct) ? g.bouncePct.toFixed(1) : "-"}%)</td><td class="neg">${g.breaks} (${isFinite(g.breakPct) ? g.breakPct.toFixed(1) : "-"}%)</td><td>${g.unclear}</td><td class="${g.avgFwdPct >= 0 ? "pos" : "neg"}">${fmtPct(g.avgFwdPct, 3)}</td></tr>`;
+    const verdict = g => !g.touches ? "chưa có lần chạm nào" : g.bouncePct >= 55 ? "thường BẬT LẠI" : g.breakPct >= 55 ? "thường XUYÊN QUA" : "không nghiêng hẳn về bên nào";
+    box.innerHTML = `<h3>Giá chạm VWAP ${anchor} thì bật lại hay xuyên qua? <small>${bars.length} nến ${tf}, ${esc(S.symbol)} ${esc(ex().name)}</small></h3>` +
+      table(["Khi chạm VWAP", "Số lần chạm", "Bật lại", "Xuyên qua", "Không rõ", `Lợi nhuận TB sau ${horizon} nến (theo hướng bật lại)`],
+        [row("Từ trên xuống (VWAP là hỗ trợ)", rx.support), row("Từ dưới lên (VWAP là kháng cự)", rx.resistance)], "") +
+      `<p class="note">Kết luận trên dữ liệu này: khi VWAP là hỗ trợ, giá ${verdict(rx.support)}; khi VWAP là kháng cự, giá ${verdict(rx.resistance)}. "Bật lại" nghĩa là trong ${horizon} nến giá đi tiếp về phía cũ được 1 ATR trước khi đóng cửa xuyên qua VWAP. "Xuyên qua" nghĩa là đóng cửa ở phía bên kia VWAP trước.</p>`;
+  }
   const dec = decimalsFor(market.tick);
   $("btTrades").innerHTML = table(["#", "Phía", "Vào lúc", "Giá vào", "Ra lúc", "Giá ra", "Khối lượng", "Lãi/lỗ", "R", "Lý do", "Số nến"],
     res.trades.slice().reverse().map((t, k) => `<tr><td>${res.trades.length - k}</td><td class="${t.side === "long" ? "pos" : "neg"}">${t.side === "long" ? "LONG" : "SHORT"}</td><td>${fmtDate(t.entryT)}</td><td>${t.entryPx.toFixed(dec)}</td><td>${fmtDate(t.exitT)}</td><td>${t.exitPx.toFixed(dec)}</td><td>${+t.qty.toPrecision(5)}</td><td class="${t.pnl >= 0 ? "pos" : "neg"}">${t.pnl >= 0 ? "+" : ""}${t.pnl.toFixed(2)}</td><td>${t.r.toFixed(2)}</td><td class="t">${esc(t.reason)}</td><td>${t.bars}</td></tr>`),

@@ -423,3 +423,71 @@ export function liquidationMap(bars, {
 export function summary(bars, intervalMs) {
   return { trend: trend(bars), momentum: momentum(bars), volatility: volatility(bars, intervalMs) };
 }
+
+// ---------- VWAP ----------
+// VWAP = tổng(giá điển hình x khối lượng) / tổng khối lượng.
+// anchor: 'day' (reset 00:00 UTC), 'week' (reset thứ Hai 00:00 UTC), 'rolling' (len nến gần nhất).
+// Giá trị ở nến i đã gồm cả nến i, nên chỉ dùng được sau khi nến i đóng.
+export function vwapSeries(bars, { anchor = 'day', len = 96 } = {}) {
+  const n = bars?.length || 0, out = new Array(n).fill(NaN);
+  const periodKey = (t) => anchor === 'week' ? Math.floor((t / 86400000 + 3) / 7) : Math.floor(t / 86400000);
+  let pv = 0, vv = 0, key = null;
+  for (let i = 0; i < n; i++) {
+    const b = bars[i], tp = (b.h + b.l + b.c) / 3;
+    if (anchor === 'rolling') {
+      pv += tp * b.v; vv += b.v;
+      if (i >= len) { const o = bars[i - len]; pv -= (o.h + o.l + o.c) / 3 * o.v; vv -= o.v; }
+    } else {
+      const k = periodKey(b.t);
+      if (k !== key) { key = k; pv = 0; vv = 0; }
+      pv += tp * b.v; vv += b.v;
+    }
+    out[i] = vv > 0 ? pv / vv : tp;
+  }
+  return out;
+}
+
+// Thống kê phản ứng khi giá chạm VWAP: bật lại hay xuyên qua.
+// Một lần chạm: nến trước đóng cửa ở một phía của VWAP, nến này có râu chạm tới VWAP (trong dung sai).
+// Kết quả trong `horizon` nến sau đó:
+//   - "bật lại": giá đi tiếp về phía ban đầu được moveAtr x ATR trước khi đóng cửa xuyên qua VWAP
+//   - "xuyên qua": đóng cửa ở phía bên kia VWAP quá dung sai trước
+//   - "không rõ": không có điều nào xảy ra
+// Sau một lần chạm, phải rời VWAP xa hơn dung sai mới tính lần chạm tiếp theo.
+export function vwapReactions(bars, vwap, { tolAtr = 0.2, horizon = 12, moveAtr = 1 } = {}) {
+  const n = bars?.length || 0, a = atr(bars, 14), events = [];
+  let armed = true;
+  for (let i = 1; i < n; i++) {
+    const b = bars[i], prev = bars[i - 1], w = vwap[i - 1], ai = a[i - 1];
+    if (!isNum(w) || !(ai > 0)) continue;
+    const tol = tolAtr * ai;
+    const away = b.l > vwap[i] + tol || b.h < vwap[i] - tol; // cả nến nằm hẳn một phía
+    const side = prev.c > w + tol ? 1 : prev.c < w - tol ? -1 : 0; // 1: giá ở trên (VWAP là hỗ trợ)
+    const touched = side === 1 ? b.l <= vwap[i] + tol : side === -1 ? b.h >= vwap[i] - tol : false;
+    if (!armed || !touched) { if (away) armed = true; continue; }
+    armed = false;
+    let outcome = 'Không rõ', after = null;
+    // ngay nến chạm: đóng cửa xuyên qua thì tính là xuyên qua; còn lại xét từ nến sau
+    if (side === 1 ? b.c < vwap[i] - tol : b.c > vwap[i] + tol) { outcome = 'Xuyên qua'; after = 0; }
+    else for (let j = i + 1; j <= Math.min(n - 1, i + horizon); j++) {
+      const bj = bars[j], wj = vwap[j];
+      const crossed = side === 1 ? bj.c < wj - tol : bj.c > wj + tol;
+      const moved = side === 1 ? bj.h >= vwap[i] + moveAtr * ai : bj.l <= vwap[i] - moveAtr * ai;
+      if (crossed) { outcome = 'Xuyên qua'; after = j - i; break; }
+      if (moved) { outcome = 'Bật lại'; after = j - i; break; }
+    }
+    const end = bars[Math.min(n - 1, i + horizon)];
+    events.push({ i, t: b.t, side: side === 1 ? 'support' : 'resistance', vwap: vwap[i], outcome, after, fwdPct: side * (end.c / b.c - 1) * 100, complete: i + horizon < n });
+  }
+  const group = (kind) => {
+    const ev = events.filter((e) => e.side === kind && e.complete);
+    const c = (o) => ev.filter((e) => e.outcome === o).length;
+    return {
+      touches: ev.length, bounce: c('Bật lại'), breaks: c('Xuyên qua'), unclear: c('Không rõ'),
+      bouncePct: ev.length ? c('Bật lại') / ev.length * 100 : NaN,
+      breakPct: ev.length ? c('Xuyên qua') / ev.length * 100 : NaN,
+      avgFwdPct: ev.length ? mean(ev.map((e) => e.fwdPct)) : NaN,
+    };
+  };
+  return { events, support: group('support'), resistance: group('resistance') };
+}

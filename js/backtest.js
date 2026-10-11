@@ -1,6 +1,6 @@
 // Backtest đơn giản cho chiến lược order-flow. Tín hiệu tại nến i chỉ dùng nến 0..i,
 // vào lệnh ở giá mở nến i+1. Một vị thế tại một thời điểm.
-import { atr, barDelta, volumeZ, pivots } from './analytics.js';
+import { atr, barDelta, volumeZ, pivots, vwapSeries } from './analytics.js';
 
 const MS_PER_YEAR = 365 * 24 * 3600 * 1000;
 
@@ -102,6 +102,38 @@ export const STRATEGIES = {
         if (!best) return null;
         if (best.lv.broken) best.lv.used = true;
         return { side: best.side, stop: best.stop };
+      };
+    },
+  },
+  vwapTouch: {
+    name: 'VWAP làm hỗ trợ/kháng cự',
+    description: 'Giá chạm VWAP rồi bị đẩy lại thì vào lệnh đảo chiều (bật lại), hoặc đóng cửa xuyên qua VWAP thì vào lệnh theo hướng phá vỡ. Kèm bảng thống kê mỗi lần chạm VWAP giá bật lại hay xuyên qua.',
+    // anchor: 0 = VWAP ngày, 1 = VWAP tuần, 2 = VWAP cuộn N nến; mode: 0 = bật lại, 1 = phá vỡ, 2 = cả hai
+    params: [
+      { key: 'anchor', label: 'VWAP (0=ngày, 1=tuần, 2=cuộn)', default: 0, min: 0, max: 2, step: 1 },
+      { key: 'rollLen', label: 'Số nến VWAP cuộn', default: 96, min: 5, max: 2000, step: 1 },
+      { key: 'mode', label: 'Chế độ (0=bật lại, 1=phá vỡ, 2=cả hai)', default: 0, min: 0, max: 2, step: 1 },
+      { key: 'tolAtr', label: 'Dung sai chạm (x ATR)', default: 0.2, min: 0, max: 2, step: 0.05 },
+      { key: 'stopAtr', label: 'Cắt lỗ sau VWAP (x ATR)', default: 0.6, min: 0.05, max: 5, step: 0.05 },
+      { key: 'rr', label: 'Tỉ lệ lời/lỗ (R)', default: 2, min: 0.5, max: 10, step: 0.1 },
+      { key: 'maxHold', label: 'Giữ tối đa (nến)', default: 24, min: 1, max: 1000, step: 1 },
+    ],
+    vwap(bars, p) { return vwapSeries(bars, { anchor: ['day', 'week', 'rolling'][Math.round(p.anchor)] || 'day', len: Math.round(p.rollLen) }); },
+    prepare(bars, p) {
+      const a = atr(bars, 14), w = this.vwap(bars, p), mode = Math.round(p.mode);
+      return (i) => {
+        if (i < 1 || !(a[i] > 0)) return null;
+        const b = bars[i], prev = bars[i - 1], tol = p.tolAtr * a[i], wi = w[i], wp = w[i - 1];
+        const above = prev.c > wp + tol, below = prev.c < wp - tol;
+        if (mode !== 1) { // bật lại: râu chạm VWAP, đóng cửa quay về phía cũ
+          if (above && b.l <= wi + tol && b.c > wi) return { side: 'long', stop: Math.min(b.l, wi) - p.stopAtr * a[i] };
+          if (below && b.h >= wi - tol && b.c < wi) return { side: 'short', stop: Math.max(b.h, wi) + p.stopAtr * a[i] };
+        }
+        if (mode !== 0) { // phá vỡ: đóng cửa xuyên qua VWAP quá dung sai
+          if (above && b.c < wi - tol) return { side: 'short', stop: wi + p.stopAtr * a[i] };
+          if (below && b.c > wi + tol) return { side: 'long', stop: wi - p.stopAtr * a[i] };
+        }
+        return null;
       };
     },
   },

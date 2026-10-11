@@ -17,7 +17,7 @@ export class FlowChart {
     this.bars = []; this.info = {}; this.step = 1; this.type = "candle"; this.rowMult = "auto";
     this.spacing = { candle: 8, box: 96 }; this.offset = 6; this.yZoom = 1;
     this.show = { profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true };
-    this.levels = []; this.zones = []; this.liqMap = null; this.markers = []; this.orders = []; this.position = null;
+    this.levels = []; this.zones = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
     this.mouse = null; this.drag = null; this.dirty = true;
     this._bind();
     const loop = () => { if (this.dirty) { this.dirty = false; this._draw(); } requestAnimationFrame(loop); };
@@ -75,6 +75,7 @@ export class FlowChart {
     if (this.show.zones) this._zones(first, L);
     if (this.show.levels) this._levels(L);
     if (this.type === "box") this._boxes(first, last, rowStep); else this._candles(first, last);
+    this._lines(first, last);
     if (this.show.liq) this._liqMarks(first, last);
     if (this.show.liqMap && this.liqMap) this._liqMap(L);
     this._markers(first, last);
@@ -221,6 +222,22 @@ export class FlowChart {
       const tot = e.l + e.s, wpx = tot / maxN * maxW, a = 0.2 + 0.6 * tot / maxN;
       ctx.fillStyle = e.l >= e.s ? `rgba(255,61,242,${a.toFixed(2)})` : `rgba(255,212,0,${a.toFixed(2)})`;
       ctx.fillRect(L.pw - wpx, k * rowPx, wpx, rowPx - 0.5);
+    }
+  }
+
+  // đường giá phụ (ví dụ VWAP trong backtest): [{values, color, name}]
+  _lines(first, last) {
+    const ctx = this.ctx; let ly = 46;
+    for (const ln of this.lines) {
+      ctx.strokeStyle = ln.color; ctx.lineWidth = 1.5; ctx.beginPath(); let on = false;
+      for (let i = first; i <= last; i++) {
+        const v = ln.values[i]; if (!isFinite(v)) { on = false; continue; }
+        // ngắt đường khi VWAP neo theo ngày/tuần bắt đầu lại
+        const jump = on && ln.resets && ln.resets[i];
+        const x = this.xOf(i), y = this.yOf(v); (on && !jump) ? ctx.lineTo(x, y) : ctx.moveTo(x, y); on = true;
+      }
+      ctx.stroke();
+      ctx.fillStyle = ln.color; ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(ln.name, 8, ly); ly += 14;
     }
   }
 
