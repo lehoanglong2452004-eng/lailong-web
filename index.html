@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610132110">
+<link rel="stylesheet" href="css/app.css?v=202610132116">
 </head>
 <body>
 <header class="menubar">
@@ -246,6 +246,7 @@
       <label class="row" data-tip="Càng nhiều nến lịch sử càng nhiều mẫu để so, tải lâu hơn. Binance tối đa khoảng 90.000 nến">Số nến lịch sử <input type="number" id="frBars" value="30000" min="3000" max="90000" step="1000"></label>
       <label class="row" data-g="fr-context"><span><input type="checkbox" id="frCtx" checked> Cùng bối cảnh H1 / H4</span></label>
       <label class="row" data-g="fractal"><span><input type="checkbox" id="frMulti" checked> Tìm cả ở 2 khung lớn hơn</span></label>
+      <label class="row" data-g="fr-equity">Rủi ro mỗi lệnh (% vốn) <input type="number" id="frRisk" value="1" min="0.1" max="10" step="0.1"></label>
       <label class="row" data-g="fr-cost">Phí taker (%) <input type="number" id="frFee" value="0.05" min="0" step="0.01"></label>
       <label class="row" data-g="fr-cost">Trượt giá (bps) <input type="number" id="frSlip" value="2" min="0" step="0.5"></label>
       <button class="primary" id="frRun">Tìm mẫu lúc này</button>
@@ -257,7 +258,21 @@
     <div class="statgrid" id="frStats"></div>
     <section class="panel frchart"><div class="chart-wrap"><canvas id="frChart"></canvas></div></section>
     <div class="card" id="frHolds" hidden></div>
+    <div class="card" id="frScen" hidden>
+      <h3>Ba kịch bản: luôn LONG, luôn SHORT, đứng ngoài <button class="q" data-g="fr-equity">?</button> <small id="frScenSub"></small></h3>
+      <p class="note" id="frScenNote"></p>
+      <div class="scen"><div class="scen-chart"><canvas id="frEqLong"></canvas></div><div class="scen-stats" id="frEqLongS"></div></div>
+      <div class="scen"><div class="scen-chart"><canvas id="frEqShort"></canvas></div><div class="scen-stats" id="frEqShortS"></div></div>
+      <div class="scen"><div class="scen-chart"><canvas id="frEqFlat"></canvas></div><div class="scen-stats" id="frEqFlatS"></div></div>
+    </div>
     <div class="card" id="frValid" hidden></div>
+    <div class="card" id="frVScen" hidden>
+      <h3>Đường cong vốn ngoài mẫu <button class="q" data-g="fr-oos">?</button></h3>
+      <div class="scen"><div class="scen-chart"><canvas id="frVqFr"></canvas></div><div class="scen-stats" id="frVqFrS"></div></div>
+      <div class="scen"><div class="scen-chart"><canvas id="frVqLong"></canvas></div><div class="scen-stats" id="frVqLongS"></div></div>
+      <div class="scen"><div class="scen-chart"><canvas id="frVqShort"></canvas></div><div class="scen-stats" id="frVqShortS"></div></div>
+      <div class="scen"><div class="scen-chart"><canvas id="frVqFlat"></canvas></div><div class="scen-stats" id="frVqFlatS"></div></div>
+    </div>
     <div class="card" id="frMatches" hidden></div>
     <div class="card" id="frHelp"></div>
   </section>
@@ -285,6 +300,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610132110"></script>
+<script type="module" src="js/app.js?v=202610132116"></script>
 </body>
 </html>

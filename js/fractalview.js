@@ -1,7 +1,7 @@
 // Lai Long Web: trang FRACTAL (giao diện). Phần tính toán nằm trong fractal.js.
-import { HOLDS, buildIndex, search, summarize, paths, quantiles, walkForward, sampleLevel, breakeven } from "./fractal.js?v=202610132110";
-import { T, alpha } from "./theme.js?v=202610132110";
-import { fitCanvas, MONO, INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610132110";
+import { HOLDS, buildIndex, search, summarize, paths, quantiles, walkForward, sampleLevel, breakeven, equityStats } from "./fractal.js?v=202610132116";
+import { T, alpha } from "./theme.js?v=202610132116";
+import { fitCanvas, MONO, INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610132116";
 
 const TFS = ["5m", "15m", "1h", "4h", "1d"];
 const TREND = { 1: "H1 tăng", 0: "H1 ngang", "-1": "H1 giảm" }, POS = ["đáy H4", "giữa H4", "đỉnh H4"];
@@ -76,9 +76,80 @@ export class FractalChart {
   }
 }
 
+// ---------- đường cong vốn (tổng R cộng dồn) ----------
+export class EquityChart {
+  constructor(cv) {
+    this.cv = cv; this.S = fitCanvas(cv, () => this.draw()); this.d = null; this.mouse = null;
+    cv.addEventListener("mousemove", e => { const r = cv.getBoundingClientRect(); this.mouse = e.clientX - r.left; this.draw(); });
+    cv.addEventListener("mouseleave", () => { this.mouse = null; this.draw(); });
+    window.addEventListener("lailong-theme", () => this.draw());
+  }
+  // d: { title, color, Rs, ts, st (equityStats), flat, range: [lo, hi] dùng chung giữa các kịch bản để so được bằng mắt }
+  set(d) { this.d = d; this.draw(); }
+  _geo() {
+    const { w, h } = this.S, d = this.d, L0 = 44, R0 = 8, T0 = 18, B0 = 16, n = Math.max(1, d.st.curve.length - 1);
+    const [lo, hi] = d.range, x = k => L0 + k / n * (w - L0 - R0), y = v => T0 + (hi - v) / (hi - lo || 1) * (h - T0 - B0);
+    return { w, h, L0, R0, T0, B0, n, x, y, lo, hi, kAt: px => Math.max(0, Math.min(n, Math.round((px - L0) / (w - L0 - R0) * n))) };
+  }
+  draw() {
+    const { ctx, w, h } = this.S, d = this.d;
+    ctx.fillStyle = T.bg; ctx.fillRect(0, 0, w, h); ctx.font = `10.5px ${MONO}`; ctx.textBaseline = "middle";
+    if (!d) return;
+    const g = this._geo(), { x, y } = g, c = d.st.curve, col = d.color === "up" ? T.up : d.color === "down" ? T.down : d.color === "accent" ? T.accent : T.muted;
+    // lưới R
+    const step = Math.max(1, Math.pow(10, Math.floor(Math.log10((g.hi - g.lo) / 3 || 1))));
+    ctx.textAlign = "right";
+    for (let v = Math.ceil(g.lo / step) * step; v <= g.hi; v += step) {
+      ctx.strokeStyle = v === 0 ? alpha(T.text, 0.45) : T.grid; ctx.beginPath(); ctx.moveTo(g.L0, y(v)); ctx.lineTo(w - g.R0, y(v)); ctx.stroke();
+      ctx.fillStyle = T.muted; ctx.fillText(`${v > 0 ? "+" : ""}${+v.toFixed(1)}R`, g.L0 - 3, y(v));
+    }
+    // vùng sụt giảm: từ đỉnh đang có xuống đường hiện tại
+    let peak = 0; ctx.fillStyle = alpha(T.down, 0.18);
+    for (let k = 1; k < c.length; k++) { peak = Math.max(peak, c[k - 1]); const pk = Math.max(peak, c[k]); if (pk > c[k]) ctx.fillRect(x(k - 1), y(pk), Math.max(1, x(k) - x(k - 1)), y(c[k]) - y(pk)); }
+    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); c.forEach((v, k) => (k ? ctx.lineTo(x(k), y(v)) : ctx.moveTo(x(k), y(v)))); ctx.stroke(); ctx.lineWidth = 1;
+    ctx.textAlign = "left"; ctx.fillStyle = col; ctx.font = `700 11.5px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.fillText(d.long || d.title, g.L0 + 4, 9);
+    ctx.font = `10.5px ${MONO}`; ctx.fillStyle = T.muted;
+    if (d.ts && d.ts.length) { ctx.fillText(fmtDate(d.ts[0]), g.L0, h - 7); ctx.textAlign = "right"; ctx.fillText(fmtDate(d.ts[d.ts.length - 1]), w - g.R0, h - 7); }
+    if (this.mouse != null) { const k = g.kAt(this.mouse); ctx.strokeStyle = alpha(T.text, 0.35); ctx.beginPath(); ctx.moveTo(x(k), g.T0); ctx.lineTo(x(k), h - g.B0); ctx.stroke(); }
+  }
+  hitTest(px) {
+    const d = this.d; if (!d) return null;
+    if (d.flat) return "Đứng ngoài: không vào lệnh nào, không lời, không lỗ, không tốn phí. Kịch bản nào nằm dưới đường 0 này thì đứng ngoài còn tốt hơn.";
+    const g = this._geo(), k = g.kAt(px); if (!k) return `${d.title}: bắt đầu từ 0R.`;
+    const c = d.st.curve, peak = Math.max(...c.slice(0, k + 1)), R = d.Rs[k - 1];
+    return `${d.title} · lệnh ${k}/${d.Rs.length}${d.ts ? ` lúc ${fmtDate(d.ts[k - 1])}` : ""}: ${R >= 0 ? "+" : ""}${R.toFixed(2)}R · tổng ${c[k] >= 0 ? "+" : ""}${c[k].toFixed(2)}R · đang dưới đỉnh ${(peak - c[k]).toFixed(2)}R.`;
+  }
+}
+
 // ---------- trang ----------
 export function initFractal({ $, S, ex, esc, table, log }) {
   const chart = new FractalChart($("frChart"));
+  const eqIds = ["frEqLong", "frEqShort", "frEqFlat", "frVqFr", "frVqLong", "frVqShort", "frVqFlat"], eq = {};
+  for (const id of eqIds) eq[id] = new EquityChart($(id));
+  // vẽ một nhóm kịch bản, dùng chung thang R để so bằng mắt
+  const fmtPF = x => isFinite(x) ? x.toFixed(2) : x === Infinity ? "∞" : "-";
+  function scenarios(rows, risk) {
+    const sts = rows.map(r => ({ ...r, st: r.flat ? equityStats(new Array(0), risk) : equityStats(r.Rs, risk) }));
+    for (const r of sts) if (r.flat) { const n = Math.max(...sts.filter(x => !x.flat).map(x => x.Rs.length), 1); r.st.curve = new Array(n + 1).fill(0); }
+    const all = sts.flatMap(r => r.st.curve); let lo = Math.min(0, ...all), hi = Math.max(0, ...all); const pad = Math.max(0.5, (hi - lo) * 0.08); lo -= pad; hi += pad;
+    for (const r of sts) {
+      eq[r.id].set({ ...r, range: [lo, hi] });
+      const s = r.st, cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
+      $(r.id + "S").innerHTML = r.flat
+        ? `<div class="h">${r.title}</div><span>Số lệnh</span><b>0</b><span>Tổng R</span><b>0R</b><span>Vốn</span><b>0%</b><span>Sụt giảm tối đa</span><b>0R · 0%</b><span>Phí đã trả</span><b>0</b>`
+        : `<div class="h ${cls(s.totalR)}">${r.title}</div>` +
+          `<span data-g="fr-equity">Số lệnh</span><b>${s.n} <small class="${sampleLevel(s.n).cls}">${sampleLevel(s.n).label}</small></b>` +
+          `<span data-g="fr-equity">WR (thắng sau phí)</span><b>${s.n ? (s.wr * 100).toFixed(1) + "%" : "-"}</b>` +
+          `<span data-g="fr-equity">PF</span><b class="${s.pf > 1 ? "pos" : s.pf < 1 ? "neg" : ""}">${fmtPF(s.pf)}</b>` +
+          `<span data-g="fr-equity">Tổng R</span><b class="${cls(s.totalR)}">${sgn(s.totalR, 1)}R</b>` +
+          `<span data-g="fr-equity">Vốn (rủi ro ${risk}%/lệnh)</span><b class="${cls(s.finalPct)}">${sgn(s.finalPct, 1)}%</b>` +
+          `<span data-g="fr-sample">Kỳ vọng / lệnh (95%)</span><b class="${s.ci.lo > 0 ? "pos" : s.ci.hi < 0 ? "neg" : ""}">${s.n ? `${sgn(s.avgR)} <small>${sgn(s.ci.lo)}…${sgn(s.ci.hi)}</small>` : "-"}</b>` +
+          `<span data-g="fr-equity">Sụt giảm tối đa</span><b class="neg">${s.maxDDR.toFixed(1)}R · ${s.maxDDPct.toFixed(1)}%</b>` +
+          `<span data-g="fr-equity">Chuỗi thua dài nhất</span><b>${s.maxLossStreak} lệnh</b>`;
+    }
+    return sts;
+  }
   const cache = new Map();
   let last = null; // lần tìm gần nhất
   const opt = () => {
@@ -89,7 +160,7 @@ export function initFractal({ $, S, ex, esc, table, log }) {
     return {
       tf, baseMs, holdMs, L: +$("frL").value, H, unit, scale, tp, sl, tpE: tp * scale, slE: sl * scale,
       K: +$("frK").value, n: Math.min(90000, Math.max(3000, +$("frBars").value || 30000)), sameCtx: $("frCtx").checked, multi: $("frMulti").checked,
-      fee: +$("frFee").value, slip: +$("frSlip").value, costPct: 2 * ((+$("frFee").value || 0) / 100 + (+$("frSlip").value || 0) / 1e4),
+      risk: Math.min(10, Math.max(0.1, +$("frRisk").value || 1)), fee: +$("frFee").value, slip: +$("frSlip").value, costPct: 2 * ((+$("frFee").value || 0) / 100 + (+$("frSlip").value || 0) / 1e4),
     };
   };
   const status = t => { $("frStatus").textContent = t; };
@@ -154,7 +225,7 @@ export function initFractal({ $, S, ex, esc, table, log }) {
     const a = ix.atr[qi], px = ix.bars[qi].c, dec = decimalsFor(Math.abs(px) / 1e5), hl = holdLabel(o.H * o.baseMs);
     const card = (g, k, v, cls = "") => `<div class="stat" ${g ? `data-g="${g}"` : ""}><span>${k}</span><b class="${cls}">${v}</b></div>`;
     const byTf = {}; for (const x of m) byTf[x.lib.label] = (byTf[x.lib.label] || 0) + 1;
-    const sideCard = s => { const x = st[s]; return card("fr-rule", `${s.toUpperCase()} thắng / hết giờ / thua`, x.n ? `${pct(x.win / x.n)} <small>${pct(x.time / x.n)} · ${pct(x.loss / x.n)}</small>` : "-") + card("fr-sample", `${s.toUpperCase()} kỳ vọng / lệnh (95%)`, x.n ? `${sgn(x.expR)} R <small>${sgn(x.ciR.lo)} đến ${sgn(x.ciR.hi)}</small>` : "-", x.ciR.lo > 0 ? "pos" : x.ciR.hi < 0 ? "neg" : ""); };
+    const sideCard = s => { const x = st[s]; return card("fr-rule", `${s.toUpperCase()} chạm chốt lời / hết giờ / chạm cắt lỗ`, x.n ? `${pct(x.win / x.n)} <small>${pct(x.time / x.n)} · ${pct(x.loss / x.n)}</small>` : "-") + card("fr-sample", `${s.toUpperCase()} kỳ vọng / lệnh (95%)`, x.n ? `${sgn(x.expR)} R <small>${sgn(x.ciR.lo)} đến ${sgn(x.ciR.hi)}</small>` : "-", x.ciR.lo > 0 ? "pos" : x.ciR.hi < 0 ? "neg" : ""); };
     $("frStats").innerHTML =
       card("fr-sample", "Số mẫu", `${st.n} <small class="${st.level.cls}">${st.level.label}</small>`) +
       card("fractal", "Theo khung", Object.entries(byTf).map(([k, v]) => `${k} ${v}`).join(" · ") || "-") +
@@ -175,6 +246,19 @@ export function initFractal({ $, S, ex, esc, table, log }) {
       table(["Thời gian giữ", ["Số mẫu", "fr-sample"], "Giá cao hơn", ["Trung vị", "atr"], "50% ở giữa"],
         st.holds.map(h => `<tr><td class="t">${h.label}</td><td>${h.n} <small class="${sampleLevel(h.n).cls}">${sampleLevel(h.n).label}</small></td><td>${isFinite(h.upPct) ? h.upPct.toFixed(0) + "%" : "-"}</td><td class="${h.median >= 0 ? "pos" : "neg"}">${isFinite(h.median) ? sgn(h.median) + " ATR" : "-"}</td><td>${isFinite(h.q1) ? `${sgn(h.q1)} đến ${sgn(h.q3)} ATR` : "-"}</td></tr>`), "Chưa có mẫu.") +
       `<p class="note">Bạn giữ lệnh từ dưới 30 phút đến tối đa 48 giờ, nên bảng cho cả 4 mốc. Mẫu ở khung lớn hơn được tính cùng số nến (cùng hình thì cùng nhịp, chỉ khác cỡ).</p>`;
+    // ba kịch bản theo thời gian: mỗi lần gặp hình này đều vào LONG / SHORT / đứng ngoài
+    const ord = m.filter(x => x.out).map(x => ({ t: x.lib.bars[x.j].t + x.lib.intervalMs, o: x.out })).sort((p, q) => p.t - q.t);
+    $("frScen").hidden = false;
+    $("frScenSub").textContent = `${ord.length} lần giống trong lịch sử, xếp theo thời gian · ${ruleTxt(o, a, dec)} · giữ tối đa ${hl}`;
+    const sc = scenarios([
+      { id: "frEqLong", title: "Kịch bản LONG", color: "up", Rs: ord.map(x => x.o.long.R), ts: ord.map(x => x.t) },
+      { id: "frEqShort", title: "Kịch bản SHORT", color: "down", Rs: ord.map(x => x.o.short.R), ts: ord.map(x => x.t) },
+      { id: "frEqFlat", title: "Đứng ngoài quan sát", color: "muted", flat: true },
+    ], o.risk);
+    const [L, Sh] = sc, best = L.st.totalR > 0 || Sh.st.totalR > 0 ? (L.st.totalR >= Sh.st.totalR ? L : Sh) : null;
+    $("frScenNote").innerHTML = !ord.length ? "Chưa có mẫu nào." : best
+      ? `Tốt nhất là <b>${best.title.replace("Kịch bản ", "")}</b> với ${sgn(best.st.totalR, 1)}R qua ${best.st.n} lệnh, nhưng phải chịu được sụt giảm ${best.st.maxDDR.toFixed(1)}R (${best.st.maxDDPct.toFixed(1)}% vốn) và chuỗi ${best.st.maxLossStreak} lệnh thua liên tiếp. ${best.st.ci.lo > 0 ? "Khoảng tin cậy của kỳ vọng vẫn dương." : "Khoảng tin cậy của kỳ vọng còn chạm số âm, nên lợi nhuận này có thể là may mắn."} Xem thêm phần kiểm chứng ngoài mẫu.`
+      : `Cả LONG lẫn SHORT đều lỗ (${sgn(L.st.totalR, 1)}R và ${sgn(Sh.st.totalR, 1)}R). Với hình này và luật này, <b>đứng ngoài là lựa chọn tốt nhất</b>.`;
     const res = r => r ? `<span class="${r.r === "win" ? "pos" : r.r === "loss" ? "neg" : "muted"}">${r.r === "win" ? "Thắng" : r.r === "loss" ? "Thua" : "Hết giờ"} ${sgn(r.R)}R</span>` : "-";
     $("frMatches").hidden = false;
     $("frMatches").innerHTML = `<h3>${Math.min(30, m.length)} mẫu giống nhất <small>trong ${m.length} mẫu đã dùng</small></h3>` +
@@ -184,6 +268,13 @@ export function initFractal({ $, S, ex, esc, table, log }) {
   }
 
   function renderValid(wf, o) {
+    $("frVScen").hidden = false;
+    scenarios([
+      { id: "frVqFr", title: "Theo FRACTAL", long: "Theo FRACTAL: mỗi điểm thử tự chọn LONG, SHORT hoặc đứng ngoài", color: "accent", Rs: wf.trades.map(t => t.R), ts: wf.trades.map(t => t.t) },
+      { id: "frVqLong", title: "Luôn LONG ở mọi điểm thử", color: "up", Rs: wf.base.long, ts: wf.base.t },
+      { id: "frVqShort", title: "Luôn SHORT ở mọi điểm thử", color: "down", Rs: wf.base.short, ts: wf.base.t },
+      { id: "frVqFlat", title: "Đứng ngoài quan sát", color: "muted", flat: true },
+    ], o.risk);
     const r = wf.res, hl = holdLabel(o.H * o.baseMs), lvl = sampleLevel(r.n);
     const ok = r.n >= 30 && r.ciR.lo > 0, better = r.avgR > Math.max(wf.baseLong, wf.baseShort);
     const verdict = r.n < 30 ? `Chỉ có ${r.n} lệnh trên đoạn ngoài mẫu, chưa đủ 30 để kết luận. Tăng số nến lịch sử để có thêm điểm thử.`
@@ -192,10 +283,10 @@ export function initFractal({ $, S, ex, esc, table, log }) {
     $("frValid").hidden = false;
     $("frValid").innerHTML = `<h3>Kiểm chứng ngoài mẫu <button class="q" data-g="fr-oos">?</button> <small>${o.tf} · giữ ${hl} · ${ruleTxt(o, 0, 0)} · phí và trượt giá ${(o.costPct * 100).toFixed(2)}% khứ hồi</small></h3>` +
       `<p class="note">${verdict}</p>` +
-      table(["", "Số lệnh", "Thắng", "R trung bình / lệnh (95%)", "Tổng R"], [
-        `<tr><td class="t">Theo mẫu giống nhau</td><td>${r.n} <small class="${lvl.cls}">${lvl.label}</small></td><td>${pct(r.ci.p)}</td><td class="${r.ciR.lo > 0 ? "pos" : r.avgR > 0 ? "" : "neg"}">${isFinite(r.avgR) ? `${sgn(r.avgR)} <small>${sgn(r.ciR.lo)} đến ${sgn(r.ciR.hi)}</small>` : "-"}</td><td>${sgn(r.totalR, 1)}</td></tr>`,
-        `<tr><td class="t">· trong đó LONG</td><td>${wf.long.n}</td><td>${pct(wf.long.ci.p)}</td><td>${isFinite(wf.long.avgR) ? sgn(wf.long.avgR) : "-"}</td><td>${sgn(wf.long.totalR, 1)}</td></tr>`,
-        `<tr><td class="t">· trong đó SHORT</td><td>${wf.short.n}</td><td>${pct(wf.short.ci.p)}</td><td>${isFinite(wf.short.avgR) ? sgn(wf.short.avgR) : "-"}</td><td>${sgn(wf.short.totalR, 1)}</td></tr>`,
+      table(["", "Số lệnh", ["WR (lãi sau phí)", "fr-equity"], "R trung bình / lệnh (95%)", "Tổng R"], [
+        `<tr><td class="t">Theo mẫu giống nhau</td><td>${r.n} <small class="${lvl.cls}">${lvl.label}</small></td><td>${pct(r.wr)}</td><td class="${r.ciR.lo > 0 ? "pos" : r.avgR > 0 ? "" : "neg"}">${isFinite(r.avgR) ? `${sgn(r.avgR)} <small>${sgn(r.ciR.lo)} đến ${sgn(r.ciR.hi)}</small>` : "-"}</td><td>${sgn(r.totalR, 1)}</td></tr>`,
+        `<tr><td class="t">· trong đó LONG</td><td>${wf.long.n}</td><td>${pct(wf.long.wr)}</td><td>${isFinite(wf.long.avgR) ? sgn(wf.long.avgR) : "-"}</td><td>${sgn(wf.long.totalR, 1)}</td></tr>`,
+        `<tr><td class="t">· trong đó SHORT</td><td>${wf.short.n}</td><td>${pct(wf.short.wr)}</td><td>${isFinite(wf.short.avgR) ? sgn(wf.short.avgR) : "-"}</td><td>${sgn(wf.short.totalR, 1)}</td></tr>`,
         `<tr><td class="t">So sánh: LONG ở mọi điểm thử</td><td>${wf.tests}</td><td>-</td><td>${sgn(wf.baseLong)}</td><td>-</td></tr>`,
         `<tr><td class="t">So sánh: SHORT ở mọi điểm thử</td><td>${wf.tests}</td><td>-</td><td>${sgn(wf.baseShort)}</td><td>-</td></tr>`,
       ], "") +
@@ -219,5 +310,5 @@ export function initFractal({ $, S, ex, esc, table, log }) {
       <li><b>Không nhìn trước:</b> chỉ dùng nến đã đóng cửa và những mẫu đã biết kết quả. Bấm <b>Kiểm chứng ngoài mẫu</b> để thử phương pháp trên 30% dữ liệu cuối như giao dịch thật.</li></ul>`;
   }
   help(opt(), 0, 0, 2);
-  return { chart };
+  return { chart, tips: { frChart: chart, ...eq } };
 }

@@ -231,6 +231,12 @@ input[type=number], input:not([type]) { cursor: text !important; }
 .frresult .frchart { height: 340px; flex: none; }
 .frresult .card { flex: none; overflow-x: auto; }
 .stat b.txt { font-family: var(--sans); }
+.scen { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 8px; height: 176px; margin-top: 8px; }
+.scen-chart { position: relative; border: 1px solid var(--line); min-height: 0; overflow: hidden; }
+.scen-stats { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 12px; align-content: start; }
+.scen-stats .h { grid-column: 1 / -1; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+.scen-stats span { color: var(--muted); }
+.scen-stats b { font-family: var(--mono); font-weight: 700; text-align: right; }
 .backtest > * { min-width: 0; }
 .btform .row > span { display: inline-flex; align-items: center; gap: 6px; }
 .btform .row > span input { width: auto; }
@@ -286,6 +292,8 @@ input[type=number], input:not([type]) { cursor: text !important; }
   .btresult { grid-template-rows: auto auto 200px 320px 260px; overflow: visible; }
   .frresult { overflow: visible; }
   .frresult .frchart { height: 300px; }
+  .scen { grid-template-columns: 1fr; height: auto; }
+  .scen-chart { height: 150px; }
   .panel.maxed { inset: 0; }
   .popover { left: 8px; width: auto; }
 }

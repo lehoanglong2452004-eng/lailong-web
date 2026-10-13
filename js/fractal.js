@@ -13,7 +13,7 @@
 // tối đa H nến. Nến chạm cả chốt lời và cắt lỗ tính là thua (thận trọng). Hết giờ: tính theo giá lúc đó.
 // Phí và trượt giá trừ vào mỗi lệnh. Kết quả quy ra R (1R = khoảng cắt lỗ).
 
-import { atrSeries } from "./flowtools.js?v=202610132110";
+import { atrSeries } from "./flowtools.js?v=202610132116";
 
 export const HOUR = 36e5;
 export const HOLDS = [
@@ -208,24 +208,42 @@ export async function walkForward(ix, { K = 100, H = 48, tp = 1, sl = 1, costPct
   let step = Math.max(1, H); const span = n - H - 1 - start;
   if (span <= 0) return null;
   if (span / step > maxTests) step = Math.ceil(span / maxTests);
-  const trades = [], base = { long: [], short: [] }, costs = []; let tests = 0, skipped = 0;
+  const trades = [], base = { long: [], short: [], t: [] }, costs = []; let tests = 0, skipped = 0;
   for (let i = start; i < n - H - 1; i += step) {
     if (!ix.valid[i]) continue;
     const o = outcome(bars, ix.atr, i, H, { tp, sl, costPct }); if (!o) continue;
-    tests++; base.long.push(o.long.R); base.short.push(o.short.R); costs.push(o.costR);
+    tests++; base.long.push(o.long.R); base.short.push(o.short.R); base.t.push(bars[i].t + ix.intervalMs); costs.push(o.costR);
     const m = search({ ix, i }, [ix], { K, H, sameCtx, capT: bars[i].t + ix.intervalMs });
     const s = summarize(m, { H, tp, sl, costPct });
     let side = null;
     // giống cách đọc trên màn hình: đủ mẫu, kỳ vọng dương và tỷ lệ thắng trên mức hoà vốn
     if (s.n >= minN) for (const sd of ["long", "short"]) if (s[sd].expR > 0 && (!side || s[sd].expR > s[side].expR)) side = sd;
-    if (side) trades.push({ i, t: bars[i].t, side, ...o[side], n: s.n, expR: s[side].expR }); else skipped++;
+    if (side) trades.push({ i, t: bars[i].t + ix.intervalMs, side, ...o[side], n: s.n, expR: s[side].expR }); else skipped++;
     if (onProgress && tests % 10 === 0) { onProgress(i - start, span); await new Promise(r => setTimeout(r, 0)); }
   }
-  const agg = arr => { const w = arr.filter(x => x.r === "win").length, R = arr.reduce((a, x) => a + x.R, 0); return { n: arr.length, win: w, ci: wilson(w, arr.length), avgR: arr.length ? R / arr.length : NaN, ciR: meanCI(arr.map(x => x.R)), totalR: R }; };
+  const agg = arr => { const w = arr.filter(x => x.r === "win").length, R = arr.reduce((a, x) => a + x.R, 0); return { n: arr.length, win: w, wr: arr.length ? arr.filter(x => x.R > 0).length / arr.length : NaN, ci: wilson(w, arr.length), avgR: arr.length ? R / arr.length : NaN, ciR: meanCI(arr.map(x => x.R)), totalR: R }; };
   const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN;
   return {
     tests, skipped, trades, res: agg(trades), long: agg(trades.filter(t => t.side === "long")), short: agg(trades.filter(t => t.side === "short")),
-    baseLong: mean(base.long), baseShort: mean(base.short), from: bars[start].t, to: bars[n - 1].t, step,
+    baseLong: mean(base.long), baseShort: mean(base.short), base, from: bars[start].t, to: bars[n - 1].t, step,
     breakeven: breakeven(tp, sl, mean(costs) || 0),
+  };
+}
+
+// Đường cong vốn của một chuỗi lệnh (theo thứ tự thời gian), mỗi lệnh rủi ro riskPct vốn (1R = riskPct).
+//   wr: tỷ lệ lệnh có lãi sau phí · pf: tổng R lãi / tổng R lỗ · maxDDR: sụt giảm lớn nhất tính bằng R
+//   (từ đỉnh cao nhất của tổng R tới đáy sau đó) · maxDDPct / finalPct: vốn tính lãi kép theo riskPct
+export function equityStats(Rs, riskPct = 1) {
+  const r = riskPct / 100, curve = [0], eq = [1];
+  let sum = 0, peak = 0, dd = 0, e = 1, ePeak = 1, eDD = 0, gp = 0, gl = 0, wins = 0, streak = 0, maxStreak = 0;
+  for (const R of Rs) {
+    sum += R; curve.push(sum); peak = Math.max(peak, sum); dd = Math.max(dd, peak - sum);
+    e *= 1 + R * r; eq.push(e); ePeak = Math.max(ePeak, e); eDD = Math.max(eDD, 1 - e / ePeak);
+    if (R > 0) { gp += R; wins++; streak = 0; } else { gl -= R; streak++; maxStreak = Math.max(maxStreak, streak); }
+  }
+  const n = Rs.length;
+  return {
+    n, wins, wr: n ? wins / n : NaN, pf: gl > 0 ? gp / gl : gp > 0 ? Infinity : NaN, totalR: sum, avgR: n ? sum / n : NaN,
+    maxDDR: dd, maxDDPct: eDD * 100, finalPct: (e - 1) * 100, maxLossStreak: maxStreak, curve, eq, ci: meanCI(Rs),
   };
 }
