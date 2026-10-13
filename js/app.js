@@ -1,22 +1,22 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610131920";
-import { MarketState } from "./market.js?v=202610131920";
-import { Heatmap } from "./heatmap.js?v=202610131920";
-import { FlowChart, drawEquity } from "./flowchart.js?v=202610131920";
-import { Dom } from "./dom.js?v=202610131920";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js?v=202610131920";
-import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js?v=202610131920";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610131920";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610131920";
-import { Tape } from "./tape.js?v=202610131920";
-import { LiqMap } from "./liqmap.js?v=202610131920";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610131920";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610131920";
-import { DOM_COLS } from "./dom.js?v=202610131920";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610131920";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610131920";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610131920";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610131935";
+import { MarketState } from "./market.js?v=202610131935";
+import { Heatmap } from "./heatmap.js?v=202610131935";
+import { FlowChart, drawEquity } from "./flowchart.js?v=202610131935";
+import { Dom } from "./dom.js?v=202610131935";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js?v=202610131935";
+import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js?v=202610131935";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610131935";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610131935";
+import { Tape } from "./tape.js?v=202610131935";
+import { LiqMap } from "./liqmap.js?v=202610131935";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610131935";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610131935";
+import { DOM_COLS } from "./dom.js?v=202610131935";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610131935";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610131935";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610131935";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -598,7 +598,7 @@ $("contrast").oninput = () => { heat.contrast = +$("contrast").value; heat.dirty
 $("rowSize").onchange = () => { flow.rowMult = $("rowSize").value; flow.dirty = true; };
 $("domMult").onchange = () => dom.setMult(+$("domMult").value);
 $("domCenter").onclick = () => dom.recenter();
-$("tabs").onclick = e => { const b = e.target.closest("[data-tab]"); if (!b) return; S.tab = b.dataset.tab; for (const x of $("tabs").querySelectorAll("[data-tab]")) x.classList.toggle("on", x === b); renderTab(); };
+$("tabs").onclick = e => { const b = e.target.closest("[data-tab]"); if (!b) return; if (layout.bottomOff) bottomShow(true); S.tab = b.dataset.tab; for (const x of $("tabs").querySelectorAll("[data-tab]")) x.classList.toggle("on", x === b); renderTab(); };
 $("fullscreenBtn").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => toast("Trình duyệt không cho phép toàn màn hình, bấm F11", true)); };
 
 // ---------- công cụ order flow ----------
@@ -622,6 +622,14 @@ const lmapShow = on => { ws.classList.toggle("nolmap", !on); $("lmapShow").check
 $("lmapShow").onchange = () => lmapShow($("lmapShow").checked);
 $("lmapHide").onclick = () => lmapShow(false);
 if (layout.lmapOff) lmapShow(false);
+// thu gọn khung dưới và ẩn thanh công cụ biểu đồ để biểu đồ cao hơn
+const redrawAll = () => { heat.dirty = flow.dirty = dom.dirty = tape.dirty = lmap.dirty = true; };
+const bottomShow = on => { ws.classList.toggle("nobottom", !on); $("bottomFold").textContent = on ? "▾" : "▴"; setLayout("bottomOff", on ? null : 1); redrawAll(); };
+$("bottomFold").onclick = () => bottomShow(!!layout.bottomOff);
+if (layout.bottomOff) bottomShow(false);
+const toolsShow = on => { ws.classList.toggle("notools", !on); $("toolsBtn").classList.toggle("on", on); setLayout("toolsOff", on ? null : 1); redrawAll(); };
+$("toolsBtn").onclick = () => toolsShow(!!layout.toolsOff);
+if (layout.toolsOff) toolsShow(false);
 $("tapeGroup").onchange = () => { tape.group = $("tapeGroup").value; tape.dirty = true; };
 
 setMode(S.mode); setView(S.view);

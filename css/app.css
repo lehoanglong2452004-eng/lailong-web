@@ -40,7 +40,7 @@ input[type=number] { font-family: var(--mono); }
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; min-height: 40px;
   padding: 5px 10px; background: var(--bg); border-bottom: 2px solid var(--accent);
 }
-.brand { font: 800 15px var(--mono); letter-spacing: .08em; color: var(--accent); white-space: nowrap; }
+.brand { font: 900 24px/1 var(--mono); letter-spacing: .12em; color: var(--accent); white-space: nowrap; padding: 2px 14px 2px 2px; margin-right: 4px; border-right: 1px solid var(--line); text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent); }
 .brand span { color: var(--ink); }
 .field { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 11.5px; }
 .field select, .field input { text-transform: none; font-size: 13px; }
@@ -80,6 +80,9 @@ input[type=number] { font-family: var(--mono); }
   grid-template-areas: "chart sm lmap sv dom st tape" "sh sm lmap sv dom st tape" "bottom sm lmap sv dom st tape";
 }
 .workspace.nolmap { grid-template-columns: minmax(0, 1fr) 0 0 6px var(--rightW) 6px var(--tapeW); }
+.workspace.nobottom { grid-template-rows: minmax(0, 1fr) 0 auto; }
+.workspace.nobottom > #splitH, .workspace.nobottom #tabBody { display: none; }
+.workspace.notools .chart-tools, .workspace.notools #chartHint { display: none; }
 .workspace.nolmap > .lmap-panel, .workspace.nolmap > #splitM { display: none; }
 .panel { background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .panel-head {
@@ -91,6 +94,8 @@ input[type=number] { font-family: var(--mono); }
 .panel-head .title { font-weight: 800; white-space: nowrap; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; font-size: 12px; }
 .panel-head .hint { color: var(--muted); font-size: 11px; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 400; }
 .chart-panel { grid-area: chart; }
+.panel-head.tabs { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+#bottomFold { flex: none; }
 .dom-panel { grid-area: dom; }
 .tape-panel { grid-area: tape; }
 .lmap-panel { grid-area: lmap; border-right: 0; }
@@ -230,6 +235,7 @@ input[type=number], input:not([type]) { cursor: text !important; }
 /* ---- điện thoại ---- */
 @media (max-width: 900px) {
   .menubar { gap: 6px; }
+  .brand { font-size: 18px; border-right: 0; }
   .panel-head .hint { display: none; }
   .panel-head { flex-wrap: wrap; }
   .workspace { display: flex; flex-direction: column; overflow: auto; gap: 4px; }

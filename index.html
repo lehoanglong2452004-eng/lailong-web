@@ -6,7 +6,7 @@
 <title>Lai Long Quant</title>
 <meta name="description" content="Phân tích định lượng thuần giá và khối lượng cho crypto futures: bookmap, footprint, sổ lệnh, thanh lý, hỗ trợ/kháng cự, xu hướng, động lượng, biến động và backtest.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%23000'/%3E%3Cpath d='M3 12V4h2v6h4v2zM10 12V4h2v6h2v2z' fill='%23ff9f1c'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/app.css?v=202610131920">
+<link rel="stylesheet" href="css/app.css?v=202610131935">
 </head>
 <body>
 <header class="menubar">
@@ -20,6 +20,7 @@
   <label class="field" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
   <datalist id="symbolList"></datalist>
   <div class="seg" id="intervals" data-tip="Khung thời gian của mỗi nến"></div>
+  <button id="toolsBtn" class="tool on" data-tip="Ẩn/hiện thanh công cụ của biểu đồ (Bookmap, Footprint, Nến, lớp hiển thị...) để biểu đồ cao hơn">☰ Công cụ</button>
   <div class="spacer"></div>
   <div class="pill" id="connPill" data-tip="Trạng thái kết nối dữ liệu trực tiếp với sàn"><i></i><span>Đang kết nối</span></div>
   <button id="glossBtn" class="tool" data-tip="Mở danh sách giải thích thuật ngữ">? Giải thích</button>
@@ -30,7 +31,7 @@
 <!-- ============ TERMINAL ============ -->
 <main class="view workspace" id="view-terminal">
   <section class="panel chart-panel" id="mainPanel">
-    <div class="panel-head">
+    <div class="panel-head chart-tools" id="chartTools">
       <div class="seg" id="chartMode">
         <button data-mode="heat" class="on" data-g="bookmap">Bookmap</button>
         <button data-mode="box" data-g="footprint">Footprint</button>
@@ -135,6 +136,7 @@
 
   <section class="panel bottom" id="bottomPanel">
     <div class="panel-head tabs" id="tabs">
+      <button class="icon" id="bottomFold" data-tip="Thu gọn khung dưới để biểu đồ cao hơn. Bấm lại hoặc bấm một thẻ để mở ra">▾</button>
       <button data-tab="absorb" class="on" data-g="absorption">Hấp thụ</button>
       <button data-tab="clusters" data-g="cluster-search">Cụm khối lượng</button>
       <button data-tab="big" data-g="big-trades">Big Trades</button>
@@ -234,6 +236,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610131920"></script>
+<script type="module" src="js/app.js?v=202610131935"></script>
 </body>
 </html>
