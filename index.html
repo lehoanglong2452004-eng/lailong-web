@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610132049">
+<link rel="stylesheet" href="css/app.css?v=202610132110">
 </head>
 <body>
 <header class="menubar">
@@ -239,8 +239,9 @@
       <label class="row" data-tip="Khung nến của mẫu. Bạn giao dịch chính 5 phút và 15 phút">Khung tìm mẫu <select id="frTf"><option selected>5m</option><option>15m</option><option>1h</option><option>4h</option></select></label>
       <label class="row" data-tip="Số nến của một mẫu, tính tới nến vừa đóng cửa">Độ dài mẫu <select id="frL"><option value="12">12 nến</option><option value="24" selected>24 nến</option><option value="36">36 nến</option><option value="48">48 nến</option></select></label>
       <label class="row" data-g="fr-rule">Giữ lệnh tối đa <select id="frHold"><option value="1800000">30 phút</option><option value="14400000" selected>4 giờ</option><option value="86400000">24 giờ</option><option value="172800000">48 giờ</option></select></label>
-      <label class="row" data-g="fr-rule">Chốt lời (× ATR) <select id="frTp"><option selected>1</option><option>1.5</option><option>2</option><option>3</option></select></label>
-      <label class="row" data-g="fr-rule">Cắt lỗ (× ATR) <select id="frSl"><option selected>1</option><option>1.5</option><option>2</option></select></label>
+      <label class="row" data-g="fr-rule">Đo chốt lời / cắt lỗ theo <select id="frUnit"><option value="hold" selected>Dao động lúc giữ lệnh</option><option value="bar">ATR một nến</option></select></label>
+      <label class="row" data-g="fr-rule">Chốt lời (× đơn vị) <select id="frTp"><option selected>1</option><option>1.5</option><option>2</option><option>3</option></select></label>
+      <label class="row" data-g="fr-rule">Cắt lỗ (× đơn vị) <select id="frSl"><option selected>1</option><option>1.5</option><option>2</option></select></label>
       <label class="row" data-g="fr-sample">Số mẫu giống nhất <select id="frK"><option>30</option><option>50</option><option selected>100</option><option>200</option><option>300</option></select></label>
       <label class="row" data-tip="Càng nhiều nến lịch sử càng nhiều mẫu để so, tải lâu hơn. Binance tối đa khoảng 90.000 nến">Số nến lịch sử <input type="number" id="frBars" value="30000" min="3000" max="90000" step="1000"></label>
       <label class="row" data-g="fr-context"><span><input type="checkbox" id="frCtx" checked> Cùng bối cảnh H1 / H4</span></label>
@@ -284,6 +285,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610132049"></script>
+<script type="module" src="js/app.js?v=202610132110"></script>
 </body>
 </html>

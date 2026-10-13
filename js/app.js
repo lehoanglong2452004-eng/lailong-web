@@ -1,23 +1,23 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610132049";
-import { MarketState } from "./market.js?v=202610132049";
-import { Heatmap } from "./heatmap.js?v=202610132049";
-import { FlowChart, drawEquity } from "./flowchart.js?v=202610132049";
-import { Dom } from "./dom.js?v=202610132049";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js?v=202610132049";
-import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js?v=202610132049";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610132049";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610132049";
-import { Tape } from "./tape.js?v=202610132049";
-import { LiqMap } from "./liqmap.js?v=202610132049";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610132049";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610132049";
-import { DOM_COLS } from "./dom.js?v=202610132049";
-import { initFractal } from "./fractalview.js?v=202610132049";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610132049";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610132049";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610132049";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610132110";
+import { MarketState } from "./market.js?v=202610132110";
+import { Heatmap } from "./heatmap.js?v=202610132110";
+import { FlowChart, drawEquity } from "./flowchart.js?v=202610132110";
+import { Dom } from "./dom.js?v=202610132110";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js?v=202610132110";
+import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js?v=202610132110";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610132110";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610132110";
+import { Tape } from "./tape.js?v=202610132110";
+import { LiqMap } from "./liqmap.js?v=202610132110";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610132110";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610132110";
+import { DOM_COLS } from "./dom.js?v=202610132110";
+import { initFractal } from "./fractalview.js?v=202610132110";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610132110";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610132110";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610132110";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);

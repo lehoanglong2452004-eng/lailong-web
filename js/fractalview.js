@@ -1,7 +1,7 @@
 // Lai Long Web: trang FRACTAL (giao diện). Phần tính toán nằm trong fractal.js.
-import { HOLDS, buildIndex, search, summarize, paths, quantiles, walkForward, sampleLevel, breakeven } from "./fractal.js?v=202610132049";
-import { T, alpha } from "./theme.js?v=202610132049";
-import { fitCanvas, MONO, INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610132049";
+import { HOLDS, buildIndex, search, summarize, paths, quantiles, walkForward, sampleLevel, breakeven } from "./fractal.js?v=202610132110";
+import { T, alpha } from "./theme.js?v=202610132110";
+import { fitCanvas, MONO, INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610132110";
 
 const TFS = ["5m", "15m", "1h", "4h", "1d"];
 const TREND = { 1: "H1 tăng", 0: "H1 ngang", "-1": "H1 giảm" }, POS = ["đáy H4", "giữa H4", "đỉnh H4"];
@@ -19,7 +19,7 @@ export class FractalChart {
   }
   set(d) { this.data = d; this.draw(); }
   _geo() {
-    const d = this.data, { w, h } = this.S, L0 = 46, R0 = 64, T0 = 22, B0 = 24;
+    const d = this.data, { w, h } = this.S, L0 = 46, R0 = 92, T0 = 22, B0 = 24;
     const all = [d.cur, ...d.q].flat().filter(v => v != null);
     let lo = Math.min(-d.sl * 1.2, ...all), hi = Math.max(d.tp * 1.2, ...all); const pad = (hi - lo) * 0.06; lo -= pad; hi += pad;
     const n = d.L - 1 + d.H, x = k => L0 + (k + d.L - 1) / n * (w - L0 - R0), y = v => T0 + (hi - v) / (hi - lo) * (h - T0 - B0);
@@ -39,7 +39,7 @@ export class FractalChart {
     }
     // chốt lời / cắt lỗ của lệnh LONG
     const hl = (v, col, text) => { ctx.setLineDash([5, 4]); ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(x(0), y(v)); ctx.lineTo(w - g.R0, y(v)); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = col; ctx.textAlign = "left"; ctx.fillText(text, w - g.R0 + 4, y(v)); };
-    hl(d.tp, T.up, `+${d.tp} ATR`); hl(-d.sl, T.down, `−${d.sl} ATR`);
+    hl(d.tp, T.up, `chốt lời +${+d.tp.toFixed(1)}`); hl(-d.sl, T.down, `cắt lỗ −${+d.sl.toFixed(1)}`);
     // từng mẫu
     const line = (p, from, col, lw) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); let on = false; p.forEach((v, idx) => { if (v == null) { on = false; return; } const k = idx - (d.L - 1) + from; on ? ctx.lineTo(x(k), y(v)) : ctx.moveTo(x(k), y(v)); on = true; }); ctx.stroke(); };
     for (const p of d.paths) { const f = p[p.length - 1]; line(p, 0, alpha(f == null ? T.muted : f > 0 ? T.up : T.down, 0.13), 1); }
@@ -82,9 +82,12 @@ export function initFractal({ $, S, ex, esc, table, log }) {
   const cache = new Map();
   let last = null; // lần tìm gần nhất
   const opt = () => {
-    const tf = $("frTf").value, holdMs = +$("frHold").value, baseMs = INTERVALS[tf];
+    const tf = $("frTf").value, holdMs = +$("frHold").value, baseMs = INTERVALS[tf], H = Math.max(1, Math.round(holdMs / baseMs));
+    // đơn vị chốt lời / cắt lỗ: "hold" = dao động kỳ vọng trong thời gian giữ lệnh = ATR một nến × √số nến giữ
+    // (giá đi ngẫu nhiên thì biên độ sau H nến lớn cỡ √H lần một nến). "bar" = ATR một nến.
+    const unit = $("frUnit").value, scale = unit === "hold" ? Math.sqrt(H) : 1, tp = +$("frTp").value, sl = +$("frSl").value;
     return {
-      tf, baseMs, holdMs, L: +$("frL").value, H: Math.max(1, Math.round(holdMs / baseMs)), tp: +$("frTp").value, sl: +$("frSl").value,
+      tf, baseMs, holdMs, L: +$("frL").value, H, unit, scale, tp, sl, tpE: tp * scale, slE: sl * scale,
       K: +$("frK").value, n: Math.min(90000, Math.max(3000, +$("frBars").value || 30000)), sameCtx: $("frCtx").checked, multi: $("frMulti").checked,
       fee: +$("frFee").value, slip: +$("frSlip").value, costPct: 2 * ((+$("frFee").value || 0) / 100 + (+$("frSlip").value || 0) / 1e4),
     };
@@ -119,7 +122,7 @@ export function initFractal({ $, S, ex, esc, table, log }) {
       status("Đang so với lịch sử...");
       await new Promise(r => setTimeout(r, 20));
       const m = search({ ix, i: qi }, libs, { K: o.K, H: o.H, sameCtx: o.sameCtx });
-      const st = summarize(m, { H: o.H, tp: o.tp, sl: o.sl, costPct: o.costPct, holds: HOLDS, baseMs: o.baseMs });
+      const st = summarize(m, { H: o.H, tp: o.tpE, sl: o.slE, costPct: o.costPct, holds: HOLDS, baseMs: o.baseMs });
       last = { o, libs, ix, qi, m, st };
       render(last);
       status(`Xong: so ${libs.map(l => `${l.bars.length.toLocaleString("vi-VN")} nến ${l.label}`).join(", ")}. Mẫu ${o.tf} từ ${fmtDate(ix.bars[0].t)} đến ${fmtDate(ix.bars[qi].t)}.`);
@@ -132,7 +135,7 @@ export function initFractal({ $, S, ex, esc, table, log }) {
     try {
       const ix = last && JSON.stringify(last.o) === JSON.stringify(o) && last.sym === `${S.ex}:${S.symbol}` ? last.ix : (await prepare(o))[0];
       status("Đang kiểm chứng ngoài mẫu: chỉ dùng quá khứ của từng điểm thử...");
-      const wf = await walkForward(ix, { K: o.K, H: o.H, tp: o.tp, sl: o.sl, costPct: o.costPct, sameCtx: o.sameCtx, onProgress: (a, b) => status(`Đang kiểm chứng ngoài mẫu... ${Math.min(100, Math.round(a / b * 100))}%`) });
+      const wf = await walkForward(ix, { K: o.K, H: o.H, tp: o.tpE, sl: o.slE, costPct: o.costPct, sameCtx: o.sameCtx, onProgress: (a, b) => status(`Đang kiểm chứng ngoài mẫu... ${Math.min(100, Math.round(a / b * 100))}%`) });
       if (!wf) throw new Error("không đủ dữ liệu cho phần ngoài mẫu");
       renderValid(wf, o);
       status(`Kiểm chứng xong: ${wf.tests} điểm thử từ ${fmtDate(wf.from)} đến ${fmtDate(wf.to)}.`);
@@ -140,28 +143,34 @@ export function initFractal({ $, S, ex, esc, table, log }) {
     $("frRun").disabled = $("frValidate").disabled = false;
   };
 
+  // mô tả luật bằng lời, kèm số giá thật
+  const ruleTxt = (o, a, dec) => {
+    const u = o.unit === "hold" ? `dao động ${holdLabel(o.H * o.baseMs)}` : `ATR ${o.tf}`;
+    const px = v => a ? ` ≈ ${(v * a).toFixed(dec)} giá` : "";
+    return `chốt lời ${o.tp} × ${u}${px(o.tpE)}, cắt lỗ ${o.sl} × ${u}${px(o.slE)}`;
+  };
   function render({ o, ix, qi, m, st }) {
     last.sym = `${S.ex}:${S.symbol}`;
     const a = ix.atr[qi], px = ix.bars[qi].c, dec = decimalsFor(Math.abs(px) / 1e5), hl = holdLabel(o.H * o.baseMs);
     const card = (g, k, v, cls = "") => `<div class="stat" ${g ? `data-g="${g}"` : ""}><span>${k}</span><b class="${cls}">${v}</b></div>`;
     const byTf = {}; for (const x of m) byTf[x.lib.label] = (byTf[x.lib.label] || 0) + 1;
-    const sideCard = s => { const x = st[s]; return card("fr-rule", `${s.toUpperCase()} thắng (95%)`, x.n ? `${pct(x.ci.p)} <small>${pct(x.ci.lo)}–${pct(x.ci.hi)}</small>` : "-", x.n && x.ci.lo > st.breakeven ? "pos" : "") + card("fr-rule", `${s.toUpperCase()} kỳ vọng / lệnh`, x.n ? `${sgn(x.expR)} R` : "-", x.expR > 0 ? "pos" : "neg"); };
+    const sideCard = s => { const x = st[s]; return card("fr-rule", `${s.toUpperCase()} thắng / hết giờ / thua`, x.n ? `${pct(x.win / x.n)} <small>${pct(x.time / x.n)} · ${pct(x.loss / x.n)}</small>` : "-") + card("fr-sample", `${s.toUpperCase()} kỳ vọng / lệnh (95%)`, x.n ? `${sgn(x.expR)} R <small>${sgn(x.ciR.lo)} đến ${sgn(x.ciR.hi)}</small>` : "-", x.ciR.lo > 0 ? "pos" : x.ciR.hi < 0 ? "neg" : ""); };
     $("frStats").innerHTML =
       card("fr-sample", "Số mẫu", `${st.n} <small class="${st.level.cls}">${st.level.label}</small>`) +
       card("fractal", "Theo khung", Object.entries(byTf).map(([k, v]) => `${k} ${v}`).join(" · ") || "-") +
       card("", `Giá cao hơn sau ${hl}`, st.n ? (st.up / st.n * 100).toFixed(0) + "%" : "-") +
       card("atr", `Trung vị sau ${hl}`, isFinite(st.median) ? `${sgn(st.median)} ATR` : "-", st.median > 0 ? "pos" : "neg") +
       sideCard("long") + sideCard("short") +
-      card("fr-cost", "Cần thắng để hoà vốn", `${pct(st.breakeven)} <small>phí ${st.costR.toFixed(2)} R/lệnh</small>`) +
+      card("fr-cost", "Phí + trượt giá mỗi lệnh", `${st.costR.toFixed(2)} R`, st.costR > 0.3 ? "neg" : "") +
       card("fr-sample", "Kết luận", st.edge ? `Nghiêng ${st.edge.toUpperCase()}` : "Chưa có lợi thế", "txt " + (st.edge === "long" ? "pos" : st.edge === "short" ? "neg" : ""));
     const ps = paths(m, o.L, o.H), cur = []; for (let k = qi - o.L + 1; k <= qi; k++) cur.push((ix.bars[k].c - px) / a);
-    chart.set({ cur, paths: ps, q: quantiles(ps), L: o.L, H: o.H, tp: o.tp, sl: o.sl, baseMs: o.baseMs });
+    chart.set({ cur, paths: ps, q: quantiles(ps), L: o.L, H: o.H, tp: o.tpE, sl: o.slE, baseMs: o.baseMs });
     const ctxNow = ix.ctx.trend[qi] == null ? "chưa đủ nến H1/H4" : `${TREND[ix.ctx.trend[qi]]}, ${POS[ix.ctx.pos[qi]]}`;
     const verdict = st.n < 30 ? `Mới có ${st.n} mẫu, chưa đủ 30 nên chưa kết luận được. Thử tắt lọc bối cảnh, tăng số nến lịch sử hoặc bật tìm ở khung lớn hơn.`
-      : st.edge ? `Trong ${st.n} lần giống trước đây, vào ${st.edge.toUpperCase()} theo luật này thắng ${pct(st[st.edge].ci.p)} (95% chắc chắn nằm trong ${pct(st[st.edge].ci.lo)} đến ${pct(st[st.edge].ci.hi)}), cao hơn mức hoà vốn ${pct(st.breakeven)}, kỳ vọng ${sgn(st[st.edge].expR)} R mỗi lệnh sau phí. Vẫn cần xem kiểm chứng ngoài mẫu trước khi tin.`
-      : `Trong ${st.n} lần giống trước đây, cả LONG lẫn SHORT đều chưa vượt mức hoà vốn ${pct(st.breakeven)} một cách chắc chắn. Nghĩa là hình này không cho lợi thế rõ với luật chốt lời ${o.tp} ATR, cắt lỗ ${o.sl} ATR trong ${hl}.`;
+      : st.edge ? `Trong ${st.n} lần giống trước đây, vào ${st.edge.toUpperCase()} theo luật này trung bình ${sgn(st[st.edge].expR)} R mỗi lệnh sau phí, và 95% chắc chắn vẫn dương (từ ${sgn(st[st.edge].ciR.lo)} đến ${sgn(st[st.edge].ciR.hi)} R). Vẫn cần xem kiểm chứng ngoài mẫu trước khi tin.`
+      : `Trong ${st.n} lần giống trước đây, cả LONG lẫn SHORT đều chưa chắc chắn có lãi sau phí (khoảng tin cậy của kỳ vọng còn chạm số âm). Nghĩa là hình này không cho lợi thế rõ với luật ${ruleTxt(o, a, dec)}, giữ tối đa ${hl}.`;
     $("frHolds").hidden = false;
-    $("frHolds").innerHTML = `<h3>Sau đó giá đã đi đâu? <button class="q" data-g="fractal">?</button> <small>${esc(S.symbol)} · ${o.tf} · ${o.L} nến · bối cảnh bây giờ: ${ctxNow} · 1 ATR lúc này ≈ ${a.toFixed(dec)} (${(a / px * 100).toFixed(2)}%)</small></h3>` +
+    $("frHolds").innerHTML = `<h3>Sau đó giá đã đi đâu? <button class="q" data-g="fractal">?</button> <small>${esc(S.symbol)} · ${o.tf} · ${o.L} nến · bối cảnh bây giờ: ${ctxNow} · 1 ATR ${o.tf} lúc này ≈ ${a.toFixed(dec)} (${(a / px * 100).toFixed(2)}%) · ${ruleTxt(o, a, dec)}</small></h3>` +
       `<p class="note">${verdict}</p>` +
       table(["Thời gian giữ", ["Số mẫu", "fr-sample"], "Giá cao hơn", ["Trung vị", "atr"], "50% ở giữa"],
         st.holds.map(h => `<tr><td class="t">${h.label}</td><td>${h.n} <small class="${sampleLevel(h.n).cls}">${sampleLevel(h.n).label}</small></td><td>${isFinite(h.upPct) ? h.upPct.toFixed(0) + "%" : "-"}</td><td class="${h.median >= 0 ? "pos" : "neg"}">${isFinite(h.median) ? sgn(h.median) + " ATR" : "-"}</td><td>${isFinite(h.q1) ? `${sgn(h.q1)} đến ${sgn(h.q3)} ATR` : "-"}</td></tr>`), "Chưa có mẫu.") +
@@ -176,30 +185,37 @@ export function initFractal({ $, S, ex, esc, table, log }) {
 
   function renderValid(wf, o) {
     const r = wf.res, hl = holdLabel(o.H * o.baseMs), lvl = sampleLevel(r.n);
-    const ok = r.n >= 30 && r.avgR > 0 && r.ci.lo > wf.breakeven, better = r.avgR > Math.max(wf.baseLong, wf.baseShort);
+    const ok = r.n >= 30 && r.ciR.lo > 0, better = r.avgR > Math.max(wf.baseLong, wf.baseShort);
     const verdict = r.n < 30 ? `Chỉ có ${r.n} lệnh trên đoạn ngoài mẫu, chưa đủ 30 để kết luận. Tăng số nến lịch sử để có thêm điểm thử.`
-      : ok ? `Trên đoạn dữ liệu phương pháp chưa từng thấy, vào lệnh theo mẫu giống nhau thắng ${pct(r.ci.p)} (cận dưới ${pct(r.ci.lo)} vẫn trên mức hoà vốn ${pct(wf.breakeven)}), trung bình ${sgn(r.avgR)} R mỗi lệnh sau phí. Đây là dấu hiệu lợi thế thật với cài đặt này.`
-      : `Trên đoạn ngoài mẫu, phương pháp ${better ? "có tốt hơn vào lệnh bừa" : "không tốt hơn vào lệnh bừa"} nhưng chưa chứng minh được lợi thế: cận dưới tỷ lệ thắng ${pct(r.ci.lo)} chưa vượt mức hoà vốn ${pct(wf.breakeven)} hoặc kỳ vọng sau phí chưa dương. Thử đổi luật chốt lời, khung hoặc thời gian giữ.`;
+      : ok ? `Trên đoạn dữ liệu phương pháp chưa từng thấy, vào lệnh theo mẫu giống nhau trung bình ${sgn(r.avgR)} R mỗi lệnh sau phí, và 95% chắc chắn vẫn dương (từ ${sgn(r.ciR.lo)} đến ${sgn(r.ciR.hi)} R). Đây là dấu hiệu lợi thế thật với cài đặt này.`
+      : `Trên đoạn ngoài mẫu, phương pháp ${better ? "có tốt hơn vào lệnh bừa" : "không tốt hơn vào lệnh bừa"} nhưng chưa chứng minh được lợi thế: kỳ vọng sau phí ${isFinite(r.avgR) ? sgn(r.avgR) : "-"} R, khoảng tin cậy từ ${sgn(r.ciR.lo)} đến ${sgn(r.ciR.hi)} R vẫn chạm số âm. Thử đổi luật chốt lời, khung hoặc thời gian giữ.`;
     $("frValid").hidden = false;
-    $("frValid").innerHTML = `<h3>Kiểm chứng ngoài mẫu <button class="q" data-g="fr-oos">?</button> <small>${o.tf} · giữ ${hl} · chốt lời ${o.tp} ATR, cắt lỗ ${o.sl} ATR · phí và trượt giá ${(o.costPct * 100).toFixed(2)}% khứ hồi</small></h3>` +
+    $("frValid").innerHTML = `<h3>Kiểm chứng ngoài mẫu <button class="q" data-g="fr-oos">?</button> <small>${o.tf} · giữ ${hl} · ${ruleTxt(o, 0, 0)} · phí và trượt giá ${(o.costPct * 100).toFixed(2)}% khứ hồi</small></h3>` +
       `<p class="note">${verdict}</p>` +
-      table(["", "Số lệnh", "Thắng (95%)", "R trung bình / lệnh", "Tổng R"], [
-        `<tr><td class="t">Theo mẫu giống nhau</td><td>${r.n} <small class="${lvl.cls}">${lvl.label}</small></td><td>${pct(r.ci.p)} <small>${pct(r.ci.lo)}–${pct(r.ci.hi)}</small></td><td class="${r.avgR > 0 ? "pos" : "neg"}">${isFinite(r.avgR) ? sgn(r.avgR) : "-"}</td><td>${sgn(r.totalR, 1)}</td></tr>`,
+      table(["", "Số lệnh", "Thắng", "R trung bình / lệnh (95%)", "Tổng R"], [
+        `<tr><td class="t">Theo mẫu giống nhau</td><td>${r.n} <small class="${lvl.cls}">${lvl.label}</small></td><td>${pct(r.ci.p)}</td><td class="${r.ciR.lo > 0 ? "pos" : r.avgR > 0 ? "" : "neg"}">${isFinite(r.avgR) ? `${sgn(r.avgR)} <small>${sgn(r.ciR.lo)} đến ${sgn(r.ciR.hi)}</small>` : "-"}</td><td>${sgn(r.totalR, 1)}</td></tr>`,
         `<tr><td class="t">· trong đó LONG</td><td>${wf.long.n}</td><td>${pct(wf.long.ci.p)}</td><td>${isFinite(wf.long.avgR) ? sgn(wf.long.avgR) : "-"}</td><td>${sgn(wf.long.totalR, 1)}</td></tr>`,
         `<tr><td class="t">· trong đó SHORT</td><td>${wf.short.n}</td><td>${pct(wf.short.ci.p)}</td><td>${isFinite(wf.short.avgR) ? sgn(wf.short.avgR) : "-"}</td><td>${sgn(wf.short.totalR, 1)}</td></tr>`,
         `<tr><td class="t">So sánh: LONG ở mọi điểm thử</td><td>${wf.tests}</td><td>-</td><td>${sgn(wf.baseLong)}</td><td>-</td></tr>`,
         `<tr><td class="t">So sánh: SHORT ở mọi điểm thử</td><td>${wf.tests}</td><td>-</td><td>${sgn(wf.baseShort)}</td><td>-</td></tr>`,
       ], "") +
-      `<p class="note">${wf.tests} điểm thử, cách nhau ${wf.step} nến, từ ${fmtDate(wf.from)} đến ${fmtDate(wf.to)}. Đứng ngoài ${wf.skipped} lần vì mẫu không cho kỳ vọng dương. Mức hoà vốn ${pct(wf.breakeven)} đã tính phí.</p>`;
+      `<p class="note">${wf.tests} điểm thử, cách nhau ${wf.step} nến, từ ${fmtDate(wf.from)} đến ${fmtDate(wf.to)}. Đứng ngoài ${wf.skipped} lần vì mẫu không cho kỳ vọng dương. Mọi con số R đã trừ phí và trượt giá.</p>`;
   }
 
   function help(o, a, px, dec) {
-    const be = breakeven(o.tp, o.sl, 0), atrTxt = a ? ` Lúc này 1 ATR ${o.tf} ≈ ${a.toFixed(dec)}, tức chốt lời cách ${(o.tp * a).toFixed(dec)} và cắt lỗ cách ${(o.sl * a).toFixed(dec)}.` : "";
+    const be = breakeven(o.tp, o.sl, 0), hl = holdLabel(o.H * o.baseMs);
+    const unitTxt = o.unit === "hold"
+      ? `<b>Đơn vị đang dùng: dao động lúc giữ lệnh</b> = ATR một nến × √(số nến giữ) = ATR × √${o.H} ≈ ${o.scale.toFixed(1)} ATR ${o.tf}. Giá đi ${hl} thường dao động cỡ chừng đó, nên chốt lời và cắt lỗ hợp với thời gian bạn giữ lệnh và phí không ăn hết lợi nhuận.`
+      : `<b>Đơn vị đang dùng: ATR một nến ${o.tf}.</b> Sát, hợp với lướt nhanh. Giữ lệnh lâu mà dùng đơn vị này thì chốt lời, cắt lỗ rất gần và phí chiếm phần lớn.`;
+    const atrTxt = a ? ` Lúc này 1 ATR ${o.tf} ≈ ${a.toFixed(dec)} giá, nên ${ruleTxt(o, a, dec)}.` : "";
     $("frHelp").innerHTML = `<h3>Luật kiểm chứng đang dùng</h3><ul class="note">
-      <li><b>ATR</b> là biên độ dao động trung bình một nến (14 nến gần nhất). Đo bằng ATR thì cùng một hình so được giữa BTC và vàng, giữa khung 5 phút và 1 giờ.${atrTxt}</li>
-      <li><b>Thắng / thua:</b> vào ở giá đóng cửa nến cuối của mẫu. LONG thắng khi giá lên ${o.tp} ATR trước khi xuống ${o.sl} ATR, trong tối đa ${holdLabel(o.H * o.baseMs)} (${o.H} nến). SHORT ngược lại. Nến chạm cả hai tính là thua. Hết giờ thì tính theo giá lúc đó.</li>
-      <li><b>Đổi luật:</b> chốt lời ${o.tp} : cắt lỗ ${o.sl} cần thắng ${pct(be)} trước phí. Chốt lời 2 : 1 chỉ cần khoảng 33%, nhưng giá phải đi xa hơn nên thắng ít hơn. Bảng trên cho biết luật nào hợp với hình hiện tại.</li>
-      <li><b>Đủ mẫu:</b> dưới 30 chưa nói được gì, từ 100 đủ tin theo thông lệ, từ 300 sai số còn khoảng ±5%. Chỉ gọi là <b>có lợi thế</b> khi cận dưới khoảng tin cậy 95% vẫn trên mức hoà vốn đã tính phí.</li>
+      <li><b>ATR</b> là biên độ dao động trung bình một nến (14 nến gần nhất). Đo bằng ATR thì cùng một hình so được giữa BTC và vàng, giữa khung 5 phút và 1 giờ.</li>
+      <li>${unitTxt}${atrTxt}</li>
+      <li><b>Thắng / thua:</b> vào ở giá đóng cửa nến cuối của mẫu. LONG thắng khi giá lên tới mức chốt lời trước khi xuống tới mức cắt lỗ, trong tối đa ${hl} (${o.H} nến). SHORT ngược lại. Nến chạm cả hai tính là thua. Hết giờ thì tính theo giá lúc đó.</li>
+      <li><b>Đổi luật:</b> chốt lời ${o.tp} : cắt lỗ ${o.sl} cần thắng ${pct(be)} trước phí. Chốt lời 2 : 1 chỉ cần khoảng 33%, nhưng giá phải đi xa hơn nên thắng ít hơn.</li>
+      <li><b>Phí:</b> mỗi lệnh trừ phí và trượt giá cả lúc vào lẫn lúc ra. Bạn đặt lệnh limit thì đổi phí thành mức maker (Binance khoảng 0,02%).</li>
+      <li><b>Đủ mẫu:</b> dưới 30 chưa nói được gì, từ 100 đủ tin theo thông lệ, từ 300 sai số còn khoảng ±5%. Chỉ gọi là <b>có lợi thế</b> khi cận dưới khoảng tin cậy 95% của kỳ vọng R (đã trừ phí) vẫn dương, tức gần như chắc chắn có lãi trung bình.</li>
+      <li><b>Thắng / hết giờ / thua:</b> lệnh chưa chạm chốt lời hay cắt lỗ khi hết thời gian giữ thì đóng theo giá lúc đó, có thể lãi hoặc lỗ một phần. Vì vậy kỳ vọng R mới là con số quyết định, không phải riêng tỷ lệ thắng.</li>
       <li><b>Không nhìn trước:</b> chỉ dùng nến đã đóng cửa và những mẫu đã biết kết quả. Bấm <b>Kiểm chứng ngoài mẫu</b> để thử phương pháp trên 30% dữ liệu cuối như giao dịch thật.</li></ul>`;
   }
   help(opt(), 0, 0, 2);

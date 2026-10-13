@@ -13,7 +13,7 @@
 // tối đa H nến. Nến chạm cả chốt lời và cắt lỗ tính là thua (thận trọng). Hết giờ: tính theo giá lúc đó.
 // Phí và trượt giá trừ vào mỗi lệnh. Kết quả quy ra R (1R = khoảng cắt lỗ).
 
-import { atrSeries } from "./flowtools.js?v=202610132049";
+import { atrSeries } from "./flowtools.js?v=202610132110";
 
 export const HOUR = 36e5;
 export const HOLDS = [
@@ -38,6 +38,12 @@ export function wilson(k, n, z = 1.96) {
   return { p, lo: Math.max(0, (c - m) / d), hi: Math.min(1, (c + m) / d) };
 }
 // tỷ lệ thắng tối thiểu để hoà vốn với chốt lời tp, cắt lỗ sl (đơn vị ATR) và chi phí costR (đơn vị R)
+// khoảng tin cậy 95% cho trung bình (kỳ vọng R mỗi lệnh)
+export function meanCI(xs, z = 1.96) {
+  const n = xs.length; if (!n) return { mean: NaN, lo: NaN, hi: NaN };
+  const m = xs.reduce((a, x) => a + x, 0) / n, v = n > 1 ? xs.reduce((a, x) => a + (x - m) ** 2, 0) / (n - 1) : 0, e = z * Math.sqrt(v / n);
+  return { mean: m, lo: m - e, hi: m + e };
+}
 export const breakeven = (tp, sl, costR = 0) => (1 + costR) / (tp / sl + 1);
 
 // gộp nến nhỏ thành nến lớn; mỗi nến lớn ghi thời điểm đóng cửa
@@ -146,23 +152,24 @@ export function search(q, libs, { K = 100, H = 48, sameCtx = true, capT = Infini
 // holds: các mốc thời gian giữ lệnh; quy ra số nến của khung gốc baseMs (mẫu ở khung khác dùng cùng số nến:
 // cùng hình thì cùng nhịp, chỉ khác cỡ — đúng tinh thần fractal)
 export function summarize(matches, { H = 48, tp = 1, sl = 1, costPct = 0, holds = [], baseMs } = {}) {
-  const side = () => ({ n: 0, win: 0, loss: 0, time: 0, sumR: 0 });
+  const side = () => ({ n: 0, win: 0, loss: 0, time: 0, sumR: 0, Rs: [] });
   const st = { long: side(), short: side(), n: 0, up: 0, finals: [] };
   for (const m of matches) {
     const o = outcome(m.lib.bars, m.lib.atr, m.j, H, { tp, sl, costPct }); m.out = o; if (!o) continue;
     st.n++; if (o.final > 0) st.up++; st.finals.push(o.final);
-    for (const s of ["long", "short"]) { const x = st[s], r = o[s]; x.n++; x[r.r]++; x.sumR += r.R; }
+    for (const s of ["long", "short"]) { const x = st[s], r = o[s]; x.n++; x[r.r]++; x.sumR += r.R; x.Rs.push(r.R); }
   }
   for (const s of ["long", "short"]) {
-    const x = st[s]; x.ci = wilson(x.win, x.n); x.expR = x.n ? x.sumR / x.n : NaN;
+    const x = st[s]; x.ci = wilson(x.win, x.n); x.expR = x.n ? x.sumR / x.n : NaN; x.ciR = meanCI(x.Rs);
   }
   const costR = st.n ? matches.reduce((a, m) => a + (m.out ? m.out.costR : 0), 0) / st.n : 0;
   st.breakeven = breakeven(tp, sl, costR); st.costR = costR;
   st.finals.sort((a, b) => a - b); st.median = st.finals.length ? st.finals[st.finals.length >> 1] : NaN;
   st.level = sampleLevel(st.n);
-  // bên nào có lợi thế: kỳ vọng dương VÀ cận dưới khoảng tin cậy của tỷ lệ thắng vẫn trên mức hoà vốn
+  // bên nào có lợi thế: đủ 30 mẫu và cận dưới khoảng tin cậy 95% của kỳ vọng R (đã trừ phí) vẫn dương.
+  // Dùng kỳ vọng R thay vì tỷ lệ thắng vì nhiều lệnh "hết giờ" vẫn có lãi hoặc lỗ một phần.
   st.edge = null;
-  for (const s of ["long", "short"]) { const x = st[s]; if (x.n >= 30 && x.expR > 0 && x.ci.lo > st.breakeven && (!st.edge || x.expR > st[st.edge].expR)) st.edge = s; }
+  for (const s of ["long", "short"]) { const x = st[s]; if (x.n >= 30 && x.ciR.lo > 0 && (!st.edge || x.expR > st[st.edge].expR)) st.edge = s; }
   st.holds = holds.map(h => {
     const fs = []; let up = 0;
     for (const m of matches) {
@@ -210,11 +217,11 @@ export async function walkForward(ix, { K = 100, H = 48, tp = 1, sl = 1, costPct
     const s = summarize(m, { H, tp, sl, costPct });
     let side = null;
     // giống cách đọc trên màn hình: đủ mẫu, kỳ vọng dương và tỷ lệ thắng trên mức hoà vốn
-    if (s.n >= minN) for (const sd of ["long", "short"]) if (s[sd].expR > 0 && s[sd].ci.p > s.breakeven && (!side || s[sd].expR > s[side].expR)) side = sd;
+    if (s.n >= minN) for (const sd of ["long", "short"]) if (s[sd].expR > 0 && (!side || s[sd].expR > s[side].expR)) side = sd;
     if (side) trades.push({ i, t: bars[i].t, side, ...o[side], n: s.n, expR: s[side].expR }); else skipped++;
     if (onProgress && tests % 10 === 0) { onProgress(i - start, span); await new Promise(r => setTimeout(r, 0)); }
   }
-  const agg = arr => { const w = arr.filter(x => x.r === "win").length, R = arr.reduce((a, x) => a + x.R, 0); return { n: arr.length, win: w, ci: wilson(w, arr.length), avgR: arr.length ? R / arr.length : NaN, totalR: R }; };
+  const agg = arr => { const w = arr.filter(x => x.r === "win").length, R = arr.reduce((a, x) => a + x.R, 0); return { n: arr.length, win: w, ci: wilson(w, arr.length), avgR: arr.length ? R / arr.length : NaN, ciR: meanCI(arr.map(x => x.R)), totalR: R }; };
   const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN;
   return {
     tests, skipped, trades, res: agg(trades), long: agg(trades.filter(t => t.side === "long")), short: agg(trades.filter(t => t.side === "short")),
