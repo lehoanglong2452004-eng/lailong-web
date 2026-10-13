@@ -5,10 +5,10 @@
 // màu sáng là lệnh chờ dày, đường trắng là dấu vết giá giữa, đường xanh/đỏ mảnh là giá mua/bán tốt nhất,
 // bong bóng là lệnh gốc đã khớp, khung vàng là tường lệnh chờ đang đứng, dấu × cam là tường bị rút.
 
-import { fmtVol, decimalsFor, MONO, fitCanvas } from "./util.js?v=202610131935";
-import { T, alpha } from "./theme.js?v=202610131935";
-import { COL_MS } from "./market.js?v=202610131935";
-import { ROW_H, HDR_H } from "./dom.js?v=202610131935";
+import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610131949";
+import { T, alpha } from "./theme.js?v=202610131949";
+import { COL_MS } from "./market.js?v=202610131949";
+import { ROW_H, HDR_H } from "./dom.js?v=202610131949";
 
 export const LMAP_WINDOWS = [30e3, 60e3, 120e3, 300e3, 900e3];
 
@@ -151,5 +151,6 @@ export class LiqMap {
     cv.addEventListener("mouseleave", () => { this.mouse = null; this.dirty = true; });
     cv.addEventListener("dblclick", () => this.dom.recenter());
     cv.addEventListener("wheel", e => { e.preventDefault(); const d = this.dom; if (d.center === null) return; d.center += (e.deltaY < 0 ? 3 : -3) * d.tick; d.follow = false; d.dirty = true; this.dirty = true; }, { passive: false });
+    touchRows(cv, ROW_H, n => { const d = this.dom; if (d.center === null) return; d.center += n * d.tick; d.follow = false; d.dirty = true; this.dirty = true; });
   }
 }

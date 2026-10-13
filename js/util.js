@@ -89,3 +89,16 @@ export function fitCanvas(cv, onResize) {
   new ResizeObserver(resize).observe(cv.parentElement);
   return state;
 }
+
+// điện thoại: kéo dọc một ngón để cuộn từng dòng (sổ lệnh, bản đồ thanh khoản, băng lệnh)
+// onRows(n): n > 0 khi ngón tay kéo xuống
+export function touchRows(cv, rowH, onRows) {
+  let y0 = null, acc = 0;
+  cv.addEventListener("touchstart", e => { if (e.touches.length === 1) { y0 = e.touches[0].clientY; acc = 0; } else y0 = null; }, { passive: true });
+  cv.addEventListener("touchmove", e => {
+    if (y0 == null) return; e.preventDefault();
+    const y = e.touches[0].clientY; acc += y - y0; y0 = y;
+    const n = Math.trunc(acc / rowH); if (n) { acc -= n * rowH; onRows(n); }
+  }, { passive: false });
+  cv.addEventListener("touchend", () => { y0 = null; });
+}

@@ -4,12 +4,12 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610131935";
-import { cvd as cvdOf } from "./analytics.js?v=202610131935";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610131935";
-import { GROUPS } from "./flowtools.js?v=202610131935";
-import { WALL_KIND } from "./walls.js?v=202610131935";
-import { T, alpha } from "./theme.js?v=202610131935";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610131949";
+import { cvd as cvdOf } from "./analytics.js?v=202610131949";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610131949";
+import { GROUPS } from "./flowtools.js?v=202610131949";
+import { WALL_KIND } from "./walls.js?v=202610131949";
+import { T, alpha } from "./theme.js?v=202610131949";
 
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
@@ -685,9 +685,19 @@ export class FlowChart {
       this.spacing[this.type] = Math.min(mx, Math.max(mn, this.sp * k)); this.offset -= this.fAt(p.x) - before; this.dirty = true;
     }, { passive: false });
     let touch = null;
-    cv.addEventListener("touchstart", e => { touch = { x: e.touches[0].clientX, offset: this.offset }; }, { passive: true });
-    cv.addEventListener("touchmove", e => { if (!touch) return; e.preventDefault(); this.offset = Math.max(3 - this.bars.length, touch.offset - (e.touches[0].clientX - touch.x) / this.sp); this.dirty = true; }, { passive: false });
-    cv.addEventListener("touchend", () => { touch = null; });
+    const spanX = e => Math.abs(e.touches[0].clientX - e.touches[1].clientX);
+    cv.addEventListener("touchstart", e => {
+      if (e.touches.length >= 2) { touch = { pinch: true, dx: spanX(e), sp: this.sp }; return; }
+      touch = { x: e.touches[0].clientX, offset: this.offset };
+    }, { passive: true });
+    cv.addEventListener("touchmove", e => {
+      if (!touch) return; e.preventDefault();
+      if (touch.pinch) { // hai ngón: chụm/mở để thu/phóng nến
+        if (e.touches.length < 2 || touch.dx < 30) return; const [mn, mx] = this.type === "box" ? [30, 260] : [1, 60];
+        this.spacing[this.type] = Math.min(mx, Math.max(mn, touch.sp * spanX(e) / touch.dx)); this.dirty = true; return;
+      }
+      this.offset = Math.max(3 - this.bars.length, touch.offset - (e.touches[0].clientX - touch.x) / this.sp); this.dirty = true; }, { passive: false });
+    cv.addEventListener("touchend", e => { touch = e.touches.length ? touch : null; });
   }
 }
 

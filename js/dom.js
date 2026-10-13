@@ -4,8 +4,8 @@
 // bán chủ động đã khớp | footprint nến hiện tại | mua chủ động đã khớp | chờ bán |
 // thay đổi lệnh chờ bán | tường lệnh chờ. Bản đồ thanh khoản nằm ở khung riêng (liqmap.js), cùng dòng giá.
 
-import { fmtVol, decimalsFor, MONO, fitCanvas } from "./util.js?v=202610131935";
-import { T, alpha } from "./theme.js?v=202610131935";
+import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610131949";
+import { T, alpha } from "./theme.js?v=202610131949";
 
 export const ROW_H = 18, HDR_H = 22;
 const CHG_MS = 5000;
@@ -56,8 +56,10 @@ export class Dom {
   // vị trí các cột đang bật theo độ rộng hiện tại
   get cols() {
     const list = DOM_COLS.filter(c => this.visible.has(c.id) || c.id === "price"), tw = list.reduce((s, c) => s + c.w, 0);
+    // cột giá cần tối thiểu ~58px để đọc đủ số (màn hình hẹp như điện thoại)
+    const pw = list.length === 1 ? this.S.w : Math.min(this.S.w * 0.4, Math.max(58, this.S.w * 1.05 / tw)), rest = this.S.w - pw, tr = tw - 1.05;
     let x = 0; const out = {};
-    for (const c of list) { const w = this.S.w * c.w / tw; out[c.id] = { x, w, def: c }; x += w; }
+    for (const c of list) { const w = c.id === "price" ? pw : rest * c.w / tr; out[c.id] = { x, w, def: c }; x += w; }
     return out;
   }
   _snapP(p) { return Math.round(p / this.tick) * this.tick; }
@@ -217,5 +219,6 @@ export class Dom {
     cv.addEventListener("mouseleave", () => { this.hover = null; this.dirty = true; });
     cv.addEventListener("dblclick", () => this.recenter());
     cv.addEventListener("wheel", e => { e.preventDefault(); if (this.center === null) return; this.center += (e.deltaY < 0 ? 3 : -3) * this.tick; this.follow = false; this.dirty = true; }, { passive: false });
+    touchRows(cv, ROW_H, n => { if (this.center === null) return; this.center += n * this.tick; this.follow = false; this.dirty = true; });
   }
 }

@@ -4,9 +4,9 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/trắng = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202610131935";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610131935";
-import { T, alpha } from "./theme.js?v=202610131935";
+import { COL_MS } from "./market.js?v=202610131949";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610131949";
+import { T, alpha } from "./theme.js?v=202610131949";
 
 const AXIS_W = 72, BOOK_W = 96, LIQ_W = 64, TIME_H = 20, PANE_H = 74;
 
@@ -414,13 +414,25 @@ export class Heatmap {
     }, { passive: false });
     // điện thoại: kéo bằng một ngón
     let touch = null;
-    cv.addEventListener("touchstart", e => { const t = e.touches[0]; touch = { x: t.clientX, y: t.clientY, tEnd: this.tEnd, pc: this.pCenter }; }, { passive: true });
+    // hai ngón: chụm/mở ngang để phóng thời gian, dọc để phóng giá
+    const span = e => [Math.abs(e.touches[0].clientX - e.touches[1].clientX), Math.abs(e.touches[0].clientY - e.touches[1].clientY)];
+    cv.addEventListener("touchstart", e => {
+      if (e.touches.length >= 2) { const [dx, dy] = span(e); touch = { pinch: true, dx, dy, ms: this.msPerPx, pp: this.pxPerPrice }; return; }
+      const t = e.touches[0]; touch = { x: t.clientX, y: t.clientY, tEnd: this.tEnd, pc: this.pCenter };
+    }, { passive: true });
     cv.addEventListener("touchmove", e => {
-      if (!touch) return; const t = e.touches[0]; e.preventDefault();
+      if (!touch) return; e.preventDefault();
+      if (touch.pinch) {
+        if (e.touches.length < 2) return; const [dx, dy] = span(e);
+        if (touch.dx > 40 && dx > 10) this.msPerPx = Math.min(20000, Math.max(15, touch.ms * touch.dx / dx));
+        if (touch.dy > 40 && dy > 10) this.pxPerPrice = touch.pp * dy / touch.dy;
+        this.dirty = true; return;
+      }
+      const t = e.touches[0];
       this.tEnd = touch.tEnd - (t.clientX - touch.x) * this.msPerPx; this.pCenter = touch.pc + (t.clientY - touch.y) / this.pxPerPrice;
       this.follow = false; this.dirty = true;
     }, { passive: false });
-    cv.addEventListener("touchend", () => { touch = null; });
+    cv.addEventListener("touchend", e => { touch = e.touches.length ? touch : null; });
   }
 }
 

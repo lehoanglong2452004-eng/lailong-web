@@ -3,9 +3,9 @@
 // Một lệnh market lớn ăn qua nhiều lệnh chờ bị sàn báo thành hàng trăm lệnh khớp nhỏ cùng thời điểm.
 // Băng này ghép lại (market.prints) để thấy đúng kích thước lệnh gốc. Tắt "Ghép lệnh" để xem băng thô.
 
-import { fmtVol, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610131935";
-import { T, alpha } from "./theme.js?v=202610131935";
-import { GROUPS, playerGroup } from "./flowtools.js?v=202610131935";
+import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202610131949";
+import { T, alpha } from "./theme.js?v=202610131949";
+import { GROUPS, playerGroup } from "./flowtools.js?v=202610131949";
 
 const GROUP = Object.fromEntries(GROUPS.map(g => [g.id, g]));
 
@@ -107,5 +107,6 @@ export class Tape {
   _bind() {
     this.cv.addEventListener("wheel", e => { e.preventDefault(); this.scroll = Math.max(0, this.scroll + (e.deltaY > 0 ? 3 : -3)); this.dirty = true; }, { passive: false });
     this.cv.addEventListener("dblclick", () => { this.scroll = 0; this.dirty = true; });
+    touchRows(this.cv, ROW_H, n => { this.scroll = Math.max(0, this.scroll - n); this.dirty = true; });
   }
 }

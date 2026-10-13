@@ -1,22 +1,22 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610131935";
-import { MarketState } from "./market.js?v=202610131935";
-import { Heatmap } from "./heatmap.js?v=202610131935";
-import { FlowChart, drawEquity } from "./flowchart.js?v=202610131935";
-import { Dom } from "./dom.js?v=202610131935";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js?v=202610131935";
-import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js?v=202610131935";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610131935";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610131935";
-import { Tape } from "./tape.js?v=202610131935";
-import { LiqMap } from "./liqmap.js?v=202610131935";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610131935";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610131935";
-import { DOM_COLS } from "./dom.js?v=202610131935";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610131935";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610131935";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610131935";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610131949";
+import { MarketState } from "./market.js?v=202610131949";
+import { Heatmap } from "./heatmap.js?v=202610131949";
+import { FlowChart, drawEquity } from "./flowchart.js?v=202610131949";
+import { Dom } from "./dom.js?v=202610131949";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js?v=202610131949";
+import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js?v=202610131949";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610131949";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610131949";
+import { Tape } from "./tape.js?v=202610131949";
+import { LiqMap } from "./liqmap.js?v=202610131949";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610131949";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610131949";
+import { DOM_COLS } from "./dom.js?v=202610131949";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610131949";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610131949";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610131949";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -460,6 +460,19 @@ function tipFor(e) {
 const noHover = matchMedia("(hover: none)").matches; // điện thoại: không có rê chuột
 document.addEventListener("mousemove", e => { if (noHover) return; lastMove = e; if (!tipFrame) tipFrame = requestAnimationFrame(() => { tipFrame = 0; tipFor(lastMove); }); });
 document.addEventListener("mouseleave", hideTip);
+// điện thoại: giữ ngón tay khoảng nửa giây để xem ý nghĩa (thay cho rê chuột)
+if (noHover) {
+  let lp = null;
+  const cancel = () => { if (lp) clearTimeout(lp.timer); lp = null; };
+  document.addEventListener("touchstart", e => {
+    cancel(); hideTip(); if (e.touches.length !== 1) return;
+    const t = e.touches[0], ev = { target: e.target, clientX: t.clientX, clientY: t.clientY };
+    lp = { x: t.clientX, y: t.clientY, timer: setTimeout(() => { tipFor(ev); navigator.vibrate?.(15); }, 450) };
+  }, { passive: true });
+  document.addEventListener("touchmove", e => { if (lp && Math.hypot(e.touches[0].clientX - lp.x, e.touches[0].clientY - lp.y) > 10) cancel(); }, { passive: true });
+  document.addEventListener("touchend", cancel);
+  document.addEventListener("contextmenu", e => { if (e.target.tagName === "CANVAS") e.preventDefault(); });
+}
 document.addEventListener("mousedown", hideTip);
 
 // ---------- ngăn giải thích thuật ngữ ----------
@@ -563,6 +576,7 @@ function setView(v) {
   S.view = v; persist();
   for (const b of $("views").children) b.classList.toggle("on", b.dataset.view === v);
   for (const id of ["terminal", "analysis", "backtest"]) $("view-" + id).hidden = id !== v;
+  document.body.classList.toggle("not-terminal", v !== "terminal");
   heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
   if (v === "analysis") renderAnalysis();
 }
@@ -571,7 +585,7 @@ function setMode(m) {
   for (const b of $("chartMode").children) b.classList.toggle("on", b.dataset.mode === m);
   $("heat").hidden = m !== "heat"; $("flow").hidden = m === "heat";
   $("contrastBox").hidden = m !== "heat"; $("rowBox").hidden = m !== "box";
-  $("chartHint").textContent = m === "heat" ? "Lăn chuột: phóng thời gian · Ctrl + lăn: phóng giá · Kéo: di chuyển · Bấm đúp: theo dõi · Rê chuột để xem ý nghĩa" : "Lăn chuột: phóng to · Kéo: di chuyển · Kéo trục giá: giãn giá · Bấm đúp: về hiện tại · Rê chuột lên nến để xem ý nghĩa";
+  $("chartHint").textContent = noHover ? (m === "heat" ? "Kéo: di chuyển · Chụm/mở hai ngón: phóng thời gian (ngang) và giá (dọc) · Chạm đúp: theo dõi · Giữ ngón tay: xem ý nghĩa" : "Kéo: di chuyển · Chụm/mở hai ngón: phóng nến · Chạm đúp: về hiện tại · Giữ ngón tay lên nến: xem ý nghĩa") : m === "heat" ? "Lăn chuột: phóng thời gian · Ctrl + lăn: phóng giá · Kéo: di chuyển · Bấm đúp: theo dõi · Rê chuột để xem ý nghĩa" : "Lăn chuột: phóng to · Kéo: di chuyển · Kéo trục giá: giãn giá · Bấm đúp: về hiện tại · Rê chuột lên nến để xem ý nghĩa";
   if (m !== "heat") flow.setType(m === "box" ? "box" : "candle");
   if (m !== "heat") startFootprint();
   for (const el of document.querySelectorAll(".flowOnly")) el.hidden = m === "heat";
@@ -608,7 +622,8 @@ $("clusterBtn").onclick = e => { e.stopPropagation(); $("clusterBtn").parentElem
 const clUpdate = () => { CL.on = $("clOn").checked; CL.metric = $("clMetric").value; CL.top = +$("clTop").value; CL.min = +$("clMin").value || 0; $("clusterBtn").classList.toggle("on", CL.on); recomputeFlow(); };
 for (const id of ["clOn", "clMetric", "clTop", "clMin"]) $(id).onchange = clUpdate;
 // cột Smart DOM, nhớ trên trình duyệt
-const domColsSaved = (() => { try { return JSON.parse(localStorage.getItem("lailong.domcols") || "null"); } catch { return null; } })();
+// điện thoại chưa chọn cột: mặc định ít cột cho vừa màn hình nhỏ (đổi trong "Cột ▾")
+const domColsSaved = (() => { try { return JSON.parse(localStorage.getItem("lailong.domcols") || "null"); } catch { return null; } })() || (matchMedia("(max-width: 600px)").matches ? ["bid", "sells", "buys", "ask", "walls"] : null);
 $("domColMenu").innerHTML = DOM_COLS.filter(c => c.id !== "price").map(c => `<label data-tip="${esc(c.tip)}"><input type="checkbox" data-domcol="${c.id}" ${!domColsSaved || domColsSaved.includes(c.id) ? "checked" : ""}> ${esc(c.label)}</label>`).join("");
 const domColUpdate = () => { const ids = [...document.querySelectorAll("[data-domcol]")].filter(x => x.checked).map(x => x.dataset.domcol); dom.setColumns(ids); try { localStorage.setItem("lailong.domcols", JSON.stringify(ids)); } catch { /* bỏ qua */ } };
 $("domColMenu").onchange = domColUpdate; domColUpdate();
@@ -630,6 +645,22 @@ if (layout.bottomOff) bottomShow(false);
 const toolsShow = on => { ws.classList.toggle("notools", !on); $("toolsBtn").classList.toggle("on", on); setLayout("toolsOff", on ? null : 1); redrawAll(); };
 $("toolsBtn").onclick = () => toolsShow(!!layout.toolsOff);
 if (layout.toolsOff) toolsShow(false);
+// điện thoại: thanh dưới cùng chọn khung đang xem
+const mShow = id => {
+  for (const b of $("mnav").children) b.classList.toggle("on", b.dataset.panel === id);
+  // sổ lệnh đi kèm bản đồ thanh khoản bên trái (cùng dòng giá)
+  for (const p of ws.querySelectorAll(":scope > .panel")) p.classList.toggle("mshow", p.id === id || (id === "domPanel" && p.id === "lmapPanel"));
+  try { localStorage.setItem("lailong.mpanel", id); } catch { /* bỏ qua */ }
+  redrawAll();
+};
+$("mnav").onclick = e => { const b = e.target.closest("[data-panel]"); if (b) mShow(b.dataset.panel); };
+{ let id = null; try { id = localStorage.getItem("lailong.mpanel"); } catch { /* bỏ qua */ } mShow(id && $(id) && $("mnav").querySelector(`[data-panel="${id}"]`) ? id : "mainPanel"); }
+// cài như ứng dụng (PWA): chạy được khi mạng chập chờn, mở từ màn hình chính
+let installEv = null;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEv = e; $("installBtn").hidden = false; });
+addEventListener("appinstalled", () => { installEv = null; $("installBtn").hidden = true; });
+$("installBtn").onclick = async () => { if (!installEv) return; installEv.prompt(); await installEv.userChoice.catch(() => {}); installEv = null; $("installBtn").hidden = true; };
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 $("tapeGroup").onchange = () => { tape.group = $("tapeGroup").value; tape.dirty = true; };
 
 setMode(S.mode); setView(S.view);

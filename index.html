@@ -2,11 +2,18 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Lai Long Quant</title>
 <meta name="description" content="Phân tích định lượng thuần giá và khối lượng cho crypto futures: bookmap, footprint, sổ lệnh, thanh lý, hỗ trợ/kháng cự, xu hướng, động lượng, biến động và backtest.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%23000'/%3E%3Cpath d='M3 12V4h2v6h4v2zM10 12V4h2v6h2v2z' fill='%23ff9f1c'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/app.css?v=202610131935">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Lai Long">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="css/app.css?v=202610131949">
 </head>
 <body>
 <header class="menubar">
@@ -20,11 +27,12 @@
   <label class="field" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
   <datalist id="symbolList"></datalist>
   <div class="seg" id="intervals" data-tip="Khung thời gian của mỗi nến"></div>
-  <button id="toolsBtn" class="tool on" data-tip="Ẩn/hiện thanh công cụ của biểu đồ (Bookmap, Footprint, Nến, lớp hiển thị...) để biểu đồ cao hơn">☰ Công cụ</button>
+  <button id="toolsBtn" class="tool on" data-tip="Ẩn/hiện thanh công cụ của biểu đồ (Bookmap, Footprint, Nến, lớp hiển thị...) để biểu đồ cao hơn">☰<span class="lbl"> Công cụ</span></button>
   <div class="spacer"></div>
   <div class="pill" id="connPill" data-tip="Trạng thái kết nối dữ liệu trực tiếp với sàn"><i></i><span>Đang kết nối</span></div>
-  <button id="glossBtn" class="tool" data-tip="Mở danh sách giải thích thuật ngữ">? Giải thích</button>
-  <button id="themeBtn" class="tool" data-tip="Đổi màu giao diện">Màu sắc</button>
+  <button id="installBtn" class="tool" hidden data-tip="Cài Lai Long Quant như một ứng dụng trên máy này (mở từ màn hình chính, không cần thanh địa chỉ)">⬇ Cài app</button>
+  <button id="glossBtn" class="tool" data-tip="Mở danh sách giải thích thuật ngữ">?<span class="lbl"> Giải thích</span></button>
+  <button id="themeBtn" class="tool" data-tip="Đổi màu giao diện"><span class="mob">Màu</span><span class="lbl">Màu sắc</span></button>
   <button id="fullscreenBtn" class="icon" data-tip="Toàn màn hình (Esc để thoát)">⛶</button>
 </header>
 
@@ -152,6 +160,13 @@
   </section>
 </main>
 
+<nav class="mnav" id="mnav" aria-label="Chọn khung">
+  <button data-panel="mainPanel" class="on"><i>▦</i>Biểu đồ</button>
+  <button data-panel="domPanel"><i>☰</i>Sổ lệnh</button>
+  <button data-panel="tapePanel"><i>≋</i>Tape</button>
+  <button data-panel="bottomPanel"><i>◫</i>Bảng</button>
+</nav>
+
 <!-- ============ PHÂN TÍCH ============ -->
 <main class="view analysis" id="view-analysis" hidden>
   <div class="cards">
@@ -236,6 +251,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610131935"></script>
+<script type="module" src="js/app.js?v=202610131949"></script>
 </body>
 </html>

@@ -232,18 +232,42 @@ input[type=number], input:not([type]) { cursor: text !important; }
 .stat span { display: block; color: var(--accent); font-size: 10.5px; text-transform: uppercase; font-weight: 700; letter-spacing: .03em; }
 .stat b { font-family: var(--mono); font-size: 16px; font-weight: 700; }
 
-/* ---- điện thoại ---- */
+.mnav, .mob { display: none; }
+
+/* ---- điện thoại: mỗi lần một khung, chuyển bằng thanh dưới cùng như ứng dụng ---- */
 @media (max-width: 900px) {
-  .menubar { gap: 6px; }
-  .brand { font-size: 18px; border-right: 0; }
+  body { height: 100dvh; min-height: 0; padding-top: env(safe-area-inset-top); }
+  .menubar { gap: 4px 6px; padding: 4px 6px; min-height: 0; }
+  .brand { font-size: 15px; letter-spacing: .06em; border-right: 0; padding-right: 2px; flex: 1; order: -2; }
+  .menubar > #connPill, .menubar > #installBtn, .menubar > #glossBtn, .menubar > #themeBtn, .menubar > #toolsBtn { order: -1; }
+  .menubar > .spacer { display: none; }
+  .menubar .lbl { display: none; }
+  .menubar .mob { display: inline; }
+  .menubar .field { font-size: 0; gap: 0; }
+  .menubar .field select, .menubar .field input { font-size: 13px; }
+  .menubar .seg button, .menubar .tool { padding: 3px 7px; font-size: 12px; }
+  #symbol { width: 96px; }
+  #connPill span, #fullscreenBtn { display: none; }
+  #connPill { padding: 3px 6px; }
+  .brand { flex: 1 0 auto; }
+  .menubar::after { content: ""; order: -1; flex-basis: 100%; height: 0; }
+  /* sổ lệnh và bản đồ thanh khoản: đầu khung một dòng, bằng chiều cao nhau để các dòng giá thẳng hàng */
+  .dom-panel .panel-head, .lmap-panel .panel-head { flex-wrap: nowrap; overflow: hidden; gap: 4px; padding-left: 4px; }
+  .dom-panel .panel-head .title, .lmap-panel .panel-head .title, .dom-panel .max, .tape-panel .max, .lmap-panel .max { display: none; }
   .panel-head .hint { display: none; }
   .panel-head { flex-wrap: wrap; }
-  .workspace { display: flex; flex-direction: column; overflow: auto; gap: 4px; }
-  .workspace > .chart-panel { height: 66vh; flex: none; }
-  .workspace > .dom-panel { height: 520px; flex: none; }
-  .workspace > .tape-panel { height: 420px; flex: none; }
-  .workspace > .lmap-panel { height: 420px; flex: none; }
-  .workspace > .bottom { height: 380px; flex: none; }
+  .workspace { display: flex; flex-direction: row; overflow: hidden; gap: 2px; padding: 2px; }
+  .workspace > .panel { display: none; flex: 1 1 0; min-height: 0; min-width: 0; }
+  .workspace > .panel.mshow { display: flex; }
+  .workspace > .lmap-panel.mshow { flex: 0 0 32%; }
+  .workspace.nolmap > .lmap-panel.mshow { display: none; }
+  .workspace.nobottom #tabBody { display: block; }
+  .lmap-panel .panel-head .max, #bottomFold { display: none; }
+  .mnav { display: flex; border-top: 2px solid var(--accent); background: var(--bg); padding-bottom: env(safe-area-inset-bottom); flex: none; }
+  .mnav button { flex: 1; border: 0; border-radius: 0; background: transparent; color: var(--muted); padding: 5px 2px 6px; font-size: 11px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .mnav button i { font-style: normal; font-size: 17px; line-height: 1.1; }
+  .mnav button.on { color: var(--accent); }
+  body.not-terminal .mnav { display: none; }
   .splitter { display: none; }
   .panel-head.tabs { overflow-x: auto; flex-wrap: nowrap; }
   .panel-head.tabs button { white-space: nowrap; }
@@ -254,3 +278,5 @@ input[type=number], input:not([type]) { cursor: text !important; }
   .panel.maxed { inset: 0; }
   .popover { left: 8px; width: auto; }
 }
+
+canvas { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
