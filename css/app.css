@@ -227,6 +227,14 @@ input[type=number], input:not([type]) { cursor: text !important; }
 .btform hr { border: 0; border-top: 1px solid var(--line); width: 100%; }
 .primary { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 800; padding: 8px; margin-top: 6px; text-transform: uppercase; letter-spacing: .05em; }
 .btresult { display: grid; grid-template-rows: auto auto 220px minmax(260px, 1fr) 220px; gap: 4px; min-height: 0; overflow: auto; }
+.frresult { display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow: auto; }
+.frresult .frchart { height: 340px; flex: none; }
+.frresult .card { flex: none; overflow-x: auto; }
+.stat b.txt { font-family: var(--sans); }
+.backtest > * { min-width: 0; }
+.btform .row > span { display: inline-flex; align-items: center; gap: 6px; }
+.btform .row > span input { width: auto; }
+.btform .tool { padding: 7px; }
 .statgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px; }
 .stat { background: var(--panel); border: 1px solid var(--line); padding: 6px 10px; }
 .stat span { display: block; color: var(--accent); font-size: 10.5px; text-transform: uppercase; font-weight: 700; letter-spacing: .03em; }
@@ -234,6 +242,7 @@ input[type=number], input:not([type]) { cursor: text !important; }
 
 .mnav, .mob { display: none; }
 
+@media (max-width: 1750px) { .menubar .lbl { display: none; } .menubar .mob { display: inline; } }
 /* ---- điện thoại: mỗi lần một khung, chuyển bằng thanh dưới cùng như ứng dụng ---- */
 @media (max-width: 900px) {
   body { height: 100dvh; min-height: 0; padding-top: env(safe-area-inset-top); }
@@ -275,6 +284,8 @@ input[type=number], input:not([type]) { cursor: text !important; }
   .liqgrid { grid-template-columns: 1fr; }
   .backtest { grid-template-columns: 1fr; overflow: auto; }
   .btresult { grid-template-rows: auto auto 200px 320px 260px; overflow: visible; }
+  .frresult { overflow: visible; }
+  .frresult .frchart { height: 300px; }
   .panel.maxed { inset: 0; }
   .popover { left: 8px; width: auto; }
 }

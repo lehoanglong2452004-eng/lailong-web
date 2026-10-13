@@ -567,8 +567,37 @@ export const GLOSSARY = [
     id: "signal-score", group: "Order flow nâng cao", term: "Điểm tín hiệu tổng hợp (0–100)",
     short: "Gộp hấp thụ, hỗ trợ/kháng cự đã test, CVD phân kỳ và funding thành một điểm, rồi thống kê mỗi mức điểm đúng bao nhiêu phần trăm so với tỷ lệ nền.",
     body: "<p><b>Thành phần</b> (tối đa): hấp thụ 35 · chạm hỗ trợ/kháng cự đã test từ 2 lần 25 · CVD phân kỳ 25 · funding lệch về một phía 15. Điểm = tổng chia tổng tối đa có dữ liệu.</p><p><b>Đúng</b> = giá đi 1 ATR theo hướng tín hiệu trước khi đi ngược 1 ATR, trong 10 nến. <b>Tỷ lệ nền</b> = kết quả nếu vào ở mọi nến theo cùng luật. Một mức điểm chỉ đáng tin khi đúng nhiều hơn nền rõ ràng và có khoảng 100 lần trở lên.</p><p>Hỗ trợ/kháng cự trong điểm số chỉ dùng đỉnh/đáy đã xác nhận trước nến đó, nên thống kê không nhìn trước tương lai. Nhãn số trên biểu đồ hiện từ 60 điểm (đổi được trong tab).</p>"
+  },
+  {
+    id: "fractal", group: "Fractal & kiểm chứng", term: "FRACTAL (tìm mẫu hình giống nhau)",
+    short: "Tìm trong lịch sử những đoạn giá và khối lượng có hình giống lúc này, rồi xem sau đó giá đã đi đâu.",
+    body: "<p>Thị trường lặp lại cấu trúc ở mọi cỡ: một cú giảm nhanh rồi hấp thụ trên khung 5 phút có thể giống hệt trên khung 1 giờ, chỉ khác cỡ. Đó là tính <b>fractal</b>.</p><p><b>Cách làm:</b> lấy L nến gần nhất (mặc định 24 nến), mô tả bằng hình dạng giá (đo bằng ATR), hình dạng khối lượng và delta mua bán chủ động. Rồi tìm K đoạn giống nhất trong lịch sử (mặc định 100), không chồng lên nhau, và chỉ lấy đoạn đã biết kết quả.</p><p><b>Cách đọc:</b> hình quạt cho thấy 100 lần giống trước đây, giá đi thế nào. Dải đậm là 50% trường hợp ở giữa, đường cam là trung vị. Bảng cho biết nếu vào LONG hoặc SHORT theo luật ATR thì thắng bao nhiêu phần trăm, kỳ vọng bao nhiêu R sau phí.</p><p><b>Lưu ý:</b> giống trong quá khứ không bảo đảm tương lai. Chỉ tin khi đủ mẫu và đã qua kiểm chứng ngoài mẫu.</p>"
+  },
+  {
+    id: "fr-rule", group: "Fractal & kiểm chứng", term: "Luật thắng thua theo ATR",
+    short: "Vào ở giá đóng cửa nến cuối, chốt lời khi giá đi có lợi tp × ATR, cắt lỗ khi đi ngược sl × ATR, tối đa thời gian giữ lệnh đã chọn.",
+    body: "<p><b>ATR</b> (Average True Range) là biên độ dao động trung bình của một nến trong 14 nến gần nhất. Ví dụ BTC khung 5 phút ATR 120 USDT nghĩa là mỗi nến 5 phút thường dao động khoảng 120 USDT.</p><p><b>Mặc định 1 : 1:</b> chốt lời 1 ATR, cắt lỗ 1 ATR. Cần thắng trên 50% (cộng thêm phí) mới có lãi.</p><p><b>Khi đổi:</b> chốt lời 2 ATR, cắt lỗ 1 ATR thì chỉ cần thắng khoảng 34% là hoà vốn, nhưng tỷ lệ thắng sẽ thấp hơn vì giá phải đi xa hơn. Cắt lỗ rộng hơn (1,5 hoặc 2 ATR) ít bị quét hơn nhưng mỗi lần thua mất nhiều hơn.</p><p><b>Thận trọng:</b> nếu một nến chạm cả chốt lời lẫn cắt lỗ, không biết cái nào trước, nên tính là thua. Hết thời gian giữ mà chưa chạm: tính theo giá lúc đó.</p><p><b>R</b> = số lần khoảng cắt lỗ. Thắng 2 ATR với cắt lỗ 1 ATR là +2R, thua là −1R.</p>"
+  },
+  {
+    id: "fr-sample", group: "Fractal & kiểm chứng", term: "Bao nhiêu mẫu thì tin được?",
+    short: "Dưới 30 mẫu: chưa nói được gì. 30 đến 99: sơ bộ. Từ 100: đủ tin theo thông lệ. Từ 300: sai số còn khoảng ±5%.",
+    body: "<p>Tỷ lệ thắng đo trên ít lần thì rất dễ sai vì may rủi. Ví dụ 6 thắng trên 10 lần (60%) nhưng khoảng tin cậy 95% là 31% đến 83%: thật ra có thể là thua.</p><p><b>Khoảng tin cậy 95% (Wilson):</b> phạm vi mà tỷ lệ thắng thật gần như chắc chắn nằm trong. Với 100 mẫu thắng 60%, khoảng là 50% đến 69%. Với 300 mẫu: 54% đến 65%.</p><p><b>Quy tắc Lai Long dùng:</b> chỉ gọi là <b>có lợi thế</b> khi có ít nhất 30 mẫu, kỳ vọng dương sau phí, và <b>cận dưới</b> khoảng tin cậy vẫn cao hơn tỷ lệ hoà vốn. Đây là cách các nhà giao dịch định lượng tránh tự lừa mình.</p>"
+  },
+  {
+    id: "fr-oos", group: "Fractal & kiểm chứng", term: "Kiểm chứng ngoài mẫu (walk-forward)",
+    short: "Thử phương pháp trên đoạn dữ liệu nó chưa từng thấy: 70% đầu làm thư viện, 30% sau để thử như giao dịch thật.",
+    body: "<p>Tìm quy luật trên một đoạn dữ liệu rồi chấm điểm trên chính đoạn đó thì luôn đẹp (gọi là quá khớp). Cách đúng là chấm trên đoạn chưa thấy.</p><p><b>Cách làm:</b> trên 30% dữ liệu cuối, tại mỗi điểm thử (cách nhau đúng thời gian giữ lệnh để các lệnh không chồng nhau), chỉ tìm mẫu trong quá khứ của điểm đó. Nếu mẫu cho thấy LONG hoặc SHORT có kỳ vọng dương thì vào lệnh, không thì đứng ngoài. Rồi ghi kết quả thật.</p><p><b>So sánh:</b> với việc vào LONG hoặc SHORT ở mọi điểm thử (không chọn lọc). Phương pháp chỉ có giá trị khi kết quả tốt hơn rõ ràng và cận dưới tỷ lệ thắng vẫn trên mức hoà vốn.</p>"
+  },
+  {
+    id: "fr-context", group: "Fractal & kiểm chứng", term: "Bối cảnh khung lớn (H1, H4)",
+    short: "Chỉ so với những lần có cùng xu hướng H1 và cùng vị trí giá trong biên độ H4, đúng cách bạn đọc đa khung.",
+    body: "<p><b>Xu hướng H1:</b> tăng khi EMA20 cao hơn EMA50 trên nến 1 giờ quá 0,3 ATR, giảm khi thấp hơn, còn lại là đi ngang.</p><p><b>Vị trí trong biên độ H4:</b> giá đang ở một phần ba dưới (đáy), giữa hay trên (đỉnh) của vùng cao nhất, thấp nhất 30 nến 4 giờ gần nhất (khoảng 5 ngày).</p><p>Cùng một hình 5 phút nhưng ở đáy biên độ trong xu hướng tăng thường khác hẳn ở đỉnh biên độ trong xu hướng giảm. Bật lọc này thì mẫu ít hơn nhưng sát bối cảnh hơn.</p><p>Chỉ dùng nến H1, H4 đã đóng cửa, không nhìn trước.</p>"
+  },
+  {
+    id: "fr-cost", group: "Fractal & kiểm chứng", term: "Phí và trượt giá trong kiểm chứng",
+    short: "Mỗi lệnh trừ 2 lần phí taker và 2 lần trượt giá (vào và ra), quy ra R. Tín hiệu đúng 55% vẫn có thể lỗ sau phí.",
+    body: "<p>Ví dụ BTC 65.000, ATR 5 phút 120 USDT, phí taker 0,05% và trượt giá 2 bps mỗi chiều: chi phí khứ hồi khoảng 0,14% × 65.000 = 91 USDT, tức gần 0,76 ATR. Với cắt lỗ 1 ATR thì mỗi lệnh mất sẵn 0,76R.</p><p>Vì vậy trên khung nhỏ, phí rất nặng. Chốt lời xa hơn (2 hoặc 3 ATR) hoặc khung lớn hơn giúp phí nhỏ đi so với lợi nhuận.</p>"
   }
-
 ];
 
-export const GROUPS = ["Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest"];
+export const GROUPS = ["Fractal & kiểm chứng", "Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest"];

@@ -1,22 +1,23 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610131949";
-import { MarketState } from "./market.js?v=202610131949";
-import { Heatmap } from "./heatmap.js?v=202610131949";
-import { FlowChart, drawEquity } from "./flowchart.js?v=202610131949";
-import { Dom } from "./dom.js?v=202610131949";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js?v=202610131949";
-import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js?v=202610131949";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610131949";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610131949";
-import { Tape } from "./tape.js?v=202610131949";
-import { LiqMap } from "./liqmap.js?v=202610131949";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610131949";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610131949";
-import { DOM_COLS } from "./dom.js?v=202610131949";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610131949";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610131949";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610131949";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610132049";
+import { MarketState } from "./market.js?v=202610132049";
+import { Heatmap } from "./heatmap.js?v=202610132049";
+import { FlowChart, drawEquity } from "./flowchart.js?v=202610132049";
+import { Dom } from "./dom.js?v=202610132049";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js?v=202610132049";
+import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js?v=202610132049";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610132049";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610132049";
+import { Tape } from "./tape.js?v=202610132049";
+import { LiqMap } from "./liqmap.js?v=202610132049";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610132049";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610132049";
+import { DOM_COLS } from "./dom.js?v=202610132049";
+import { initFractal } from "./fractalview.js?v=202610132049";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610132049";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610132049";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610132049";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -430,7 +431,8 @@ function renderBacktest(res, bars, tf, capital, id, params) {
 
 // ---------- chú thích khi rê chuột ----------
 const tipEl = $("tip");
-const CANVAS_TIP = { heat, flow, dom, tape, lmap, btChart };
+const fractal = initFractal({ $, S, ex, esc, table, log });
+const CANVAS_TIP = { heat, flow, dom, tape, lmap, btChart, frChart: fractal.chart };
 let tipFrame = 0, lastMove = null;
 function showTip(html, x, y) {
   tipEl.innerHTML = html; tipEl.hidden = false;
@@ -575,7 +577,7 @@ function setConn(text, ok) { const p = $("connPill"); p.className = "pill" + (ok
 function setView(v) {
   S.view = v; persist();
   for (const b of $("views").children) b.classList.toggle("on", b.dataset.view === v);
-  for (const id of ["terminal", "analysis", "backtest"]) $("view-" + id).hidden = id !== v;
+  for (const id of ["terminal", "analysis", "backtest", "fractal"]) $("view-" + id).hidden = id !== v;
   document.body.classList.toggle("not-terminal", v !== "terminal");
   heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
   if (v === "analysis") renderAnalysis();

@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610131949">
+<link rel="stylesheet" href="css/app.css?v=202610132049">
 </head>
 <body>
 <header class="menubar">
@@ -22,6 +22,7 @@
     <button data-view="terminal" class="on" data-tip="Bookmap, footprint, nến và sổ lệnh trực tiếp">Terminal</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
     <button data-view="backtest" data-tip="Kiểm tra chiến lược trên dữ liệu lịch sử">Backtest</button>
+    <button data-view="fractal" data-g="fractal">FRACTAL</button>
   </nav>
   <label class="field" data-tip="Sàn lấy dữ liệu. Giả lập: dữ liệu ngẫu nhiên để thử giao diện">Sàn <select id="exchange"></select></label>
   <label class="field" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
@@ -229,6 +230,38 @@
   </section>
 </main>
 
+<!-- ============ FRACTAL ============ -->
+<main class="view backtest fractal" id="view-fractal" hidden>
+  <aside class="panel btform">
+    <div class="panel-head"><span class="title">Tìm mẫu hình giống nhau</span><div class="spacer"></div><button class="q" data-g="fractal">?</button></div>
+    <div class="formbody">
+      <p class="note">Mã và sàn lấy theo thanh trên cùng. Lấy L nến gần nhất, tìm trong lịch sử những đoạn có cùng hình giá, khối lượng và delta, rồi xem sau đó giá đi đâu.</p>
+      <label class="row" data-tip="Khung nến của mẫu. Bạn giao dịch chính 5 phút và 15 phút">Khung tìm mẫu <select id="frTf"><option selected>5m</option><option>15m</option><option>1h</option><option>4h</option></select></label>
+      <label class="row" data-tip="Số nến của một mẫu, tính tới nến vừa đóng cửa">Độ dài mẫu <select id="frL"><option value="12">12 nến</option><option value="24" selected>24 nến</option><option value="36">36 nến</option><option value="48">48 nến</option></select></label>
+      <label class="row" data-g="fr-rule">Giữ lệnh tối đa <select id="frHold"><option value="1800000">30 phút</option><option value="14400000" selected>4 giờ</option><option value="86400000">24 giờ</option><option value="172800000">48 giờ</option></select></label>
+      <label class="row" data-g="fr-rule">Chốt lời (× ATR) <select id="frTp"><option selected>1</option><option>1.5</option><option>2</option><option>3</option></select></label>
+      <label class="row" data-g="fr-rule">Cắt lỗ (× ATR) <select id="frSl"><option selected>1</option><option>1.5</option><option>2</option></select></label>
+      <label class="row" data-g="fr-sample">Số mẫu giống nhất <select id="frK"><option>30</option><option>50</option><option selected>100</option><option>200</option><option>300</option></select></label>
+      <label class="row" data-tip="Càng nhiều nến lịch sử càng nhiều mẫu để so, tải lâu hơn. Binance tối đa khoảng 90.000 nến">Số nến lịch sử <input type="number" id="frBars" value="30000" min="3000" max="90000" step="1000"></label>
+      <label class="row" data-g="fr-context"><span><input type="checkbox" id="frCtx" checked> Cùng bối cảnh H1 / H4</span></label>
+      <label class="row" data-g="fractal"><span><input type="checkbox" id="frMulti" checked> Tìm cả ở 2 khung lớn hơn</span></label>
+      <label class="row" data-g="fr-cost">Phí taker (%) <input type="number" id="frFee" value="0.05" min="0" step="0.01"></label>
+      <label class="row" data-g="fr-cost">Trượt giá (bps) <input type="number" id="frSlip" value="2" min="0" step="0.5"></label>
+      <button class="primary" id="frRun">Tìm mẫu lúc này</button>
+      <button class="tool" id="frValidate" data-g="fr-oos">Kiểm chứng ngoài mẫu</button>
+      <p class="note" id="frStatus"></p>
+    </div>
+  </aside>
+  <section class="frresult">
+    <div class="statgrid" id="frStats"></div>
+    <section class="panel frchart"><div class="chart-wrap"><canvas id="frChart"></canvas></div></section>
+    <div class="card" id="frHolds" hidden></div>
+    <div class="card" id="frValid" hidden></div>
+    <div class="card" id="frMatches" hidden></div>
+    <div class="card" id="frHelp"></div>
+  </section>
+</main>
+
 <!-- ============ GIẢI THÍCH THUẬT NGỮ ============ -->
 <aside class="drawer" id="glossary" hidden>
   <div class="drawer-head">
@@ -251,6 +284,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610131949"></script>
+<script type="module" src="js/app.js?v=202610132049"></script>
 </body>
 </html>
