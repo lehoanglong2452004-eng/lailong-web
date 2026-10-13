@@ -1,150 +1,11 @@
-// Backtest đơn giản cho chiến lược order-flow. Tín hiệu tại nến i chỉ dùng nến 0..i,
-// vào lệnh ở giá mở nến i+1. Một vị thế tại một thời điểm.
-import { atr, barDelta, volumeZ, pivots, vwapSeries } from './analytics.js?v=202610132116';
+// Bộ máy backtest. Tín hiệu tại nến i chỉ dùng nến 0..i. Một vị thế tại một thời điểm.
+// simulate(): bộ máy chính của trang Backtest, tính kết quả theo R cho hai kịch bản chốt lời TP1 / TP2.
+// runBacktest(): bộ máy cũ tính theo USDT, vào ở giá mở nến sau tín hiệu (giữ cho các bài test).
+import { STRATEGIES, defaultParams, context } from './strategies.js?v=202610132155';
+import { equityStats } from './fractal.js?v=202610132155';
+export { STRATEGIES, defaultParams };
 
 const MS_PER_YEAR = 365 * 24 * 3600 * 1000;
-
-// Mỗi chiến lược: {name, description, params, prepare(bars, p) -> signal(i)}
-// signal(i) trả null hoặc {side: 'long'|'short', stop, rr, maxHold}.
-export const STRATEGIES = {
-  volBreakout: {
-    name: 'Phá vỡ vùng khối lượng bất thường',
-    description: 'Khi một nến có khối lượng đột biến và đóng cửa vượt đỉnh/đáy gần nhất theo hướng dòng tiền chủ động, vào lệnh theo hướng đó ở nến kế tiếp. Cắt lỗ ở phía bên kia của nến đột biến.',
-    params: [
-      { key: 'zThreshold', label: 'Ngưỡng z khối lượng', default: 2.5, min: 1, max: 6, step: 0.1 },
-      { key: 'lookback', label: 'Số nến tính z', default: 50, min: 10, max: 500, step: 1 },
-      { key: 'range', label: 'Số nến tìm đỉnh/đáy', default: 20, min: 2, max: 200, step: 1 },
-      { key: 'atrBuffer', label: 'Đệm cắt lỗ (x ATR)', default: 0.2, min: 0, max: 3, step: 0.05 },
-      { key: 'rr', label: 'Tỉ lệ lời/lỗ (R)', default: 2, min: 0.5, max: 10, step: 0.1 },
-      { key: 'maxHold', label: 'Giữ tối đa (nến)', default: 24, min: 1, max: 1000, step: 1 },
-    ],
-    prepare(bars, p) {
-      const a = atr(bars, 14);
-      const z = volumeZ(bars, p.lookback);
-      const R = Math.max(1, Math.round(p.range));
-      return (i) => {
-        if (i < R || !(z[i] >= p.zThreshold) || !(a[i] > 0)) return null;
-        const b = bars[i];
-        let hh = -Infinity, ll = Infinity;
-        for (let k = i - R; k < i; k++) { if (bars[k].h > hh) hh = bars[k].h; if (bars[k].l < ll) ll = bars[k].l; }
-        const d = barDelta(b);
-        if (d > 0 && b.c > hh) return { side: 'long', stop: b.l - p.atrBuffer * a[i] };
-        if (d < 0 && b.c < ll) return { side: 'short', stop: b.h + p.atrBuffer * a[i] };
-        return null;
-      };
-    },
-  },
-  srRetest: {
-    name: 'Test lại hỗ trợ/kháng cự',
-    description: 'Khi giá phá một vùng hỗ trợ/kháng cự rồi quay lại test và bị đẩy đi tiếp, vào lệnh theo hướng phá vỡ. Chế độ bật lại: vùng chạm nhiều lần chưa thủng bị chạm râu và đóng ngược lại thì vào lệnh đảo chiều.',
-    // mode: 0 = cả hai, 1 = chỉ test lại sau phá vỡ, 2 = chỉ bật lại
-    params: [
-      { key: 'mode', label: 'Chế độ (0=cả hai, 1=test lại, 2=bật lại)', default: 0, min: 0, max: 2, step: 1 },
-      { key: 'pivotLen', label: 'Độ rộng pivot (nến mỗi bên)', default: 5, min: 2, max: 30, step: 1 },
-      { key: 'tolAtr', label: 'Dung sai vùng (x ATR)', default: 0.3, min: 0.05, max: 2, step: 0.05 },
-      { key: 'retestBars', label: 'Số nến chờ test lại', default: 10, min: 1, max: 100, step: 1 },
-      { key: 'minTouches', label: 'Số lần chạm tối thiểu (bật lại)', default: 2, min: 1, max: 10, step: 1 },
-      { key: 'stopAtr', label: 'Cắt lỗ sau vùng (x ATR)', default: 0.5, min: 0.05, max: 5, step: 0.05 },
-      { key: 'rr', label: 'Tỉ lệ lời/lỗ (R)', default: 2, min: 0.5, max: 10, step: 0.1 },
-      { key: 'maxHold', label: 'Giữ tối đa (nến)', default: 48, min: 1, max: 1000, step: 1 },
-    ],
-    prepare(bars, p) {
-      const a = atr(bars, 14);
-      const L = Math.max(1, Math.round(p.pivotLen));
-      // pivot chỉ được dùng từ nến knownAt trở đi => không nhìn trước
-      const pv = pivots(bars, L, L).sort((x, y) => x.knownAt - y.knownAt);
-      const mode = Math.round(p.mode);
-      const useRetest = mode === 0 || mode === 1;
-      const useBounce = mode === 0 || mode === 2;
-      const MAX_LEVELS = 40;
-      let levels = [];
-      let pi = 0;
-      return (i) => {
-        const b = bars[i];
-        const ai = a[i];
-        // thêm pivot vừa được xác nhận
-        while (pi < pv.length && pv[pi].knownAt <= i) {
-          const q = pv[pi++];
-          if (!(ai > 0)) continue;
-          const tol = p.tolAtr * ai;
-          const lv = levels.find((x) => Math.abs(x.price - q.price) <= tol);
-          if (lv) {
-            lv.sum += q.price; lv.touches++; lv.price = lv.sum / lv.touches; lv.lastI = q.i;
-          } else {
-            levels.push({ price: q.price, sum: q.price, touches: 1, side: b.c > q.price ? 1 : -1,
-              broken: false, breakIdx: -1, breakDir: 0, used: false, lastI: q.i });
-            if (levels.length > MAX_LEVELS) levels = levels.slice(-MAX_LEVELS);
-          }
-        }
-        if (!(ai > 0)) return null;
-        const tol = p.tolAtr * ai;
-        let best = null;
-        for (const lv of levels) {
-          const P = lv.price;
-          // phá vỡ: đóng cửa vượt quá dung sai
-          if (lv.side === -1 && b.c > P + tol) {
-            lv.side = 1; lv.broken = true; lv.breakIdx = i; lv.breakDir = 1; lv.used = false; continue;
-          }
-          if (lv.side === 1 && b.c < P - tol) {
-            lv.side = -1; lv.broken = true; lv.breakIdx = i; lv.breakDir = -1; lv.used = false; continue;
-          }
-          let sig = null;
-          if (useRetest && lv.broken && !lv.used && i > lv.breakIdx && i - lv.breakIdx <= p.retestBars) {
-            if (lv.breakDir === 1 && b.l <= P + tol && b.c > P) sig = { side: 'long', stop: P - p.stopAtr * ai };
-            if (lv.breakDir === -1 && b.h >= P - tol && b.c < P) sig = { side: 'short', stop: P + p.stopAtr * ai };
-          }
-          if (!sig && useBounce && !lv.broken && lv.touches >= p.minTouches) {
-            if (lv.side === 1 && b.l <= P + tol && b.c > P) sig = { side: 'long', stop: P - p.stopAtr * ai };
-            if (lv.side === -1 && b.h >= P - tol && b.c < P) sig = { side: 'short', stop: P + p.stopAtr * ai };
-          }
-          if (sig && (!best || lv.touches > best.touches)) best = { ...sig, touches: lv.touches, lv };
-        }
-        if (!best) return null;
-        if (best.lv.broken) best.lv.used = true;
-        return { side: best.side, stop: best.stop };
-      };
-    },
-  },
-  vwapTouch: {
-    name: 'VWAP làm hỗ trợ/kháng cự',
-    description: 'Giá chạm VWAP rồi bị đẩy lại thì vào lệnh đảo chiều (bật lại), hoặc đóng cửa xuyên qua VWAP thì vào lệnh theo hướng phá vỡ. Kèm bảng thống kê mỗi lần chạm VWAP giá bật lại hay xuyên qua.',
-    // anchor: 0 = VWAP ngày, 1 = VWAP tuần, 2 = VWAP cuộn N nến; mode: 0 = bật lại, 1 = phá vỡ, 2 = cả hai
-    params: [
-      { key: 'anchor', label: 'VWAP (0=ngày, 1=tuần, 2=cuộn)', default: 0, min: 0, max: 2, step: 1 },
-      { key: 'rollLen', label: 'Số nến VWAP cuộn', default: 96, min: 5, max: 2000, step: 1 },
-      { key: 'mode', label: 'Chế độ (0=bật lại, 1=phá vỡ, 2=cả hai)', default: 0, min: 0, max: 2, step: 1 },
-      { key: 'tolAtr', label: 'Dung sai chạm (x ATR)', default: 0.2, min: 0, max: 2, step: 0.05 },
-      { key: 'stopAtr', label: 'Cắt lỗ sau VWAP (x ATR)', default: 0.6, min: 0.05, max: 5, step: 0.05 },
-      { key: 'rr', label: 'Tỉ lệ lời/lỗ (R)', default: 2, min: 0.5, max: 10, step: 0.1 },
-      { key: 'maxHold', label: 'Giữ tối đa (nến)', default: 24, min: 1, max: 1000, step: 1 },
-    ],
-    vwap(bars, p) { return vwapSeries(bars, { anchor: ['day', 'week', 'rolling'][Math.round(p.anchor)] || 'day', len: Math.round(p.rollLen) }); },
-    prepare(bars, p) {
-      const a = atr(bars, 14), w = this.vwap(bars, p), mode = Math.round(p.mode);
-      return (i) => {
-        if (i < 1 || !(a[i] > 0)) return null;
-        const b = bars[i], prev = bars[i - 1], tol = p.tolAtr * a[i], wi = w[i], wp = w[i - 1];
-        const above = prev.c > wp + tol, below = prev.c < wp - tol;
-        if (mode !== 1) { // bật lại: râu chạm VWAP, đóng cửa quay về phía cũ
-          if (above && b.l <= wi + tol && b.c > wi) return { side: 'long', stop: Math.min(b.l, wi) - p.stopAtr * a[i] };
-          if (below && b.h >= wi - tol && b.c < wi) return { side: 'short', stop: Math.max(b.h, wi) + p.stopAtr * a[i] };
-        }
-        if (mode !== 0) { // phá vỡ: đóng cửa xuyên qua VWAP quá dung sai
-          if (above && b.c < wi - tol) return { side: 'short', stop: wi + p.stopAtr * a[i] };
-          if (below && b.c > wi + tol) return { side: 'long', stop: wi - p.stopAtr * a[i] };
-        }
-        return null;
-      };
-    },
-  },
-};
-
-export function defaultParams(strategyId) {
-  const s = STRATEGIES[strategyId];
-  const out = {};
-  for (const p of s?.params || []) out[p.key] = p.default;
-  return out;
-}
 
 function inferInterval(bars) {
   const d = [];
@@ -271,4 +132,106 @@ export function runBacktest(bars, strategyId, params = {}, {
     equity.push({ t: b.t, eq });
   }
   return { trades, equity, stats: computeStats(trades, equity, capital, iv, barsInPos) };
+}
+
+// ---------- bộ máy chính: kết quả theo R, hai kịch bản chốt lời ----------
+// Mỗi lệnh có một SL và hai "chân" độc lập: chân 1 chốt ở TP1, chân 2 chốt ở TP2 (SL giữ nguyên, không dời).
+// Lệnh kết thúc khi cả hai chân đã đóng. R của một chân = (lời/lỗ theo giá − phí hai đầu) / khoảng cách SL,
+// nhân với hệ số f < 1 khi giới hạn đòn bẩy làm khối lượng nhỏ hơn mức rủi ro đã chọn.
+// Vào lệnh: không có entry thì khớp ở giá đóng cửa nến tín hiệu (cộng trượt giá), theo dõi từ nến sau.
+// Lệnh chờ: khớp khi giá chạm entry (mở cửa vượt qua thì khớp ở giá mở), huỷ khi hết hạn hoặc giá chạy tới cancelPx
+// (mặc định là tp1Px riêng của chiến lược nếu có) trước khi khớp.
+// Trong cùng một nến chạm cả SL và TP thì tính SL. Nến khớp lệnh chờ mà chạm luôn SL thì tính SL.
+export const EXIT = { tp: 'Chốt lời', sl: 'Cắt lỗ', time: 'Hết giờ', eod: 'Cuối ngày', end: 'Cuối dữ liệu' };
+export function simulate(bars, strat, params = {}, {
+  riskPct = 1, feeRate = 0.0005, slippageBps = 2, maxLeverage = 20, tp1R = 1, tp2R = 2, maxHoldBars = Infinity, side = 'both', intervalMs,
+} = {}) {
+  const s = typeof strat === 'string' ? STRATEGIES[strat] : strat;
+  if (!s) throw new Error('Không có chiến lược: ' + strat);
+  const p = { ...(typeof strat === 'string' ? defaultParams(strat) : {}), ...params };
+  const n = bars?.length || 0, trades = [], out = { trades, signals: 0, missed: 0, barsInPos: 0 };
+  if (!n) return out;
+  const iv = intervalMs || inferInterval(bars), signal = s.prepare(bars, p, context(bars), iv), slip = slippageBps / 1e4;
+  let pos = null, pend = null;
+  const allowed = (sd) => side === 'both' || side === sd;
+  const open = (i, px, sg) => {
+    const dir = sg.side === 'long' ? 1 : -1, risk = dir * (px - sg.stop);
+    if (!(risk > 0)) return;
+    const tpOf = (R, own) => (own != null && dir * (own - px) > 0 ? own : px + dir * R * risk);
+    pos = {
+      dir, side: sg.side, tag: sg.tag || '', i, t: bars[i].t, entryPx: px, stop: sg.stop, risk, forceExit: sg.forceExit,
+      f: Math.min(1, maxLeverage * risk / ((riskPct / 100) * px)),
+      legs: [{ tp: tpOf(tp1R, sg.tp1Px) }, { tp: tpOf(tp2R, sg.tp2Px) }],
+    };
+  };
+  const closeLeg = (leg, i, px, why) => {
+    const { dir, entryPx, risk, f } = pos;
+    leg.px = px; leg.why = why; leg.i = i; leg.t = bars[i].t;
+    leg.r = (dir * (px - entryPx) - feeRate * (entryPx + px)) / risk * f;
+  };
+  const finish = () => {
+    if (!pos || pos.legs.some((l) => l.r == null)) return;
+    const [a, b] = pos.legs;
+    trades.push({
+      side: pos.side, tag: pos.tag, i: pos.i, t: pos.t, entryPx: pos.entryPx, stop: pos.stop, risk: pos.risk, f: pos.f,
+      tp1Px: a.tp, tp2Px: b.tp, r1: a.r, r2: b.r, why1: a.why, why2: b.why, exit1: { t: a.t, px: a.px }, exit2: { t: b.t, px: b.px },
+      bars1: a.i - pos.i, bars2: b.i - pos.i, exitT: Math.max(a.t, b.t),
+    });
+    pos = null;
+  };
+  const stopFill = (b) => (pos.dir === 1 ? Math.min(b.o, pos.stop) : Math.max(b.o, pos.stop)) * (1 - pos.dir * slip);
+  for (let i = 0; i < n; i++) {
+    const b = bars[i];
+    if (pend && !pos) {
+      const dir = pend.side === 'long' ? 1 : -1;
+      if (i - pend.i > pend.valid) { pend = null; out.missed++; }
+      else if (dir === 1 ? b.l <= pend.entry : b.h >= pend.entry) {
+        const sg = pend; pend = null;
+        open(i, dir === 1 ? Math.min(b.o, sg.entry) : Math.max(b.o, sg.entry), sg);
+        if (pos && (dir === 1 ? b.l <= pos.stop : b.h >= pos.stop)) { const px = stopFill(b); for (const l of pos.legs) closeLeg(l, i, px, EXIT.sl); }
+      } else if (dir === 1 ? b.h >= pend.cancelPx : b.l <= pend.cancelPx) { pend = null; out.missed++; }
+    } else if (pos && i > pos.i) {
+      const { dir } = pos, hitSL = dir === 1 ? b.l <= pos.stop : b.h >= pos.stop;
+      for (const l of pos.legs) {
+        if (l.r != null) continue;
+        if (hitSL) closeLeg(l, i, stopFill(b), EXIT.sl);
+        else if (dir === 1 ? b.h >= l.tp : b.l <= l.tp) closeLeg(l, i, dir === 1 ? Math.max(b.o, l.tp) : Math.min(b.o, l.tp), EXIT.tp);
+      }
+      const why = i - pos.i >= maxHoldBars ? EXIT.time : pos.forceExit && pos.forceExit(i) ? EXIT.eod : i === n - 1 ? EXIT.end : null;
+      if (why) { const px = b.c * (1 - dir * slip); for (const l of pos.legs) if (l.r == null) closeLeg(l, i, px, why); }
+    }
+    if (pos) out.barsInPos++;
+    finish();
+    // tín hiệu luôn được gọi mỗi nến để chiến lược cập nhật trạng thái tuần tự
+    const sg = signal(i);
+    if (sg && !pos && !pend && allowed(sg.side) && i < n - 1) {
+      out.signals++;
+      const dir = sg.side === 'long' ? 1 : -1;
+      if (sg.fillAt != null) {
+        open(i, sg.fillAt, sg);
+        if (pos && (dir === 1 ? b.l <= pos.stop : b.h >= pos.stop)) { const px = stopFill(b); for (const l of pos.legs) closeLeg(l, i, px, EXIT.sl); finish(); }
+      } else if (sg.entry == null) open(i, b.c * (1 + dir * slip), sg);
+      else if (dir * (sg.entry - sg.stop) > 0) {
+        // huỷ lệnh chờ khi giá chạy tới mức chiến lược chỉ định (ví dụ Fibonacci: vượt đỉnh cũ) trước khi khớp
+        pend = { ...sg, i, valid: sg.valid ?? 30, cancelPx: sg.cancelPx ?? sg.tp1Px ?? (dir === 1 ? Infinity : -Infinity) };
+      }
+    }
+  }
+  return out;
+}
+
+// Thống kê một danh sách lệnh theo một kịch bản chốt lời (leg 1 hoặc 2)
+export function tradeStats(trades, leg = 2, riskPct = 1) {
+  const k = leg === 1 ? 'r1' : 'r2', st = equityStats(trades.map((t) => t[k]), riskPct);
+  const why = {}; for (const t of trades) { const w = t[leg === 1 ? 'why1' : 'why2']; why[w] = (why[w] || 0) + 1; }
+  st.why = why;
+  st.avgBars = trades.length ? trades.reduce((s, t) => s + t[leg === 1 ? 'bars1' : 'bars2'], 0) / trades.length : NaN;
+  st.capped = trades.filter((t) => t.f < 1).length;
+  return st;
+}
+
+// Chia theo thời gian: lệnh vào trước mốc split (phần đầu) và sau (phần cuối, ngoài mẫu)
+export function splitTrades(trades, bars, frac = 0.7) {
+  const cut = bars[Math.min(bars.length - 1, Math.floor(bars.length * frac))]?.t ?? Infinity;
+  return { cut, ins: trades.filter((t) => t.t < cut), oos: trades.filter((t) => t.t >= cut) };
 }

@@ -1,23 +1,23 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610132116";
-import { MarketState } from "./market.js?v=202610132116";
-import { Heatmap } from "./heatmap.js?v=202610132116";
-import { FlowChart, drawEquity } from "./flowchart.js?v=202610132116";
-import { Dom } from "./dom.js?v=202610132116";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js?v=202610132116";
-import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js?v=202610132116";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610132116";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610132116";
-import { Tape } from "./tape.js?v=202610132116";
-import { LiqMap } from "./liqmap.js?v=202610132116";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610132116";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610132116";
-import { DOM_COLS } from "./dom.js?v=202610132116";
-import { initFractal } from "./fractalview.js?v=202610132116";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610132116";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610132116";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610132116";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610132155";
+import { MarketState } from "./market.js?v=202610132155";
+import { Heatmap } from "./heatmap.js?v=202610132155";
+import { FlowChart } from "./flowchart.js?v=202610132155";
+import { Dom } from "./dom.js?v=202610132155";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610132155";
+import { initBacktest } from "./backtestview.js?v=202610132155";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610132155";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610132155";
+import { Tape } from "./tape.js?v=202610132155";
+import { LiqMap } from "./liqmap.js?v=202610132155";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610132155";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610132155";
+import { DOM_COLS } from "./dom.js?v=202610132155";
+import { initFractal } from "./fractalview.js?v=202610132155";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610132155";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610132155";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610132155";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -367,72 +367,18 @@ async function renderDvol() {
 // ---------- trang Backtest ----------
 const btChart = new FlowChart($("btChart"), { emptyText: "Bấm \"Chạy backtest\" để xem điểm vào/ra lệnh trên biểu đồ" });
 btChart.show = { ...btChart.show, liq: false, liqMap: false, cvd: false, oi: false, profile: false };
-const PARAM_G = { rr: "bt-rr", maxHold: "bt-maxhold", zThreshold: "sigma", tolAtr: "atr", stopAtr: "atr", atrBuffer: "atr", anchor: "vwap", rollLen: "vwap" };
-const STRAT_G = { volBreakout: "strat-volbreakout", srRetest: "strat-srretest", vwapTouch: "strat-vwap" };
-function renderStrategyForm() {
-  const id = $("btStrategy").value, st = STRATEGIES[id];
-  $("btDesc").innerHTML = `${esc(st.description)} <button class="q" data-g="${STRAT_G[id] || "backtest"}">?</button>`;
-  $("btParams").innerHTML = st.params.map(p => `<label class="row" ${PARAM_G[p.key] ? `data-g="${PARAM_G[p.key]}"` : `data-tip="${esc(p.label)}"`}>${esc(p.label)} <input type="number" data-param="${p.key}" value="${p.default}" min="${p.min}" max="${p.max}" step="${p.step}"></label>`).join("");
-}
-$("btStrategy").innerHTML = Object.entries(STRATEGIES).map(([id, s]) => `<option value="${id}">${esc(s.name)}</option>`).join("");
-$("btStrategy").onchange = renderStrategyForm; renderStrategyForm();
-const btCache = new Map();
-$("btRun").onclick = async () => {
-  const id = $("btStrategy").value, tf = $("btInterval").value, n = Math.min(20000, Math.max(200, +$("btBars").value || 5000));
-  const params = { ...defaultParams(id) }; for (const el of document.querySelectorAll("[data-param]")) params[el.dataset.param] = +el.value;
-  const status = $("btStatus"); status.textContent = `Đang tải ${n} nến ${tf} ${S.symbol} từ ${ex().name}...`; $("btRun").disabled = true;
-  try {
-    const ck = `${S.ex}:${S.symbol}:${tf}:${n}`; let bars = btCache.get(ck);
-    if (!bars) { bars = await ex().klines(S.symbol, tf, n); btCache.set(ck, bars); }
-    if (bars.length < 100) throw new Error("không đủ dữ liệu");
-    status.textContent = `Đang chạy trên ${bars.length} nến...`; await new Promise(r => setTimeout(r, 30));
-    const capital = +$("btCapital").value || 10000;
-    const res = runBacktest(bars, id, params, { capital, riskPct: +$("btRisk").value, maxLeverage: +$("btLev").value, feeRate: +$("btFee").value / 100, slippageBps: +$("btSlip").value, intervalMs: INTERVALS[tf] });
-    renderBacktest(res, bars, tf, capital, id, params);
-    status.textContent = `Xong: ${bars.length} nến từ ${fmtDate(bars[0].t)} đến ${fmtDate(bars[bars.length - 1].t)}. Lệnh vào ở giá mở cửa nến sau tín hiệu, đã tính phí và trượt giá.`;
-  } catch (e) { status.textContent = `Lỗi: ${e.message}`; }
-  $("btRun").disabled = false;
-};
-function renderBacktest(res, bars, tf, capital, id, params) {
-  const s = res.stats, card = (g, k, v, cls = "") => `<div class="stat" data-g="${g}"><span>${k}</span><b class="${cls}">${v}</b></div>`;
-  $("btStats").innerHTML = card("bt-net", "Lợi nhuận ròng", `${s.netProfit >= 0 ? "+" : ""}${s.netProfit.toFixed(2)} (${fmtPct(s.netPct)})`, s.netProfit >= 0 ? "pos" : "neg") +
-    card("bt-trades", "Số lệnh", `${s.trades} (L ${s.longs} / S ${s.shorts})`) + card("bt-winrate", "Tỷ lệ thắng", s.trades ? s.winRate.toFixed(1) + "%" : "-") +
-    card("bt-pf", "Profit factor", isFinite(s.profitFactor) ? s.profitFactor.toFixed(2) : "∞") + card("bt-avgr", "R trung bình", s.trades ? s.avgR.toFixed(2) : "-") +
-    card("bt-expectancy", "Kỳ vọng mỗi lệnh", s.trades ? s.expectancy.toFixed(2) + " USDT" : "-") + card("bt-mdd", "Sụt giảm tối đa", s.maxDrawdownPct.toFixed(2) + "%", "neg") +
-    card("bt-sharpe", "Sharpe (năm hoá)", isFinite(s.sharpe) ? s.sharpe.toFixed(2) : "-") + card("bt-avgbars", "Giữ lệnh trung bình", s.trades ? s.avgBars.toFixed(1) + " nến" : "-") +
-    card("bt-exposure", "Thời gian có vị thế", s.exposurePct.toFixed(1) + "%");
-  drawEquity($("btEquity"), res.equity, capital);
-  const bb = bars.map(b => ({ ...b, d: b.bv != null ? 2 * b.bv - b.v : (b.h > b.l ? b.v * (b.c - b.o) / (b.h - b.l) : 0) }));
-  btChart.setData(bb, { step: market.fpStep || 1, tick: market.tick, intervalMs: INTERVALS[tf], symbol: S.symbol, exchangeName: ex().name, interval: tf, deltaApprox: isDeltaApprox(bars) });
-  const markers = [];
-  for (const t of res.trades) {
-    const dir = t.side === "long" ? 1 : -1;
-    markers.push({ t: t.entryT, price: t.entryPx, dir, link: { t: t.exitT, price: t.exitPx, win: t.pnl > 0 } }, { t: t.exitT, price: t.exitPx, dir, exit: true });
-  }
-  btChart.setOverlays({ markers, levels: [], zones: [], lines: [] });
-  const box = $("btVwap"); box.hidden = id !== "vwapTouch";
-  if (id === "vwapTouch") {
-    const w = STRATEGIES.vwapTouch.vwap(bars, params), anchor = ["ngày", "tuần", `cuộn ${params.rollLen} nến`][Math.round(params.anchor)] || "ngày";
-    const resets = Math.round(params.anchor) === 2 ? null : bars.map((b, i) => i > 0 && (Math.round(params.anchor) === 1 ? Math.floor((b.t / 864e5 + 3) / 7) !== Math.floor((bars[i - 1].t / 864e5 + 3) / 7) : Math.floor(b.t / 864e5) !== Math.floor(bars[i - 1].t / 864e5)));
-    btChart.setOverlays({ lines: [{ values: w, color: "#c678dd", name: `VWAP ${anchor}`, resets }] });
-    const horizon = 12, rx = vwapReactions(bars, w, { tolAtr: params.tolAtr, horizon, moveAtr: 1 });
-    const row = (name, g) => `<tr><td class="t">${name}</td><td>${g.touches}</td><td class="pos">${g.bounce} (${isFinite(g.bouncePct) ? g.bouncePct.toFixed(1) : "-"}%)</td><td class="neg">${g.breaks} (${isFinite(g.breakPct) ? g.breakPct.toFixed(1) : "-"}%)</td><td>${g.unclear}</td><td class="${g.avgFwdPct >= 0 ? "pos" : "neg"}">${fmtPct(g.avgFwdPct, 3)}</td></tr>`;
-    const verdict = g => !g.touches ? "chưa có lần chạm nào" : g.bouncePct >= 55 ? "thường BẬT LẠI" : g.breakPct >= 55 ? "thường XUYÊN QUA" : "không nghiêng hẳn về bên nào";
-    box.innerHTML = `<h3>Giá chạm VWAP ${anchor} thì bật lại hay xuyên qua? <button class="q" data-g="vwap">?</button> <small>${bars.length} nến ${tf}, ${esc(S.symbol)} ${esc(ex().name)}</small></h3>` +
-      table(["Khi chạm VWAP", "Số lần chạm", "Bật lại", "Xuyên qua", "Không rõ", `Lợi nhuận TB sau ${horizon} nến (theo hướng bật lại)`],
-        [row("Từ trên xuống (VWAP là hỗ trợ)", rx.support), row("Từ dưới lên (VWAP là kháng cự)", rx.resistance)], "") +
-      `<p class="note">Kết luận trên dữ liệu này: khi VWAP là hỗ trợ, giá ${verdict(rx.support)}; khi VWAP là kháng cự, giá ${verdict(rx.resistance)}. "Bật lại" nghĩa là trong ${horizon} nến giá đi tiếp về phía cũ được 1 ATR trước khi đóng cửa xuyên qua VWAP. "Xuyên qua" nghĩa là đóng cửa ở phía bên kia VWAP trước.</p>`;
-  }
-  const dec = decimalsFor(market.tick);
-  $("btTrades").innerHTML = table(["#", "Phía", "Vào lúc", "Giá vào", "Ra lúc", "Giá ra", "Khối lượng", "Lãi/lỗ", ["R", "bt-avgr"], ["Lý do", "bt-reason"], ["Số nến", "bt-avgbars"]],
-    res.trades.slice().reverse().map((t, k) => `<tr><td>${res.trades.length - k}</td><td class="${t.side === "long" ? "pos" : "neg"}">${t.side === "long" ? "LONG" : "SHORT"}</td><td>${fmtDate(t.entryT)}</td><td>${t.entryPx.toFixed(dec)}</td><td>${fmtDate(t.exitT)}</td><td>${t.exitPx.toFixed(dec)}</td><td>${+t.qty.toPrecision(5)}</td><td class="${t.pnl >= 0 ? "pos" : "neg"}">${t.pnl >= 0 ? "+" : ""}${t.pnl.toFixed(2)}</td><td>${t.r.toFixed(2)}</td><td class="t">${esc(t.reason)}</td><td>${t.bars}</td></tr>`),
-    "Chiến lược không có lệnh nào trên dữ liệu này. Thử nới ngưỡng hoặc tăng số nến.");
-}
-
 // ---------- chú thích khi rê chuột ----------
 const tipEl = $("tip");
 const fractal = initFractal({ $, S, ex, esc, table, log });
-const CANVAS_TIP = { heat, flow, dom, tape, lmap, btChart, ...fractal.tips };
+const backtest = initBacktest({ $, S, ex, esc, table, market, chart: btChart });
+// nhấp đúp vào ô thông số (Backtest, FRACTAL) để trả về giá trị mặc định
+document.addEventListener("dblclick", e => {
+  const el = e.target.closest(".btform input[type=number], .btform select"); if (!el) return;
+  if (el.tagName === "SELECT") { const d = [...el.options].findIndex(o => o.defaultSelected); el.selectedIndex = d < 0 ? 0 : d; } else el.value = el.defaultValue;
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+  el.classList.add("reset"); setTimeout(() => el.classList.remove("reset"), 500);
+});
+const CANVAS_TIP = { heat, flow, dom, tape, lmap, btChart, ...fractal.tips, ...backtest.tips };
 let tipFrame = 0, lastMove = null;
 function showTip(html, x, y) {
   tipEl.innerHTML = html; tipEl.hidden = false;
@@ -528,7 +474,7 @@ function mix(a, b, f) {
 }
 window.addEventListener("lailong-theme", () => {
   heat.dirty = flow.dirty = dom.dirty = tape.dirty = btChart.dirty = true;
-  const eq = $("btEquity"); if (eq._fit) drawEquity(eq, eq._eq, eq._cap);
+  backtest.redraw();
   if (S.view === "analysis" && analysis) renderAnalysis();
 });
 

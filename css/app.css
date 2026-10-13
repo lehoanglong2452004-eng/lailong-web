@@ -237,7 +237,25 @@ input[type=number], input:not([type]) { cursor: text !important; }
 .scen-stats .h { grid-column: 1 / -1; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
 .scen-stats span { color: var(--muted); }
 .scen-stats b { font-family: var(--mono); font-weight: 700; text-align: right; }
+.scen-stats b.txt, .scen-stats b small, .stat b small { font-family: var(--sans); }
+.btres .scen { height: 206px; }
 .backtest > * { min-width: 0; }
+.btres .btchart { height: 380px; flex: none; }
+.btres .bttrades { height: 320px; flex: none; }
+.btres .bttrades .tab-body { height: 100%; overflow: auto; }
+.stratlist { flex: none; display: flex; flex-direction: column; border: 1px solid var(--line); max-height: 300px; overflow: auto; }
+.stratlist .grp { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 5px 8px 2px; }
+.stratlist .it { display: flex; align-items: center; gap: 6px; padding: 5px 6px; cursor: pointer; border-top: 1px solid var(--line); }
+.stratlist .it:hover { background: var(--panel2, rgba(127,127,127,.08)); }
+.stratlist .it.sel { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--ink); font-weight: 700; }
+.stratlist .star { border: 0; background: none; cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px; color: var(--muted); }
+.stratlist .star.on { color: #f5b301; }
+.stratlist .nm { flex: 1; min-width: 0; }
+.legbar { display: flex; align-items: center; gap: 6px; flex: none; color: var(--muted); font-size: 12px; }
+.legbar .tool.on { background: var(--accent); color: #000; border-color: var(--accent); }
+.rank tr.click { cursor: pointer; }
+.rank tr.click:hover td { background: rgba(127,127,127,.1); }
+.rank tr.cur td { font-weight: 700; }
 .btform .row > span { display: inline-flex; align-items: center; gap: 6px; }
 .btform .row > span input { width: auto; }
 .btform .tool { padding: 7px; }
@@ -299,3 +317,6 @@ input[type=number], input:not([type]) { cursor: text !important; }
 }
 
 canvas { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.btform input.reset, .btform select.reset { outline: 2px solid var(--accent); transition: outline .2s; }
+@media (max-width: 900px) { .btres .scen { height: auto; } .btres .btchart { height: 320px; } .stratlist { max-height: 260px; } }
+@media (max-width: 900px) { .backtest { grid-auto-rows: max-content; } .btform .formbody { overflow: visible; } }

@@ -448,15 +448,15 @@ export const GLOSSARY = [
     id: "bt-maxhold",
     group: "Backtest",
     term: "Giữ tối đa",
-    short: "Số nến tối đa một lệnh được giữ; quá giới hạn mà chưa chạm TP hay SL thì lệnh tự đóng.",
-    body: "<p>Giúp tránh giữ lệnh “treo” quá lâu khi ý tưởng ban đầu không còn đúng.</p><p><b>Ví dụ:</b> Giữ tối đa 48 nến trên khung 15 phút = 12 giờ. Sau 12 giờ lệnh được đóng ở giá thị trường, ghi lý do “Hết giờ”.</p>"
+    short: "Số giờ tối đa một lệnh được giữ; quá giới hạn mà chưa chạm TP hay SL thì lệnh tự đóng.",
+    body: "<p>Giúp tránh giữ lệnh “treo” quá lâu khi ý tưởng ban đầu không còn đúng. Mặc định 48 giờ, đúng giới hạn bạn không giữ lệnh quá 2 phiên ngày.</p><p><b>Ví dụ:</b> Giữ tối đa 48 giờ trên khung 15 phút = 192 nến. Sau 48 giờ lệnh được đóng ở giá đóng cửa, ghi lý do “Hết giờ”.</p>"
   },
   {
     id: "bt-reason",
     group: "Backtest",
     term: "Lý do thoát lệnh",
-    short: "Vì sao lệnh được đóng: TP (chốt lời), SL (cắt lỗ), Hết giờ (quá thời gian giữ) hoặc Cuối dữ liệu.",
-    body: "<ul><li><b>TP:</b> giá chạm mục tiêu chốt lời.</li><li><b>SL:</b> giá chạm stop loss.</li><li><b>Hết giờ:</b> giữ quá số nến tối đa.</li><li><b>Cuối dữ liệu:</b> backtest hết dữ liệu khi lệnh còn mở, lệnh được đóng ở giá cuối cùng.</li></ul><p><b>Lưu ý:</b> Nếu trong cùng một nến giá chạm cả TP lẫn SL, backtest giả định chạm SL trước cho an toàn.</p>"
+    short: "Vì sao lệnh được đóng: Chốt lời, Cắt lỗ, Hết giờ, Cuối ngày (MIDOTI) hoặc Cuối dữ liệu.",
+    body: "<ul><li><b>Chốt lời:</b> giá chạm TP1 hoặc TP2.</li><li><b>Cắt lỗ:</b> giá chạm stop loss.</li><li><b>Cuối ngày:</b> MIDOTI đóng lệnh trước mốc OP ngày mới.</li><li><b>Hết giờ:</b> giữ quá số nến tối đa.</li><li><b>Cuối dữ liệu:</b> backtest hết dữ liệu khi lệnh còn mở, lệnh được đóng ở giá cuối cùng.</li></ul><p><b>Lưu ý:</b> Nếu trong cùng một nến giá chạm cả TP lẫn SL, backtest giả định chạm SL trước cho an toàn.</p>"
   },
   {
     id: "bt-overfit",
@@ -466,25 +466,67 @@ export const GLOSSARY = [
     body: "<p>Quá khớp (overfitting) là khi bạn thử đi thử lại các thông số đến khi kết quả quá khứ đẹp, nhưng thực chất là “học thuộc” các biến động ngẫu nhiên đã xảy ra.</p><p><b>Dấu hiệu:</b> Chỉ cần đổi tham số một chút (ví dụ 20 thành 22) là kết quả sụp đổ; số lệnh quá ít; profit factor hoặc Sharpe cao bất thường.</p><p><b>Cách phòng:</b> Thử trên nhiều coin và nhiều giai đoạn khác nhau; ưu tiên các tham số mà xung quanh nó kết quả cũng tốt; bắt đầu tiền thật với khối lượng nhỏ.</p>"
   },
   {
-    id: "strat-volbreakout",
+    id: "bt-strategies",
     group: "Backtest",
-    term: "Chiến lược phá vỡ khối lượng",
-    short: "Vào lệnh khi giá phá ra khỏi vùng đi ngang kèm khối lượng tăng vọt, theo hướng phá vỡ.",
-    body: "<p>Ý tưởng: cú phá vỡ thật thường có nhiều người tham gia, nên khối lượng tăng mạnh. Phá vỡ với khối lượng thấp hay là bẫy.</p><p><b>Quy tắc chung:</b> Nến đóng cửa vượt đỉnh (hoặc đáy) gần nhất và có khối lượng cao bất thường (tính theo σ) → vào theo hướng phá ở giá mở nến sau; stop loss đặt ở phía bên kia vùng hoặc theo ATR.</p><p><b>Ví dụ:</b> BTC đi ngang 61.000–62.000, nến 1h đóng 62.300 với khối lượng 3σ → vào long ở giá mở nến kế tiếp.</p><p><b>Lưu ý:</b> Hiệu quả trong thị trường có xu hướng; trong thị trường đi ngang sẽ có nhiều lần phá vỡ giả.</p>"
+    term: "13 chiến lược backtest",
+    short: "Bộ chiến lược thuần giá và khối lượng của Lai Long, mỗi chiến lược có luật vào lệnh và cắt lỗ rõ ràng để máy kiểm chứng.",
+    body: "<p>Mỗi chiến lược chỉ nhìn các nến đã đóng cửa (không nhìn trước tương lai). Khi đủ điều kiện, nó báo lệnh MUA hoặc BÁN kèm giá cắt lỗ đặt theo cấu trúc (dưới đáy, ngoài vùng, ngoài râu nến...).</p><p><b>Danh sách:</b> MIDOTI v2.568, hai đỉnh/hai đáy, Fibonacci 0.5–0.68, pinbar/engulfing volume lớn, pullback EMA, pullback VWAP, orderblock, 31 mẫu hình khối lượng (gom 8 nhóm), Point of Entry (QML), Supply Demand Zone, Wyckoff, cấu trúc HH-HL / LH-LL, chống lại thị trường.</p><p><b>Lưu ý:</b> Máy chỉ làm được phần có quy tắc rõ ràng. Phần cảm nhận bằng mắt (vùng “đẹp”, tin tức) không đưa vào được, nên kết quả là cận dưới của một trader giỏi dùng cùng chiến lược.</p>"
   },
   {
-    id: "strat-srretest",
+    id: "bt-pin",
     group: "Backtest",
-    term: "Chiến lược test lại hỗ trợ / kháng cự",
-    short: "Chờ giá quay về một mức hỗ trợ/kháng cự mạnh và bị đẩy lại rồi mới vào lệnh theo hướng bật.",
-    body: "<p>Ý tưởng: mức hỗ trợ/kháng cự có độ mạnh cao hay khiến giá phản ứng. Thay vì đuổi theo giá, ta chờ giá về mức và có dấu hiệu bật lại.</p><p><b>Quy tắc chung:</b> Giá chạm mức HT (hoặc KC) nhưng nến đóng cửa vẫn ở phía đúng của mức → vào long (hoặc short) ở giá mở nến sau; stop loss ngay bên kia mức.</p><p><b>Ví dụ:</b> HT 60.000 độ mạnh 80. Nến 15m xuống 59.950 nhưng đóng ở 60.150 → vào long, stop 59.700.</p><p><b>Lưu ý:</b> Mức nào cũng có lúc bị phá; luôn dùng stop loss.</p>"
+    term: "Ghim chiến lược (⭐)",
+    short: "Bấm ngôi sao để ghim chiến lược yêu thích lên đầu danh sách. Lưu trên trình duyệt của máy này.",
+    body: "<p>Chiến lược đã ghim hiện ở nhóm đầu danh sách và có ⭐ trong bảng xếp hạng. Bấm lại ngôi sao để bỏ ghim.</p><p><b>Lưu ý:</b> Danh sách ghim lưu trong trình duyệt, đổi máy hoặc xoá dữ liệu trình duyệt thì phải ghim lại.</p>"
   },
   {
-    id: "strat-vwap",
+    id: "bt-tp",
     group: "Backtest",
-    term: "Chiến lược VWAP",
-    short: "Dùng VWAP (ngày, tuần hoặc cuộn) làm hỗ trợ/kháng cự động, giao dịch khi giá bật lại hoặc xuyên qua VWAP.",
-    body: "<p>VWAP là mức giá trung bình mà nhiều quỹ dùng làm chuẩn, nên giá hay phản ứng khi chạm VWAP.</p><p><b>Chọn loại VWAP:</b> VWAP ngày (reset mỗi ngày), VWAP tuần (reset mỗi tuần), VWAP cuộn (tính trên N nến gần nhất).</p><p><b>Hai kiểu vào lệnh:</b></p><ul><li><b>Bật lại:</b> giá chạm VWAP rồi bị đẩy ngược lại → vào theo hướng bật (VWAP đóng vai hỗ trợ/kháng cự).</li><li><b>Xuyên qua:</b> nến đóng cửa xuyên hẳn qua VWAP → vào theo hướng xuyên (phe kia vừa giành quyền kiểm soát).</li></ul><p><b>Bảng thống kê:</b> cho biết trong quá khứ, khi giá chạm VWAP thì bao nhiêu % lần bật lại và bao nhiêu % lần xuyên qua, giúp chọn kiểu nào hợp với mã đang xem.</p><p><b>Ví dụ:</b> Bảng cho thấy BTC khung 15m bật lại ở VWAP ngày 62% số lần → kiểu “bật lại” đáng thử hơn.</p>"
+    term: "TP1 và TP2 (hai kịch bản chốt lời)",
+    short: "Mỗi lệnh được tính hai lần: chốt hết ở TP1, hoặc giữ tới TP2. Cùng một SL, không dời SL.",
+    body: "<p>Giống bảng thống kê của MIDOTI: mỗi lệnh có hai “chân” độc lập dùng chung giá vào và SL.</p><ul><li><b>TP1:</b> chốt toàn bộ khi giá chạm TP1 (mặc định 1R).</li><li><b>TP2:</b> giữ tới TP2 (mặc định 2R). Chạm TP1 rồi quay về SL vẫn tính thua −1R.</li></ul><p>Lệnh chỉ kết thúc khi cả hai chân đã đóng, nên hai kịch bản có cùng số lệnh và so sánh công bằng. Nút <b>Kết quả theo TP1 / TP2</b> đổi kịch bản đang xem.</p><p><b>Ví dụ:</b> Vào long 100, SL 99 (1R = 1). TP1 = 101, TP2 = 102. Giá lên 101.5 rồi rơi về 99: chân TP1 +1R, chân TP2 −1R.</p>"
+  },
+  {
+    id: "bt-entry",
+    group: "Backtest",
+    term: "Cách vào lệnh ở vùng",
+    short: "Lệnh chờ ở mép vùng (như trong tài liệu) hoặc chờ nến xác nhận đóng cửa rồi mới vào.",
+    body: "<ul><li><b>Lệnh chờ ở mép vùng:</b> giá vừa chạm mép gần của vùng tươi là khớp. Giá tốt hơn, SL ngắn hơn, nhưng hay bị quét SL khi vùng không giữ.</li><li><b>Chờ nến xác nhận:</b> nến chạm vùng phải đóng cửa quay ra theo hướng vùng (nến tăng ở vùng cầu, nến giảm ở vùng cung) mới vào ở giá đóng cửa. Ít lệnh thua hơn nhưng giá vào kém hơn.</li></ul><p>Vùng chỉ dùng một lần: lần chạm đầu tiên làm vùng hết “tươi”, dù có vào lệnh hay không.</p>"
+  },
+  {
+    id: "bt-volmult",
+    group: "Backtest",
+    term: "Volume ≥ × trung bình",
+    short: "Khối lượng nến phải lớn hơn bao nhiêu lần khối lượng trung bình của 20 nến trước đó.",
+    body: "<p>Ví dụ 2 nghĩa là nến có khối lượng ít nhất gấp đôi trung bình 20 nến trước nó (không tính chính nó).</p><p><b>Lưu ý:</b> Ngưỡng càng cao thì càng ít lệnh nhưng mỗi tín hiệu càng “đặc biệt”. Dưới 30 lệnh thì kết quả chưa đáng tin.</p>"
+  },
+  {
+    id: "bt-scen",
+    group: "Backtest",
+    term: "Bốn kịch bản: cả hai phía, LONG, SHORT, đứng ngoài",
+    short: "Cùng chiến lược nhưng chỉ lấy lệnh MUA, chỉ lấy lệnh BÁN, hoặc không làm gì, để biết phía nào thật sự có lợi thế.",
+    body: "<p>Mỗi kịch bản là một lần chạy riêng: “Chỉ LONG” bỏ qua mọi tín hiệu BÁN nên có thể vào được những lệnh mua mà bản cả hai phía bỏ lỡ (vì lúc đó đang giữ lệnh bán).</p><ul><li><b>WR:</b> tỷ lệ lệnh có lãi sau phí.</li><li><b>PF:</b> tổng R thắng / tổng R thua. Trên 1 là có lãi.</li><li><b>Tổng R:</b> cộng dồn R của mọi lệnh.</li><li><b>Vốn:</b> lãi kép với mức rủi ro mỗi lệnh đã chọn.</li><li><b>Kỳ vọng / lệnh (95%):</b> R trung bình mỗi lệnh và khoảng tin cậy 95%. Cận dưới trên 0 với ít nhất 30 lệnh mới gọi là có lợi thế.</li><li><b>Sụt giảm tối đa:</b> từ đỉnh cao nhất của đường vốn xuống đáy sau đó.</li></ul><p><b>Đứng ngoài</b> là đường 0: kịch bản nào nằm dưới đường này thì không giao dịch còn tốt hơn. Vạch đứt trên biểu đồ là mốc chia 70% dữ liệu đầu và 30% cuối.</p>"
+  },
+  {
+    id: "bt-oos",
+    group: "Backtest",
+    term: "Kiểm chứng ngoài mẫu (70% / 30%)",
+    short: "So kết quả trên 70% dữ liệu đầu với 30% dữ liệu cuối. Lợi thế thật phải còn ở phần cuối.",
+    body: "<p>Nếu bạn chỉnh thông số cho đẹp, hãy coi 70% đầu là nơi chỉnh, 30% cuối là “bài thi” chưa từng thấy.</p><p><b>Cách đọc:</b> phần cuối vẫn có kỳ vọng R dương thì lợi thế còn giữ. Phần đầu đẹp mà phần cuối âm thường là quá khớp hoặc thị trường đã đổi tính chất.</p><p><b>Lưu ý:</b> phần cuối ít lệnh hơn nên khoảng tin cậy rộng hơn.</p>"
+  },
+  {
+    id: "bt-rank",
+    group: "Backtest",
+    term: "Bảng xếp hạng chiến lược",
+    short: "Chạy cả 13 chiến lược với thông số mặc định trên cùng mã, khung và số nến, rồi xếp theo cận dưới kỳ vọng R.",
+    body: "<p>Xếp theo cận dưới khoảng tin cậy 95% của kỳ vọng R mỗi lệnh, tức là kịch bản xấu mà vẫn hợp lý. Cách này phạt chiến lược ít lệnh, vì ít lệnh thì khoảng tin cậy rộng.</p><p>Bấm vào một dòng để mở chiến lược đó và xem chi tiết.</p><p><b>Lưu ý:</b> Chạy 13 chiến lược rồi chọn cái tốt nhất cũng là một kiểu chọn lọc may rủi. Hãy xem thêm cột “30% cuối” và thử trên mã khác trước khi tin.</p>"
+  },
+  {
+    id: "bt-reset",
+    group: "Backtest",
+    term: "Nhấp đúp để về mặc định",
+    short: "Mọi ô thông số đều gõ được số tuỳ ý. Nhấp đúp vào ô để trả về giá trị mặc định.",
+    body: "<p>Áp dụng cho trang Backtest và FRACTAL. Ô có giới hạn nhỏ nhất và lớn nhất, gõ vượt quá thì máy tự kéo về trong giới hạn khi chạy.</p>"
   }
   ,
   // ───────────── Order flow nâng cao ─────────────

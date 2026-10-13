@@ -1,7 +1,7 @@
 // Lai Long Web: trang FRACTAL (giao diện). Phần tính toán nằm trong fractal.js.
-import { HOLDS, buildIndex, search, summarize, paths, quantiles, walkForward, sampleLevel, breakeven, equityStats } from "./fractal.js?v=202610132116";
-import { T, alpha } from "./theme.js?v=202610132116";
-import { fitCanvas, MONO, INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610132116";
+import { HOLDS, buildIndex, search, summarize, paths, quantiles, walkForward, sampleLevel, breakeven, equityStats } from "./fractal.js?v=202610132155";
+import { T, alpha } from "./theme.js?v=202610132155";
+import { fitCanvas, MONO, INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610132155";
 
 const TFS = ["5m", "15m", "1h", "4h", "1d"];
 const TREND = { 1: "H1 tăng", 0: "H1 ngang", "-1": "H1 giảm" }, POS = ["đáy H4", "giữa H4", "đỉnh H4"];
@@ -97,7 +97,7 @@ export class EquityChart {
     if (!d) return;
     const g = this._geo(), { x, y } = g, c = d.st.curve, col = d.color === "up" ? T.up : d.color === "down" ? T.down : d.color === "accent" ? T.accent : T.muted;
     // lưới R
-    const step = Math.max(1, Math.pow(10, Math.floor(Math.log10((g.hi - g.lo) / 3 || 1))));
+    const raw = (g.hi - g.lo) / 5 || 1, p10 = Math.pow(10, Math.floor(Math.log10(raw))), step = Math.max(1, [1, 2, 5, 10].map(m => m * p10).find(x => x >= raw));
     ctx.textAlign = "right";
     for (let v = Math.ceil(g.lo / step) * step; v <= g.hi; v += step) {
       ctx.strokeStyle = v === 0 ? alpha(T.text, 0.45) : T.grid; ctx.beginPath(); ctx.moveTo(g.L0, y(v)); ctx.lineTo(w - g.R0, y(v)); ctx.stroke();
@@ -107,6 +107,11 @@ export class EquityChart {
     let peak = 0; ctx.fillStyle = alpha(T.down, 0.18);
     for (let k = 1; k < c.length; k++) { peak = Math.max(peak, c[k - 1]); const pk = Math.max(peak, c[k]); if (pk > c[k]) ctx.fillRect(x(k - 1), y(pk), Math.max(1, x(k) - x(k - 1)), y(c[k]) - y(pk)); }
     ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); c.forEach((v, k) => (k ? ctx.lineTo(x(k), y(v)) : ctx.moveTo(x(k), y(v)))); ctx.stroke(); ctx.lineWidth = 1;
+    // mốc chia trong mẫu / ngoài mẫu
+    if (d.splitK > 0 && d.splitK < g.n) {
+      ctx.strokeStyle = alpha(T.text, 0.45); ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(x(d.splitK), g.T0); ctx.lineTo(x(d.splitK), h - g.B0); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = T.muted; ctx.textAlign = "left"; ctx.fillText("30% cuối →", x(d.splitK) + 4, h - g.B0 - 6);
+    }
     ctx.textAlign = "left"; ctx.fillStyle = col; ctx.font = `700 11.5px ${getComputedStyle(document.body).fontFamily}`;
     ctx.fillText(d.long || d.title, g.L0 + 4, 9);
     ctx.font = `10.5px ${MONO}`; ctx.fillStyle = T.muted;
@@ -115,10 +120,10 @@ export class EquityChart {
   }
   hitTest(px) {
     const d = this.d; if (!d) return null;
-    if (d.flat) return "Đứng ngoài: không vào lệnh nào, không lời, không lỗ, không tốn phí. Kịch bản nào nằm dưới đường 0 này thì đứng ngoài còn tốt hơn.";
+    if (d.flat) return d.flatTip || "Đứng ngoài: không vào lệnh nào, không lời, không lỗ, không tốn phí. Kịch bản nào nằm dưới đường 0 này thì đứng ngoài còn tốt hơn.";
     const g = this._geo(), k = g.kAt(px); if (!k) return `${d.title}: bắt đầu từ 0R.`;
     const c = d.st.curve, peak = Math.max(...c.slice(0, k + 1)), R = d.Rs[k - 1];
-    return `${d.title} · lệnh ${k}/${d.Rs.length}${d.ts ? ` lúc ${fmtDate(d.ts[k - 1])}` : ""}: ${R >= 0 ? "+" : ""}${R.toFixed(2)}R · tổng ${c[k] >= 0 ? "+" : ""}${c[k].toFixed(2)}R · đang dưới đỉnh ${(peak - c[k]).toFixed(2)}R.`;
+    return `${d.title} · lệnh ${k}/${d.Rs.length}${d.tags ? ` (${d.tags[k - 1]})` : ""}${d.splitK > 0 && k > d.splitK ? " · ngoài mẫu" : ""}${d.ts ? ` lúc ${fmtDate(d.ts[k - 1])}` : ""}: ${R >= 0 ? "+" : ""}${R.toFixed(2)}R · tổng ${c[k] >= 0 ? "+" : ""}${c[k].toFixed(2)}R · đang dưới đỉnh ${(peak - c[k]).toFixed(2)}R.`;
   }
 }
 
@@ -153,13 +158,14 @@ export function initFractal({ $, S, ex, esc, table, log }) {
   const cache = new Map();
   let last = null; // lần tìm gần nhất
   const opt = () => {
-    const tf = $("frTf").value, holdMs = +$("frHold").value, baseMs = INTERVALS[tf], H = Math.max(1, Math.round(holdMs / baseMs));
+    const num = (id, lo, hi, def) => { const v = +$(id).value; return Math.min(hi, Math.max(lo, isFinite(v) && v > 0 ? v : def)); };
+    const tf = $("frTf").value, holdMs = num("frHold", 0.25, 48, 4) * 36e5, baseMs = INTERVALS[tf], H = Math.max(1, Math.round(holdMs / baseMs));
     // đơn vị chốt lời / cắt lỗ: "hold" = dao động kỳ vọng trong thời gian giữ lệnh = ATR một nến × √số nến giữ
     // (giá đi ngẫu nhiên thì biên độ sau H nến lớn cỡ √H lần một nến). "bar" = ATR một nến.
-    const unit = $("frUnit").value, scale = unit === "hold" ? Math.sqrt(H) : 1, tp = +$("frTp").value, sl = +$("frSl").value;
+    const unit = $("frUnit").value, scale = unit === "hold" ? Math.sqrt(H) : 1, tp = num("frTp", 0.1, 10, 1), sl = num("frSl", 0.1, 10, 1);
     return {
-      tf, baseMs, holdMs, L: +$("frL").value, H, unit, scale, tp, sl, tpE: tp * scale, slE: sl * scale,
-      K: +$("frK").value, n: Math.min(90000, Math.max(3000, +$("frBars").value || 30000)), sameCtx: $("frCtx").checked, multi: $("frMulti").checked,
+      tf, baseMs, holdMs, L: Math.round(num("frL", 6, 120, 24)), H, unit, scale, tp, sl, tpE: tp * scale, slE: sl * scale,
+      K: Math.round(num("frK", 10, 1000, 100)), n: Math.min(90000, Math.max(3000, +$("frBars").value || 30000)), sameCtx: $("frCtx").checked, multi: $("frMulti").checked,
       risk: Math.min(10, Math.max(0.1, +$("frRisk").value || 1)), fee: +$("frFee").value, slip: +$("frSlip").value, costPct: 2 * ((+$("frFee").value || 0) / 100 + (+$("frSlip").value || 0) / 1e4),
     };
   };
