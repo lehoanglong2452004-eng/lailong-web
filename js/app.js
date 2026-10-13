@@ -10,6 +10,7 @@ import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js";
 import { approxFootprint, exactFootprintBinance } from "./fphistory.js";
 import { absorption, absorptionStats, clusterSearch } from "./orderflow.js";
 import { Tape } from "./tape.js";
+import { LiqMap } from "./liqmap.js";
 import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js";
 import { WallTracker, WALL_KIND } from "./walls.js";
 import { DOM_COLS } from "./dom.js";
@@ -60,6 +61,7 @@ const flow = new FlowChart($("flow"));
 const dom = new Dom($("dom"), market);
 const tape = new Tape($("tape"), market);
 const walls = new WallTracker(); dom.walls = walls;
+const lmap = new LiqMap($("lmap"), market, dom); lmap.walls = walls;
 flow.prints = () => [market.histPrints, market.prints];
 flow.opts.onRange = () => { if (S.tab === "absorb") renderTab(); };
 
@@ -428,7 +430,7 @@ function renderBacktest(res, bars, tf, capital, id, params) {
 
 // ---------- chú thích khi rê chuột ----------
 const tipEl = $("tip");
-const CANVAS_TIP = { heat, flow, dom, tape, btChart };
+const CANVAS_TIP = { heat, flow, dom, tape, lmap, btChart };
 let tipFrame = 0, lastMove = null;
 function showTip(html, x, y) {
   tipEl.innerHTML = html; tipEl.hidden = false;
@@ -523,18 +525,19 @@ function setLayout(k, v) {
   if (v == null) { delete layout[k]; ws.style.removeProperty("--" + k); } else { layout[k] = v; ws.style.setProperty("--" + k, v + "px"); }
   try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch { /* bỏ qua */ }
 }
-for (const k of ["rightW", "bottomH", "tapeW"]) if (layout[k]) ws.style.setProperty("--" + k, layout[k] + "px");
+for (const k of ["rightW", "bottomH", "tapeW", "lmapW"]) if (layout[k]) ws.style.setProperty("--" + k, layout[k] + "px");
 function splitter(el, k, calc) {
   el.addEventListener("pointerdown", e => {
     e.preventDefault(); el.setPointerCapture(e.pointerId);
     document.body.classList.add("resizing"); el.classList.add("drag"); hideTip();
     const move = ev => setLayout(k, Math.round(calc(ev, ws.getBoundingClientRect())));
-    const up = () => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); document.body.classList.remove("resizing"); el.classList.remove("drag"); heat.dirty = flow.dirty = dom.dirty = tape.dirty = true; };
+    const up = () => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); document.body.classList.remove("resizing"); el.classList.remove("drag"); heat.dirty = flow.dirty = dom.dirty = tape.dirty = lmap.dirty = true; };
     el.addEventListener("pointermove", move); el.addEventListener("pointerup", up);
   });
   el.addEventListener("dblclick", () => setLayout(k, null));
 }
 splitter($("splitV"), "rightW", (e, r) => { const tw = $("tapePanel").offsetWidth + 6; return Math.min(r.width - tw - 320, Math.max(220, r.right - e.clientX - tw - 4)); });
+splitter($("splitM"), "lmapW", e => Math.max(120, Math.min(900, $("lmapPanel").getBoundingClientRect().right - e.clientX - 3)));
 splitter($("splitT"), "tapeW", (e, r) => Math.min(r.width - 600, Math.max(200, r.right - e.clientX - 4)));
 splitter($("splitH"), "bottomH", (e, r) => Math.min(r.height - 160, Math.max(60, r.bottom - e.clientY - 4)));
 
@@ -614,8 +617,13 @@ $("domClear").onclick = () => { market.tradedAt.clear(); dom.dirty = true; };
 $("tapeSmart").onchange = () => { tape.smart = $("tapeSmart").checked; tape.dirty = true; };
 $("tapeBig").onchange = () => { tape.bigOnly = $("tapeBig").checked; tape.dirty = true; };
 $("tapeMin").oninput = () => { tape.minQ = +$("tapeMin").value || 0; tape.dirty = true; };
+$("lmapWin").onchange = () => lmap.setWindow(+$("lmapWin").value);
+const lmapShow = on => { ws.classList.toggle("nolmap", !on); $("lmapShow").checked = on; setLayout("lmapOff", on ? null : 1); heat.dirty = flow.dirty = dom.dirty = tape.dirty = lmap.dirty = true; };
+$("lmapShow").onchange = () => lmapShow($("lmapShow").checked);
+$("lmapHide").onclick = () => lmapShow(false);
+if (layout.lmapOff) lmapShow(false);
 $("tapeGroup").onchange = () => { tape.group = $("tapeGroup").value; tape.dirty = true; };
 
 setMode(S.mode); setView(S.view);
 loadSymbols(); load();
-window.lailong = { market, heat, flow, dom, tape, walls, S, alpha }; // tiện kiểm tra trong DevTools
+window.lailong = { market, heat, flow, dom, tape, walls, lmap, S, alpha }; // tiện kiểm tra trong DevTools

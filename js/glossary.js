@@ -491,7 +491,7 @@ export const GLOSSARY = [
   {
     id: "smart-dom", group: "Order flow nâng cao", term: "Smart DOM (sổ lệnh thông minh)",
     short: "Sổ lệnh bậc thang có thêm các cột phân tích: khối lượng hôm nay, thay đổi độ sâu, đã khớp, footprint nến, bản đồ thanh khoản.",
-    body: "<p>DOM thường chỉ cho thấy lệnh chờ mua/bán ở mỗi giá. Smart DOM ghép thêm các cột để thấy <b>thanh khoản đang di chuyển ra sao</b> và <b>ai đang khớp lệnh ở đâu</b>.</p><ul><li><b>Hôm nay:</b> khối lượng khớp trong ngày tại mỗi giá, giống hồ sơ khối lượng thu nhỏ.</li><li><b>Δ Mua / Δ Bán:</b> lệnh chờ tăng hay giảm trong 5 giây.</li><li><b>Bán / Mua:</b> khối lượng chủ động đã khớp tại giá.</li><li><b>Bản đồ 60s:</b> Bookmap thu nhỏ của 60 giây gần nhất kèm dấu vết giá.</li><li><b>FP nến:</b> footprint của nến đang chạy.</li></ul><p>Bấm <b>Cột ▾</b> để bật/tắt từng cột cho đúng việc bạn đang làm.</p>"
+    body: "<p>DOM thường chỉ cho thấy lệnh chờ mua/bán ở mỗi giá. Smart DOM ghép thêm các cột để thấy <b>thanh khoản đang di chuyển ra sao</b> và <b>ai đang khớp lệnh ở đâu</b>.</p><ul><li><b>Hôm nay:</b> khối lượng khớp trong ngày tại mỗi giá, giống hồ sơ khối lượng thu nhỏ.</li><li><b>Δ Mua / Δ Bán:</b> lệnh chờ tăng hay giảm trong 5 giây.</li><li><b>Bán / Mua:</b> khối lượng chủ động đã khớp tại giá.</li><li><b>FP nến:</b> footprint của nến đang chạy.</li><li><b>Tường:</b> tường lệnh chờ lớn và số lần bị rút.</li></ul><p>Bấm <b>Cột ▾</b> để bật/tắt từng cột cho đúng việc bạn đang làm. Bản đồ thanh khoản nằm ở khung riêng ngay bên trái, cùng dòng giá với DOM.</p>"
   },
   {
     id: "depth-change", group: "Order flow nâng cao", term: "Thay đổi độ sâu (Δ Mua / Δ Bán)",
@@ -499,9 +499,9 @@ export const GLOSSARY = [
     body: "<p>So sánh lệnh chờ hiện tại với 5 giây trước ở từng mức giá.</p><p><b>Cách đọc:</b></p><ul><li>Số <b>+</b> lớn ở phía mua dưới giá: có người đang đặt thêm lệnh đỡ giá.</li><li>Số <b>−</b> lớn mà cột Bán/Mua không tăng tương ứng: lệnh bị <b>rút</b>, không phải bị khớp. Thường là tường giả (spoofing).</li><li>Số <b>−</b> đi kèm khối lượng khớp lớn: tường đang bị ăn thật.</li></ul>"
   },
   {
-    id: "dom-liqmap", group: "Order flow nâng cao", term: "Bản đồ thanh khoản và dấu vết trong DOM",
-    short: "Bookmap thu nhỏ 60 giây ngay trong sổ lệnh: màu sáng là lệnh chờ dày, đường trắng là dấu vết giá, chấm là lệnh khớp.",
-    body: "<p>Cột <b>Bản đồ 60s</b> vẽ lịch sử sổ lệnh 60 giây gần nhất cho đúng các dòng giá của DOM, bên phải là hiện tại.</p><ul><li>Dải sáng kéo dài: tường thanh khoản đứng yên lâu, đáng tin hơn.</li><li>Dải sáng xuất hiện rồi biến mất khi giá tới gần: lệnh bị rút.</li><li><b>Dấu vết</b> (đường trắng): đường đi của giá trong 60 giây.</li><li>Chấm xanh/đỏ: lệnh gốc mua/bán chủ động; viền trắng là lệnh lớn.</li></ul>"
+    id: "dom-liqmap", group: "Order flow nâng cao", term: "Bản đồ thanh khoản (khung cạnh sổ lệnh)",
+    short: "Bookmap thu nhỏ đặt giữa biểu đồ giá và sổ lệnh: mỗi dòng trùng một dòng giá của DOM, màu sáng là lệnh chờ dày, đường trắng là dấu vết giá.",
+    body: "<p>Khung <b>Bản đồ thanh khoản</b> vẽ lịch sử sổ lệnh 30 giây đến 15 phút gần nhất (chọn ở đầu khung), bên phải là bây giờ. Mỗi dòng trùng đúng một dòng giá của Smart DOM bên cạnh nên đọc ngang là thấy giá.</p><ul><li>Dải sáng kéo dài: tường thanh khoản đứng yên lâu, đáng tin hơn. Khung vàng là tường đang đứng.</li><li>Dải sáng biến mất khi giá tới gần: lệnh bị rút; dấu × cam là nghi tường giả.</li><li><b>Dấu vết</b> (đường trắng): giá giữa; đường xanh/đỏ mảnh là giá mua/bán tốt nhất.</li><li>Bong bóng xanh/đỏ: lệnh gốc mua/bán chủ động; viền trắng là lệnh lớn.</li></ul><p>Kéo đường chia bên trái để đổi độ rộng, bấm ✕ để ẩn (bật lại trong <b>Lớp hiển thị</b>). Lăn chuột trên khung để cuộn giá cùng sổ lệnh.</p>"
   },
   {
     id: "smart-tape", group: "Order flow nâng cao", term: "Smart Tape (băng lệnh thông minh)",

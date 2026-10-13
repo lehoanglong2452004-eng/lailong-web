@@ -42,6 +42,7 @@
           <label data-g="sr-level"><input type="checkbox" data-layer="levels" checked> Hỗ trợ / kháng cự đã test</label>
           <label data-g="abnormal-volume"><input type="checkbox" data-layer="zones" checked> Vùng khối lượng bất thường</label>
           <label data-g="liquidation"><input type="checkbox" data-layer="liq" checked> Lệnh thanh lý thật</label>
+          <label data-g="dom-liqmap"><input type="checkbox" id="lmapShow" checked> Khung bản đồ thanh khoản (cạnh sổ lệnh)</label>
           <label data-g="liq-map"><input type="checkbox" data-layer="liqMap" checked> Bản đồ thanh lý ước tính</label>
           <label data-g="trade-bubble"><input type="checkbox" data-layer="bubbles" checked> Bong bóng khớp lệnh (Bookmap)</label>
           <label data-g="big-trade"><input type="checkbox" data-layer="bigOnly"> Chỉ hiện lệnh lớn (Bookmap)</label>
@@ -79,6 +80,20 @@
     <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas></div>
     <div class="signalbar" id="signalbar"></div>
     <div class="dom-hint" id="chartHint"></div>
+  </section>
+
+  <div class="splitter v" id="splitM" data-tip="Kéo để đổi độ rộng bản đồ thanh khoản. Bấm đúp để về mặc định"></div>
+
+  <section class="panel lmap-panel" id="lmapPanel">
+    <div class="panel-head">
+      <span class="title" data-g="dom-liqmap">Thanh khoản</span>
+      <select id="lmapWin" data-tip="Khoảng thời gian bản đồ hiển thị (bên phải là bây giờ)"><option value="30000">30s</option><option value="60000" selected>1 phút</option><option value="120000">2 phút</option><option value="300000">5 phút</option><option value="900000">15 phút</option></select>
+      <div class="spacer"></div>
+      <button class="icon" id="lmapHide" data-tip="Ẩn khung này (bật lại trong Lớp hiển thị)">✕</button>
+      <button class="icon max" data-max="lmapPanel" data-tip="Phóng to bản đồ thanh khoản">⤢</button>
+    </div>
+    <div class="dom-wrap"><canvas id="lmap"></canvas></div>
+    <div class="dom-hint">Cùng dòng giá với sổ lệnh</div>
   </section>
 
   <div class="splitter v" id="splitV" data-tip="Kéo để đổi độ rộng sổ lệnh. Bấm đúp để về mặc định"></div>

@@ -1,13 +1,14 @@
 // Lai Long Web: Smart DOM, sổ lệnh dạng bậc thang để soi thanh khoản và dòng lệnh.
 //
 // Cột (bật/tắt được): khối lượng hôm nay tại giá | giá | thay đổi lệnh chờ mua | chờ mua |
-// bán chủ động đã khớp | bản đồ thanh khoản 60 giây + dấu vết giá + bong bóng lệnh khớp |
-// footprint nến hiện tại | mua chủ động đã khớp | chờ bán | thay đổi lệnh chờ bán
+// bán chủ động đã khớp | footprint nến hiện tại | mua chủ động đã khớp | chờ bán |
+// thay đổi lệnh chờ bán | tường lệnh chờ. Bản đồ thanh khoản nằm ở khung riêng (liqmap.js), cùng dòng giá.
 
 import { fmtVol, decimalsFor, MONO, fitCanvas } from "./util.js";
 import { T, alpha } from "./theme.js";
 
-const ROW_H = 18, HDR_H = 22, MAP_MS = 60000, CHG_MS = 5000;
+export const ROW_H = 18, HDR_H = 22;
+const CHG_MS = 5000;
 
 export const DOM_COLS = [
   { id: "today", label: "Hôm nay", w: 1.1, tip: "Khối lượng đã khớp tại mỗi giá trong ngày (giờ UTC). Thanh dài là vùng giá được giao dịch nhiều nhất hôm nay." },
@@ -15,21 +16,12 @@ export const DOM_COLS = [
   { id: "bidChg", label: "Δ Mua", w: 0.75, tip: "Lệnh chờ mua tại giá đó tăng (+) hay giảm (−) bao nhiêu trong 5 giây qua. Giảm mạnh mà không có lệnh khớp là lệnh bị rút." },
   { id: "bid", label: "Chờ mua", w: 1.25, tip: "Lệnh chờ mua (bid) đang nằm tại mỗi giá." },
   { id: "sells", label: "Bán", w: 0.85, tip: "Tổng khối lượng BÁN chủ động đã khớp tại mỗi giá kể từ lúc mở trang (hoặc lúc bấm xoá)." },
-  { id: "map", label: "Bản đồ 60s", w: 1.6, tip: "Bản đồ thanh khoản 60 giây gần nhất: màu sáng là lệnh chờ dày. Đường trắng là dấu vết giá, chấm xanh/đỏ là lệnh mua/bán chủ động vừa khớp." },
   { id: "fp", label: "FP nến", w: 1.15, tip: "Footprint của nến đang chạy: bán chủ động × mua chủ động tại mỗi giá." },
   { id: "buys", label: "Mua", w: 0.85, tip: "Tổng khối lượng MUA chủ động đã khớp tại mỗi giá kể từ lúc mở trang (hoặc lúc bấm xoá)." },
   { id: "ask", label: "Chờ bán", w: 1.25, tip: "Lệnh chờ bán (ask) đang nằm tại mỗi giá." },
   { id: "askChg", label: "Δ Bán", w: 0.75, tip: "Lệnh chờ bán tại giá đó tăng (+) hay giảm (−) bao nhiêu trong 5 giây qua." },
   { id: "walls", label: "Tường", w: 0.9, tip: "Tường lệnh chờ lớn (≥ 6 lần trung vị, top 3% quanh giá). Ô vàng = tường đang đứng và đã đứng bao lâu. \"G×n\" màu cam = số lần tường tại giá này bị rút khi giá tới gần trong 10 phút qua (nghi tường giả, spoofing)." },
 ];
-
-// bảng màu bản đồ thanh khoản: tối -> xanh -> vàng -> trắng
-const HEAT = [[0, 10, 14, 30], [0.25, 0, 90, 180], [0.5, 0, 190, 160], [0.72, 240, 210, 40], [0.88, 255, 120, 20], [1, 255, 250, 240]];
-function heatColor(x) {
-  let j = 0; while (j < HEAT.length - 2 && x > HEAT[j + 1][0]) j++;
-  const a = HEAT[j], b = HEAT[j + 1], f = Math.min(1, Math.max(0, (x - a[0]) / (b[0] - a[0])));
-  return `rgb(${a[1] + (b[1] - a[1]) * f | 0},${a[2] + (b[2] - a[2]) * f | 0},${a[3] + (b[3] - a[3]) * f | 0})`;
-}
 
 export class Dom {
   constructor(canvas, market) {
@@ -133,7 +125,6 @@ export class Dom {
     for (const v of D.chg.values()) maxChg = Math.max(maxChg, Math.abs(v.bid), Math.abs(v.ask));
     const last = this.m.last, lastRow = last ? this._rowOf(last.p) : null;
     ctx.textBaseline = "middle";
-    if (C.map) this._map(C.map, rows);
     for (let k = 0; k < rows; k++) {
       const y = this._yOf(k), cy = y + ROW_H / 2, price = this._priceOfRow(k), e = D.lv.get(k), isAsk = D.bestAsk !== null ? k <= D.bestAsk : price > this.center;
       if (this.hover === k) { ctx.fillStyle = alpha(T.accent, 0.14); ctx.fillRect(0, y, w, ROW_H); }
@@ -205,50 +196,6 @@ export class Dom {
       ctx.fillText(c.def.label.toUpperCase(), c.x + c.w / 2, HDR_H / 2); ctx.restore();
     }
     ctx.strokeStyle = T.line; ctx.beginPath(); ctx.moveTo(0, HDR_H - 0.5); ctx.lineTo(this.S.w, HDR_H - 0.5); ctx.stroke();
-  }
-
-  // bản đồ thanh khoản 60 giây + dấu vết giá + bong bóng lệnh khớp
-  _map(col, rows) {
-    const ctx = this.ctx, cols = this.m.cols, now = Date.now(), g = this.m.grid, t = this.tick;
-    ctx.save(); ctx.beginPath(); ctx.rect(col.x, HDR_H, col.w, rows * ROW_H); ctx.clip();
-    ctx.fillStyle = "#05070d"; ctx.fillRect(col.x, HDR_H, col.w, rows * ROW_H);
-    if (g && cols.length) {
-      let i0 = cols.length; while (i0 > 0 && now - cols[i0 - 1].t < MAP_MS) i0--;
-      const n = cols.length - i0, cw = col.w / (MAP_MS / 500);
-      // giá trị lớn nhất để chuẩn hoá màu
-      let mx = 0; const cells = [];
-      let carry = null;
-      for (let i = i0; i < cols.length; i++) {
-        const c = cols[i].keys ? cols[i] : carry; if (!c || !c.keys) continue; carry = c;
-        const x = col.x + col.w - (now - cols[i].t) / MAP_MS * col.w, agg = new Map();
-        for (let j = 0; j < c.keys.length; j++) { const r = this._rowOf(c.keys[j] * g); if (r < 0 || r >= rows) continue; agg.set(r, (agg.get(r) || 0) + c.sizes[j]); }
-        for (const [r, q] of agg) { mx = Math.max(mx, q); cells.push(x, r, q); }
-      }
-      void n;
-      for (let j = 0; j < cells.length; j += 3) {
-        const v = Math.pow(cells[j + 2] / (mx || 1), 0.5);
-        ctx.fillStyle = heatColor(v); ctx.fillRect(cells[j], this._yOf(cells[j + 1]), cw + 0.6, ROW_H);
-      }
-      // dấu vết: giá giữa của từng cột
-      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.5; ctx.beginPath(); let on = false;
-      for (let i = i0; i < cols.length; i++) {
-        const c = cols[i]; if (c.bb == null || c.ba == null) continue;
-        const x = col.x + col.w - (now - c.t) / MAP_MS * col.w, y = this._yOf(this._rowOf((c.bb + c.ba) / 2)) + ROW_H / 2;
-        on ? ctx.lineTo(x, y) : ctx.moveTo(x, y); on = true;
-      }
-      ctx.stroke();
-    }
-    // bong bóng lệnh gốc (đã ghép) trong 60 giây
-    const pr = this.m.prints; let s = pr.length, maxB = 0;
-    while (s > 0 && now - pr[s - 1].t < MAP_MS) s--;
-    for (let i = s; i < pr.length; i++) maxB = Math.max(maxB, pr[i].q);
-    for (let i = s; i < pr.length; i++) {
-      const p = pr[i], x = col.x + col.w - (now - p.t) / MAP_MS * col.w, y = this._yOf(this._rowOf(p.vwap)) + ROW_H / 2;
-      const r = Math.max(1.5, Math.sqrt(p.q / (maxB || 1)) * ROW_H * 0.9);
-      ctx.fillStyle = alpha(p.side === "buy" ? T.up : T.down, 0.7); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-      if (p.q >= this.m.bigPrint) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.2; ctx.stroke(); }
-    }
-    ctx.restore(); void t;
   }
 
   hitTest(x, y) {

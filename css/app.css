@@ -13,8 +13,9 @@
   --warn: #f5a524;
   --mono: ui-monospace, "Cascadia Mono", "Consolas", Menlo, monospace;
   --sans: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
-  --rightW: 500px;
-  --tapeW: 400px;
+  --rightW: 430px;
+  --tapeW: 340px;
+  --lmapW: 230px;
   --bottomH: 210px;
   color-scheme: dark;
 }
@@ -74,10 +75,12 @@ input[type=number] { font-family: var(--mono); }
 /* ---- bố cục Terminal: kéo được hai đường chia ---- */
 .workspace {
   flex: 1; min-height: 0; display: grid; padding: 4px;
-  grid-template-columns: minmax(0, 1fr) 6px var(--rightW) 6px var(--tapeW);
+  grid-template-columns: minmax(0, 1fr) 6px var(--lmapW) 4px var(--rightW) 6px var(--tapeW);
   grid-template-rows: minmax(0, 1fr) 6px var(--bottomH);
-  grid-template-areas: "chart sv dom st tape" "sh sv dom st tape" "bottom sv dom st tape";
+  grid-template-areas: "chart sm lmap sv dom st tape" "sh sm lmap sv dom st tape" "bottom sm lmap sv dom st tape";
 }
+.workspace.nolmap { grid-template-columns: minmax(0, 1fr) 0 0 6px var(--rightW) 6px var(--tapeW); }
+.workspace.nolmap > .lmap-panel, .workspace.nolmap > #splitM { display: none; }
 .panel { background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .panel-head {
   display: flex; align-items: center; gap: 8px; padding: 3px 6px 3px 10px;
@@ -90,6 +93,10 @@ input[type=number] { font-family: var(--mono); }
 .chart-panel { grid-area: chart; }
 .dom-panel { grid-area: dom; }
 .tape-panel { grid-area: tape; }
+.lmap-panel { grid-area: lmap; border-right: 0; }
+.lmap-panel .panel-head { gap: 4px; overflow: hidden; }
+.lmap-panel .panel-head select { max-width: 76px; }
+#splitM { grid-area: sm; }
 #splitT { grid-area: st; }
 .bottom { grid-area: bottom; }
 .splitter { background: transparent; position: relative; z-index: 5; }
@@ -229,6 +236,7 @@ input[type=number], input:not([type]) { cursor: text !important; }
   .workspace > .chart-panel { height: 66vh; flex: none; }
   .workspace > .dom-panel { height: 520px; flex: none; }
   .workspace > .tape-panel { height: 420px; flex: none; }
+  .workspace > .lmap-panel { height: 420px; flex: none; }
   .workspace > .bottom { height: 380px; flex: none; }
   .splitter { display: none; }
   .panel-head.tabs { overflow-x: auto; flex-wrap: nowrap; }
