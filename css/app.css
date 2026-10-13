@@ -13,7 +13,8 @@
   --warn: #f5a524;
   --mono: ui-monospace, "Cascadia Mono", "Consolas", Menlo, monospace;
   --sans: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
-  --rightW: 440px;
+  --rightW: 500px;
+  --tapeW: 400px;
   --bottomH: 210px;
   color-scheme: dark;
 }
@@ -64,25 +65,32 @@ input[type=number] { font-family: var(--mono); }
   background: var(--panel); border: 1px solid var(--line); padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.7);
 }
 .dropdown.open .menu { display: block; }
+.dropdown .menu.right { left: auto; right: 0; }
+.dropdown .menu .row { justify-content: space-between; }
+.dropdown .menu select { max-width: 160px; }
 .dropdown .menu label { display: flex; gap: 8px; align-items: center; padding: 5px 6px; cursor: pointer; }
 .dropdown .menu label:hover { background: var(--panel-2); }
 
 /* ---- bố cục Terminal: kéo được hai đường chia ---- */
 .workspace {
   flex: 1; min-height: 0; display: grid; padding: 4px;
-  grid-template-columns: minmax(0, 1fr) 6px var(--rightW);
+  grid-template-columns: minmax(0, 1fr) 6px var(--rightW) 6px var(--tapeW);
   grid-template-rows: minmax(0, 1fr) 6px var(--bottomH);
-  grid-template-areas: "chart sv dom" "sh sv dom" "bottom sv dom";
+  grid-template-areas: "chart sv dom st tape" "sh sv dom st tape" "bottom sv dom st tape";
 }
 .panel { background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .panel-head {
   display: flex; align-items: center; gap: 8px; padding: 3px 6px 3px 10px;
   background: var(--panel-2); border-bottom: 1px solid var(--line); min-height: 30px;
 }
+.panel-head button, .panel-head label { white-space: nowrap; }
+.chart-panel .panel-head { flex-wrap: wrap; row-gap: 4px; padding-top: 4px; padding-bottom: 4px; }
 .panel-head .title { font-weight: 800; white-space: nowrap; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; font-size: 12px; }
 .panel-head .hint { color: var(--muted); font-size: 11px; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 400; }
 .chart-panel { grid-area: chart; }
 .dom-panel { grid-area: dom; }
+.tape-panel { grid-area: tape; }
+#splitT { grid-area: st; }
 .bottom { grid-area: bottom; }
 .splitter { background: transparent; position: relative; z-index: 5; }
 .splitter::after { content: ""; position: absolute; background: var(--line); }
@@ -97,7 +105,7 @@ body.resizing canvas { pointer-events: none; }
 .chart-wrap canvas, .dom-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .chart-wrap canvas { cursor: crosshair; }
 .chart-wrap canvas[hidden] { display: none; }
-.dom-cols { display: grid; grid-template-columns: 14% 19.8% 23.1% 20% 23.1%; font-size: 11px; font-weight: 700; color: var(--muted); padding: 3px 0; border-bottom: 1px solid var(--line); text-transform: uppercase; }
+.dom-cols-unused { display: grid; grid-template-columns: 14% 19.8% 23.1% 20% 23.1%; font-size: 11px; font-weight: 700; color: var(--muted); padding: 3px 0; border-bottom: 1px solid var(--line); text-transform: uppercase; }
 .dom-cols span { text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .dom-wrap canvas { cursor: ns-resize; }
 .dom-hint { font-size: 11px; color: var(--muted); padding: 3px 8px; border-top: 1px solid var(--line); text-align: center; font-weight: 400; }
@@ -220,6 +228,7 @@ input[type=number], input:not([type]) { cursor: text !important; }
   .workspace { display: flex; flex-direction: column; overflow: auto; gap: 4px; }
   .workspace > .chart-panel { height: 66vh; flex: none; }
   .workspace > .dom-panel { height: 520px; flex: none; }
+  .workspace > .tape-panel { height: 420px; flex: none; }
   .workspace > .bottom { height: 380px; flex: none; }
   .splitter { display: none; }
   .panel-head.tabs { overflow-x: auto; flex-wrap: nowrap; }

@@ -486,6 +486,59 @@ export const GLOSSARY = [
     short: "Dùng VWAP (ngày, tuần hoặc cuộn) làm hỗ trợ/kháng cự động, giao dịch khi giá bật lại hoặc xuyên qua VWAP.",
     body: "<p>VWAP là mức giá trung bình mà nhiều quỹ dùng làm chuẩn, nên giá hay phản ứng khi chạm VWAP.</p><p><b>Chọn loại VWAP:</b> VWAP ngày (reset mỗi ngày), VWAP tuần (reset mỗi tuần), VWAP cuộn (tính trên N nến gần nhất).</p><p><b>Hai kiểu vào lệnh:</b></p><ul><li><b>Bật lại:</b> giá chạm VWAP rồi bị đẩy ngược lại → vào theo hướng bật (VWAP đóng vai hỗ trợ/kháng cự).</li><li><b>Xuyên qua:</b> nến đóng cửa xuyên hẳn qua VWAP → vào theo hướng xuyên (phe kia vừa giành quyền kiểm soát).</li></ul><p><b>Bảng thống kê:</b> cho biết trong quá khứ, khi giá chạm VWAP thì bao nhiêu % lần bật lại và bao nhiêu % lần xuyên qua, giúp chọn kiểu nào hợp với mã đang xem.</p><p><b>Ví dụ:</b> Bảng cho thấy BTC khung 15m bật lại ở VWAP ngày 62% số lần → kiểu “bật lại” đáng thử hơn.</p>"
   }
+  ,
+  // ───────────── Order flow nâng cao ─────────────
+  {
+    id: "smart-dom", group: "Order flow nâng cao", term: "Smart DOM (sổ lệnh thông minh)",
+    short: "Sổ lệnh bậc thang có thêm các cột phân tích: khối lượng hôm nay, thay đổi độ sâu, đã khớp, footprint nến, bản đồ thanh khoản.",
+    body: "<p>DOM thường chỉ cho thấy lệnh chờ mua/bán ở mỗi giá. Smart DOM ghép thêm các cột để thấy <b>thanh khoản đang di chuyển ra sao</b> và <b>ai đang khớp lệnh ở đâu</b>.</p><ul><li><b>Hôm nay:</b> khối lượng khớp trong ngày tại mỗi giá, giống hồ sơ khối lượng thu nhỏ.</li><li><b>Δ Mua / Δ Bán:</b> lệnh chờ tăng hay giảm trong 5 giây.</li><li><b>Bán / Mua:</b> khối lượng chủ động đã khớp tại giá.</li><li><b>Bản đồ 60s:</b> Bookmap thu nhỏ của 60 giây gần nhất kèm dấu vết giá.</li><li><b>FP nến:</b> footprint của nến đang chạy.</li></ul><p>Bấm <b>Cột ▾</b> để bật/tắt từng cột cho đúng việc bạn đang làm.</p>"
+  },
+  {
+    id: "depth-change", group: "Order flow nâng cao", term: "Thay đổi độ sâu (Δ Mua / Δ Bán)",
+    short: "Lệnh chờ tại một giá tăng hay giảm bao nhiêu trong 5 giây qua: cho biết thanh khoản đang được thêm vào hay rút đi.",
+    body: "<p>So sánh lệnh chờ hiện tại với 5 giây trước ở từng mức giá.</p><p><b>Cách đọc:</b></p><ul><li>Số <b>+</b> lớn ở phía mua dưới giá: có người đang đặt thêm lệnh đỡ giá.</li><li>Số <b>−</b> lớn mà cột Bán/Mua không tăng tương ứng: lệnh bị <b>rút</b>, không phải bị khớp. Thường là tường giả (spoofing).</li><li>Số <b>−</b> đi kèm khối lượng khớp lớn: tường đang bị ăn thật.</li></ul>"
+  },
+  {
+    id: "dom-liqmap", group: "Order flow nâng cao", term: "Bản đồ thanh khoản và dấu vết trong DOM",
+    short: "Bookmap thu nhỏ 60 giây ngay trong sổ lệnh: màu sáng là lệnh chờ dày, đường trắng là dấu vết giá, chấm là lệnh khớp.",
+    body: "<p>Cột <b>Bản đồ 60s</b> vẽ lịch sử sổ lệnh 60 giây gần nhất cho đúng các dòng giá của DOM, bên phải là hiện tại.</p><ul><li>Dải sáng kéo dài: tường thanh khoản đứng yên lâu, đáng tin hơn.</li><li>Dải sáng xuất hiện rồi biến mất khi giá tới gần: lệnh bị rút.</li><li><b>Dấu vết</b> (đường trắng): đường đi của giá trong 60 giây.</li><li>Chấm xanh/đỏ: lệnh gốc mua/bán chủ động; viền trắng là lệnh lớn.</li></ul>"
+  },
+  {
+    id: "smart-tape", group: "Order flow nâng cao", term: "Smart Tape (băng lệnh thông minh)",
+    short: "Băng lệnh khớp đã ghép các lệnh nhỏ cùng thời điểm, cùng phía thành lệnh gốc, để thấy đúng kích thước lệnh của tổ chức.",
+    body: "<p>Khi một quỹ mua 1.000 hợp đồng bằng lệnh market, lệnh đó ăn qua nhiều lệnh chờ và sàn báo thành hàng trăm lệnh khớp nhỏ cùng một thời điểm. Băng thường trông như một chuỗi số nhỏ lộn xộn.</p><p><b>Smart Tape</b> ghép các lệnh khớp liền nhau cùng phía, cùng thời điểm thành <b>một lệnh gốc</b>.</p><p><b>Các cột:</b> Thời gian · Giá · +/− (số mức giá đã ăn qua) · KL (khối lượng gốc) · Bid/Ask (giá tốt nhất ngay trước khi khớp) · Sizes (khối lượng chờ ở bid × ask lúc đó) · TB (khối lượng trung bình mỗi lệnh nhỏ).</p><p>Dòng tô màu đậm là lệnh lớn (top 0,5%). Tắt <b>Ghép lệnh</b> để xem băng thô của sàn.</p>"
+  },
+  {
+    id: "sweep", group: "Order flow nâng cao", term: "Quét giá (+/−)",
+    short: "Số mức giá một lệnh gốc đã ăn qua. Nhiều dấu + hoặc − nghĩa là lệnh rất hung hăng, chấp nhận trượt giá để khớp ngay.",
+    body: "<p>Một lệnh market lớn hơn lượng chờ ở giá tốt nhất sẽ ăn tiếp sang giá kế bên. Cột +/− cho biết nó đã ăn qua bao nhiêu mức.</p><p><b>Ví dụ:</b> <b>+++++</b> = lệnh mua ăn qua 5 mức giá; <b>−12</b> = lệnh bán ăn qua 12 mức giá. Nhiều lệnh quét liên tiếp cùng phía thường là dấu hiệu phe đó đang rất gấp.</p>"
+  },
+  {
+    id: "absorption", group: "Order flow nâng cao", term: "Hấp thụ (Absorption)",
+    short: "Lực chủ động rất lớn ở một đầu nến nhưng giá không đi tiếp: lệnh chờ phía đối diện đã ăn hết. Chấm đỏ ở đáy = bán bị hấp thụ.",
+    body: "<p>Trang đánh dấu một nến là <b>hấp thụ bán</b> (chấm đỏ dưới đáy) khi đủ cả ba điều kiện:</p><ul><li>Khối lượng nến cao bất thường (từ 2σ so với 50 nến trước).</li><li>Ở 1/3 dưới của nến, bán chủ động chiếm ít nhất 30% khối lượng cả nến và 60% giao dịch ở vùng đó.</li><li>Giá vẫn đóng cửa ở nửa trên của nến: bán rất mạnh nhưng giá không xuống được.</li></ul><p>Nghĩa là lệnh chờ mua đã đỡ hết lực bán, phe mua đang thắng thế. <b>Hấp thụ mua</b> (chấm xanh trên đỉnh) là ngược lại.</p><p>Chấm càng to thì càng mạnh. Rê chuột lên chấm để xem số liệu và kết quả sau đó (giá có đảo chiều được 1 ATR trước khi phá đáy/đỉnh không). Bảng <b>Hấp thụ</b> ở dưới thống kê tỷ lệ đúng trên dữ liệu đang xem.</p><p><b>Lưu ý:</b> tín hiệu chỉ dùng dữ liệu tới hết nến đó. Với nến có footprint ước tính, điều kiện chặt hơn và kém chính xác hơn footprint thật.</p>"
+  },
+  {
+    id: "big-trades", group: "Order flow nâng cao", term: "Big Trades",
+    short: "Các lệnh gốc lớn nhất (top 0,5% sau khi ghép) vẽ thành vòng tròn trên biểu đồ nến và footprint, tại giá trung bình của lệnh.",
+    body: "<p>Lấy từ Smart Tape: mỗi vòng tròn là một lệnh gốc lớn. Xanh = mua chủ động, đỏ = bán chủ động, vòng càng to lệnh càng lớn.</p><p>Với Binance, trang tải lại lệnh khớp thật của các nến gần nhất nên có cả Big Trades trong quá khứ gần; các sàn khác chỉ có từ lúc mở trang.</p><p><b>Cách đọc:</b> nhiều Big Trades bán ở đáy mà giá không giảm thêm thường đi cùng hấp thụ; Big Trades mua phá qua kháng cự là dấu hiệu phá vỡ có lực.</p>"
+  },
+  {
+    id: "cluster-search", group: "Order flow nâng cao", term: "Cluster Search (tìm cụm khối lượng)",
+    short: "Tự tìm các ô footprint (một mức giá trong một nến) có khối lượng hoặc delta lớn bất thường và đóng khung cam.",
+    body: "<p>Chọn <b>Tìm cụm ▾</b> trên biểu đồ:</p><ul><li><b>Đo theo:</b> tổng khối lượng, delta (|mua − bán|), chỉ mua hoặc chỉ bán chủ động.</li><li><b>Ngưỡng:</b> top 0,1% đến 2% ô lớn nhất, hoặc nhập một số tối thiểu.</li></ul><p>Các ô này thường là nơi phe lớn vào lệnh. Khi giá quay lại vùng đó, nó hay đóng vai trò hỗ trợ/kháng cự. Danh sách nằm ở tab <b>Cụm khối lượng</b> phía dưới.</p>"
+  },
+  {
+    id: "cvd-pro", group: "Order flow nâng cao", term: "Delta, CVD và CVD Pro",
+    short: "Delta: mua − bán từng nến. CVD: delta cộng dồn (đường). CVD Pro: CVD vẽ thành nến và bắt đầu lại mỗi ngày.",
+    body: "<p>Chọn ở ô <b>Ô dưới</b> của biểu đồ:</p><ul><li><b>Delta:</b> cột xanh/đỏ, mua chủ động trừ bán chủ động trong từng nến.</li><li><b>CVD:</b> đường cộng dồn delta, kèm open interest.</li><li><b>CVD Pro:</b> CVD vẽ thành nến (mở = CVD đầu nến, đóng = cuối nến, râu = đỉnh/đáy CVD trong nến nếu theo dõi được), bắt đầu lại từ 0 mỗi ngày (UTC) để so các phiên với nhau.</li></ul><p><b>Phân kỳ:</b> giá làm đỉnh mới nhưng nến CVD Pro không lên được đỉnh mới nghĩa là lực mua chủ động đang yếu đi.</p>"
+  },
+  {
+    id: "range-profile", group: "Order flow nâng cao", term: "Hồ sơ khối lượng cho vùng tự chọn",
+    short: "Bấm Chọn vùng (hoặc giữ Shift) rồi kéo trên biểu đồ để xem POC, vùng giá trị 70% và HVN/LVN của đúng đoạn đó.",
+    body: "<p>Dùng khi muốn xem một đoạn giá cụ thể (ví dụ một vùng đi ngang, một đợt tăng) đã giao dịch nhiều nhất ở đâu.</p><ul><li><b>POC</b> (vàng): giá khớp nhiều nhất trong đoạn.</li><li><b>VAH/VAL</b> (tím, nét đứt): cạnh trên/dưới của vùng chứa 70% khối lượng, kéo dài sang phải để làm hỗ trợ/kháng cự.</li></ul><p>Có footprint thì tính theo từng mức giá thật; không có thì chia đều khối lượng trên biên độ nến. Chuột phải vào vùng để xoá. Bật <b>Hồ sơ từng ngày</b> trong Lớp hiển thị để tự vẽ cho mỗi ngày.</p>"
+  }
+
 ];
 
-export const GROUPS = ["Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest"];
+export const GROUPS = ["Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest"];

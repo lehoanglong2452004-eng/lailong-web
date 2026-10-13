@@ -8,6 +8,9 @@ import { Dom } from "./dom.js";
 import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, vwapReactions } from "./analytics.js";
 import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js";
 import { approxFootprint, exactFootprintBinance } from "./fphistory.js";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js";
+import { Tape } from "./tape.js";
+import { DOM_COLS } from "./dom.js";
 import { GLOSSARY, GROUPS } from "./glossary.js";
 import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js";
 import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js";
@@ -25,7 +28,7 @@ const S = {
   interval: qs.get("i") || saved.interval || "1m",
   view: qs.get("v") || saved.view || "terminal",
   mode: saved.mode || "heat",
-  tab: "liqs",
+  tab: "absorb",
 };
 if (!EXCHANGES[S.ex]) S.ex = "BINANCE";
 if (!INTERVALS[S.interval]) S.interval = "1m";
@@ -53,58 +56,17 @@ function toast(text, err) { const el = $("toast"); el.textContent = text; el.cla
 const heat = new Heatmap($("heat"), market, { exchangeName: () => ex().name });
 const flow = new FlowChart($("flow"));
 const dom = new Dom($("dom"), market);
-
-// ---------- lưu lệnh thanh lý 24 giờ trên trình duyệt ----------
-// Sàn chỉ đẩy thanh lý theo thời gian thực, nên trang tự ghi lại khi đang mở.
-// "spans" là các khoảng thời gian trang đã ghi, để biết số liệu mỗi khung phủ được bao nhiêu.
-const DAY = 864e5;
-const LQ = { key: null, list: [], spans: [], dirty: false };
-function liqLoad() {
-  LQ.key = "lailong.liq." + key(); LQ.list = []; LQ.spans = [];
-  try { const o = JSON.parse(localStorage.getItem(LQ.key) || "null"); if (o) { LQ.list = o.list || []; LQ.spans = o.spans || []; } } catch { /* bỏ qua */ }
-  const now = Date.now();
-  LQ.list = LQ.list.filter(x => x.t >= now - DAY);
-  LQ.spans = LQ.spans.filter(s => s[1] >= now - DAY);
-  if (ex().hasLiq) LQ.spans.push([now, now]);
-}
-function liqAddSpan(a, b) { LQ.spans.push([a, b]); mergeSpans(); }
-function mergeSpans() {
-  LQ.spans.sort((x, y) => x[0] - y[0]);
-  const out = [];
-  for (const s of LQ.spans) { const l = out[out.length - 1]; if (l && s[0] <= l[1] + 120e3) l[1] = Math.max(l[1], s[1]); else out.push([s[0], s[1]]); }
-  LQ.spans = out;
-}
-function liqAdd(list) {
-  const seen = new Set(LQ.list.map(x => `${x.t}|${x.p}|${x.q}`));
-  for (const l of list) { const k = `${l.t}|${l.p}|${l.q}`; if (!seen.has(k)) { seen.add(k); LQ.list.push({ t: l.t, p: l.p, q: l.q, side: l.side }); } }
-  LQ.list.sort((a, b) => a.t - b.t); LQ.dirty = true;
-}
-function liqSave() {
-  if (!LQ.key || !ex().hasLiq) return;
-  const now = Date.now();
-  if (LQ.spans.length) LQ.spans[LQ.spans.length - 1][1] = now;
-  mergeSpans();
-  LQ.list = LQ.list.filter(x => x.t >= now - DAY);
-  try { localStorage.setItem(LQ.key, JSON.stringify({ list: LQ.list.slice(-20000), spans: LQ.spans })); } catch { /* bộ nhớ đầy thì bỏ qua */ }
-  LQ.dirty = false;
-}
-setInterval(liqSave, 10000);
-window.addEventListener("beforeunload", liqSave);
-function coverage(ms) {
-  const now = Date.now(), a = now - ms; let c = 0;
-  for (const s of LQ.spans) c += Math.max(0, Math.min(now, s[1]) - Math.max(a, s[0]));
-  return Math.min(1, c / ms);
-}
+const tape = new Tape($("tape"), market);
+flow.prints = () => [market.histPrints, market.prints];
+flow.opts.onRange = () => { if (S.tab === "absorb") renderTab(); };
 
 // ---------- tải dữ liệu một mã ----------
 let conn = null, loadToken = 0, analysis = null, fpState = null;
 async function load() {
   const token = ++loadToken; persist();
   if (conn) { conn.close(); conn = null; }
-  liqSave();
   market.reset({ symbol: S.symbol, exchange: S.ex, interval: S.interval });
-  heat.resetView(); dom.reset(); flow.setData([], {}); flow.fpProgress = ""; analysis = null; fpState = null; liqCtxCache = null; renderSignals();
-  liqLoad(); renderTab();
+  heat.resetView(); dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; tape.reset(); renderSignals(); renderTab();
   setConn("Đang tải dữ liệu", null);
   let info = { tick: 0, ctVal: 1 };
   try { info = await ex().info(S.symbol); } catch (e) { log(`Không lấy được thông tin mã: ${e.message}`); }
@@ -117,17 +79,9 @@ async function load() {
       market.onBook(); dom.update();
     },
     onTrades: list => { if (token !== loadToken) return; market.onTrades(list); },
-    onLiq: list => { if (token !== loadToken) return; market.onLiq(list); liqAdd(list); },
+    onLiq: list => { if (token !== loadToken) return; market.onLiq(list); },
     onStatus: (text, ok) => { if (token === loadToken) { setConn(text, ok); log(text); } },
   });
-  if (ex().liqHistory) {
-    const from = Date.now() - DAY;
-    ex().liqHistory(S.symbol, info, from).then(list => {
-      if (token !== loadToken || !list.length) return;
-      liqAdd(list); liqAddSpan(list.length >= 900 ? list[0].t : from, Date.now()); liqSave(); scheduleUi();
-      log(`Đã tải ${list.length} lệnh thanh lý gần nhất từ ${ex().name}`);
-    }).catch(e => log(`Không tải được lịch sử thanh lý: ${e.message}`));
-  }
   try {
     const bars = await ex().klines(S.symbol, S.interval, 1500);
     if (ex().hasOi && bars.length) {
@@ -139,7 +93,8 @@ async function load() {
     flow.setData(market.bars, { step: market.fpStep, tick: market.tick, intervalMs: market.intervalMs, symbol: S.symbol, exchangeName: ex().name, interval: S.interval, deltaApprox: isDeltaApprox(bars) });
     recompute();
     log(`Đã tải ${bars.length} nến ${S.interval} ${S.symbol} từ ${ex().name}`);
-    if (S.mode === "box") startFootprint();
+    if (S.mode !== "heat") startFootprint();
+    seedDayVolume(token);
   } catch (e) {
     log(`Không tải được nến: ${e.message}`); toast(`Không tải được dữ liệu từ ${ex().name}: ${e.message}`, true);
   }
@@ -176,16 +131,17 @@ function recompute() {
   analysis = { levels, zones, zonesAll, liqMap, sum: summary(bars, market.intervalMs) };
   heat.setOverlays({ levels, zones, liqMap });
   flow.setOverlays({ levels, zones, liqMap });
+  recomputeFlow();
   renderSignals();
   if (S.view === "analysis") renderAnalysis();
 }
 market.on(kind => {
   if (kind === "newbar") recompute();
-  if (kind === "footprint") flow.refresh();
+  if (kind === "footprint") { flow.refresh(); scheduleFlow(); }
   if (kind === "trades" || kind === "liq") { flow.refresh(); scheduleUi(); }
 });
 let uiTimer = null;
-function scheduleUi() { if (uiTimer) return; uiTimer = setTimeout(() => { uiTimer = null; if (["liqs", "big"].includes(S.tab)) renderTab(); }, 1000); }
+function scheduleUi() { if (uiTimer) return; uiTimer = setTimeout(() => { uiTimer = null; flow.bigQ = market.bigPrint; if (S.tab === "big") renderTab(); }, 1000); }
 setInterval(() => { if (market.bars.length) recompute(); }, 15000);
 
 function trendTag(label, score) {
@@ -209,58 +165,54 @@ function renderSignals() {
   ].map(([g, x]) => `<span data-g="${g}">${x}</span>`).join("");
 }
 
-// ---------- thanh lý theo 4 khung: 15 phút, 1 giờ, 4 giờ, 24 giờ ----------
-const WINDOWS = [["15 phút", 15 * 60e3], ["1 giờ", 3600e3], ["4 giờ", 4 * 3600e3], ["24 giờ", DAY]];
-let liqCtxCache = null;
-// nến 5 phút 24 giờ qua (kèm OI) để biết giá và OI đổi bao nhiêu trong từng khung
-async function liqCtx() {
-  const k = key();
-  if (liqCtxCache && liqCtxCache.k === k && Date.now() - liqCtxCache.t < 60e3) return liqCtxCache.bars;
-  if (liqCtx._p) return liqCtx._p;
-  liqCtx._p = (async () => {
-    try {
-      const bars = await ex().klines(S.symbol, "5m", 300);
-      if (ex().hasOi && bars.length) { try { attachOi(bars, await ex().oiHistory(S.symbol, "5m", bars[0].t), 300e3); } catch { /* không có OI */ } }
-      if (k === key()) liqCtxCache = { k, t: Date.now(), bars };
-      return bars;
-    } catch { return []; } finally { liqCtx._p = null; }
-  })();
-  return liqCtx._p;
+// ---------- hấp thụ, cụm khối lượng (tính trên nến của khung đang xem) ----------
+let absorb = [], clusters = null, flowTimer = null;
+const CL = { on: false, metric: "volume", top: 0.005, min: 0 };
+function recomputeFlow() {
+  if (market.bars.length < 60) return;
+  absorb = absorption(market.bars, { step: market.fpStep });
+  clusters = CL.on ? clusterSearch(market.bars, { metric: CL.metric, topPct: CL.top, minValue: CL.min, step: market.fpStep }) : null;
+  flow.setOverlays({ absorb, clusters: clusters ? clusters.cells : [] });
+  flow.bigQ = market.bigPrint;
+  if (["absorb", "clusters"].includes(S.tab)) renderTab();
 }
-function liqWindowsHtml(bars) {
-  if (!ex().hasLiq) return `<div class="empty">${esc(ex().name)} không công bố lệnh thanh lý công khai.</div>`;
-  const now = Date.now(), dec = decimalsFor(market.tick || 0.01), last = bars && bars.length ? bars[bars.length - 1] : null;
-  const at = t => { if (!bars || !bars.length) return null; let b = null; for (const x of bars) { if (x.t <= t) b = x; else break; } return b; };
-  const rows = WINDOWS.map(([name, ms]) => {
-    let l = 0, s = 0, n = 0, big = null;
-    for (const x of LQ.list) if (x.t >= now - ms) { const v = x.p * x.q; if (x.side === "long") l += v; else s += v; n++; if (!big || v > big.v) big = { v, side: x.side, p: x.p }; }
-    const b0 = at(now - ms), cov = coverage(ms);
-    const px = b0 && last ? (last.c / b0.o - 1) * 100 : null;
-    const oi = b0 && last && b0.oi && last.oi ? (last.oi / b0.oi - 1) * 100 : null;
-    const ratio = s > 0 ? (l / s).toFixed(2) : l > 0 ? "∞" : "-";
-    return `<tr><td class="t"><b>${name}</b></td><td class="neg">${fmtUsd(l)}</td><td class="pos">${fmtUsd(s)}</td><td>${fmtUsd(l + s)}</td><td>${ratio}</td><td>${n}</td>` +
-      `<td>${big ? `<span class="${big.side === "long" ? "neg" : "pos"}">${big.side === "long" ? "L" : "S"} ${fmtUsd(big.v)}</span> @ ${big.p.toFixed(dec)}` : "-"}</td>` +
-      `<td class="${px == null ? "" : px >= 0 ? "pos" : "neg"}">${px == null ? "-" : fmtPct(px)}</td><td class="${oi == null ? "" : oi >= 0 ? "pos" : "neg"}">${oi == null ? "-" : fmtPct(oi)}</td>` +
-      `<td class="${cov < 0.9 ? "warn" : ""}">${(cov * 100).toFixed(0)}%</td></tr>`;
-  });
-  return table([["Khung", "liq-windows"], ["Long bị thanh lý", "liquidation"], ["Short bị thanh lý", "liquidation"], "Tổng", ["Tỷ lệ L/S", "liq-ls-ratio"], "Số lệnh", ["Lệnh lớn nhất", "big-trade"], "Giá thay đổi", ["OI thay đổi", "oi"], ["Đã ghi được", "liq-windows"]], rows, "") +
-    `<p class="note">"Đã ghi được" là phần thời gian của khung mà trang này đang mở để ghi thanh lý (sàn chỉ đẩy thanh lý trực tiếp, không cho tải lại${ex().liqHistory ? ", trừ OKX cho tải lại các lệnh gần nhất" : ""}). Dưới 100% nghĩa là số thật có thể lớn hơn. Dữ liệu lưu trên trình duyệt này 24 giờ.</p>`;
+function scheduleFlow() { if (flowTimer) return; flowTimer = setTimeout(() => { flowTimer = null; recomputeFlow(); }, 1500); }
+
+// khối lượng tại giá trong ngày (UTC) cho cột "Hôm nay" của Smart DOM, dựng từ nến 1 phút
+async function seedDayVolume(token) {
+  const start = market.dayStart, n = Math.min(1440, Math.ceil((Date.now() - start) / 60e3) + 1);
+  try {
+    const bars = await ex().klines(S.symbol, "1m", n);
+    if (token !== loadToken || !market.tick) return;
+    const tk = market.tick, liveStart = market.liveStart || Date.now();
+    for (const b of bars) {
+      if (b.t < start || b.t + 60e3 > liveStart) continue; // phần sau lúc mở trang đã có từ lệnh khớp trực tiếp
+      const k1 = Math.round(b.l / tk), k2 = Math.round(b.h / tk), cnt = k2 - k1 + 1, st = Math.max(1, Math.ceil(cnt / 400));
+      for (let k = k1; k <= k2; k += st) market.dayVol.set(k, (market.dayVol.get(k) || 0) + b.v * Math.min(st, k2 - k + 1) / cnt);
+    }
+  } catch (e) { log(`Không tải được khối lượng trong ngày: ${e.message}`); }
 }
 
 // ---------- các tab phía dưới ----------
 let symbolRows = [], symbolFilter = "";
 function renderTab() {
   const body = $("tabBody"), dec = decimalsFor(market.tick);
-  if (S.tab === "liqs") {
-    body.innerHTML = liqWindowsHtml(liqCtxCache && liqCtxCache.k === key() ? liqCtxCache.bars : null) +
-      (ex().hasLiq ? table(["Thời gian", ["Vị thế bị thanh lý", "liquidation"], "Giá", "Khối lượng", "Giá trị"],
-        LQ.list.slice(-200).reverse().map(x => `<tr><td>${fmtTime(x.t, true)}</td><td class="${x.side === "long" ? "neg" : "pos"}">${x.side === "long" ? "LONG" : "SHORT"}</td><td>${x.p.toFixed(dec)}</td><td>${fmtVol(x.q)}</td><td>${fmtUsd(x.p * x.q)}</td></tr>`),
-        "Chưa ghi được lệnh thanh lý nào trong 24 giờ qua.") : "");
-    if (!liqCtxCache || liqCtxCache.k !== key()) liqCtx().then(b => { if (b.length && S.tab === "liqs") renderTab(); });
+  const coinName = coin();
+  if (S.tab === "absorb") {
+    const st = absorptionStats(absorb), pct = g => isFinite(g.pct) ? g.pct.toFixed(0) + "%" : "-";
+    const res = { reversed: ["Đúng", "pos"], failed: ["Sai", "neg"], unclear: ["Không rõ", "muted"], pending: ["Đang chờ", "muted"] };
+    body.innerHTML = `<div class="signalbar"><span data-g="absorption">Khung ${S.interval}, ${market.bars.length} nến: hấp thụ bán (đỏ) <b>${st.sell.n}</b> lần, đúng <b class="pos">${pct(st.sell)}</b> · hấp thụ mua (xanh) <b>${st.buy.n}</b> lần, đúng <b class="pos">${pct(st.buy)}</b></span>${flow.ranges.length ? `<span data-g="range-profile">Vùng tự chọn: <b>${flow.ranges.length}</b> (chuột phải để xoá)</span>` : ""}</div>` +
+      table(["Nến", ["Loại", "absorption"], "Giá", "KL nến", ["Độ lệch", "sigma"], "Chủ động ở mép", "Đóng cửa", "Độ mạnh", "Sau đó", ""],
+        absorb.slice(-150).reverse().map(e => { const r = res[e.fwd.result]; return `<tr class="click" data-goto="${e.t}"><td>${fmtDate(e.t)}</td><td class="t ${e.side === "sell" ? "neg" : "pos"}">${e.side === "sell" ? "Hấp thụ bán (đáy)" : "Hấp thụ mua (đỉnh)"}</td><td>${e.price.toFixed(dec)}</td><td>${fmtVol(e.vol)}</td><td>${e.z.toFixed(1)}σ</td><td>${fmtVol(e.edgeVol)} (${(e.edgeShare * 100).toFixed(0)}%)</td><td>${((e.side === "sell" ? e.closePos : 1 - e.closePos) * 100).toFixed(0)}% từ mép</td><td>${e.strength}</td><td class="t ${r[1]}">${r[0]}${e.fwd.result === "reversed" ? ` (+${e.fwd.bestAtr.toFixed(1)} ATR, ${e.fwd.bars} nến)` : ""}</td><td class="t muted">${e.exact ? "" : "ước tính"}</td></tr>`; }),
+        "Chưa có nến hấp thụ nào trong dữ liệu đang xem.");
+  } else if (S.tab === "clusters") {
+    body.innerHTML = !CL.on ? `<div class="empty">Bật "Tìm cụm ▾" trên biểu đồ để tìm các ô footprint có khối lượng lớn bất thường.</div>` : !clusters ? `<div class="empty">Đang tính...</div>` :
+      `<div class="signalbar"><span data-g="cluster-search">Ngưỡng: <b>${fmtVol(clusters.threshold)} ${coinName}</b> · tìm thấy <b>${clusters.cells.length}</b> ô</span></div>` +
+      table(["Nến", "Giá", "Bán", "Mua", "Tổng", ["Delta", "delta"], ""], clusters.cells.map(c => `<tr class="click" data-goto="${c.t}"><td>${fmtDate(c.t)}</td><td>${c.price.toFixed(dec)}</td><td class="neg">${fmtVol(c.sell)}</td><td class="pos">${fmtVol(c.buy)}</td><td>${fmtVol(c.sell + c.buy)}</td><td class="${c.buy >= c.sell ? "pos" : "neg"}">${c.buy >= c.sell ? "+" : ""}${fmtVol(c.buy - c.sell)}</td><td class="t muted">${c.approx ? "ước tính" : ""}</td></tr>`), "Không có ô nào vượt ngưỡng.");
   } else if (S.tab === "big") {
-    const big = market.trades.filter(t => t.q >= market.bigTrade).slice(-150).reverse();
-    body.innerHTML = `<div class="signalbar"><span data-g="big-trade">Ngưỡng lệnh lớn (top 0,5%): <b>${isFinite(market.bigTrade) ? fmtVol(market.bigTrade) + " " + coin() : "đang tính"}</b></span></div>` +
-      table(["Thời gian", ["Phía", "aggressor"], "Giá", "Khối lượng", "Giá trị"], big.map(t => `<tr><td>${fmtTime(t.t)}</td><td class="${t.side === "buy" ? "pos" : "neg"}">${t.side === "buy" ? "MUA" : "BÁN"}</td><td>${t.p.toFixed(dec)}</td><td>${fmtVol(t.q)}</td><td>${fmtUsd(t.p * t.q)}</td></tr>`), "Chưa có lệnh lớn.");
+    const all = market.prints.concat(market.histPrints).filter(p => p.q >= market.bigPrint).sort((a, b) => b.t - a.t).slice(0, 300);
+    body.innerHTML = `<div class="signalbar"><span data-g="big-trades">Ngưỡng Big Trade (top 0,5% lệnh gốc đã ghép): <b>${isFinite(market.bigPrint) ? fmtVol(market.bigPrint) + " " + coinName : "đang tính"}</b>${market.histPrints.length ? ` · gồm ${fmtVol(market.histPrints.length)} lệnh gốc tải lại từ ${ex().name}` : ""}</span></div>` +
+      table(["Thời gian", ["Phía", "aggressor"], "Giá TB", "Khối lượng", "Giá trị", ["Số lệnh nhỏ", "smart-tape"], ["Mức giá quét", "sweep"]], all.map(t => `<tr class="click" data-goto="${t.t}"><td>${fmtTime(t.t, true)}</td><td class="${t.side === "buy" ? "pos" : "neg"}">${t.side === "buy" ? "MUA" : "BÁN"}</td><td>${t.vwap.toFixed(dec)}</td><td>${fmtVol(t.q)}</td><td>${fmtUsd(t.vwap * t.q)}</td><td>${t.n}</td><td>${t.levels}</td></tr>`), "Chưa có Big Trade.");
   } else if (S.tab === "symbols") {
     const f = symbolFilter.toUpperCase(), rows = symbolRows.filter(r => !f || r.symbol.includes(f)).slice(0, 300);
     body.innerHTML = `<div class="signalbar"><input id="symFilter" placeholder="Tìm mã..." value="${esc(symbolFilter)}" style="width:160px"></div>` +
@@ -271,8 +223,16 @@ function renderTab() {
   }
 }
 $("tabBody").addEventListener("click", e => {
-  const r = e.target.closest("[data-sym]"); if (r) { S.symbol = r.dataset.sym; $("symbol").value = S.symbol; load(); }
+  const r = e.target.closest("[data-sym]"); if (r) { S.symbol = r.dataset.sym; $("symbol").value = S.symbol; load(); return; }
+  const g = e.target.closest("[data-goto]"); if (g) goToTime(+g.dataset.goto);
 });
+// đưa biểu đồ nến/footprint tới nến chứa thời điểm t
+function goToTime(t) {
+  if (S.mode === "heat") setMode("box");
+  const i = flow._barIndexAt(t); if (i < 0) return;
+  const vis = flow._L ? flow._L.pw / flow.sp : 20;
+  flow.offset = Math.max(-flow.bars.length + 3, flow.bars.length - 1 - i - vis / 2); flow.dirty = true;
+}
 async function loadSymbols() {
   symbolRows = [];
   try {
@@ -294,8 +254,7 @@ async function renderAnalysis() {
   $("zoneTable").innerHTML = table(["Thời gian", ["Phía", "aggressor"], "Vùng giá", ["Độ lệch", "sigma"], "Khối lượng", ["Trạng thái", "zone-status"]],
     analysis.zonesAll.slice(-25).reverse().map(z => `<tr><td>${fmtDate(z.t)}</td><td class="t ${z.side === "buy" ? "pos" : "neg"}">${z.side === "buy" ? "Mua chủ động" : "Bán chủ động"}</td><td>${z.low.toFixed(dec)} – ${z.high.toFixed(dec)}</td><td>${z.z.toFixed(1)}σ</td><td>${fmtVol(z.volume)}</td><td class="t">${z.active ? "Còn hiệu lực" : "Đã bị xuyên qua"}</td></tr>`),
     "Không có nến khối lượng bất thường trong dữ liệu đã tải.");
-  renderLiqCard(last, dec);
-  liqCtx().then(b => { if (S.view === "analysis") { $("liqWindows").innerHTML = liqWindowsHtml(b); $("liqInfo").textContent = `${S.symbol} · ${ex().name}`; } });
+  renderAbsorptionCard();
   const vp = volumeProfile(market.bars.slice(-500));
   const near = (arr, n) => arr.slice().sort((a, b) => Math.abs(a - last) - Math.abs(b - last)).slice(0, n).sort((a, b) => b - a).map(x => x.toFixed(dec)).join(", ") || "-";
   $("vpStats").innerHTML = `<div class="kv"><span>Phạm vi</span><b>500 nến ${S.interval} gần nhất</b><span data-g="poc">POC (giá nhiều KL nhất)</span><b>${vp.poc == null ? "-" : vp.poc.toFixed(dec)}</b><span data-g="value-area">Vùng giá trị 70%</span><b>${vp.val == null ? "-" : vp.val.toFixed(dec) + " – " + vp.vah.toFixed(dec)}</b><span data-g="hvn">Nút khối lượng cao (HVN)</span><b>${near(vp.hvn, 6)}</b><span data-g="lvn">Nút khối lượng thấp (LVN)</span><b>${near(vp.lvn, 6)}</b></div><p class="note">HVN thường là vùng giá dễ bị hút về và đi ngang; LVN là vùng giá dễ chạy nhanh qua.</p>`;
@@ -315,23 +274,21 @@ async function renderAnalysis() {
   $("mtfTable").innerHTML = table([["Khung", "mtf"], "Xu hướng", ["Điểm xu hướng", "trend-score"], ["Cấu trúc", "structure"], ["Động lượng", "momentum"], ["Thay đổi 10 nến", "roc"], ["Chế độ biến động", "vol-regime"], ["Biến động năm hoá", "realized-vol"]], rows, "");
 }
 
-function renderLiqCard(last, dec) {
-  const m = analysis.liqMap;
-  let html = `<div class="kv">`;
-  if (m) {
-    const top = (list, dir) => list.filter(b => dir > 0 ? b.price > last : b.price < last).sort((a, b) => b.notional - a.notional).slice(0, 3).sort((a, b) => dir * (a.price - b.price)).map(b => `${b.price.toFixed(dec)} (${fmtUsd(b.notional)})`).join(", ") || "-";
-    html += `<span data-g="liq-cluster-up">Cụm short sẽ bị thanh lý (phía trên)</span><b>${top(m.shorts, 1)}</b><span data-g="liq-cluster-down">Cụm long sẽ bị thanh lý (phía dưới)</span><b>${top(m.longs, -1)}</b><span data-g="liq-map">Tổng ước tính</span><b>long ${fmtUsd(m.totalLong)} · short ${fmtUsd(m.totalShort)}</b>`;
-  } else html += `<span data-g="liq-map">Bản đồ ước tính</span><b>${ex().hasOi ? "đang chờ dữ liệu open interest" : ex().name + " không có lịch sử open interest"}</b>`;
-  $("liqStats").innerHTML = html + `</div>`;
-  const cv = $("liqCanvas"), F = cv._fit || (cv._fit = fitCanvas(cv, () => analysis && renderLiqCard(market.bars[market.bars.length - 1].c, dec))), ctx = F.ctx;
-  ctx.fillStyle = T.bg; ctx.fillRect(0, 0, F.w, F.h);
-  if (!m) return;
-  const lo = last * 0.88, hi = last * 1.12, n = 120, bins = new Array(n).fill(0).map(() => [0, 0]);
-  for (const [list, s] of [[m.longs, 0], [m.shorts, 1]]) for (const b of list) { const k = Math.floor((b.price - lo) / (hi - lo) * n); if (k >= 0 && k < n) bins[k][s] += b.notional; }
-  const maxN = Math.max(1, ...bins.map(b => b[0] + b[1])), bw = F.w / n;
-  bins.forEach((b, k) => { const x = k * bw; let y = F.h - 16; for (const [v, col] of [[b[0], "#ff3df2"], [b[1], "#ffd400"]]) { const hh = v / maxN * (F.h - 30); ctx.fillStyle = col; ctx.fillRect(x, y - hh, Math.max(1, bw - 1), hh); y -= hh; } });
-  const xl = (last - lo) / (hi - lo) * F.w; ctx.strokeStyle = T.text; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(xl, 0); ctx.lineTo(xl, F.h - 16); ctx.stroke(); ctx.setLineDash([]);
-  ctx.fillStyle = T.muted; ctx.font = `11px ${MONO}`; ctx.textAlign = "left"; ctx.fillText(lo.toFixed(dec), 2, F.h - 3); ctx.textAlign = "right"; ctx.fillText(hi.toFixed(dec), F.w - 2, F.h - 3); ctx.textAlign = "center"; ctx.fillStyle = T.text; ctx.fillText(last.toFixed(dec), xl, F.h - 3);
+const absCache = new Map();
+async function renderAbsorptionCard() {
+  const rows = [];
+  for (const tf of ["5m", "15m", "1h", "4h", "1d"]) {
+    const ck = `${S.ex}:${S.symbol}:${tf}`; let c = absCache.get(ck);
+    if (tf === S.interval) c = { t: Date.now(), ev: absorb, bars: market.bars, exact: true };
+    else if (!c || Date.now() - c.t > 120e3) {
+      try { const bars = await ex().klines(S.symbol, tf, 500); c = { t: Date.now(), ev: absorption(bars), bars }; absCache.set(ck, c); }
+      catch (e) { rows.push(`<tr><td>${tf}</td><td colspan="7" class="t muted">Lỗi: ${esc(e.message)}</td></tr>`); continue; }
+    }
+    const st = absorptionStats(c.ev), last = c.ev[c.ev.length - 1], dec = decimalsFor(market.tick || 0.01), pct = g => isFinite(g.pct) ? `${g.pct.toFixed(0)}%` : "-";
+    rows.push(`<tr><td>${tf}${tf === S.interval ? " ★" : ""}</td><td>${c.bars.length}</td><td class="neg">${st.sell.n}</td><td class="pos">${pct(st.sell)}</td><td class="pos">${st.buy.n}</td><td class="pos">${pct(st.buy)}</td><td class="t">${last ? `${last.side === "sell" ? "Hấp thụ bán" : "Hấp thụ mua"} ${last.price.toFixed(dec)} lúc ${fmtDate(last.t)}` : "-"}</td></tr>`);
+  }
+  $("absInfo").textContent = `${S.symbol} · ${ex().name}`;
+  $("absTable").innerHTML = table([["Khung", "mtf"], "Số nến", ["Hấp thụ bán", "absorption"], "Đúng", ["Hấp thụ mua", "absorption"], "Đúng", "Gần nhất"], rows, "");
 }
 
 let dvolCache = null;
@@ -425,7 +382,7 @@ function renderBacktest(res, bars, tf, capital, id, params) {
 
 // ---------- chú thích khi rê chuột ----------
 const tipEl = $("tip");
-const CANVAS_TIP = { heat, flow, dom, btChart };
+const CANVAS_TIP = { heat, flow, dom, tape, btChart };
 let tipFrame = 0, lastMove = null;
 function showTip(html, x, y) {
   tipEl.innerHTML = html; tipEl.hidden = false;
@@ -507,7 +464,7 @@ function mix(a, b, f) {
   return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * f).toString(16).padStart(2, "0")).join("");
 }
 window.addEventListener("lailong-theme", () => {
-  heat.dirty = flow.dirty = dom.dirty = btChart.dirty = true;
+  heat.dirty = flow.dirty = dom.dirty = tape.dirty = btChart.dirty = true;
   const eq = $("btEquity"); if (eq._fit) drawEquity(eq, eq._eq, eq._cap);
   if (S.view === "analysis" && analysis) renderAnalysis();
 });
@@ -520,25 +477,26 @@ function setLayout(k, v) {
   if (v == null) { delete layout[k]; ws.style.removeProperty("--" + k); } else { layout[k] = v; ws.style.setProperty("--" + k, v + "px"); }
   try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch { /* bỏ qua */ }
 }
-for (const k of ["rightW", "bottomH"]) if (layout[k]) ws.style.setProperty("--" + k, layout[k] + "px");
+for (const k of ["rightW", "bottomH", "tapeW"]) if (layout[k]) ws.style.setProperty("--" + k, layout[k] + "px");
 function splitter(el, k, calc) {
   el.addEventListener("pointerdown", e => {
     e.preventDefault(); el.setPointerCapture(e.pointerId);
     document.body.classList.add("resizing"); el.classList.add("drag"); hideTip();
     const move = ev => setLayout(k, Math.round(calc(ev, ws.getBoundingClientRect())));
-    const up = () => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); document.body.classList.remove("resizing"); el.classList.remove("drag"); heat.dirty = flow.dirty = dom.dirty = true; };
+    const up = () => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); document.body.classList.remove("resizing"); el.classList.remove("drag"); heat.dirty = flow.dirty = dom.dirty = tape.dirty = true; };
     el.addEventListener("pointermove", move); el.addEventListener("pointerup", up);
   });
   el.addEventListener("dblclick", () => setLayout(k, null));
 }
-splitter($("splitV"), "rightW", (e, r) => Math.min(r.width - 320, Math.max(220, r.right - e.clientX - 4)));
+splitter($("splitV"), "rightW", (e, r) => { const tw = $("tapePanel").offsetWidth + 6; return Math.min(r.width - tw - 320, Math.max(220, r.right - e.clientX - tw - 4)); });
+splitter($("splitT"), "tapeW", (e, r) => Math.min(r.width - 600, Math.max(200, r.right - e.clientX - 4)));
 splitter($("splitH"), "bottomH", (e, r) => Math.min(r.height - 160, Math.max(60, r.bottom - e.clientY - 4)));
 
 function setMax(id) {
   const p = id && $(id), on = p && !p.classList.contains("maxed");
   document.querySelectorAll(".panel.maxed").forEach(x => x.classList.remove("maxed"));
   if (on) p.classList.add("maxed");
-  heat.dirty = flow.dirty = dom.dirty = true;
+  heat.dirty = flow.dirty = dom.dirty = tape.dirty = true;
 }
 for (const b of document.querySelectorAll("[data-max]")) b.onclick = () => setMax(b.dataset.max);
 const topH = () => document.documentElement.style.setProperty("--topH", document.querySelector(".menubar").getBoundingClientRect().height + "px");
@@ -566,7 +524,9 @@ function setMode(m) {
   $("contrastBox").hidden = m !== "heat"; $("rowBox").hidden = m !== "box";
   $("chartHint").textContent = m === "heat" ? "Lăn chuột: phóng thời gian · Ctrl + lăn: phóng giá · Kéo: di chuyển · Bấm đúp: theo dõi · Rê chuột để xem ý nghĩa" : "Lăn chuột: phóng to · Kéo: di chuyển · Kéo trục giá: giãn giá · Bấm đúp: về hiện tại · Rê chuột lên nến để xem ý nghĩa";
   if (m !== "heat") flow.setType(m === "box" ? "box" : "candle");
-  if (m === "box") startFootprint();
+  if (m !== "heat") startFootprint();
+  for (const el of document.querySelectorAll(".flowOnly")) el.hidden = m === "heat";
+  $("selBtn").hidden = m === "heat";
   heat.dirty = flow.dirty = true;
 }
 
@@ -592,6 +552,23 @@ $("domCenter").onclick = () => dom.recenter();
 $("tabs").onclick = e => { const b = e.target.closest("[data-tab]"); if (!b) return; S.tab = b.dataset.tab; for (const x of $("tabs").querySelectorAll("[data-tab]")) x.classList.toggle("on", x === b); renderTab(); };
 $("fullscreenBtn").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => toast("Trình duyệt không cho phép toàn màn hình, bấm F11", true)); };
 
+// ---------- công cụ order flow ----------
+$("paneMode").onchange = () => { flow.pane = $("paneMode").value; flow.dirty = true; };
+$("selBtn").onclick = () => { flow.selecting = !flow.selecting; $("selBtn").classList.toggle("on", flow.selecting); $("flow").style.cursor = flow.selecting ? "col-resize" : ""; };
+$("clusterBtn").onclick = e => { e.stopPropagation(); $("clusterBtn").parentElement.classList.toggle("open"); };
+const clUpdate = () => { CL.on = $("clOn").checked; CL.metric = $("clMetric").value; CL.top = +$("clTop").value; CL.min = +$("clMin").value || 0; $("clusterBtn").classList.toggle("on", CL.on); recomputeFlow(); };
+for (const id of ["clOn", "clMetric", "clTop", "clMin"]) $(id).onchange = clUpdate;
+// cột Smart DOM, nhớ trên trình duyệt
+const domColsSaved = (() => { try { return JSON.parse(localStorage.getItem("lailong.domcols") || "null"); } catch { return null; } })();
+$("domColMenu").innerHTML = DOM_COLS.filter(c => c.id !== "price").map(c => `<label data-tip="${esc(c.tip)}"><input type="checkbox" data-domcol="${c.id}" ${!domColsSaved || domColsSaved.includes(c.id) ? "checked" : ""}> ${esc(c.label)}</label>`).join("");
+const domColUpdate = () => { const ids = [...document.querySelectorAll("[data-domcol]")].filter(x => x.checked).map(x => x.dataset.domcol); dom.setColumns(ids); try { localStorage.setItem("lailong.domcols", JSON.stringify(ids)); } catch { /* bỏ qua */ } };
+$("domColMenu").onchange = domColUpdate; domColUpdate();
+$("domColBtn").onclick = e => { e.stopPropagation(); $("domColBtn").parentElement.classList.toggle("open"); };
+$("domClear").onclick = () => { market.tradedAt.clear(); dom.dirty = true; };
+$("tapeSmart").onchange = () => { tape.smart = $("tapeSmart").checked; tape.dirty = true; };
+$("tapeBig").onchange = () => { tape.bigOnly = $("tapeBig").checked; tape.dirty = true; };
+$("tapeMin").oninput = () => { tape.minQ = +$("tapeMin").value || 0; tape.dirty = true; };
+
 setMode(S.mode); setView(S.view);
 loadSymbols(); load();
-window.lailong = { market, heat, flow, dom, S, LQ, alpha }; // tiện kiểm tra trong DevTools
+window.lailong = { market, heat, flow, dom, tape, S, alpha }; // tiện kiểm tra trong DevTools

@@ -6,6 +6,7 @@
 // - Bars: nến của khung đang xem, nến cuối được cập nhật theo từng lệnh khớp, kèm footprint.
 
 import { niceStep, INTERVALS } from "./util.js";
+import { TapeAggregator, quantile } from "./orderflow.js";
 
 export const COL_MS = 500;
 const MAX_COLS = 7200;       // 1 giờ ở 0,5 giây mỗi cột (bộ ghi trên laptop giữ lâu hơn)
@@ -42,7 +43,7 @@ export class Book {
 }
 
 export class MarketState {
-  constructor() { this.reset(); }
+  constructor() { this.listeners = new Set(); this.reset(); }
 
   reset(opts = {}) {
     this.symbol = opts.symbol || ""; this.exchange = opts.exchange || "";
@@ -55,7 +56,10 @@ export class MarketState {
     this.last = null; this.cvd = 0; this.liveStart = null;
     this.tradedAt = new Map(); // khối lượng đã khớp tại từng mức giá kể từ lúc mở trang: [bán, mua]
     this.sizes = []; this.bigTrade = Infinity; // ngưỡng "lệnh lớn": phân vị 99,5%
-    this.listeners = new Set();
+    // Smart Tape: lệnh gốc sau khi ghép các lệnh nhỏ cùng thời điểm, cùng phía
+    this.tape = new TapeAggregator({ tick: this.tick });
+    this.prints = []; this.histPrints = []; this.bigPrint = Infinity;
+    this.dayVol = new Map(); this.dayStart = Math.floor(Date.now() / 864e5) * 864e5; // khối lượng tại giá trong ngày (UTC)
   }
 
   on(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
@@ -81,8 +85,13 @@ export class MarketState {
 
   onTrades(list) {
     const now = Date.now();
+    if (this.tick && !this.tape.tick) this.tape.tick = this.tick;
     for (const t of list) {
       this.trades.push(t); this.last = t;
+      const done = this.tape.add(t);
+      if (this.tape.started) { const b = this.book.sorted(); this.tape.cur.meta = { bb: b.bids[0] ? b.bids[0][0] : null, ba: b.asks[0] ? b.asks[0][0] : null, bq: b.bids[0] ? b.bids[0][1] : 0, aq: b.asks[0] ? b.asks[0][1] : 0 }; }
+      if (done) this.prints.push(done);
+      if (this.tick && t.t >= this.dayStart) { const k = Math.round(t.p / this.tick); this.dayVol.set(k, (this.dayVol.get(k) || 0) + t.q); }
       if (this.tick) { const k = Math.round(t.p / this.tick), e = this.tradedAt.get(k) || [0, 0]; e[t.side === "buy" ? 1 : 0] += t.q; this.tradedAt.set(k, e); }
       const col = this._ensureCol(now);
       if (t.side === "buy") { col.bv += t.q; col.bpv += t.p * t.q; } else { col.sv += t.q; col.spv += t.p * t.q; }
@@ -93,6 +102,8 @@ export class MarketState {
       this._barTrade(t);
     }
     if (this.sizes.length > 4000) this.sizes.splice(0, this.sizes.length - 3000);
+    if (this.prints.length > 6000) this.prints.splice(0, 1000);
+    if (this.prints.length >= 50 && this.prints.length % 20 < list.length) this.updateBigPrint();
     if (this.sizes.length > 200 && (this.trades.length % 50 < list.length)) {
       const s = this.sizes.slice().sort((a, b) => a - b);
       this.bigTrade = s[Math.floor(s.length * 0.995)];
@@ -103,6 +114,12 @@ export class MarketState {
       this.trades.splice(0, Math.max(k, this.trades.length - 20000));
     }
     this.emit("trades");
+  }
+
+  // ngưỡng lệnh lớn của Smart Tape: top 0,5% lệnh gốc (cả lịch sử tải lại lẫn trực tiếp)
+  updateBigPrint() {
+    const qs = this.prints.map(p => p.q); for (const p of this.histPrints) qs.push(p.q);
+    if (qs.length >= 50) this.bigPrint = quantile(qs, 0.995);
   }
 
   onLiq(list) {
@@ -172,6 +189,8 @@ export class MarketState {
     b.h = Math.max(b.h, tr.p); b.l = Math.min(b.l, tr.p); b.c = tr.p; b.v += tr.q;
     if (tr.side === "buy") b.bv = (b.bv || 0) + tr.q;
     b.d += tr.side === "buy" ? tr.q : -tr.q;
+    // đỉnh/đáy CVD trong nến (cho CVD Pro), tính từ lúc bắt đầu theo dõi nến này
+    if (b.cvdH == null) { b.cvdH = Math.max(0, b.d); b.cvdL = Math.min(0, b.d); } else { b.cvdH = Math.max(b.cvdH, b.d); b.cvdL = Math.min(b.cvdL, b.d); }
     const k = Math.floor(tr.p / this.fpStep + 1e-9), cell = b.fp.get(k) || [0, 0];
     cell[tr.side === "buy" ? 1 : 0] += tr.q; b.fp.set(k, cell);
   }

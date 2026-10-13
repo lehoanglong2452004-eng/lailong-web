@@ -7,6 +7,7 @@
 //    phần ước tính bằng số liệu thật. Có giới hạn số lần gọi để không vượt hạn mức của sàn.
 
 import { INTERVALS, getJson, sleep } from "./util.js";
+import { smartTape } from "./orderflow.js";
 
 const SUB = { "1m": null, "5m": "1m", "15m": "1m", "1h": "5m", "4h": "15m", "1d": "1h" };
 const SUB_CAP = { BINANCE: 12000, BYBIT: 12000, OKX: 3000, HYPERLIQUID: 5000, SIM: 12000 };
@@ -83,6 +84,12 @@ export async function exactFootprintBinance(symbol, market, isCurrent, { maxRequ
       let fp = acc.get(bt); if (!fp) { fp = new Map(); acc.set(bt, fp); }
       const c = fp.get(k) || [0, 0]; c[x.m ? 0 : 1] += q; fp.set(k, c);
     }
+    // ghép lệnh nhỏ thành lệnh gốc để vẽ Big Trades cho cả các nến cũ
+    const page = rows.filter(x => (minId === null || x.a < minId) && x.T < liveStart).sort((a, b) => a.a - b.a)
+      .map(x => ({ t: x.T, p: +x.p, q: +x.q, side: x.m ? "sell" : "buy" }));
+    for (const pr of smartTape(page, { tick: market.tick })) market.histPrints.push(pr);
+    if (market.histPrints.length > 200000) market.histPrints.splice(0, market.histPrints.length - 200000);
+    market.updateBigPrint();
     minId = Math.min(...rows.map(x => x.a));
     const earliest = Math.min(...rows.map(x => x.T));
     const barStart = Math.floor(earliest / ms) * ms;
