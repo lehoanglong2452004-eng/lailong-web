@@ -4,12 +4,12 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js";
-import { cvd as cvdOf } from "./analytics.js";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js";
-import { GROUPS } from "./flowtools.js";
-import { WALL_KIND } from "./walls.js";
-import { T, alpha } from "./theme.js";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610131920";
+import { cvd as cvdOf } from "./analytics.js?v=202610131920";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610131920";
+import { GROUPS } from "./flowtools.js?v=202610131920";
+import { WALL_KIND } from "./walls.js?v=202610131920";
+import { T, alpha } from "./theme.js?v=202610131920";
 
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
