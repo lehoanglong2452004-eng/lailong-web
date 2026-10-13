@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610132205">
+<link rel="stylesheet" href="css/app.css?v=202610132215">
 </head>
 <body>
 <header class="menubar">
@@ -222,6 +222,10 @@
       <label class="row" data-g="bt-slippage">Trượt giá (bps) <input type="number" id="btSlip" value="2" min="0" step="0.5"></label>
       <button class="primary" id="btRun">Chạy backtest</button>
       <button class="tool" id="btRunAll" data-g="bt-rank">Chạy tất cả, xếp hạng</button>
+      <hr>
+      <label class="row col" data-g="bt-robust">Các coin để kiểm tra độ bền <input type="text" id="btSyms" value="BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT" spellcheck="false"></label>
+      <label class="row" data-g="bt-segs">Số đoạn thời gian <input type="number" id="btSegs" value="5" min="2" max="12" step="1"></label>
+      <button class="tool" id="btRobustRun" data-g="bt-robust">Kiểm tra độ bền</button>
       <p class="note" id="btStatus"></p>
     </div>
   </aside>
@@ -229,12 +233,12 @@
     <div class="legbar" id="btLegBar" hidden><span data-g="bt-tp">Kết quả theo</span><button class="tool on" data-leg="1">TP1</button><button class="tool" data-leg="2">TP2</button><small id="btLegNote"></small></div>
     <div class="statgrid" id="btStats"></div>
     <div class="card" id="btRank" hidden></div>
+    <div class="card" id="btRobust" hidden></div>
     <div class="card" id="btScen" hidden>
-      <h3>Bốn kịch bản: theo chiến lược, chỉ LONG, chỉ SHORT, đứng ngoài <button class="q" data-g="bt-scen">?</button> <small id="btScenSub"></small></h3>
+      <h3>Ba kịch bản: theo chiến lược, chỉ LONG, chỉ SHORT <button class="q" data-g="bt-scen">?</button> <small id="btScenSub"></small></h3>
       <div class="scen"><div class="scen-chart"><canvas id="btEqBoth"></canvas></div><div class="scen-stats" id="btEqBothS"></div></div>
       <div class="scen"><div class="scen-chart"><canvas id="btEqLong"></canvas></div><div class="scen-stats" id="btEqLongS"></div></div>
       <div class="scen"><div class="scen-chart"><canvas id="btEqShort"></canvas></div><div class="scen-stats" id="btEqShortS"></div></div>
-      <div class="scen"><div class="scen-chart"><canvas id="btEqFlat"></canvas></div><div class="scen-stats" id="btEqFlatS"></div></div>
     </div>
     <div class="card" id="btValid" hidden></div>
     <section class="panel btchart"><div class="chart-wrap"><canvas id="btChart"></canvas></div></section>
@@ -272,11 +276,10 @@
     <section class="panel frchart"><div class="chart-wrap"><canvas id="frChart"></canvas></div></section>
     <div class="card" id="frHolds" hidden></div>
     <div class="card" id="frScen" hidden>
-      <h3>Ba kịch bản: luôn LONG, luôn SHORT, đứng ngoài <button class="q" data-g="fr-equity">?</button> <small id="frScenSub"></small></h3>
+      <h3>Hai kịch bản: luôn LONG, luôn SHORT <button class="q" data-g="fr-equity">?</button> <small id="frScenSub"></small></h3>
       <p class="note" id="frScenNote"></p>
       <div class="scen"><div class="scen-chart"><canvas id="frEqLong"></canvas></div><div class="scen-stats" id="frEqLongS"></div></div>
       <div class="scen"><div class="scen-chart"><canvas id="frEqShort"></canvas></div><div class="scen-stats" id="frEqShortS"></div></div>
-      <div class="scen"><div class="scen-chart"><canvas id="frEqFlat"></canvas></div><div class="scen-stats" id="frEqFlatS"></div></div>
     </div>
     <div class="card" id="frValid" hidden></div>
     <div class="card" id="frVScen" hidden>
@@ -284,7 +287,6 @@
       <div class="scen"><div class="scen-chart"><canvas id="frVqFr"></canvas></div><div class="scen-stats" id="frVqFrS"></div></div>
       <div class="scen"><div class="scen-chart"><canvas id="frVqLong"></canvas></div><div class="scen-stats" id="frVqLongS"></div></div>
       <div class="scen"><div class="scen-chart"><canvas id="frVqShort"></canvas></div><div class="scen-stats" id="frVqShortS"></div></div>
-      <div class="scen"><div class="scen-chart"><canvas id="frVqFlat"></canvas></div><div class="scen-stats" id="frVqFlatS"></div></div>
     </div>
     <div class="card" id="frMatches" hidden></div>
     <div class="card" id="frHelp"></div>
@@ -313,6 +315,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610132205"></script>
+<script type="module" src="js/app.js?v=202610132215"></script>
 </body>
 </html>

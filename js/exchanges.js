@@ -10,7 +10,7 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610132205";
+import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610132215";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
 function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
@@ -409,8 +409,10 @@ const sim = {
   _price: 65000, _anchor: 65000,
   async listSymbols() { return [{ symbol: "BTCUSDT", last: this._price, change: 0, volUsd: 1e9 }]; },
   async info() { return { tick: 0.1, ctVal: 1 }; },
-  _bars(interval, n) {
-    const ms = INTERVALS[interval], r = prng(7 + ms / 1000), out = [];
+  _bars(interval, n, symbol = "BTCUSDT") {
+    // mỗi mã giả lập một chuỗi giá riêng (BTCUSDT giữ nguyên chuỗi cũ)
+    const seed = symbol === "BTCUSDT" ? 0 : [...symbol].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 100003, 7);
+    const ms = INTERVALS[interval], r = prng(7 + ms / 1000 + seed), out = [];
     let p = 52000, oi = 80000, t = Math.floor(Date.now() / ms) * ms - (n - 1) * ms;
     const vol = 0.0035 * Math.sqrt(ms / 60e3) / 3;
     let regime = 0;
@@ -428,7 +430,7 @@ const sim = {
     for (const b of out) { b.o *= k; b.h *= k; b.l *= k; b.c *= k; }
     return out;
   },
-  async klines(symbol, interval, n) { this._anchor = this._price; return this._bars(interval, n).map(({ oi, ...b }) => b); },
+  async klines(symbol, interval, n) { this._anchor = this._price; return this._bars(interval, n, symbol).map(({ oi, ...b }) => b); },
   async oiHistory(symbol, interval, from) {
     const ms = INTERVALS[interval];
     return this._bars(interval, Math.min(20000, Math.ceil((Date.now() - from) / ms) + 1)).map(b => ({ t: b.t + ms, oi: b.oi }));

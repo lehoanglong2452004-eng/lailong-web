@@ -317,6 +317,17 @@ input[type=number], input:not([type]) { cursor: text !important; }
 }
 
 canvas { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.btform .row.col { flex-direction: column; align-items: stretch; gap: 4px; }
+.btform .row.col input { width: 100%; }
+.robust .cell { text-align: center; }
+.robust .cell.pos { background: rgba(38, 166, 154, .18); }
+.robust .cell.neg { background: rgba(239, 83, 80, .16); }
+.robust .cell.few { opacity: .55; }
+.robust .checks { margin: 8px 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.robust .checks li::before { content: "✗ "; color: var(--sell); font-weight: 700; }
+.robust .checks li.ok::before { content: "✓ "; color: var(--buy); }
+.robust h3 { margin-top: 16px; }
+.robust .verdict { font-size: 1.15em; font-weight: 700; }
 .btform input.reset, .btform select.reset { outline: 2px solid var(--accent); transition: outline .2s; }
 @media (max-width: 900px) { .btres .scen { height: auto; } .btres .btchart { height: 320px; } .stratlist { max-height: 260px; } }
 @media (max-width: 900px) { .backtest { grid-auto-rows: max-content; } .btform .formbody { overflow: visible; } }

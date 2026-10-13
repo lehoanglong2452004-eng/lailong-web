@@ -1,6 +1,6 @@
 // Lai Long Web: chiến lược MIDOTI v2.568 (luật OP + VWAP theo file Pine của Lai Long).
 // Tách riêng khỏi strategies.js để bản web công khai có thể không kèm file này.
-import { registerStrategy, tzOffsetMin, localMin, inWin, P, OPT } from './strategies.js?v=202610132205';
+import { registerStrategy, tzOffsetMin, localMin, inWin, P, OPT } from './strategies.js?v=202610132215';
 
 // ---------- MIDOTI v2.568: luật OP + VWAP theo file Pine của Lai Long ----------
 const OP_ANCHORS = [

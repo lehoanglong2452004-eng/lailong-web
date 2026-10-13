@@ -1,7 +1,7 @@
 // Lai Long Web: trang FRACTAL (giao diện). Phần tính toán nằm trong fractal.js.
-import { HOLDS, buildIndex, search, summarize, paths, quantiles, walkForward, sampleLevel, breakeven, equityStats } from "./fractal.js?v=202610132205";
-import { T, alpha } from "./theme.js?v=202610132205";
-import { fitCanvas, MONO, INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610132205";
+import { HOLDS, buildIndex, search, summarize, paths, quantiles, walkForward, sampleLevel, breakeven, equityStats } from "./fractal.js?v=202610132215";
+import { T, alpha } from "./theme.js?v=202610132215";
+import { fitCanvas, MONO, INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610132215";
 
 const TFS = ["5m", "15m", "1h", "4h", "1d"];
 const TREND = { 1: "H1 tăng", 0: "H1 ngang", "-1": "H1 giảm" }, POS = ["đáy H4", "giữa H4", "đỉnh H4"];
@@ -130,7 +130,7 @@ export class EquityChart {
 // ---------- trang ----------
 export function initFractal({ $, S, ex, esc, table, log }) {
   const chart = new FractalChart($("frChart"));
-  const eqIds = ["frEqLong", "frEqShort", "frEqFlat", "frVqFr", "frVqLong", "frVqShort", "frVqFlat"], eq = {};
+  const eqIds = ["frEqLong", "frEqShort", "frVqFr", "frVqLong", "frVqShort"], eq = {};
   for (const id of eqIds) eq[id] = new EquityChart($(id));
   // vẽ một nhóm kịch bản, dùng chung thang R để so bằng mắt
   const fmtPF = x => isFinite(x) ? x.toFixed(2) : x === Infinity ? "∞" : "-";
@@ -259,7 +259,6 @@ export function initFractal({ $, S, ex, esc, table, log }) {
     const sc = scenarios([
       { id: "frEqLong", title: "Kịch bản LONG", color: "up", Rs: ord.map(x => x.o.long.R), ts: ord.map(x => x.t) },
       { id: "frEqShort", title: "Kịch bản SHORT", color: "down", Rs: ord.map(x => x.o.short.R), ts: ord.map(x => x.t) },
-      { id: "frEqFlat", title: "Đứng ngoài quan sát", color: "muted", flat: true },
     ], o.risk);
     const [L, Sh] = sc, best = L.st.totalR > 0 || Sh.st.totalR > 0 ? (L.st.totalR >= Sh.st.totalR ? L : Sh) : null;
     $("frScenNote").innerHTML = !ord.length ? "Chưa có mẫu nào." : best
@@ -279,7 +278,6 @@ export function initFractal({ $, S, ex, esc, table, log }) {
       { id: "frVqFr", title: "Theo FRACTAL", long: "Theo FRACTAL: mỗi điểm thử tự chọn LONG, SHORT hoặc đứng ngoài", color: "accent", Rs: wf.trades.map(t => t.R), ts: wf.trades.map(t => t.t) },
       { id: "frVqLong", title: "Luôn LONG ở mọi điểm thử", color: "up", Rs: wf.base.long, ts: wf.base.t },
       { id: "frVqShort", title: "Luôn SHORT ở mọi điểm thử", color: "down", Rs: wf.base.short, ts: wf.base.t },
-      { id: "frVqFlat", title: "Đứng ngoài quan sát", color: "muted", flat: true },
     ], o.risk);
     const r = wf.res, hl = holdLabel(o.H * o.baseMs), lvl = sampleLevel(r.n);
     const ok = r.n >= 30 && r.ciR.lo > 0, better = r.avgR > Math.max(wf.baseLong, wf.baseShort);

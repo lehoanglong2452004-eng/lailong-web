@@ -503,9 +503,9 @@ export const GLOSSARY = [
   {
     id: "bt-scen",
     group: "Backtest",
-    term: "Bốn kịch bản: cả hai phía, LONG, SHORT, đứng ngoài",
-    short: "Cùng chiến lược nhưng chỉ lấy lệnh MUA, chỉ lấy lệnh BÁN, hoặc không làm gì, để biết phía nào thật sự có lợi thế.",
-    body: "<p>Mỗi kịch bản là một lần chạy riêng: “Chỉ LONG” bỏ qua mọi tín hiệu BÁN nên có thể vào được những lệnh mua mà bản cả hai phía bỏ lỡ (vì lúc đó đang giữ lệnh bán).</p><ul><li><b>WR:</b> tỷ lệ lệnh có lãi sau phí.</li><li><b>PF:</b> tổng R thắng / tổng R thua. Trên 1 là có lãi.</li><li><b>Tổng R:</b> cộng dồn R của mọi lệnh.</li><li><b>Vốn:</b> lãi kép với mức rủi ro mỗi lệnh đã chọn.</li><li><b>Kỳ vọng / lệnh (95%):</b> R trung bình mỗi lệnh và khoảng tin cậy 95%. Cận dưới trên 0 với ít nhất 30 lệnh mới gọi là có lợi thế.</li><li><b>Sụt giảm tối đa:</b> từ đỉnh cao nhất của đường vốn xuống đáy sau đó.</li></ul><p><b>Đứng ngoài</b> là đường 0: kịch bản nào nằm dưới đường này thì không giao dịch còn tốt hơn. Vạch đứt trên biểu đồ là mốc chia 70% dữ liệu đầu và 30% cuối.</p>"
+    term: "Ba kịch bản: cả hai phía, LONG, SHORT",
+    short: "Cùng chiến lược nhưng lấy cả hai phía, chỉ lệnh MUA hoặc chỉ lệnh BÁN, để biết phía nào thật sự có lợi thế.",
+    body: "<p>Mỗi kịch bản là một lần chạy riêng: “Chỉ LONG” bỏ qua mọi tín hiệu BÁN nên có thể vào được những lệnh mua mà bản cả hai phía bỏ lỡ (vì lúc đó đang giữ lệnh bán).</p><ul><li><b>WR:</b> tỷ lệ lệnh có lãi sau phí.</li><li><b>PF:</b> tổng R thắng / tổng R thua. Trên 1 là có lãi.</li><li><b>Tổng R:</b> cộng dồn R của mọi lệnh.</li><li><b>Vốn:</b> lãi kép với mức rủi ro mỗi lệnh đã chọn.</li><li><b>Kỳ vọng / lệnh (95%):</b> R trung bình mỗi lệnh và khoảng tin cậy 95%. Cận dưới trên 0 với ít nhất 30 lệnh mới gọi là có lợi thế.</li><li><b>Sụt giảm tối đa:</b> từ đỉnh cao nhất của đường vốn xuống đáy sau đó.</li></ul><p>Kịch bản nào nằm dưới đường 0 thì không giao dịch còn tốt hơn. Vạch đứt trên biểu đồ là mốc chia 70% dữ liệu đầu và 30% cuối.</p>"
   },
   {
     id: "bt-oos",
@@ -520,6 +520,27 @@ export const GLOSSARY = [
     term: "Bảng xếp hạng chiến lược",
     short: "Chạy cả 13 chiến lược với thông số mặc định trên cùng mã, khung và số nến, rồi xếp theo cận dưới kỳ vọng R.",
     body: "<p>Xếp theo cận dưới khoảng tin cậy 95% của kỳ vọng R mỗi lệnh, tức là kịch bản xấu mà vẫn hợp lý. Cách này phạt chiến lược ít lệnh, vì ít lệnh thì khoảng tin cậy rộng.</p><p>Bấm vào một dòng để mở chiến lược đó và xem chi tiết.</p><p><b>Lưu ý:</b> Chạy 13 chiến lược rồi chọn cái tốt nhất cũng là một kiểu chọn lọc may rủi. Hãy xem thêm cột “30% cuối” và thử trên mã khác trước khi tin.</p>"
+  },
+  {
+    id: "bt-robust",
+    group: "Backtest",
+    term: "Kiểm tra độ bền",
+    short: "Chạy cùng một chiến lược, cùng thông số trên nhiều coin, chia nhiều đoạn thời gian và tách theo trạng thái thị trường.",
+    body: "<p>Một kết quả đẹp trên một coin, một giai đoạn có thể chỉ là may mắn. Lợi thế thật phải còn khi đổi coin, đổi thời gian và đổi tính chất thị trường.</p><p><b>Ba điều kiện để gọi là bền:</b></p><ul><li>Gộp mọi lệnh của mọi coin: có ít nhất 30 lệnh và cận dưới khoảng tin cậy 95% của kỳ vọng R trên 0.</li><li>Ít nhất 2/3 số coin có kỳ vọng dương.</li><li>Ít nhất 2/3 số đoạn thời gian có kỳ vọng dương.</li></ul><p>Coin hoặc đoạn có dưới 5 lệnh không được tính vào hai điều kiện sau vì quá ít để nói lên điều gì.</p><p>Gõ tên coin cách nhau bằng dấu phẩy, tối đa 12 coin. Coin nào sàn không có sẽ được bỏ qua và báo lại.</p><p><b>Lưu ý:</b> thông số phải đặt trước rồi mới chạy. Chỉnh đi chỉnh lại cho tới khi bảng này đẹp thì nó không còn là bài thử nữa.</p>"
+  },
+  {
+    id: "bt-segs",
+    group: "Backtest",
+    term: "Chia nhiều đoạn thời gian (walk-forward)",
+    short: "Chia toàn bộ thời gian thành các đoạn liên tiếp dài bằng nhau, xem chiến lược có kiếm tiền ở từng đoạn không.",
+    body: "<p>Thay vì chỉ chia 70/30 một lần, thời gian được chia thành nhiều đoạn (mặc định 5). Mỗi lệnh thuộc đoạn chứa lúc vào lệnh.</p><p>Vì thông số được đặt trước và giữ nguyên cho mọi đoạn, mỗi đoạn là một lần thử độc lập. Chiến lược bền thì phần lớn các ô có màu xanh, không chỉ một hai đoạn lời đậm còn lại lỗ.</p><p><b>Cách đọc ô:</b> số trên là kỳ vọng R mỗi lệnh, số dưới là số lệnh. Ô mờ là dưới 5 lệnh, chưa đáng tin.</p>"
+  },
+  {
+    id: "bt-regime",
+    group: "Backtest",
+    term: "Trạng thái thị trường: lên, xuống, đi ngang",
+    short: "Tách kết quả theo lúc có tín hiệu thị trường đang có xu hướng lên, xu hướng xuống hay đi ngang.",
+    body: "<p>Tại nến có tín hiệu, xét 50 nến trước đó (không nhìn trước). Tỷ lệ hiệu quả = quãng giá đi được từ đầu tới cuối chia cho tổng quãng đường giá đã chạy.</p><ul><li>Từ 0,3 trở lên và giá tăng: <b>thị trường lên</b>.</li><li>Từ 0,3 trở lên và giá giảm: <b>thị trường xuống</b>.</li><li>Dưới 0,3: <b>đi ngang</b>, giá chạy qua lại nhiều mà không đi được xa.</li></ul><p>Nhờ bảng này bro biết chiến lược hợp lúc nào, ví dụ chỉ dùng khi thị trường đi ngang và tắt khi có xu hướng mạnh.</p>"
   },
   {
     id: "bt-reset",
@@ -637,8 +658,8 @@ export const GLOSSARY = [
   },
   {
     id: "fr-equity", group: "Fractal & kiểm chứng", term: "Ba kịch bản và đường cong vốn",
-    short: "Nếu mỗi lần gặp hình này trong lịch sử bạn đều vào LONG (hoặc SHORT, hoặc đứng ngoài) theo đúng luật, tài khoản sẽ đi thế nào.",
-    body: "<p>Các mẫu giống nhau được xếp theo thời gian. Mỗi mẫu là một lệnh theo luật đang chọn (chốt lời, cắt lỗ, thời gian giữ, đã trừ phí và trượt giá). Đường cong cộng dồn kết quả từng lệnh.</p><p><b>WR</b> (tỷ lệ thắng): phần trăm lệnh có lãi sau phí, kể cả lệnh hết giờ mà vẫn lãi.</p><p><b>PF</b> (profit factor): tổng R của các lệnh lãi chia tổng R của các lệnh lỗ. Trên 1 là có lãi, từ 1,5 trở lên là tốt.</p><p><b>Tổng R</b>: cộng tất cả lệnh. Với rủi ro 1% mỗi lệnh, +10R xấp xỉ +10% vốn (trang tính lãi kép chính xác).</p><p><b>Sụt giảm tối đa (drawdown)</b>: từ đỉnh cao nhất của tài khoản xuống đáy thấp nhất sau đó, tính bằng R và bằng % vốn. Đây là mức đau nhất bạn phải chịu được nếu đi theo kịch bản đó.</p><p><b>Chuỗi thua dài nhất</b>: số lệnh lỗ liên tiếp nhiều nhất.</p><p><b>Đứng ngoài</b>: không vào lệnh thì không lời, không lỗ, không tốn phí: đường thẳng ở 0. Kịch bản nào nằm dưới đường này thì đứng ngoài còn tốt hơn.</p><p><b>Lưu ý:</b> đây là kết quả trên các lần giống trong quá khứ, chưa phải kiểm chứng ngoài mẫu. Phần \"Đường cong vốn ngoài mẫu\" mới là bài thử thật.</p>"
+    short: "Nếu mỗi lần gặp hình này trong lịch sử bạn đều vào LONG (hoặc SHORT) theo đúng luật, tài khoản sẽ đi thế nào.",
+    body: "<p>Các mẫu giống nhau được xếp theo thời gian. Mỗi mẫu là một lệnh theo luật đang chọn (chốt lời, cắt lỗ, thời gian giữ, đã trừ phí và trượt giá). Đường cong cộng dồn kết quả từng lệnh.</p><p><b>WR</b> (tỷ lệ thắng): phần trăm lệnh có lãi sau phí, kể cả lệnh hết giờ mà vẫn lãi.</p><p><b>PF</b> (profit factor): tổng R của các lệnh lãi chia tổng R của các lệnh lỗ. Trên 1 là có lãi, từ 1,5 trở lên là tốt.</p><p><b>Tổng R</b>: cộng tất cả lệnh. Với rủi ro 1% mỗi lệnh, +10R xấp xỉ +10% vốn (trang tính lãi kép chính xác).</p><p><b>Sụt giảm tối đa (drawdown)</b>: từ đỉnh cao nhất của tài khoản xuống đáy thấp nhất sau đó, tính bằng R và bằng % vốn. Đây là mức đau nhất bạn phải chịu được nếu đi theo kịch bản đó.</p><p><b>Chuỗi thua dài nhất</b>: số lệnh lỗ liên tiếp nhiều nhất.</p><p><b>Đường 0</b>: kịch bản nào nằm dưới đường này thì không vào lệnh còn tốt hơn.</p><p><b>Lưu ý:</b> đây là kết quả trên các lần giống trong quá khứ, chưa phải kiểm chứng ngoài mẫu. Phần \"Đường cong vốn ngoài mẫu\" mới là bài thử thật.</p>"
   },
   {
     id: "fr-cost", group: "Fractal & kiểm chứng", term: "Phí và trượt giá trong kiểm chứng",

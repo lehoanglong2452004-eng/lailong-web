@@ -1,10 +1,11 @@
 // Lai Long Web: trang Backtest (giao diện). Chiến lược nằm trong strategies.js, bộ máy chạy lệnh trong backtest.js.
-import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610132205";
-import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610132205";
-import { EquityChart } from "./fractalview.js?v=202610132205";
-import { sampleLevel } from "./fractal.js?v=202610132205";
-import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610132205";
-import { isDeltaApprox } from "./analytics.js?v=202610132205";
+import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610132215";
+import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610132215";
+import { EquityChart } from "./fractalview.js?v=202610132215";
+import { sampleLevel } from "./fractal.js?v=202610132215";
+import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610132215";
+import { isDeltaApprox } from "./analytics.js?v=202610132215";
+import { robustness } from "./robust.js?v=202610132215";
 
 const PIN_KEY = "lailong.btPins", SEL_KEY = "lailong.btStrat", LEG_KEY = "lailong.btLeg";
 const sgn = (x, d = 2) => (x >= 0 ? "+" : "") + x.toFixed(d);
@@ -21,8 +22,8 @@ export function verdict(st) {
 }
 
 export function initBacktest({ $, S, ex, esc, table, market, chart }) {
-  let pins = store.get(PIN_KEY, []), cur = store.get(SEL_KEY, "midoti"), leg = store.get(LEG_KEY, 2), last = null, rank = null;
-  const eq = {}; for (const id of ["btEqBoth", "btEqLong", "btEqShort", "btEqFlat"]) eq[id] = new EquityChart($(id));
+  let pins = store.get(PIN_KEY, []), cur = store.get(SEL_KEY, "midoti"), leg = store.get(LEG_KEY, 2), last = null, rank = null, rob = null;
+  const eq = {}; for (const id of ["btEqBoth", "btEqLong", "btEqShort"]) eq[id] = new EquityChart($(id));
   const status = t => { $("btStatus").textContent = t; };
 
   // ---------- danh sách chiến lược + ghim ----------
@@ -64,16 +65,16 @@ export function initBacktest({ $, S, ex, esc, table, market, chart }) {
     return o;
   }
   const cache = new Map();
-  async function loadBars(tf, n) {
-    const k = `${S.ex}:${S.symbol}:${tf}:${n}`;
+  async function loadBars(tf, n, symbol = S.symbol) {
+    const k = `${S.ex}:${symbol}:${tf}:${n}`;
     if (cache.has(k) && Date.now() - cache.get(k).t < 5 * 60e3) return cache.get(k).bars;
-    let bars = await ex().klines(S.symbol, tf, n);
+    let bars = await ex().klines(symbol, tf, n);
     const ms = INTERVALS[tf], now = Date.now();
     bars = bars.filter(b => b.t + ms <= now); // chỉ dùng nến đã đóng cửa
     cache.set(k, { t: Date.now(), bars });
     return bars;
   }
-  const busy = on => { $("btRun").disabled = $("btRunAll").disabled = on; };
+  const busy = on => { $("btRun").disabled = $("btRunAll").disabled = $("btRobustRun").disabled = on; };
 
   // ---------- chạy một chiến lược ----------
   async function run() {
@@ -92,10 +93,9 @@ export function initBacktest({ $, S, ex, esc, table, market, chart }) {
     busy(false);
   }
   $("btRun").onclick = run;
-  $("btLegBar").onclick = e => { const b = e.target.closest("[data-leg]"); if (!b) return; leg = +b.dataset.leg; store.set(LEG_KEY, leg); if (last) render(); if (rank) renderRank(); };
+  $("btLegBar").onclick = e => { const b = e.target.closest("[data-leg]"); if (!b) return; leg = +b.dataset.leg; store.set(LEG_KEY, leg); if (last) render(); if (rank) renderRank(); if (rob) renderRobust(); };
 
   function statRows(title, st, risk, capital) {
-    if (!st) return `<div class="h">${title}</div><span>Số lệnh</span><b>0</b><span>Tổng R</span><b>0R</b><span>Vốn</span><b>0%</b><span>Sụt giảm tối đa</span><b>0R · 0%</b><span>Phí đã trả</span><b>0</b>`;
     const v = verdict(st);
     return `<div class="h ${cls(st.totalR)}">${title}</div>` +
       `<span data-g="bt-scen">Số lệnh</span><b>${st.n} <small class="${sampleLevel(st.n).cls}">${sampleLevel(st.n).label}</small></b>` +
@@ -129,19 +129,15 @@ export function initBacktest({ $, S, ex, esc, table, market, chart }) {
       card("bt-mdd", "Sụt giảm tối đa", `${a.maxDDR.toFixed(1)}R · ${a.maxDDPct.toFixed(1)}%`, "neg") +
       card("bt-avgbars", "Giữ lệnh trung bình", a.n ? `${a.avgBars.toFixed(1)} nến` : "-") +
       card("bt-scen", "Kết luận", v.txt, v.cls + " txt");
-    // bốn kịch bản, dùng chung thang R
+    // ba kịch bản, dùng chung thang R
     const { cut } = splitTrades([], bars);
     const rows = [
       { id: "btEqBoth", title: "Theo chiến lược (cả LONG và SHORT)", color: "accent", tr: res.both.trades, st: sts.both },
       { id: "btEqLong", title: "Chỉ lệnh LONG", color: "up", tr: res.long.trades, st: sts.long },
       { id: "btEqShort", title: "Chỉ lệnh SHORT", color: "down", tr: res.short.trades, st: sts.short },
-      { id: "btEqFlat", title: "Đứng ngoài", color: "muted", flat: true },
     ];
-    const nMax = Math.max(1, ...rows.filter(r => !r.flat).map(r => r.tr.length));
-    const flatSt = { curve: new Array(nMax + 1).fill(0) };
-    const all = rows.flatMap(r => r.flat ? [0] : r.st.curve); let lo = Math.min(0, ...all), hi = Math.max(0, ...all); const pad = Math.max(0.5, (hi - lo) * 0.08); lo -= pad; hi += pad;
+    const all = rows.flatMap(r => r.st.curve); let lo = Math.min(0, ...all), hi = Math.max(0, ...all); const pad = Math.max(0.5, (hi - lo) * 0.08); lo -= pad; hi += pad;
     for (const r of rows) {
-      if (r.flat) { eq[r.id].set({ title: r.title, color: r.color, flat: true, st: flatSt, range: [lo, hi] }); $(r.id + "S").innerHTML = statRows(r.title, null); continue; }
       eq[r.id].set({ title: r.title, long: `${r.title} · ${tpTxt}`, color: r.color, Rs: r.tr.map(t => t[k]), ts: r.tr.map(t => t.t), tags: r.tr.map(t => `${t.side === "long" ? "LONG" : "SHORT"} ${t.tag}`), st: r.st, range: [lo, hi], splitK: r.tr.filter(t => t.t < cut).length });
       $(r.id + "S").innerHTML = statRows(r.title, r.st, risk, o.capital);
     }
@@ -228,6 +224,47 @@ export function initBacktest({ $, S, ex, esc, table, market, chart }) {
     const tr = e.target.closest("[data-rank]"); if (!tr) return;
     cur = tr.dataset.rank; store.set(SEL_KEY, cur); renderList(); renderForm(); renderRank(); run();
   };
+
+  // ---------- kiểm tra độ bền: nhiều coin, nhiều đoạn thời gian, theo trạng thái thị trường ----------
+  $("btRobustRun").onclick = async () => {
+    const o = common(), id = cur, params = readParams();
+    const syms = [...new Set($("btSyms").value.toUpperCase().split(/[\s,;]+/).filter(Boolean))].slice(0, 12);
+    const K = Math.round(clampNum($("btSegs"), 2, 12, 5));
+    if (!syms.length) { status("Nhập ít nhất một coin, ví dụ BTCUSDT, ETHUSDT."); return; }
+    busy(true);
+    const sets = [], failed = [];
+    for (const [j, sym] of syms.entries()) {
+      status(`Đang tải và chạy ${j + 1}/${syms.length}: ${sym} (${o.n} nến ${o.tf} từ ${ex().name})...`); await new Promise(r => setTimeout(r, 0));
+      try {
+        const bars = await loadBars(o.tf, o.n, sym);
+        if (bars.length < 300) throw new Error("không đủ dữ liệu");
+        sets.push({ symbol: sym, bars, trades: simulate(bars, id, params, { ...o.sim, side: "both" }).trades });
+      } catch (e) { failed.push(`${sym} (${e.message})`); }
+    }
+    if (sets.length) { rob = { sets, o, id, K, failed, exName: ex().name }; renderRobust(); status(`Xong kiểm tra độ bền: ${STRATEGIES[id].short} trên ${sets.length} coin.${failed.length ? ` Bỏ qua: ${failed.join(", ")}.` : ""}`); }
+    else status(`Lỗi: không tải được coin nào. ${failed.join(", ")}`);
+    busy(false);
+  };
+  function renderRobust() {
+    const { sets, o, id, K, exName } = rob, risk = o.sim.riskPct, R = robustness(sets, { segments: K, leg, riskPct: risk });
+    $("btLegBar").hidden = false;
+    const ev = st => st.n ? `${sgn(st.avgR)} <small>(${sgn(st.ci.lo)}…${sgn(st.ci.hi)})</small>` : "-";
+    const evCls = st => st.ci.lo > 0 ? "pos" : st.ci.hi < 0 ? "neg" : "";
+    const cell = st => `<td class="cell ${st.n ? cls(st.avgR) : ""}${st.n < 5 ? " few" : ""}" title="${st.n} lệnh">${st.n ? `${sgn(st.avgR)}<br><small>${st.n} lệnh</small>` : "-"}</td>`;
+    const day = t => fmtDate(t).slice(0, 10);
+    const head = ["Coin", "Số lệnh", "WR", "PF", ["Kỳ vọng / lệnh (95%)", "bt-scen"], "Tổng R", "Sụt giảm", ["30% cuối: kỳ vọng", "bt-oos"], "Kết luận"];
+    const row = (name, st, oos) => { const v = verdict(st); return `<tr><td class="t">${esc(name)}</td><td>${st.n}</td><td>${st.n ? (st.wr * 100).toFixed(1) + "%" : "-"}</td><td class="${st.pf > 1 ? "pos" : st.pf < 1 ? "neg" : ""}">${fmtPF(st.pf)}</td><td class="${evCls(st)}">${ev(st)}</td><td class="${cls(st.totalR)}">${sgn(st.totalR, 1)}R</td><td class="neg">${st.n ? st.maxDDR.toFixed(1) + "R" : "-"}</td><td class="${oos ? cls(oos.avgR) : ""}">${oos && oos.n ? `${sgn(oos.avgR)} <small>(${oos.n} lệnh)</small>` : "-"}</td><td class="t ${v.cls}">${v.txt}</td></tr>`; };
+    $("btRobust").hidden = false;
+    $("btRobust").innerHTML = `<h3>Kiểm tra độ bền: ${esc(STRATEGIES[id].name)} <button class="q" data-g="bt-robust">?</button> <small>${esc(exName)} · ${o.tf} · ${o.n} nến mỗi coin · ${leg === 1 ? `TP1 ${o.sim.tp1R}R` : `TP2 ${o.sim.tp2R}R`} · cùng một bộ thông số cho mọi coin</small></h3>` +
+      `<div class="robust"><p class="verdict ${R.verdict.cls}">${R.verdict.txt}</p><ul class="checks">${R.checks.map(c => `<li class="${c.ok ? "ok" : ""}">${esc(c.txt)}</li>`).join("")}</ul>` +
+      `<h3>Từng coin</h3>` + table(head, [...R.coins.map(c => row(c.symbol, c.st, c.oos)), row("Gộp tất cả", R.pooled, null)], "") +
+      `<h3>Từng đoạn thời gian <button class="q" data-g="bt-segs">?</button> <small>kỳ vọng R mỗi lệnh, ô xanh là dương, ô đỏ là âm, ô mờ là dưới 5 lệnh</small></h3>` +
+      table(["Coin", ...R.segs.map((g, k) => `Đoạn ${k + 1}<br><small>${day(g.from)}</small>`)],
+        [...R.coins.map(c => `<tr><td class="t">${esc(c.symbol)}</td>${c.cells.map(cell).join("")}</tr>`), `<tr><td class="t"><b>Gộp</b></td>${R.segs.map(g => cell(g.st)).join("")}</tr>`], "") +
+      `<h3>Theo trạng thái thị trường <button class="q" data-g="bt-regime">?</button> <small>gộp mọi coin, xét lúc có tín hiệu</small></h3>` +
+      table(["Trạng thái", "Số lệnh", "WR", "PF", "Kỳ vọng / lệnh (95%)", "Tổng R"], R.regimes.map(({ name, st }) => `<tr><td class="t">${name}</td><td>${st.n}</td><td>${st.n ? (st.wr * 100).toFixed(1) + "%" : "-"}</td><td class="${st.pf > 1 ? "pos" : st.pf < 1 ? "neg" : ""}">${fmtPF(st.pf)}</td><td class="${evCls(st)}">${ev(st)}</td><td class="${cls(st.totalR)}">${sgn(st.totalR, 1)}R</td></tr>`), "") +
+      `<p class="note">${R.regNote.length ? `Chiến lược kiếm được tiền khi ${R.regNote.join(", ")}.` : "Chưa thấy trạng thái thị trường nào cho kỳ vọng dương."} Mỗi đoạn thời gian dùng đúng thông số đặt từ trước, không chỉnh lại theo dữ liệu, nên mỗi đoạn là một lần thử độc lập. Nếu bro chỉnh thông số cho đến khi bảng này đẹp thì nó lại mất tác dụng.</p></div>`;
+  }
 
   // MIDOTI nằm ở file riêng, chỉ có trong bản trên máy của Lai Long; không có thì bỏ qua
   import("./midoti.js").catch(() => null).finally(() => { if (!STRATEGIES[cur]) cur = STRATEGY_ORDER[0]; renderList(); renderForm(); });

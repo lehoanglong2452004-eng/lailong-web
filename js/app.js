@@ -1,23 +1,23 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610132205";
-import { MarketState } from "./market.js?v=202610132205";
-import { Heatmap } from "./heatmap.js?v=202610132205";
-import { FlowChart } from "./flowchart.js?v=202610132205";
-import { Dom } from "./dom.js?v=202610132205";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610132205";
-import { initBacktest } from "./backtestview.js?v=202610132205";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610132205";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610132205";
-import { Tape } from "./tape.js?v=202610132205";
-import { LiqMap } from "./liqmap.js?v=202610132205";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610132205";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610132205";
-import { DOM_COLS } from "./dom.js?v=202610132205";
-import { initFractal } from "./fractalview.js?v=202610132205";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610132205";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610132205";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610132205";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610132215";
+import { MarketState } from "./market.js?v=202610132215";
+import { Heatmap } from "./heatmap.js?v=202610132215";
+import { FlowChart } from "./flowchart.js?v=202610132215";
+import { Dom } from "./dom.js?v=202610132215";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610132215";
+import { initBacktest } from "./backtestview.js?v=202610132215";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610132215";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610132215";
+import { Tape } from "./tape.js?v=202610132215";
+import { LiqMap } from "./liqmap.js?v=202610132215";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610132215";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610132215";
+import { DOM_COLS } from "./dom.js?v=202610132215";
+import { initFractal } from "./fractalview.js?v=202610132215";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610132215";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610132215";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610132215";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -373,7 +373,7 @@ const fractal = initFractal({ $, S, ex, esc, table, log });
 const backtest = initBacktest({ $, S, ex, esc, table, market, chart: btChart });
 // nhấp đúp vào ô thông số (Backtest, FRACTAL) để trả về giá trị mặc định
 document.addEventListener("dblclick", e => {
-  const el = e.target.closest(".btform input[type=number], .btform select"); if (!el) return;
+  const el = e.target.closest(".btform input[type=number], .btform input[type=text], .btform select"); if (!el) return;
   if (el.tagName === "SELECT") { const d = [...el.options].findIndex(o => o.defaultSelected); el.selectedIndex = d < 0 ? 0 : d; } else el.value = el.defaultValue;
   el.dispatchEvent(new Event("change", { bubbles: true }));
   el.classList.add("reset"); setTimeout(() => el.classList.remove("reset"), 500);
