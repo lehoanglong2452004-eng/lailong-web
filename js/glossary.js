@@ -537,6 +537,36 @@ export const GLOSSARY = [
     id: "range-profile", group: "Order flow nâng cao", term: "Hồ sơ khối lượng cho vùng tự chọn",
     short: "Bấm Chọn vùng (hoặc giữ Shift) rồi kéo trên biểu đồ để xem POC, vùng giá trị 70% và HVN/LVN của đúng đoạn đó.",
     body: "<p>Dùng khi muốn xem một đoạn giá cụ thể (ví dụ một vùng đi ngang, một đợt tăng) đã giao dịch nhiều nhất ở đâu.</p><ul><li><b>POC</b> (vàng): giá khớp nhiều nhất trong đoạn.</li><li><b>VAH/VAL</b> (tím, nét đứt): cạnh trên/dưới của vùng chứa 70% khối lượng, kéo dài sang phải để làm hỗ trợ/kháng cự.</li></ul><p>Có footprint thì tính theo từng mức giá thật; không có thì chia đều khối lượng trên biên độ nến. Chuột phải vào vùng để xoá. Bật <b>Hồ sơ từng ngày</b> trong Lớp hiển thị để tự vẽ cho mỗi ngày.</p>"
+  },
+  {
+    id: "ofi", group: "Order flow nâng cao", term: "OFI (Order Flow Imbalance, áp lực sổ lệnh)",
+    short: "Đo bên nào đang dồn lệnh chờ ở giá tốt nhất: dương là bên mua kéo giá mua lên, âm là bên bán ép xuống. Chọn trong ô \"Ô dưới\".",
+    body: "<p>Mỗi lần sổ lệnh thay đổi: nếu giá mua tốt nhất tăng hoặc lệnh chờ mua ở đó dày thêm thì cộng; nếu giá bán tốt nhất giảm hoặc lệnh chờ bán dày thêm thì trừ (phương pháp của Cont, Kukanov và Stoikov). Cộng trong mỗi nến thành một cột, cộng dồn thành đường vàng.</p><p><b>Cách đọc:</b> delta cho biết ai <i>khớp lệnh</i> chủ động, OFI cho biết ai đang <i>đặt lệnh chờ</i>. Giá tăng mà OFI âm dần là phe mua đang yếu đi trong sổ lệnh.</p><p><b>Giới hạn:</b> sàn không cho tải lịch sử sổ lệnh nên OFI chỉ có từ lúc mở trang.</p>"
+  },
+  {
+    id: "vpin", group: "Order flow nâng cao", term: "VPIN (dòng lệnh \"độc\")",
+    short: "Mức một chiều của dòng lệnh, 0 là mua bán cân bằng, gần 1 là một phía áp đảo. VPIN cao thường đi trước những cú chạy mạnh.",
+    body: "<p>Chia khối lượng thành các giỏ bằng nhau (1/50 khối lượng một ngày), mỗi giỏ tính |mua − bán| chia khối lượng giỏ, rồi lấy trung bình 50 giỏ gần nhất (Easley, López de Prado, O'Hara).</p><p><b>Vì sao quan trọng:</b> khi một phía biết điều gì đó hoặc phải mua/bán gấp, bên tạo lập thị trường bị thua liên tục nên rút lệnh chờ, thanh khoản mỏng đi và giá dễ chạy mạnh. Vạch nét đứt đỏ là mức top 10% của chính mã đó; vùng tô đỏ là lúc dòng lệnh \"độc\".</p><p>VPIN không cho biết hướng, chỉ cho biết sắp có biến động. Kết hợp với delta hoặc hấp thụ để biết phía nào.</p>"
+  },
+  {
+    id: "player-groups", group: "Order flow nâng cao", term: "Nhóm người chơi (cá voi / vừa / nhỏ lẻ)",
+    short: "Lệnh gốc được chia theo kích thước: cá voi là top 0,5%, vừa là top 5%, còn lại là nhỏ lẻ. Xem delta từng nhóm ở ô dưới và lọc trên Smart Tape.",
+    body: "<p>Ngưỡng tính theo chính mã đang xem (lệnh 1 BTC là nhỏ với BTC nhưng rất lớn với một đồng nhỏ). Ô dưới \"Delta theo nhóm người chơi\" vẽ CVD của từng nhóm trên cùng một thang.</p><p><b>Cách đọc:</b> cá voi mua ròng trong khi nhỏ lẻ bán ròng là dấu hiệu tích luỹ; ngược lại là phân phối. Cột \"Nhóm\" trên Smart Tape ghi \"Máy\" cho lệnh thuộc một chuỗi chia đều.</p><p>Binance tải lại được lệnh khớp cũ nên có số liệu cho nhiều nến; sàn khác chỉ có từ lúc mở trang.</p>"
+  },
+  {
+    id: "spoofing", group: "Order flow nâng cao", term: "Tường giả (spoofing)",
+    short: "Lệnh chờ rất lớn dựng lên để doạ phe kia rồi rút đi khi giá tới gần. Bộ theo dõi đếm số lần tường bị rút mà gần như không được khớp.",
+    body: "<p>Mỗi giây hệ thống tìm \"tường\": mức giá có lệnh chờ ≥ 6 lần trung vị và thuộc top 3% trong ±1% quanh giá. Khi tường mất ≥ 75% khối lượng:</p><ul><li><b>Bị ăn</b> (tường thật): khối lượng khớp tại đó ≥ một nửa phần mất.</li><li><b>Rút khi giá tới gần</b> (nghi tường giả): khớp rất ít và giá đã tới sát.</li><li><b>Rút khi giá còn xa</b>: đổi ý bình thường.</li></ul><p>Trên Smart DOM, cột <b>Tường</b> tô vàng tường đang đứng và ghi \"G×n\" (giả) màu cam. Trên biểu đồ, dấu × cam là chỗ tường bị rút. Một mức giá có nhiều lần \"giả\" thì đừng coi tường ở đó là hỗ trợ/kháng cự thật.</p>"
+  },
+  {
+    id: "algo-twap", group: "Order flow nâng cao", term: "Dấu vết lệnh chia đều (TWAP)",
+    short: "Chuỗi lệnh cùng phía, cùng kích thước, cách nhau đều đặn: dấu vết của quỹ hoặc tổ chức đang mua/bán rải bằng thuật toán.",
+    body: "<p>Tổ chức cần mua lượng lớn thường không đặt một lệnh mà chia nhỏ theo thời gian (TWAP) để không đẩy giá. Người thường không đặt lệnh đều như máy, nên chuỗi lệnh giống hệt nhau, nhịp đều là dấu vết rõ.</p><p><b>Điều kiện:</b> ít nhất 6 lệnh gốc cùng phía, cùng kích thước (3 chữ số có nghĩa), khoảng cách giữa các lệnh lệch không quá 30%. <b>Độ đều</b> 100% là cách nhau tuyệt đối đều.</p><p>Trên biểu đồ: hình thoi viền tím nối nét đứt. Tab \"Lệnh chia đều\" liệt kê tổng khối lượng, giá trị và giá đã đi thế nào trong lúc thuật toán chạy.</p><p><b>Giới hạn:</b> thuật toán đổi kích thước ngẫu nhiên thì không nhận ra được.</p>"
+  },
+  {
+    id: "signal-score", group: "Order flow nâng cao", term: "Điểm tín hiệu tổng hợp (0–100)",
+    short: "Gộp hấp thụ, hỗ trợ/kháng cự đã test, CVD phân kỳ và funding thành một điểm, rồi thống kê mỗi mức điểm đúng bao nhiêu phần trăm so với tỷ lệ nền.",
+    body: "<p><b>Thành phần</b> (tối đa): hấp thụ 35 · chạm hỗ trợ/kháng cự đã test từ 2 lần 25 · CVD phân kỳ 25 · funding lệch về một phía 15. Điểm = tổng chia tổng tối đa có dữ liệu.</p><p><b>Đúng</b> = giá đi 1 ATR theo hướng tín hiệu trước khi đi ngược 1 ATR, trong 10 nến. <b>Tỷ lệ nền</b> = kết quả nếu vào ở mọi nến theo cùng luật. Một mức điểm chỉ đáng tin khi đúng nhiều hơn nền rõ ràng và có khoảng 100 lần trở lên.</p><p>Hỗ trợ/kháng cự trong điểm số chỉ dùng đỉnh/đáy đã xác nhận trước nến đó, nên thống kê không nhìn trước tương lai. Nhãn số trên biểu đồ hiện từ 60 điểm (đổi được trong tab).</p>"
   }
 
 ];

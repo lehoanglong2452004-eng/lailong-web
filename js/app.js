@@ -1,6 +1,6 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, inferTick } from "./exchanges.js";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js";
 import { MarketState } from "./market.js";
 import { Heatmap } from "./heatmap.js";
 import { FlowChart, drawEquity } from "./flowchart.js";
@@ -10,6 +10,8 @@ import { STRATEGIES, defaultParams, runBacktest } from "./backtest.js";
 import { approxFootprint, exactFootprintBinance } from "./fphistory.js";
 import { absorption, absorptionStats, clusterSearch } from "./orderflow.js";
 import { Tape } from "./tape.js";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js";
+import { WallTracker, WALL_KIND } from "./walls.js";
 import { DOM_COLS } from "./dom.js";
 import { GLOSSARY, GROUPS } from "./glossary.js";
 import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js";
@@ -57,6 +59,7 @@ const heat = new Heatmap($("heat"), market, { exchangeName: () => ex().name });
 const flow = new FlowChart($("flow"));
 const dom = new Dom($("dom"), market);
 const tape = new Tape($("tape"), market);
+const walls = new WallTracker(); dom.walls = walls;
 flow.prints = () => [market.histPrints, market.prints];
 flow.opts.onRange = () => { if (S.tab === "absorb") renderTab(); };
 
@@ -66,7 +69,7 @@ async function load() {
   const token = ++loadToken; persist();
   if (conn) { conn.close(); conn = null; }
   market.reset({ symbol: S.symbol, exchange: S.ex, interval: S.interval });
-  heat.resetView(); dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; tape.reset(); renderSignals(); renderTab();
+  heat.resetView(); dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; scores = null; algo = []; walls.reset(); flow.setOverlays({ spoofs: walls.events, algoRuns: [], scores: [], vpinVals: null, groupVals: null }); tape.reset(); renderSignals(); renderTab();
   setConn("Đang tải dữ liệu", null);
   let info = { tick: 0, ctVal: 1 };
   try { info = await ex().info(S.symbol); } catch (e) { log(`Không lấy được thông tin mã: ${e.message}`); }
@@ -87,6 +90,10 @@ async function load() {
     if (ex().hasOi && bars.length) {
       try { attachOi(bars, await ex().oiHistory(S.symbol, S.interval, bars[0].t), INTERVALS[S.interval]); }
       catch (e) { log(`Không tải được open interest: ${e.message}`); }
+    }
+    if (ex().fundingHistory && bars.length) {
+      try { attachFunding(bars, await ex().fundingHistory(S.symbol, bars[0].t - 864e5), INTERVALS[S.interval]); }
+      catch (e) { log(`Không tải được lịch sử funding: ${e.message}`); }
     }
     if (token !== loadToken) return;
     market.setBars(bars);
@@ -166,16 +173,40 @@ function renderSignals() {
 }
 
 // ---------- hấp thụ, cụm khối lượng (tính trên nến của khung đang xem) ----------
-let absorb = [], clusters = null, flowTimer = null;
+let absorb = [], clusters = null, flowTimer = null, algo = [], scores = null;
 const CL = { on: false, metric: "volume", top: 0.005, min: 0 };
 function recomputeFlow() {
   if (market.bars.length < 60) return;
   absorb = absorption(market.bars, { step: market.fpStep });
   clusters = CL.on ? clusterSearch(market.bars, { metric: CL.metric, topPct: CL.top, minValue: CL.min, step: market.fpStep }) : null;
-  flow.setOverlays({ absorb, clusters: clusters ? clusters.cells : [] });
+  const vp = vpin(market.bars, { intervalMs: market.intervalMs }), vv = vp.filter(v => v != null).sort((a, b) => a - b);
+  scores = signalScore(market.bars, { absorb });
+  flow.setOverlays({ absorb, clusters: clusters ? clusters.cells : [], vpinVals: vp, vpinHi: vv.length ? vv[Math.floor(vv.length * 0.9)] : null, vpinPct: percentileOf(vp, vp[vp.length - 1]), scores: scores.events });
   flow.bigQ = market.bigPrint;
-  if (["absorb", "clusters"].includes(S.tab)) renderTab();
+  recomputePrints();
+  if (["absorb", "clusters", "score"].includes(S.tab)) renderTab();
 }
+// nhóm người chơi và lệnh chia đều: tính lại theo lệnh gốc (cả lịch sử tải lại lẫn trực tiếp)
+function recomputePrints() {
+  if (!market.bars.length) return;
+  const lists = [market.histPrints, market.prints];
+  flow.setOverlays({ groupVals: groupFlow(market.bars, lists, { big: market.bigPrint, mid: market.midPrint, intervalMs: market.intervalMs }) });
+  const n = market.histPrints.length + market.prints.length; if (n < 200) return;
+  const qs = []; for (const l of lists) for (let i = 0; i < l.length; i += Math.max(1, Math.floor(n / 20000))) qs.push(l[i].q);
+  qs.sort((a, b) => a - b);
+  for (const l of lists) for (const p of l) p.algo = false;
+  algo = algoRuns(lists, { minQ: qs[Math.floor(qs.length * 0.6)] });
+  for (const r of algo) for (const p of r.prints) p.algo = true;
+  flow.setOverlays({ algoRuns: algo });
+  if (S.tab === "algo") renderTab();
+}
+setInterval(() => { if (S.mode !== "heat" || S.tab === "algo") recomputePrints(); }, 5000);
+// tường lệnh chờ: so sổ lệnh mỗi giây
+setInterval(() => {
+  const cols = market.cols; let col = null; for (let i = cols.length - 1; i >= Math.max(0, cols.length - 4); i--) if (cols[i].keys) { col = cols[i]; break; }
+  const done = walls.step(Date.now(), col, market.book.mid(), market.grid, market.tradedGrid);
+  if (done.length) { flow.dirty = true; if (S.tab === "spoof") renderTab(); }
+}, 1000);
 function scheduleFlow() { if (flowTimer) return; flowTimer = setTimeout(() => { flowTimer = null; recomputeFlow(); }, 1500); }
 
 // khối lượng tại giá trong ngày (UTC) cho cột "Hôm nay" của Smart DOM, dựng từ nến 1 phút
@@ -213,6 +244,21 @@ function renderTab() {
     const all = market.prints.concat(market.histPrints).filter(p => p.q >= market.bigPrint).sort((a, b) => b.t - a.t).slice(0, 300);
     body.innerHTML = `<div class="signalbar"><span data-g="big-trades">Ngưỡng Big Trade (top 0,5% lệnh gốc đã ghép): <b>${isFinite(market.bigPrint) ? fmtVol(market.bigPrint) + " " + coinName : "đang tính"}</b>${market.histPrints.length ? ` · gồm ${fmtVol(market.histPrints.length)} lệnh gốc tải lại từ ${ex().name}` : ""}</span></div>` +
       table(["Thời gian", ["Phía", "aggressor"], "Giá TB", "Khối lượng", "Giá trị", ["Số lệnh nhỏ", "smart-tape"], ["Mức giá quét", "sweep"]], all.map(t => `<tr class="click" data-goto="${t.t}"><td>${fmtTime(t.t, true)}</td><td class="${t.side === "buy" ? "pos" : "neg"}">${t.side === "buy" ? "MUA" : "BÁN"}</td><td>${t.vwap.toFixed(dec)}</td><td>${fmtVol(t.q)}</td><td>${fmtUsd(t.vwap * t.q)}</td><td>${t.n}</td><td>${t.levels}</td></tr>`), "Chưa có Big Trade.");
+  } else if (S.tab === "score") {
+    if (!scores) { body.innerHTML = `<div class="empty">Đang tính...</div>`; return; }
+    const pct = x => isFinite(x) ? x.toFixed(0) + "%" : "-", B = scores.base || {};
+    body.innerHTML = `<div class="signalbar"><span data-g="signal-score">Khung ${S.interval}, ${market.bars.length} nến · <b>${scores.events.length}</b> tín hiệu điểm ≥ 20 · tỷ lệ nền (vào ở mọi nến): mua <b>${pct(B.buy)}</b>, bán <b>${pct(B.sell)}</b>${scores.hasFund ? "" : " · không có funding nên điểm tính trên 85"}</span><span>Hiện trên biểu đồ từ điểm <select id="scoreMin">${[40, 50, 60, 70, 80].map(v => `<option${v === flow.scoreMin ? " selected" : ""}>${v}</option>`).join("")}</select></span></div>` +
+      table(["Mức điểm", "Số lần", "Đúng", "Sai", ["Tỷ lệ đúng", "signal-score"], "Tỷ lệ nền", "Hơn nền"], scores.buckets.map(b => `<tr><td>${b.lo} – ${b.hi}</td><td>${b.n}</td><td class="pos">${b.win}</td><td class="neg">${b.loss}</td><td><b>${pct(b.pct)}</b></td><td class="muted">${pct(b.base)}</td><td class="${b.pct - b.base >= 0 ? "pos" : "neg"}">${isFinite(b.pct - b.base) ? (b.pct - b.base >= 0 ? "+" : "") + (b.pct - b.base).toFixed(0) + " điểm" : "-"}</td></tr>`), "Chưa đủ dữ liệu.") +
+      `<p class="note">Đúng = giá đi 1 ATR theo hướng tín hiệu trước khi đi ngược 1 ATR, trong 10 nến. "Tỷ lệ nền" là kết quả nếu vào lệnh ở mọi nến theo cùng luật: một mức điểm chỉ có ý nghĩa khi đúng nhiều hơn nền rõ ràng và có ít nhất khoảng 100 lần.</p>` +
+      table(["Nến", "Phía", "Điểm", ...SCORE_PARTS.map(x => x.label), "Lý do", "Sau đó"], scores.events.slice(-150).reverse().map(e => { const r = { win: ["Đúng", "pos"], loss: ["Sai", "neg"], flat: ["Đi ngang", "muted"], pending: ["Đang chờ", "muted"] }[e.fwd.result]; return `<tr class="click" data-goto="${e.t}"><td>${fmtDate(e.t)}</td><td class="${e.side === "buy" ? "pos" : "neg"}">${e.side === "buy" ? "MUA" : "BÁN"}</td><td><b>${e.score}</b></td>${SCORE_PARTS.map(x => `<td>${e.parts[x.id] ? e.parts[x.id].toFixed(0) : "-"}</td>`).join("")}<td class="t">${esc(e.why.join("; "))}</td><td class="t ${r[1]}">${r[0]}</td></tr>`; }), "Chưa có tín hiệu.");
+    const sm = $("scoreMin"); if (sm) sm.onchange = () => { flow.scoreMin = +sm.value; flow.dirty = true; };
+  } else if (S.tab === "algo") {
+    body.innerHTML = `<div class="signalbar"><span data-g="algo-twap">Chuỗi lệnh gốc cùng phía, cùng kích thước, cách nhau đều đặn (ít nhất 6 lệnh, độ lệch nhịp ≤ 30%) · tìm thấy <b>${algo.length}</b> chuỗi trong ${fmtVol(market.histPrints.length + market.prints.length)} lệnh gốc</span></div>` +
+      table(["Bắt đầu", "Kết thúc", "Phía", "KL mỗi lệnh", "Số lệnh", "Nhịp", "Độ đều", "Tổng KL", "Giá trị", "Giá TB", "Giá đi"], algo.slice(0, 300).map(r => `<tr class="click" data-goto="${r.t0}"><td>${fmtTime(r.t0, true)}</td><td>${fmtTime(r.t1, true)}</td><td class="${r.side === "buy" ? "pos" : "neg"}">${r.side === "buy" ? "MUA" : "BÁN"}</td><td>${fmtVol(r.size)}</td><td>${r.n}</td><td>${(r.gapMs / 1000).toFixed(1)} giây</td><td>${((1 - r.cv) * 100).toFixed(0)}%</td><td>${fmtVol(r.total)}</td><td>${fmtUsd(r.total * r.vwap)}</td><td>${r.vwap.toFixed(dec)}</td><td class="${r.last >= r.first ? "pos" : "neg"}">${r.first.toFixed(dec)} → ${r.last.toFixed(dec)}</td></tr>`), market.histPrints.length + market.prints.length < 200 ? "Đang chờ đủ lệnh khớp..." : "Chưa thấy chuỗi lệnh chia đều nào.");
+  } else if (S.tab === "spoof") {
+    const ev = walls.events.slice().reverse(), cnt = k => walls.events.filter(e => e.kind === k).length;
+    body.innerHTML = `<div class="signalbar"><span data-g="spoofing">Từ lúc mở trang: <b class="neg">${cnt("spoof")}</b> lần rút khi giá tới gần (nghi tường giả) · <b>${cnt("pulled")}</b> lần rút khi giá còn xa · <b class="pos">${cnt("filled")}</b> lần bị ăn (tường thật) · đang đứng <b>${walls.active().length}</b> tường</span></div>` +
+      table(["Thời gian", "Phía", "Giá", "KL tường", "Đứng", "Cách giá lúc dựng", "Cách giá lúc mất", "Đã khớp tại đó", "Kết luận"], ev.slice(0, 300).map(e => { const k = WALL_KIND[e.kind]; return `<tr class="click" data-goto="${e.t}"><td>${fmtTime(e.t, true)}</td><td class="${e.side === "bid" ? "pos" : "neg"}">${e.side === "bid" ? "Chờ mua" : "Chờ bán"}</td><td>${e.price.toFixed(dec)}</td><td>${fmtVol(e.q)}</td><td>${(e.life / 1000).toFixed(0)} giây</td><td>${e.dist0.toFixed(dec)}</td><td>${e.dist.toFixed(dec)}</td><td>${fmtVol(e.traded)} (${e.q ? (e.traded / e.q * 100).toFixed(0) : 0}%)</td><td class="t ${k.cls}">${k.label} (${k.note})</td></tr>`; }), "Chưa có tường nào biến mất. Bộ theo dõi chạy từ lúc mở trang.");
   } else if (S.tab === "symbols") {
     const f = symbolFilter.toUpperCase(), rows = symbolRows.filter(r => !f || r.symbol.includes(f)).slice(0, 300);
     body.innerHTML = `<div class="signalbar"><input id="symFilter" placeholder="Tìm mã..." value="${esc(symbolFilter)}" style="width:160px"></div>` +
@@ -553,7 +599,7 @@ $("tabs").onclick = e => { const b = e.target.closest("[data-tab]"); if (!b) ret
 $("fullscreenBtn").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => toast("Trình duyệt không cho phép toàn màn hình, bấm F11", true)); };
 
 // ---------- công cụ order flow ----------
-$("paneMode").onchange = () => { flow.pane = $("paneMode").value; flow.dirty = true; };
+$("paneMode").onchange = () => { flow.pane = $("paneMode").value; if (flow.pane === "groups") recomputePrints(); flow.dirty = true; };
 $("selBtn").onclick = () => { flow.selecting = !flow.selecting; $("selBtn").classList.toggle("on", flow.selecting); $("flow").style.cursor = flow.selecting ? "col-resize" : ""; };
 $("clusterBtn").onclick = e => { e.stopPropagation(); $("clusterBtn").parentElement.classList.toggle("open"); };
 const clUpdate = () => { CL.on = $("clOn").checked; CL.metric = $("clMetric").value; CL.top = +$("clTop").value; CL.min = +$("clMin").value || 0; $("clusterBtn").classList.toggle("on", CL.on); recomputeFlow(); };
@@ -568,7 +614,8 @@ $("domClear").onclick = () => { market.tradedAt.clear(); dom.dirty = true; };
 $("tapeSmart").onchange = () => { tape.smart = $("tapeSmart").checked; tape.dirty = true; };
 $("tapeBig").onchange = () => { tape.bigOnly = $("tapeBig").checked; tape.dirty = true; };
 $("tapeMin").oninput = () => { tape.minQ = +$("tapeMin").value || 0; tape.dirty = true; };
+$("tapeGroup").onchange = () => { tape.group = $("tapeGroup").value; tape.dirty = true; };
 
 setMode(S.mode); setView(S.view);
 loadSymbols(); load();
-window.lailong = { market, heat, flow, dom, tape, S, alpha }; // tiện kiểm tra trong DevTools
+window.lailong = { market, heat, flow, dom, tape, walls, S, alpha }; // tiện kiểm tra trong DevTools

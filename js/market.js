@@ -58,7 +58,9 @@ export class MarketState {
     this.sizes = []; this.bigTrade = Infinity; // ngưỡng "lệnh lớn": phân vị 99,5%
     // Smart Tape: lệnh gốc sau khi ghép các lệnh nhỏ cùng thời điểm, cùng phía
     this.tape = new TapeAggregator({ tick: this.tick });
-    this.prints = []; this.histPrints = []; this.bigPrint = Infinity;
+    this.prints = []; this.histPrints = []; this.bigPrint = Infinity; this.midPrint = Infinity; // cá voi: top 0,5%, vừa: top 5%
+    this.tradedGrid = new Map(); // khối lượng đã khớp theo ô lưới của bản đồ nhiệt (cho bộ theo dõi tường)
+    this._pb = null; this._pa = null; this.ofiPend = new Map(); // OFI: thay đổi lệnh chờ ở giá mua/bán tốt nhất
     this.dayVol = new Map(); this.dayStart = Math.floor(Date.now() / 864e5) * 864e5; // khối lượng tại giá trong ngày (UTC)
   }
 
@@ -79,6 +81,7 @@ export class MarketState {
       const mid = this.book.mid();
       if (mid) this.grid = Math.max(this.tick || 0, niceStep(mid * 0.00004));
     }
+    this._ofi(Date.now());
     this._ensureCol(Date.now());
     this.emit("book");
   }
@@ -92,6 +95,7 @@ export class MarketState {
       if (this.tape.started) { const b = this.book.sorted(); this.tape.cur.meta = { bb: b.bids[0] ? b.bids[0][0] : null, ba: b.asks[0] ? b.asks[0][0] : null, bq: b.bids[0] ? b.bids[0][1] : 0, aq: b.asks[0] ? b.asks[0][1] : 0 }; }
       if (done) this.prints.push(done);
       if (this.tick && t.t >= this.dayStart) { const k = Math.round(t.p / this.tick); this.dayVol.set(k, (this.dayVol.get(k) || 0) + t.q); }
+      if (this.grid) { const k = Math.round(t.p / this.grid), e = this.tradedGrid.get(k) || [0, 0]; e[t.side === "buy" ? 1 : 0] += t.q; this.tradedGrid.set(k, e); }
       if (this.tick) { const k = Math.round(t.p / this.tick), e = this.tradedAt.get(k) || [0, 0]; e[t.side === "buy" ? 1 : 0] += t.q; this.tradedAt.set(k, e); }
       const col = this._ensureCol(now);
       if (t.side === "buy") { col.bv += t.q; col.bpv += t.p * t.q; } else { col.sv += t.q; col.spv += t.p * t.q; }
@@ -119,7 +123,24 @@ export class MarketState {
   // ngưỡng lệnh lớn của Smart Tape: top 0,5% lệnh gốc (cả lịch sử tải lại lẫn trực tiếp)
   updateBigPrint() {
     const qs = this.prints.map(p => p.q); for (const p of this.histPrints) qs.push(p.q);
-    if (qs.length >= 50) this.bigPrint = quantile(qs, 0.995);
+    if (qs.length >= 50) { this.bigPrint = quantile(qs, 0.995); this.midPrint = quantile(qs, 0.95); }
+  }
+
+  // OFI (Order Flow Imbalance, Cont và cộng sự): mỗi lần sổ lệnh đổi, cộng phần lệnh chờ mua tốt nhất
+  // tăng thêm và trừ phần lệnh chờ bán tốt nhất tăng thêm. Dương = áp lực mua trong sổ lệnh.
+  _ofi(now) {
+    const s = this.book.sorted(), bb = s.bids[0], ba = s.asks[0];
+    if (!bb || !ba) return;
+    if (this._pb && this._pa) {
+      const [pb, qb] = this._pb, [pa, qa] = this._pa;
+      const e = (bb[0] >= pb ? bb[1] : 0) - (bb[0] <= pb ? qb : 0) - (ba[0] <= pa ? ba[1] : 0) + (ba[0] >= pa ? qa : 0);
+      if (e) {
+        const bar = this._barAt(now);
+        if (bar) bar.ofi = (bar.ofi || 0) + e;
+        else if (this.intervalMs) { const bt = Math.floor(now / this.intervalMs) * this.intervalMs; this.ofiPend.set(bt, (this.ofiPend.get(bt) || 0) + e); }
+      }
+    }
+    this._pb = [bb[0], bb[1]]; this._pa = [ba[0], ba[1]];
   }
 
   onLiq(list) {
@@ -178,7 +199,8 @@ export class MarketState {
     let b = this.bars[this.bars.length - 1];
     if (bt < b.t) return;
     if (bt > b.t) {
-      b = { t: bt, o: tr.p, h: tr.p, l: tr.p, c: tr.p, v: 0, bv: 0, d: 0, fp: new Map(), liqL: 0, liqS: 0, live: true };
+      b = { t: bt, o: tr.p, h: tr.p, l: tr.p, c: tr.p, v: 0, bv: 0, d: 0, fp: new Map(), liqL: 0, liqS: 0, live: true, fund: b.fund };
+      if (this.ofiPend.has(bt)) { b.ofi = this.ofiPend.get(bt); this.ofiPend.delete(bt); }
       this.bars.push(b);
       if (this.bars.length > 20000) this.bars.shift();
       this.emit("newbar");

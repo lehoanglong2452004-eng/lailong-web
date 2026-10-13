@@ -5,6 +5,9 @@
 
 import { fmtVol, decimalsFor, pad2, MONO, fitCanvas } from "./util.js";
 import { T, alpha } from "./theme.js";
+import { GROUPS, playerGroup } from "./flowtools.js";
+
+const GROUP = Object.fromEntries(GROUPS.map(g => [g.id, g]));
 
 const ROW_H = 18, HDR_H = 22;
 const COLS = [
@@ -16,6 +19,7 @@ const COLS = [
   ["ask", "Ask", 1.05, "Giá bán tốt nhất ngay trước khi lệnh khớp."],
   ["sizes", "Sizes", 1.5, "Khối lượng chờ ở giá mua tốt nhất × giá bán tốt nhất lúc đó."],
   ["avg", "TB", 0.75, "Khối lượng trung bình mỗi lệnh nhỏ: khối lượng chia số lệnh nhỏ được ghép."],
+  ["group", "Nhóm", 0.75, "Nhóm người chơi theo kích thước lệnh gốc: Voi (cá voi) = top 0,5%, Vừa = top 5%, Lẻ (nhỏ lẻ) = còn lại. \"Máy\" = lệnh thuộc một chuỗi chia đều (thuật toán kiểu TWAP)."],
 ];
 
 function hms(t) { const d = new Date(t); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`; }
@@ -24,7 +28,7 @@ export class Tape {
   constructor(canvas, market) {
     this.cv = canvas; this.m = market;
     this.S = fitCanvas(canvas, () => { this.dirty = true; }); this.ctx = this.S.ctx;
-    this.smart = true; this.minQ = 0; this.bigOnly = false; this.scroll = 0; this.dirty = true;
+    this.smart = true; this.minQ = 0; this.bigOnly = false; this.group = ""; this.scroll = 0; this.dirty = true;
     this._bind();
     const loop = () => { if (this.dirty) { this.dirty = false; this._draw(); } requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
@@ -40,6 +44,8 @@ export class Tape {
     } else list = this.m.trades.slice(-3000).map(t => ({ t: t.t, side: t.side, q: t.q, n: 1, p: t.p, pMin: t.p, pMax: t.p, levels: 1, vwap: t.p }));
     const min = this.bigOnly ? this.m.bigPrint : this.minQ;
     if (min > 0) list = list.filter(p => p.q >= min);
+    if (this.group === "algo") list = list.filter(p => p.algo);
+    else if (this.group) list = list.filter(p => playerGroup(p.q, this.m.bigPrint, this.m.midPrint) === this.group);
     return list.reverse();
   }
 
@@ -68,9 +74,11 @@ export class Tape {
       else if (r % 2) { ctx.fillStyle = alpha(T.text, 0.03); ctx.fillRect(0, y, w, ROW_H); }
       const m = p.meta || {}, sw = p.levels > 9 ? `${buy ? "+" : "−"}${p.levels}` : (buy ? "+" : "−").repeat(p.levels);
       const cells = { time: hms(p.t), price: p.p.toFixed(dec), sweep: sw, vol: fmtVol(p.q), bid: m.bb != null ? m.bb.toFixed(dec) : "", ask: m.ba != null ? m.ba.toFixed(dec) : "", sizes: m.bb != null ? `${fmtVol(m.bq)}×${fmtVol(m.aq)}` : "", avg: fmtVol(p.q / p.n) };
+      const grp = isFinite(this.m.midPrint) ? GROUP[playerGroup(p.q, big, this.m.midPrint)] : null;
+      cells.group = p.algo ? "Máy" : grp ? grp.short : "";
       ctx.font = `${p.q >= big ? "bold " : ""}${font}px ${MONO}`;
       for (const c of C) {
-        ctx.fillStyle = c.id === "vol" || c.id === "price" || c.id === "sweep" ? col : c.id === "time" ? (p.pending ? T.muted : col) : T.text;
+        ctx.fillStyle = c.id === "vol" || c.id === "price" || c.id === "sweep" ? col : c.id === "time" ? (p.pending ? T.muted : col) : c.id === "group" ? (p.algo ? "#c77dff" : grp ? grp.color : T.text) : T.text;
         ctx.save(); ctx.beginPath(); ctx.rect(c.x, y, c.w, ROW_H); ctx.clip();
         ctx.textAlign = c.id === "sweep" ? "left" : "right"; ctx.fillText(cells[c.id], c.id === "sweep" ? c.x + 3 : c.x + c.w - 3, cy); ctx.restore();
       }
@@ -91,6 +99,8 @@ export class Tape {
     s += ".";
     if (m.bb != null) s += ` Ngay trước đó: mua tốt nhất ${m.bb.toFixed(dec)} (${fmtVol(m.bq)}), bán tốt nhất ${m.ba.toFixed(dec)} (${fmtVol(m.aq)}).`;
     if (p.q >= this.m.bigPrint) s += ` Đây là lệnh lớn (top 0,5% lệnh gốc, từ ${fmtVol(this.m.bigPrint)}).`;
+    else if (p.q >= this.m.midPrint) s += ` Nhóm "Vừa" (top 5% lệnh gốc, từ ${fmtVol(this.m.midPrint)}).`;
+    if (p.algo) s += " Lệnh này thuộc một chuỗi lệnh cùng kích thước, nhịp đều (thuật toán chia lệnh, xem tab \"Lệnh chia đều\").";
     return s;
   }
 

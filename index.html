@@ -47,6 +47,9 @@
           <label data-g="big-trade"><input type="checkbox" data-layer="bigOnly"> Chỉ hiện lệnh lớn (Bookmap)</label>
           <label data-g="absorption"><input type="checkbox" data-layer="absorb" checked> Chỉ báo hấp thụ (nến, footprint)</label>
           <label data-g="big-trades"><input type="checkbox" data-layer="big" checked> Big Trades (nến, footprint)</label>
+          <label data-g="signal-score"><input type="checkbox" data-layer="score" checked> Điểm tín hiệu ≥ 60 (nến, footprint)</label>
+          <label data-g="algo-twap"><input type="checkbox" data-layer="algo" checked> Dấu vết lệnh chia đều (nến, footprint)</label>
+          <label data-g="spoofing"><input type="checkbox" data-layer="spoof" checked> Tường giả bị rút (nến, footprint)</label>
           <label data-g="volume-profile"><input type="checkbox" data-layer="profile" checked> Hồ sơ khối lượng vùng đang xem</label>
           <label data-g="range-profile"><input type="checkbox" data-layer="dayProfile"> Hồ sơ khối lượng từng ngày</label>
           <label data-g="delta"><input type="checkbox" data-layer="delta" checked> Delta (nến)</label>
@@ -54,7 +57,7 @@
         </div>
       </div>
       <label class="field small flowOnly" data-g="cvd-pro">Ô dưới
-        <select id="paneMode"><option value="deltaCvd">Delta + CVD</option><option value="delta">Delta</option><option value="cvd">CVD</option><option value="cvdpro">CVD Pro</option></select>
+        <select id="paneMode"><option value="deltaCvd">Delta + CVD</option><option value="delta">Delta</option><option value="cvd">CVD</option><option value="cvdpro">CVD Pro</option><option value="ofi">OFI (áp lực sổ lệnh)</option><option value="vpin">VPIN (dòng lệnh độc)</option><option value="groups">Delta theo nhóm người chơi</option></select>
       </label>
       <button id="selBtn" class="tool" data-g="range-profile">▭ Chọn vùng</button>
       <div class="dropdown">
@@ -104,6 +107,7 @@
       <span class="title" data-g="smart-tape">Smart Tape</span>
       <label class="field small" data-tip="Ghép các lệnh nhỏ cùng thời điểm, cùng phía thành lệnh gốc. Tắt để xem băng thô của sàn"><input type="checkbox" id="tapeSmart" checked> Ghép</label>
       <label class="field small" data-tip="Chỉ hiện lệnh gốc thuộc top 0,5% lớn nhất"><input type="checkbox" id="tapeBig"> Lớn</label>
+      <select id="tapeGroup" class="small" data-g="player-groups"><option value="">Mọi nhóm</option><option value="whale">Cá voi</option><option value="mid">Vừa</option><option value="retail">Nhỏ lẻ</option><option value="algo">Lệnh chia đều</option></select>
       <label class="field small" data-tip="Ẩn các lệnh nhỏ hơn số này (đơn vị coin)">≥ <input type="number" id="tapeMin" min="0" step="any" placeholder="0" style="width:64px"></label>
       <div class="spacer"></div>
       <button class="icon max" data-max="tapePanel" data-tip="Phóng to Smart Tape">⤢</button>
@@ -119,6 +123,9 @@
       <button data-tab="absorb" class="on" data-g="absorption">Hấp thụ</button>
       <button data-tab="clusters" data-g="cluster-search">Cụm khối lượng</button>
       <button data-tab="big" data-g="big-trades">Big Trades</button>
+      <button data-tab="score" data-g="signal-score">Điểm tín hiệu</button>
+      <button data-tab="algo" data-g="algo-twap">Lệnh chia đều</button>
+      <button data-tab="spoof" data-g="spoofing">Tường giả</button>
       <button data-tab="symbols" data-tip="Tất cả mã của sàn, sắp theo khối lượng 24 giờ. Bấm để chuyển mã">Danh sách mã</button>
       <button data-tab="logs" data-tip="Nhật ký kết nối và tải dữ liệu">Nhật ký</button>
       <div class="spacer"></div>

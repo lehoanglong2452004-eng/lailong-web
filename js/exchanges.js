@@ -102,6 +102,18 @@ const binance = {
     }
     return dedupe(out);
   },
+  async fundingHistory(symbol, from) {
+    const out = []; let start = from;
+    for (let guard = 0; guard < 20 && start < Date.now(); guard++) {
+      const rows = await getJson(`${BN_REST}/fapi/v1/fundingRate?symbol=${symbol}&startTime=${start}&limit=1000`);
+      if (!rows.length) break;
+      for (const r of rows) out.push({ t: r.fundingTime, rate: num(r.fundingRate) });
+      const last = Math.max(...rows.map(r => r.fundingTime));
+      if (rows.length < 1000 || last <= start) break;
+      start = last + 1;
+    }
+    return dedupe(out);
+  },
   connect(symbol, info, book, h) {
     const s = symbol.toLowerCase();
     // Sổ lệnh sâu: nhận thay đổi qua WebSocket rồi ghép với ảnh chụp 1000 mức giá qua REST.
@@ -187,6 +199,18 @@ const okx = {
       const r = await getJson(`${OKX_REST}/api/v5/market/history-candles?instId=${inst}&bar=${OKX_BAR[interval]}&limit=100&after=${end}`);
       return r.data.map(x => ({ t: num(x[0]), o: num(x[1]), h: num(x[2]), l: num(x[3]), c: num(x[4]), v: num(x[6]), bv: null }));
     }, Math.min(n, 3000), INTERVALS[interval]);
+  },
+  async fundingHistory(symbol, from) {
+    const out = []; let after = Date.now();
+    for (let guard = 0; guard < 30 && after > from; guard++) {
+      const r = await getJson(`${OKX_REST}/api/v5/public/funding-rate-history?instId=${okxInst(symbol)}&limit=100&after=${after}`);
+      if (!r.data || !r.data.length) break;
+      for (const x of r.data) out.push({ t: num(x.fundingTime), rate: num(x.realizedRate || x.fundingRate) });
+      const first = Math.min(...r.data.map(x => num(x.fundingTime)));
+      if (first >= after) break;
+      after = first;
+    }
+    return dedupe(out);
   },
   async oiHistory(symbol, interval, from) {
     const period = oiPeriod(interval, ["5m", "15m", "1h", "4h", "1d"]);
@@ -274,6 +298,18 @@ const bybit = {
       return r.result.list.map(x => ({ t: num(x[0]), o: num(x[1]), h: num(x[2]), l: num(x[3]), c: num(x[4]), v: num(x[5]), bv: null }));
     }, n, INTERVALS[interval]);
   },
+  async fundingHistory(symbol, from) {
+    const out = []; let end = Date.now();
+    for (let guard = 0; guard < 30 && end > from; guard++) {
+      const r = await getJson(`${BY_REST}/v5/market/funding/history?category=linear&symbol=${symbol}&limit=200&endTime=${end}`);
+      const list = r.result.list || []; if (!list.length) break;
+      for (const x of list) out.push({ t: num(x.fundingRateTimestamp), rate: num(x.fundingRate) });
+      const first = Math.min(...list.map(x => num(x.fundingRateTimestamp)));
+      if (first >= end) break;
+      end = first - 1;
+    }
+    return dedupe(out);
+  },
   async oiHistory(symbol, interval, from) {
     const period = oiPeriod(interval, ["5m", "15m", "1h", "4h", "1d"]);
     const p = { "5m": "5min", "15m": "15min", "1h": "1h", "4h": "4h", "1d": "1d" }[period];
@@ -330,6 +366,19 @@ const hyperliquid = {
     return rows.map(x => ({ t: num(x.t), o: num(x.o), h: num(x.h), l: num(x.l), c: num(x.c), v: num(x.v), bv: null }));
   },
   async oiHistory() { return []; },
+  // funding của Hyperliquid tính theo từng giờ
+  async fundingHistory(symbol, from) {
+    const out = []; let start = Math.max(from, Date.now() - 60 * 864e5);
+    for (let guard = 0; guard < 40 && start < Date.now(); guard++) {
+      const rows = await postJson(HL_REST, { type: "fundingHistory", coin: hlCoin(symbol), startTime: start });
+      if (!rows.length) break;
+      for (const x of rows) out.push({ t: num(x.time), rate: num(x.fundingRate) });
+      const last = Math.max(...rows.map(x => num(x.time)));
+      if (last <= start || rows.length < 400) break;
+      start = last + 1;
+    }
+    return dedupe(out);
+  },
   connect(symbol, info, book, h) {
     const coin = hlCoin(symbol);
     return openSocket(HL_WS, {
@@ -384,10 +433,15 @@ const sim = {
     const ms = INTERVALS[interval];
     return this._bars(interval, Math.min(20000, Math.ceil((Date.now() - from) / ms) + 1)).map(b => ({ t: b.t + ms, oi: b.oi }));
   },
+  async fundingHistory(symbol, from) {
+    const r = prng(99), out = []; let f = 0.0001;
+    for (let t = Math.floor(from / 288e5) * 288e5; t <= Date.now(); t += 288e5) { f = Math.max(-0.0008, Math.min(0.0012, f * 0.9 + 0.00001 + gauss(r) * 0.00008)); out.push({ t, rate: f }); }
+    return out;
+  },
   connect(symbol, info, book, h) {
     const r = prng(Date.now() & 0xffff), tick = 0.1;
-    let mid = this._price, drift = 0;
-    const walls = new Map();
+    let mid = this._price, drift = 0, twap = null;
+    const walls = new Map(), spoofs = new Set();
     const rebuild = () => {
       book.clear();
       const bb = Math.floor(mid / tick) * tick;
@@ -396,8 +450,8 @@ const sim = {
         const d = i < 200 ? i : 200 + (i - 200) * 5;
         const pb = +(bb - d * tick).toFixed(1), pa = +(bb + (d + 1) * tick).toFixed(1);
         const base = (0.2 + r() * 1.2) * (1 + d * 0.004);
-        book.set("bid", pb, base * (1 + (walls.get(pb) || 0)));
-        book.set("ask", pa, base * (1 + (walls.get(pa) || 0)));
+        book.set("bid", pb, base + (walls.get(pb) || 0));
+        book.set("ask", pa, base + (walls.get(pa) || 0));
       }
       book.ts = Date.now();
     };
@@ -406,9 +460,12 @@ const sim = {
       if (r() < 0.02) drift = (r() - 0.5) * 0.4;
       if (r() < 0.05) { // tường thanh khoản xuất hiện / biến mất
         const p = +(Math.round((mid + (r() - 0.5) * 300) / 0.5) * 0.5).toFixed(1);
-        walls.set(p, 20 + r() * 60);
-        if (walls.size > 12) walls.delete(walls.keys().next().value);
+        walls.set(p, 150 + r() * 300);
+        if (r() < 0.5) spoofs.add(p);
+        if (walls.size > 12) { const k = walls.keys().next().value; walls.delete(k); spoofs.delete(k); }
       }
+      for (const p of spoofs) if (Math.abs(p - mid) < 3) { walls.delete(p); spoofs.delete(p); } // tường giả: rút khi giá tới gần
+      if (!twap && r() < 0.002) twap = { side: r() < 0.5 ? "buy" : "sell", q: +(0.5 + r() * 3).toFixed(3), every: 1500 + r() * 3000, left: 8 + Math.floor(r() * 12), next: Date.now() };
       const trades = [], now = Date.now(), n = 1 + Math.floor(r() * 6);
       for (let i = 0; i < n; i++) {
         const side = r() < 0.5 + drift * 0.5 ? "buy" : "sell";
@@ -419,6 +476,10 @@ const sim = {
       }
       this._price = mid;
       h.onTrades(trades);
+      if (twap && now >= twap.next) { // thuật toán chia lệnh: cùng kích thước, nhịp đều
+        h.onTrades([{ p: +(twap.side === "buy" ? Math.ceil(mid / tick) * tick : Math.floor(mid / tick) * tick).toFixed(1), q: twap.q, side: twap.side, t: now + 1 }]);
+        twap.next = now + twap.every * (0.95 + r() * 0.1); if (--twap.left <= 0) twap = null;
+      }
       if (r() < 0.004) h.onLiq([{ p: +mid.toFixed(1), q: 0.2 + r() * 6, side: r() < 0.5 ? "long" : "short", t: now }]);
       rebuild(); h.onBook();
     }, 100);
@@ -448,6 +509,17 @@ export function attachOi(bars, oiRows, intervalMs) {
     const close = b.t + intervalMs;
     while (j + 1 < oiRows.length && oiRows[j + 1].t <= close) j++;
     b.oi = oiRows.length && oiRows[j].t <= close && close - oiRows[j].t <= Math.max(intervalMs, 3600e3) * 2 ? oiRows[j].oi : null;
+  }
+  return bars;
+}
+
+// Gắn funding vào từng nến: mức funding đã chốt gần nhất tính tới lúc nến đóng
+export function attachFunding(bars, rows, intervalMs) {
+  let j = -1;
+  for (const b of bars) {
+    const close = b.t + intervalMs;
+    while (j + 1 < rows.length && rows[j + 1].t <= close) j++;
+    b.fund = j >= 0 ? rows[j].rate : null;
   }
   return bars;
 }

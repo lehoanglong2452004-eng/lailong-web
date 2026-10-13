@@ -20,6 +20,7 @@ export const DOM_COLS = [
   { id: "buys", label: "Mua", w: 0.85, tip: "Tổng khối lượng MUA chủ động đã khớp tại mỗi giá kể từ lúc mở trang (hoặc lúc bấm xoá)." },
   { id: "ask", label: "Chờ bán", w: 1.25, tip: "Lệnh chờ bán (ask) đang nằm tại mỗi giá." },
   { id: "askChg", label: "Δ Bán", w: 0.75, tip: "Lệnh chờ bán tại giá đó tăng (+) hay giảm (−) bao nhiêu trong 5 giây qua." },
+  { id: "walls", label: "Tường", w: 0.9, tip: "Tường lệnh chờ lớn (≥ 6 lần trung vị, top 3% quanh giá). Ô vàng = tường đang đứng và đã đứng bao lâu. \"G×n\" màu cam = số lần tường tại giá này bị rút khi giá tới gần trong 10 phút qua (nghi tường giả, spoofing)." },
 ];
 
 // bảng màu bản đồ thanh khoản: tối -> xanh -> vàng -> trắng
@@ -37,6 +38,7 @@ export class Dom {
     this.center = null; this.tick = 0; this.mult = 1; this.hover = null; this.follow = true; this.dirty = true;
     this.visible = new Set(DOM_COLS.map(c => c.id));
     this.snaps = []; // ảnh chụp lệnh chờ mỗi giây để tính thay đổi độ sâu
+    this.walls = null; // WallTracker (app gắn vào)
     this._bind();
     const loop = () => { if (this.dirty) { this.dirty = false; this._draw(); } requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
@@ -105,8 +107,14 @@ export class Dom {
     // footprint nến đang chạy
     const fp = new Map(), bar = this.m.bars[this.m.bars.length - 1], st = this.m.fpStep;
     if (bar && bar.fp && st) for (const [k, c] of bar.fp) { const r = this._rowOf((k + 0.5) * st); if (r < 0 || r >= rows) continue; const e = fp.get(r) || [0, 0]; e[0] += c[0]; e[1] += c[1]; fp.set(r, e); }
+    // tường đang đứng và số lần bị rút khi giá tới gần (10 phút)
+    const wallNow = new Map(), spoof = new Map();
+    if (this.walls) {
+      for (const wl of this.walls.active()) { const r = this._rowOf(wl.p); if (r >= 0 && r < rows) wallNow.set(r, wl); }
+      for (const e of this.walls.events) if (e.kind === "spoof" && now - e.t <= 600e3) { const r = this._rowOf(e.price); if (r >= 0 && r < rows) spoof.set(r, (spoof.get(r) || 0) + 1); }
+    }
     const { bids, asks } = this.m.book.sorted();
-    return { lv, chg, traded, today, fp, bestBid: bids.length ? this._rowOf(bids[0][0]) : null, bestAsk: asks.length ? this._rowOf(asks[0][0]) : null };
+    return { lv, chg, traded, today, fp, wallNow, spoof, bestBid: bids.length ? this._rowOf(bids[0][0]) : null, bestAsk: asks.length ? this._rowOf(asks[0][0]) : null };
   }
 
   _draw() {
@@ -173,6 +181,11 @@ export class Dom {
         ctx.textAlign = "center"; ctx.fillStyle = T.muted; ctx.fillText("×", cx, cy);
         ctx.textAlign = "left"; ctx.fillStyle = imb === T.up ? T.up : T.text; ctx.fillText(fmtVol(f[1]), cx + 4, cy);
         ctx.restore();
+      }
+      if (C.walls) {
+        const wl = D.wallNow.get(k), sc = D.spoof.get(k);
+        if (wl) { ctx.fillStyle = alpha("#f5c542", 0.35); ctx.fillRect(C.walls.x + 2, y + 2, C.walls.w - 4, ROW_H - 4); text(C.walls, `${((Date.now() - wl.t0) / 1000).toFixed(0)}s`, T.text, sc ? "left" : "right"); }
+        if (sc) text(C.walls, `G×${sc}`, "#ff9f1a");
       }
       ctx.strokeStyle = alpha(T.line, 0.7); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, y + ROW_H - 0.5); ctx.lineTo(w, y + ROW_H - 0.5); ctx.stroke();
     }
@@ -246,7 +259,9 @@ export class Dom {
     const k = Math.floor((y - HDR_H) / ROW_H), price = this._priceOfRow(k), dec = decimalsFor(this.tick), D = this._D;
     const e = D.lv.get(k) || { bid: 0, ask: 0 }, tr = D.traded.get(k) || [0, 0], f = D.fp.get(k) || [0, 0], ch = D.chg.get(k) || { bid: 0, ask: 0 }, tv = D.today.get(k) || 0;
     const sg = v => (v > 0 ? "+" : v < 0 ? "−" : "") + fmtVol(Math.abs(v));
-    return `Giá ${price.toFixed(dec)} · chờ mua ${fmtVol(e.bid)} (5 giây: ${sg(ch.bid)}) · chờ bán ${fmtVol(e.ask)} (5 giây: ${sg(ch.ask)}) · đã khớp từ lúc mở trang: bán ${fmtVol(tr[0])}, mua ${fmtVol(tr[1])} · nến hiện tại: bán ${fmtVol(f[0])} × mua ${fmtVol(f[1])} · hôm nay ${fmtVol(tv)}. [${col.def.label}] ${col.def.tip}`;
+    const wl = D.wallNow && D.wallNow.get(k), sc = D.spoof && D.spoof.get(k);
+    const wallTxt = (wl ? ` · TƯỜNG ${wl.side === "bid" ? "MUA" : "BÁN"} ${fmtVol(wl.q)} đang đứng ${((Date.now() - wl.t0) / 1000).toFixed(0)} giây` : "") + (sc ? ` · ${sc} lần tường bị rút khi giá tới gần trong 10 phút (nghi tường giả)` : "");
+    return `Giá ${price.toFixed(dec)} · chờ mua ${fmtVol(e.bid)} (5 giây: ${sg(ch.bid)}) · chờ bán ${fmtVol(e.ask)} (5 giây: ${sg(ch.ask)}) · đã khớp từ lúc mở trang: bán ${fmtVol(tr[0])}, mua ${fmtVol(tr[1])} · nến hiện tại: bán ${fmtVol(f[0])} × mua ${fmtVol(f[1])} · hôm nay ${fmtVol(tv)}${wallTxt}. [${col.def.label}] ${col.def.tip}`;
   }
 
   _bind() {
