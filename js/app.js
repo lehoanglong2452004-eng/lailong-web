@@ -1,24 +1,25 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610141932";
-import { MarketState } from "./market.js?v=202610141932";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610141932";
-import { FlowChart } from "./flowchart.js?v=202610141932";
-import { Dom } from "./dom.js?v=202610141932";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610141932";
-import { initBacktest } from "./backtestview.js?v=202610141932";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610141932";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610141932";
-import { Tape } from "./tape.js?v=202610141932";
-import { LiqMap } from "./liqmap.js?v=202610141932";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610141932";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610141932";
-import { Alerts } from "./alerts.js?v=202610141932";
-import { DOM_COLS } from "./dom.js?v=202610141932";
-import { initFractal } from "./fractalview.js?v=202610141932";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610141932";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610141932";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610141932";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610141959";
+import { MarketState } from "./market.js?v=202610141959";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610141959";
+import { FlowChart } from "./flowchart.js?v=202610141959";
+import { Dom } from "./dom.js?v=202610141959";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610141959";
+import { initBacktest } from "./backtestview.js?v=202610141959";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610141959";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610141959";
+import { Tape } from "./tape.js?v=202610141959";
+import { LiqMap } from "./liqmap.js?v=202610141959";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610141959";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610141959";
+import { Alerts } from "./alerts.js?v=202610141959";
+import { DOM_COLS } from "./dom.js?v=202610141959";
+import { initFractal } from "./fractalview.js?v=202610141959";
+import { initJournal } from "./journalview.js?v=202610141959";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610141959";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610141959";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610141959";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -408,6 +409,7 @@ btChart.show = { ...btChart.show, liq: false, liqMap: false, cvd: false, oi: fal
 const tipEl = $("tip");
 const fractal = initFractal({ $, S, ex, esc, table, log });
 const backtest = initBacktest({ $, S, ex, esc, table, market, chart: btChart });
+const journal = initJournal({ $, S, esc, table, market, toast });
 // nhấp đúp vào ô thông số (Backtest, FRACTAL) để trả về giá trị mặc định
 document.addEventListener("dblclick", e => {
   const el = e.target.closest(".btform input[type=number], .btform input[type=text], .btform select, .hmcfg input, .hmcfg select"); if (!el) return;
@@ -559,10 +561,11 @@ function setConn(text, ok) { const p = $("connPill"); p.className = "pill" + (ok
 function setView(v) {
   S.view = v; persist();
   for (const b of $("views").children) b.classList.toggle("on", b.dataset.view === v);
-  for (const id of ["terminal", "analysis", "backtest", "fractal"]) $("view-" + id).hidden = id !== v;
+  for (const id of ["terminal", "analysis", "backtest", "fractal", "journal"]) $("view-" + id).hidden = id !== v;
   document.body.classList.toggle("not-terminal", v !== "terminal");
   heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
   if (v === "analysis") renderAnalysis();
+  if (v === "journal") journal.show();
 }
 function setMode(m) {
   S.mode = m; persist();

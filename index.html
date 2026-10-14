@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610141932">
+<link rel="stylesheet" href="css/app.css?v=202610141959">
 </head>
 <body>
 <header class="menubar">
@@ -23,6 +23,7 @@
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
     <button data-view="backtest" data-tip="Kiểm tra chiến lược trên dữ liệu lịch sử">Backtest</button>
     <button data-view="fractal" data-g="fractal">FRACTAL</button>
+    <button data-view="journal" data-g="journal">Nhật ký</button>
   </nav>
   <label class="field" data-tip="Sàn lấy dữ liệu. Giả lập: dữ liệu ngẫu nhiên để thử giao diện">Sàn <select id="exchange"></select></label>
   <label class="field" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
@@ -286,6 +287,60 @@
 </main>
 
 <!-- ============ FRACTAL ============ -->
+<!-- ============ NHẬT KÝ & RỦI RO ============ -->
+<main class="view backtest journal" id="view-journal" hidden>
+  <aside class="panel btform">
+    <div class="panel-head"><span class="title">Rủi ro &amp; nhật ký</span><div class="spacer"></div><button class="q" data-g="journal">?</button></div>
+    <div class="formbody">
+      <h4 data-g="risk-guard">Tài khoản và giới hạn</h4>
+      <label class="row" data-tip="Số vốn lúc bắt đầu ghi nhật ký. Vốn hiện tại = số này cộng lãi/lỗ các lệnh đã đóng">Vốn ban đầu (USDT) <input type="number" data-jc="capital" min="1" step="any"></label>
+      <label class="row" data-g="bt-risk">Rủi ro mỗi lệnh (%) <input type="number" data-jc="riskPct" min="0.05" max="10" step="0.05"></label>
+      <label class="row" data-g="risk-guard">Lỗ tối đa mỗi ngày (%) <input type="number" data-jc="dayLossPct" min="0.5" max="50" step="0.5"></label>
+      <label class="row" data-g="risk-guard">Số lệnh tối đa mỗi ngày <input type="number" data-jc="maxTrades" min="1" max="100" step="1"></label>
+      <label class="row" data-g="bt-fee">Phí taker (%) <input type="number" data-jc="fee" min="0" step="0.01"></label>
+      <div id="jGuard" class="jguard"></div>
+      <hr>
+      <h4 data-g="position-size">Tính khối lượng lệnh</h4>
+      <label class="row">Mã <input type="text" id="szSym" spellcheck="false"></label>
+      <label class="row">Giá vào <span class="inl"><button class="tool" id="szNow" data-tip="Lấy giá hiện tại của mã đang xem">Giá hiện tại</button><input type="number" id="szEntry" step="any"></span></label>
+      <label class="row">Cắt lỗ <input type="number" id="szStop" step="any"></label>
+      <label class="row">Mục tiêu (không bắt buộc) <input type="number" id="szTarget" step="any"></label>
+      <label class="row" data-tip="Đòn bẩy định dùng, để tính ký quỹ và giá thanh lý (ký quỹ cô lập)">Đòn bẩy <input type="number" id="szLev" min="1" max="125" step="1"></label>
+      <div id="szOut" class="szout"></div>
+      <button class="tool" id="szToJournal">Ghi lệnh này vào nhật ký ↓</button>
+      <hr>
+      <h4 id="jForm">Ghi lệnh / đóng lệnh</h4>
+      <label class="row">Vào lúc <input type="datetime-local" id="jTime"></label>
+      <label class="row">Mã <input type="text" id="jSym" spellcheck="false"></label>
+      <label class="row">Phía <select id="jSide"><option value="long">LONG</option><option value="short">SHORT</option></select></label>
+      <label class="row">Chiến lược <select id="jStrat"></select></label>
+      <label class="row">Giá vào <input type="number" id="jEntry" step="any"></label>
+      <label class="row">Cắt lỗ ban đầu <input type="number" id="jStop" step="any"></label>
+      <label class="row">Mục tiêu <input type="number" id="jTarget" step="any"></label>
+      <label class="row" data-tip="Số coin. Để trống thì chỉ tính theo R">Khối lượng <input type="number" id="jQty" step="any"></label>
+      <label class="row" data-tip="Để trống nếu lệnh còn mở. Điền khi đóng lệnh">Giá ra <input type="number" id="jExit" step="any"></label>
+      <label class="row">Ra lúc <input type="datetime-local" id="jTExit"></label>
+      <label class="row" data-tip="Tổng phí hai chiều (USDT). Để trống thì tự ước tính theo phí taker">Phí (USDT) <input type="number" id="jFee" step="any"></label>
+      <label class="row" data-tip="Mức căng thẳng lúc bấm vào lệnh">Cảm xúc <select id="jEmo"></select></label>
+      <label class="row col">Lý do vào lệnh <textarea id="jReason" rows="2" placeholder="Tín hiệu gì, ở vùng nào, khung nào..."></textarea></label>
+      <div class="jmist" data-g="journal-mistakes"><span>Lỗi đã mắc (nếu có)</span><div id="jMistakes"></div></div>
+      <label class="row col">Ghi chú sau lệnh <textarea id="jNote" rows="2" placeholder="Rút ra điều gì..."></textarea></label>
+      <button class="primary" id="jSave">Lưu lệnh</button>
+      <button class="tool" id="jCancel" hidden>Huỷ sửa</button>
+      <hr>
+      <p class="note">Nhật ký lưu trên trình duyệt của máy này, không gửi đi đâu. Bấm Xuất file để sao lưu hoặc chuyển sang máy khác.</p>
+      <div class="inl"><button class="tool" id="jExport">Xuất file</button><button class="tool" id="jImport">Nhập file</button><button class="tool" id="jCsv" data-tip="Mở được bằng Excel">Xuất Excel (CSV)</button></div>
+      <input type="file" id="jFile" accept=".json,application/json" hidden>
+    </div>
+  </aside>
+  <section class="frresult">
+    <div class="statgrid" id="jStats"></div>
+    <div class="card" id="jEqCard" hidden><div class="scen-chart jeq"><canvas id="jEq"></canvas></div></div>
+    <div class="card" id="jGroups"></div>
+    <section class="card"><h3>Các lệnh</h3><div class="tablewrap" id="jTrades"></div></section>
+  </section>
+</main>
+
 <main class="view backtest fractal" id="view-fractal" hidden>
   <aside class="panel btform">
     <div class="panel-head"><span class="title">Tìm mẫu hình giống nhau</span><div class="spacer"></div><button class="q" data-g="fractal">?</button></div>
@@ -353,6 +408,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610141932"></script>
+<script type="module" src="js/app.js?v=202610141959"></script>
 </body>
 </html>

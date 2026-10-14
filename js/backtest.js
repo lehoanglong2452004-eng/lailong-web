@@ -1,8 +1,8 @@
 // Bộ máy backtest. Tín hiệu tại nến i chỉ dùng nến 0..i. Một vị thế tại một thời điểm.
 // simulate(): bộ máy chính của trang Backtest, tính kết quả theo R cho hai kịch bản chốt lời TP1 / TP2.
 // runBacktest(): bộ máy cũ tính theo USDT, vào ở giá mở nến sau tín hiệu (giữ cho các bài test).
-import { STRATEGIES, defaultParams, context } from './strategies.js?v=202610141932';
-import { equityStats } from './fractal.js?v=202610141932';
+import { STRATEGIES, defaultParams, context } from './strategies.js?v=202610141959';
+import { equityStats } from './fractal.js?v=202610141959';
 export { STRATEGIES, defaultParams };
 
 const MS_PER_YEAR = 365 * 24 * 3600 * 1000;

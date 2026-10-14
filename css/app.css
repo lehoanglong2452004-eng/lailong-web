@@ -345,3 +345,22 @@ canvas { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: n
 .hmcfg .row input[type=number] { width: 72px; }
 .hmcfg .note { margin: 2px 6px 6px; }
 .hmcfg input.reset, .hmcfg select.reset { outline: 2px solid var(--accent); }
+
+/* ---- nhật ký & rủi ro ---- */
+.journal .btform h4 { margin: 4px 0 0; color: var(--accent); font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; }
+.journal .btform .row.col { flex-direction: column; align-items: stretch; }
+.journal .btform textarea { width: 100%; resize: vertical; font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); padding: 4px 6px; }
+.journal .inl { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.journal .row .inl input { width: 110px; }
+.journal .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 12px; }
+.journal .kv span { color: var(--muted); }
+.journal .kv b { font-family: var(--mono); text-align: right; }
+.jguard, .szout { background: var(--panel-2); border: 1px solid var(--line); padding: 6px 8px; }
+.jwarn { margin-top: 6px; padding: 5px 8px; border-left: 3px solid #f5c542; background: color-mix(in srgb, #f5c542 12%, transparent); font-size: 12px; }
+.jwarn.stop { border-left-color: var(--sell); background: color-mix(in srgb, var(--sell) 16%, transparent); font-weight: 700; }
+.jok { margin-top: 6px; color: var(--buy); font-size: 12px; }
+.jmist > span { color: var(--muted); }
+.jmist label { display: flex; gap: 6px; align-items: center; padding: 2px 0; font-size: 12.5px; }
+.journal .jeq { height: 220px; }
+.journal #jGroups h4 { margin: 12px 0 4px; color: var(--accent); font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; }
+.journal td.jreason { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }

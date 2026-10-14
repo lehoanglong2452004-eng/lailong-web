@@ -772,6 +772,26 @@ export const GLOSSARY = [
     body: "<p>Cách so giống ATAS và Sierra Chart: mua chủ động ở giá P so với bán chủ động ở giá ngay dưới (P − 1 dòng), vì người mua chủ động khớp vào giá bán (ask) còn người bán chủ động khớp vào giá mua (bid). Ô nào gấp 3 lần trở lên được tô viền: xanh là mua lấn át, đỏ là bán lấn át.</p><p>Khi có từ 3 ô cùng phía liền nhau, hệ thống vẽ một <b>dải</b> kéo sang phải: dải xanh là vùng phe mua đã đẩy mạnh (thường đỡ giá khi quay lại), dải đỏ là vùng phe bán đẩy mạnh. Dải dừng lại khi có nến đóng cửa xuyên qua.</p><p>Chỉ có cho nến có footprint thật (từ lúc mở trang, hoặc tải lại lệnh khớp với Binance).</p>"
   },
   {
+    id: "journal", group: "Công cụ", term: "Nhật ký giao dịch",
+    short: "Ghi lại từng lệnh kèm lý do, lỗi đã mắc và cảm xúc, rồi thống kê xem bro thật sự kiếm tiền ở đâu và mất tiền vì đâu.",
+    body: "<p>Mỗi lệnh ghi giá vào, cắt lỗ ban đầu và giá ra. Kết quả tính theo <b>R</b> (bội số của rủi ro ban đầu), nên so được các lệnh to nhỏ khác nhau. Lệnh chưa có giá ra là lệnh đang mở.</p><p>Thống kê chia theo chiến lược, theo lỗi, theo phía, giờ vào lệnh, thứ trong tuần và cảm xúc. Ô <b>Lệnh không mắc lỗi</b> so với <b>Lệnh có mắc lỗi</b> cho biết kỷ luật đáng giá bao nhiêu R mỗi lệnh.</p><p>Cần khoảng 30 lệnh trở lên thì thống kê mới bắt đầu đáng tin. Dữ liệu chỉ nằm trên trình duyệt của máy này; trên laptop và trên web là hai nhật ký riêng, dùng Xuất file / Nhập file để gộp.</p>"
+  },
+  {
+    id: "risk-guard", group: "Công cụ", term: "Giới hạn rủi ro trong ngày",
+    short: "Lỗ tối đa mỗi ngày và số lệnh tối đa mỗi ngày. Chạm giới hạn thì app báo đỏ: nên dừng tới ngày mai.",
+    body: "<p>Quỹ và prop firm luôn có giới hạn lỗ ngày (thường 2 đến 5% vốn), vì sau vài lệnh thua người ta hay gỡ bằng lệnh to hơn. App cộng lãi/lỗ các lệnh đã đóng hôm nay (theo giờ máy) và so với giới hạn.</p><p><b>Rủi ro đang mở</b> là tổng số tiền sẽ mất nếu mọi lệnh đang mở chạm cắt lỗ. Khi có từ 2 lệnh cùng chiều, app nhắc rằng BTC, ETH, SOL thường chạy cùng nhau, nên rủi ro thật gần bằng tổng chứ không được chia nhỏ.</p>"
+  },
+  {
+    id: "position-size", group: "Công cụ", term: "Tính khối lượng lệnh",
+    short: "Từ vốn, % rủi ro, giá vào và cắt lỗ, tính số coin cần vào để nếu chạm cắt lỗ thì mất đúng số tiền đã định (đã gồm phí).",
+    body: "<p>Khối lượng = số tiền chấp nhận mất ÷ (khoảng cắt lỗ + phí hai chiều). Ví dụ vốn 10.000 USDT, rủi ro 1% là 100 USDT; BTC vào 65.000, cắt lỗ 64.350 (cách 650) thì vào khoảng 0,15 BTC.</p><p>Đòn bẩy không đổi số tiền mất khi chạm cắt lỗ, nó chỉ đổi ký quỹ phải bỏ ra và giá thanh lý. App báo đỏ nếu cắt lỗ nằm sau giá thanh lý (ký quỹ cô lập, ước tính với ký quỹ duy trì 0,5%).</p>"
+  },
+  {
+    id: "journal-mistakes", group: "Công cụ", term: "Lỗi đã mắc",
+    short: "Đánh dấu lỗi kỷ luật của từng lệnh để biết lỗi nào làm mất nhiều R nhất.",
+    body: "<p>Các lỗi phổ biến: vào sớm, FOMO đuổi giá, ngoài kế hoạch, dời cắt lỗ ra xa, chốt lời quá sớm, khối lượng quá lớn, gỡ lỗ, vào sát giờ ra tin, vào trễ. Bảng <b>Theo lỗi đã mắc</b> xếp lỗi gây thiệt hại nhiều nhất lên đầu: đó là thứ cần sửa trước tiên.</p>"
+  },
+  {
     id: "alerts", group: "Công cụ", term: "Cảnh báo",
     short: "Phát tiếng và hiện thông báo khi có lệnh lớn, tường bị rút, nghi iceberg, hoặc giá chạm mức bro đặt.",
     body: "<p>Mở nút <b>🔔</b> trên thanh menu để bật từng loại. Thông báo của trình duyệt cần bro cho phép một lần; khi tab đang mở thì có tiếng và dòng chữ ở góc dưới.</p><p>Cảnh báo giá: gõ mức giá rồi bấm Thêm. Khi giá đi qua mức đó, cảnh báo kêu một lần rồi tự xoá. Danh sách mức giá được lưu lại trên máy này.</p><p>Để tránh ồn, mỗi loại kêu tối đa một lần mỗi 5 giây.</p>"
