@@ -2,7 +2,8 @@
 
 Chỉ dùng thư viện chuẩn để chạy được ở cả hai nơi:
   - máy chủ terminal trên laptop (lấy trực tiếp, lưu tạm 10 phút);
-  - GitHub Actions của trang web công khai (chạy định kỳ, ghi ra data/calendar.json và data/news.json).
+  - GitHub Actions của trang web công khai (chạy định kỳ, ghi ra data/calendar.json
+    và data/news.json).
 
 Chạy tay: python news.py <thư mục ra>
 """
@@ -15,7 +16,7 @@ import sys
 import time
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
@@ -33,14 +34,26 @@ FEEDS = [
 ]
 # tin có các từ này được đánh dấu "nóng"
 HOT = re.compile(
-    r"\b(SEC|ETF|hack(ed)?|exploit|Fed|FOMC|CPI|rate (cut|hike)|liquidat\w*|ban(s|ned)?|approv\w*|lawsuit|"
-    r"Trump|tariff|Powell|BlackRock|bankrupt\w*|delist\w*|halt\w*|outage|crash\w*|surge\w*|plunge\w*|record high)\b",
+    r"\b(SEC|ETF|hack(ed)?|exploit|Fed|FOMC|CPI|rate (cut|hike)|liquidat\w*|ban(s|ned)?|"
+    r"approv\w*|lawsuit|Trump|tariff|Powell|BlackRock|bankrupt\w*|delist\w*|halt\w*|"
+    r"outage|crash\w*|surge\w*|plunge\w*|record high)\b",
     re.I,
 )
 COINS = ["BTC", "ETH", "SOL", "XRP", "BNB", "DOGE", "ADA", "AVAX", "LINK", "TON", "SUI", "HYPE"]
-COIN_WORDS = {"BTC": r"bitcoin|btc", "ETH": r"ethereum|ether\b|eth\b", "SOL": r"solana|\bsol\b", "XRP": r"\bxrp\b|ripple",
-              "BNB": r"\bbnb\b|binance coin", "DOGE": r"doge", "ADA": r"cardano|\bada\b", "AVAX": r"avalanche|avax",
-              "LINK": r"chainlink", "TON": r"\btoncoin\b|\bton\b", "SUI": r"\bsui\b", "HYPE": r"hyperliquid"}
+COIN_WORDS = {
+    "BTC": r"bitcoin|btc",
+    "ETH": r"ethereum|ether\b|eth\b",
+    "SOL": r"solana|\bsol\b",
+    "XRP": r"\bxrp\b|ripple",
+    "BNB": r"\bbnb\b|binance coin",
+    "DOGE": r"doge",
+    "ADA": r"cardano|\bada\b",
+    "AVAX": r"avalanche|avax",
+    "LINK": r"chainlink",
+    "TON": r"\btoncoin\b|\bton\b",
+    "SUI": r"\bsui\b",
+    "HYPE": r"hyperliquid",
+}
 
 
 def _get(url: str, timeout: float = 15) -> bytes:
@@ -54,21 +67,32 @@ def fetch_calendar() -> dict:
     for url in CALENDAR_URLS:
         try:
             for e in json.loads(_get(url)):
-                ts = datetime.fromisoformat(e["date"]).astimezone(timezone.utc)
+                ts = datetime.fromisoformat(e["date"]).astimezone(UTC)
                 impact = e.get("impact", "")
                 country = e.get("country", "")
-                # giữ tin tác động mạnh của mọi nước và tin trung bình của Mỹ (crypto chạy theo đồng USD)
+                # giữ tin tác động mạnh của mọi nước và tin trung bình của Mỹ
+                # (crypto chạy theo đồng USD)
                 if impact != "High" and not (impact == "Medium" and country == "USD"):
                     continue
-                events.append({
-                    "t": int(ts.timestamp() * 1000), "title": e.get("title", ""), "country": country,
-                    "impact": impact, "forecast": e.get("forecast", ""), "previous": e.get("previous", ""),
-                    "actual": e.get("actual", ""),
-                })
+                events.append(
+                    {
+                        "t": int(ts.timestamp() * 1000),
+                        "title": e.get("title", ""),
+                        "country": country,
+                        "impact": impact,
+                        "forecast": e.get("forecast", ""),
+                        "previous": e.get("previous", ""),
+                        "actual": e.get("actual", ""),
+                    }
+                )
         except Exception as exc:  # tuần sau đôi khi chưa có
             errors.append(f"{url.rsplit('/', 1)[-1]}: {exc}")
     uniq = {(e["t"], e["title"], e["country"]): e for e in events}
-    return {"updated": int(time.time() * 1000), "events": sorted(uniq.values(), key=lambda e: e["t"]), "errors": errors}
+    return {
+        "updated": int(time.time() * 1000),
+        "events": sorted(uniq.values(), key=lambda e: e["t"]),
+        "errors": errors,
+    }
 
 
 def _text(el, tag):
@@ -92,7 +116,16 @@ def fetch_news(limit: int = 80) -> dict:
                 except Exception:
                     t = int(time.time() * 1000)
                 coins = [c for c in COINS if re.search(COIN_WORDS[c], title, re.I)]
-                items.append({"t": t, "title": title, "link": link, "source": source, "hot": bool(HOT.search(title)), "coins": coins})
+                items.append(
+                    {
+                        "t": t,
+                        "title": title,
+                        "link": link,
+                        "source": source,
+                        "hot": bool(HOT.search(title)),
+                        "coins": coins,
+                    }
+                )
         except Exception as exc:
             errors.append(f"{source}: {exc}")
     seen, out = set(), []
@@ -139,6 +172,9 @@ if __name__ == "__main__":
     cal, news = fetch_calendar(), fetch_news()
     a = _write_if_changed(out / "calendar.json", cal, "events")
     b = _write_if_changed(out / "news.json", news, "items")
-    print(f"lịch: {len(cal['events'])} sự kiện {'(đã ghi)' if a else '(không đổi)'}; tin: {len(news['items'])} {'(đã ghi)' if b else '(không đổi)'}")
+    print(
+        f"lịch: {len(cal['events'])} sự kiện {'(đã ghi)' if a else '(không đổi)'}; "
+        f"tin: {len(news['items'])} {'(đã ghi)' if b else '(không đổi)'}"
+    )
     for e in cal["errors"] + news["errors"]:
         print("lỗi:", e)
