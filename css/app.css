@@ -76,12 +76,10 @@ input[type=number] { font-family: var(--mono); }
 .workspace {
   flex: 1; min-height: 0; display: grid; padding: 4px;
   grid-template-columns: minmax(0, 1fr) 6px var(--lmapW) 4px var(--rightW) 6px var(--tapeW);
-  grid-template-rows: minmax(0, 1fr) 6px var(--bottomH);
-  grid-template-areas: "chart sm lmap sv dom st tape" "sh sm lmap sv dom st tape" "bottom sm lmap sv dom st tape";
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "chart sm lmap sv dom st tape";
 }
 .workspace.nolmap { grid-template-columns: minmax(0, 1fr) 0 0 6px var(--rightW) 6px var(--tapeW); }
-.workspace.nobottom { grid-template-rows: minmax(0, 1fr) 0 auto; }
-.workspace.nobottom > #splitH, .workspace.nobottom #tabBody { display: none; }
 .workspace.notools .chart-tools, .workspace.notools #chartHint { display: none; }
 .workspace.nolmap > .lmap-panel, .workspace.nolmap > #splitM { display: none; }
 .panel { background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
@@ -294,7 +292,6 @@ input[type=number], input:not([type]) { cursor: text !important; }
   .workspace > .panel.mshow { display: flex; }
   .workspace > .lmap-panel.mshow { flex: 0 0 32%; }
   .workspace.nolmap > .lmap-panel.mshow { display: none; }
-  .workspace.nobottom #tabBody { display: block; }
   .lmap-panel .panel-head .max, #bottomFold { display: none; }
   .mnav { display: flex; border-top: 2px solid var(--accent); background: var(--bg); padding-bottom: env(safe-area-inset-bottom); flex: none; }
   .mnav button { flex: 1; border: 0; border-radius: 0; background: transparent; color: var(--muted); padding: 5px 2px 6px; font-size: 11px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 1px; }

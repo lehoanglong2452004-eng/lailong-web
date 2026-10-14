@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610141854">
+<link rel="stylesheet" href="css/app.css?v=202610141901">
 </head>
 <body>
 <header class="menubar">
@@ -180,30 +180,12 @@
     <div class="dom-hint">Lăn chuột: xem lại · Bấm đúp: về mới nhất · Dòng đậm: lệnh lớn</div>
   </section>
 
-  <div class="splitter h" id="splitH" data-tip="Kéo để đổi chiều cao khung dưới. Bấm đúp để về mặc định"></div>
-
-  <section class="panel bottom" id="bottomPanel">
-    <div class="panel-head tabs" id="tabs">
-      <button class="icon" id="bottomFold" data-tip="Thu gọn khung dưới để biểu đồ cao hơn. Bấm lại hoặc bấm một thẻ để mở ra">▾</button>
-      <button data-tab="clusters" class="on" data-g="cluster-search">Cụm khối lượng</button>
-      <button data-tab="big" data-g="big-trades">Big Trades</button>
-      <button data-tab="score" data-g="signal-score">Điểm tín hiệu</button>
-      <button data-tab="algo" data-g="algo-twap">Lệnh chia đều</button>
-      <button data-tab="spoof" data-g="spoofing">Tường giả</button>
-      <button data-tab="symbols" data-tip="Tất cả mã của sàn, sắp theo khối lượng 24 giờ. Bấm để chuyển mã">Danh sách mã</button>
-      <button data-tab="logs" data-tip="Nhật ký kết nối và tải dữ liệu">Nhật ký</button>
-      <div class="spacer"></div>
-      <button class="icon max" data-max="bottomPanel" data-tip="Phóng to khung này">⤢</button>
-    </div>
-    <div class="tab-body" id="tabBody"></div>
-  </section>
 </main>
 
 <nav class="mnav" id="mnav" aria-label="Chọn khung">
   <button data-panel="mainPanel" class="on"><i>▦</i>Biểu đồ</button>
   <button data-panel="domPanel"><i>☰</i>Sổ lệnh</button>
   <button data-panel="tapePanel"><i>≋</i>Tape</button>
-  <button data-panel="bottomPanel"><i>◫</i>Bảng</button>
 </nav>
 
 <!-- ============ PHÂN TÍCH ============ -->
@@ -353,6 +335,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610141854"></script>
+<script type="module" src="js/app.js?v=202610141901"></script>
 </body>
 </html>

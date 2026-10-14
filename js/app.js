@@ -1,23 +1,23 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610141854";
-import { MarketState } from "./market.js?v=202610141854";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610141854";
-import { FlowChart } from "./flowchart.js?v=202610141854";
-import { Dom } from "./dom.js?v=202610141854";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610141854";
-import { initBacktest } from "./backtestview.js?v=202610141854";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610141854";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610141854";
-import { Tape } from "./tape.js?v=202610141854";
-import { LiqMap } from "./liqmap.js?v=202610141854";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610141854";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610141854";
-import { DOM_COLS } from "./dom.js?v=202610141854";
-import { initFractal } from "./fractalview.js?v=202610141854";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610141854";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610141854";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610141854";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610141901";
+import { MarketState } from "./market.js?v=202610141901";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610141901";
+import { FlowChart } from "./flowchart.js?v=202610141901";
+import { Dom } from "./dom.js?v=202610141901";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610141901";
+import { initBacktest } from "./backtestview.js?v=202610141901";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610141901";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610141901";
+import { Tape } from "./tape.js?v=202610141901";
+import { LiqMap } from "./liqmap.js?v=202610141901";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610141901";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610141901";
+import { DOM_COLS } from "./dom.js?v=202610141901";
+import { initFractal } from "./fractalview.js?v=202610141901";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610141901";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610141901";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610141901";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -240,7 +240,8 @@ async function seedDayVolume(token) {
 // ---------- các tab phía dưới ----------
 let symbolRows = [], symbolFilter = "";
 function renderTab() {
-  const body = $("tabBody"), dec = decimalsFor(market.tick);
+  const body = $("tabBody"); if (!body) return;
+  const dec = decimalsFor(market.tick);
   const coinName = coin();
   if (S.tab === "clusters") {
     body.innerHTML = !CL.on ? `<div class="empty">Bật "Tìm cụm ▾" trên biểu đồ để tìm các ô footprint có khối lượng lớn bất thường.</div>` : !clusters ? `<div class="empty">Đang tính...</div>` :
@@ -274,10 +275,6 @@ function renderTab() {
     body.innerHTML = table(["Thời gian", "Nội dung"], logs.map(x => `<tr><td>${fmtTime(x.t, true)}</td><td class="t">${esc(x.text)}</td></tr>`), "Chưa có nhật ký.");
   }
 }
-$("tabBody").addEventListener("click", e => {
-  const r = e.target.closest("[data-sym]"); if (r) { S.symbol = r.dataset.sym; $("symbol").value = S.symbol; load(); return; }
-  const g = e.target.closest("[data-goto]"); if (g) goToTime(+g.dataset.goto);
-});
 // đưa biểu đồ nến/footprint tới nến chứa thời điểm t
 function goToTime(t) {
   if (S.mode === "heat") setMode("box");
@@ -503,7 +500,6 @@ function splitter(el, k, calc) {
 splitter($("splitV"), "rightW", (e, r) => { const tw = $("tapePanel").offsetWidth + 6; return Math.min(r.width - tw - 320, Math.max(220, r.right - e.clientX - tw - 4)); });
 splitter($("splitM"), "lmapW", e => Math.max(120, Math.min(900, $("lmapPanel").getBoundingClientRect().right - e.clientX - 3)));
 splitter($("splitT"), "tapeW", (e, r) => Math.min(r.width - 600, Math.max(200, r.right - e.clientX - 4)));
-splitter($("splitH"), "bottomH", (e, r) => Math.min(r.height - 160, Math.max(60, r.bottom - e.clientY - 4)));
 
 function setMax(id) {
   const p = id && $(id), on = p && !p.classList.contains("maxed");
@@ -581,7 +577,6 @@ $("contrast").oninput = () => { heat.contrast = lmap.contrast = +$("contrast").v
 $("rowSize").onchange = () => { flow.rowMult = $("rowSize").value; flow.dirty = true; };
 $("domMult").onchange = () => dom.setMult(+$("domMult").value);
 $("domCenter").onclick = () => dom.recenter();
-$("tabs").onclick = e => { const b = e.target.closest("[data-tab]"); if (!b) return; if (layout.bottomOff) bottomShow(true); S.tab = b.dataset.tab; for (const x of $("tabs").querySelectorAll("[data-tab]")) x.classList.toggle("on", x === b); renderTab(); };
 $("fullscreenBtn").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => toast("Trình duyệt không cho phép toàn màn hình, bấm F11", true)); };
 
 // ---------- công cụ order flow ----------
@@ -608,9 +603,6 @@ $("lmapHide").onclick = () => lmapShow(false);
 if (layout.lmapOff) lmapShow(false);
 // thu gọn khung dưới và ẩn thanh công cụ biểu đồ để biểu đồ cao hơn
 const redrawAll = () => { heat.dirty = flow.dirty = dom.dirty = tape.dirty = lmap.dirty = true; };
-const bottomShow = on => { ws.classList.toggle("nobottom", !on); $("bottomFold").textContent = on ? "▾" : "▴"; setLayout("bottomOff", on ? null : 1); redrawAll(); };
-$("bottomFold").onclick = () => bottomShow(!!layout.bottomOff);
-if (layout.bottomOff) bottomShow(false);
 const toolsShow = on => { ws.classList.toggle("notools", !on); $("toolsBtn").classList.toggle("on", on); setLayout("toolsOff", on ? null : 1); redrawAll(); };
 $("toolsBtn").onclick = () => toolsShow(!!layout.toolsOff);
 if (layout.toolsOff) toolsShow(false);
