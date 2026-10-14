@@ -1,23 +1,23 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610141840";
-import { MarketState } from "./market.js?v=202610141840";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610141840";
-import { FlowChart } from "./flowchart.js?v=202610141840";
-import { Dom } from "./dom.js?v=202610141840";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610141840";
-import { initBacktest } from "./backtestview.js?v=202610141840";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610141840";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610141840";
-import { Tape } from "./tape.js?v=202610141840";
-import { LiqMap } from "./liqmap.js?v=202610141840";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610141840";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610141840";
-import { DOM_COLS } from "./dom.js?v=202610141840";
-import { initFractal } from "./fractalview.js?v=202610141840";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610141840";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610141840";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610141840";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610141854";
+import { MarketState } from "./market.js?v=202610141854";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610141854";
+import { FlowChart } from "./flowchart.js?v=202610141854";
+import { Dom } from "./dom.js?v=202610141854";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610141854";
+import { initBacktest } from "./backtestview.js?v=202610141854";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610141854";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610141854";
+import { Tape } from "./tape.js?v=202610141854";
+import { LiqMap } from "./liqmap.js?v=202610141854";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610141854";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610141854";
+import { DOM_COLS } from "./dom.js?v=202610141854";
+import { initFractal } from "./fractalview.js?v=202610141854";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610141854";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610141854";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610141854";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -32,7 +32,7 @@ const S = {
   interval: qs.get("i") || saved.interval || "1m",
   view: qs.get("v") || saved.view || "terminal",
   mode: saved.mode === "box" ? "box" : "heat", // trang Nến đã bỏ: chỉ còn Bookmap và Footprint
-  tab: "absorb",
+  tab: "clusters",
 };
 if (!EXCHANGES[S.ex]) S.ex = "BINANCE";
 if (!INTERVALS[S.interval]) S.interval = "1m";
@@ -64,7 +64,7 @@ const tape = new Tape($("tape"), market);
 const walls = new WallTracker(); dom.walls = walls;
 const lmap = new LiqMap($("lmap"), market, dom); lmap.walls = walls;
 flow.prints = () => [market.histPrints, market.prints];
-flow.opts.onRange = () => { if (S.tab === "absorb") renderTab(); };
+flow.opts.onRange = () => {};
 
 // ---------- tải dữ liệu một mã ----------
 let conn = null, loadToken = 0, analysis = null, fpState = null;
@@ -197,7 +197,7 @@ function recomputeFlow() {
   flow.setOverlays({ absorb, clusters: clusters ? clusters.cells : [], vpinVals: vp, vpinHi: vv.length ? vv[Math.floor(vv.length * 0.9)] : null, vpinPct: percentileOf(vp, vp[vp.length - 1]), scores: scores.events });
   flow.bigQ = market.bigPrint;
   recomputePrints();
-  if (["absorb", "clusters", "score"].includes(S.tab)) renderTab();
+  if (["clusters", "score"].includes(S.tab)) renderTab();
 }
 // nhóm người chơi và lệnh chia đều: tính lại theo lệnh gốc (cả lịch sử tải lại lẫn trực tiếp)
 function recomputePrints() {
@@ -242,14 +242,7 @@ let symbolRows = [], symbolFilter = "";
 function renderTab() {
   const body = $("tabBody"), dec = decimalsFor(market.tick);
   const coinName = coin();
-  if (S.tab === "absorb") {
-    const st = absorptionStats(absorb), pct = g => isFinite(g.pct) ? g.pct.toFixed(0) + "%" : "-";
-    const res = { reversed: ["Đúng", "pos"], failed: ["Sai", "neg"], unclear: ["Không rõ", "muted"], pending: ["Đang chờ", "muted"] };
-    body.innerHTML = `<div class="signalbar"><span data-g="absorption">Khung ${S.interval}, ${market.bars.length} nến: hấp thụ bán (đỏ) <b>${st.sell.n}</b> lần, đúng <b class="pos">${pct(st.sell)}</b> · hấp thụ mua (xanh) <b>${st.buy.n}</b> lần, đúng <b class="pos">${pct(st.buy)}</b></span>${flow.ranges.length ? `<span data-g="range-profile">Vùng tự chọn: <b>${flow.ranges.length}</b> (chuột phải để xoá)</span>` : ""}</div>` +
-      table(["Nến", ["Loại", "absorption"], "Giá", "KL nến", ["Độ lệch", "sigma"], "Chủ động ở mép", "Đóng cửa", "Độ mạnh", "Sau đó", ""],
-        absorb.slice(-150).reverse().map(e => { const r = res[e.fwd.result]; return `<tr class="click" data-goto="${e.t}"><td>${fmtDate(e.t)}</td><td class="t ${e.side === "sell" ? "neg" : "pos"}">${e.side === "sell" ? "Hấp thụ bán (đáy)" : "Hấp thụ mua (đỉnh)"}</td><td>${e.price.toFixed(dec)}</td><td>${fmtVol(e.vol)}</td><td>${e.z.toFixed(1)}σ</td><td>${fmtVol(e.edgeVol)} (${(e.edgeShare * 100).toFixed(0)}%)</td><td>${((e.side === "sell" ? e.closePos : 1 - e.closePos) * 100).toFixed(0)}% từ mép</td><td>${e.strength}</td><td class="t ${r[1]}">${r[0]}${e.fwd.result === "reversed" ? ` (+${e.fwd.bestAtr.toFixed(1)} ATR, ${e.fwd.bars} nến)` : ""}</td><td class="t muted">${e.exact ? "" : "ước tính"}</td></tr>`; }),
-        "Chưa có nến hấp thụ nào trong dữ liệu đang xem.");
-  } else if (S.tab === "clusters") {
+  if (S.tab === "clusters") {
     body.innerHTML = !CL.on ? `<div class="empty">Bật "Tìm cụm ▾" trên biểu đồ để tìm các ô footprint có khối lượng lớn bất thường.</div>` : !clusters ? `<div class="empty">Đang tính...</div>` :
       `<div class="signalbar"><span data-g="cluster-search">Ngưỡng: <b>${fmtVol(clusters.threshold)} ${coinName}</b> · tìm thấy <b>${clusters.cells.length}</b> ô</span></div>` +
       table(["Nến", "Giá", "Bán", "Mua", "Tổng", ["Delta", "delta"], ""], clusters.cells.map(c => `<tr class="click" data-goto="${c.t}"><td>${fmtDate(c.t)}</td><td>${c.price.toFixed(dec)}</td><td class="neg">${fmtVol(c.sell)}</td><td class="pos">${fmtVol(c.buy)}</td><td>${fmtVol(c.sell + c.buy)}</td><td class="${c.buy >= c.sell ? "pos" : "neg"}">${c.buy >= c.sell ? "+" : ""}${fmtVol(c.buy - c.sell)}</td><td class="t muted">${c.approx ? "ước tính" : ""}</td></tr>`), "Không có ô nào vượt ngưỡng.");
