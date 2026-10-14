@@ -2,6 +2,146 @@
 export const GLOSSARY = [
   // ───────────── Bookmap ─────────────
   {
+    id: "bm-settings",
+    group: "Bookmap",
+    term: "Cài đặt Bookmap",
+    short: "Chỉnh màu bản đồ, bong bóng, các đường và các cột bên phải. Lưu trên máy của bạn, nhấp đúp vào ô để về mặc định.",
+    body: "<p>Bảng cài đặt chia bốn phần: <b>màu bản đồ</b>, <b>bong bóng khối lượng</b>, <b>đường trên bản đồ</b> và <b>cột bên phải</b>. Mọi thay đổi được lưu trên trình duyệt của bạn, mở lại trang vẫn giữ.</p><p>Nhấp đúp vào một ô để đưa ô đó về mặc định.</p>"
+  },
+  {
+    id: "bm-colors",
+    group: "Bookmap",
+    term: "Bảng màu",
+    short: "Bookmap: xanh đen, xanh nhạt, vàng, cam, đỏ (đỏ là dày nhất). Xám: đen tới trắng.",
+    body: "<p>Màu càng nóng thì lệnh chờ ở mức giá đó càng dày. Bảng xám giúp nhìn bong bóng và đường giá rõ hơn khi bản đồ quá rực.</p>"
+  },
+  {
+    id: "bm-cutoff",
+    group: "Bookmap",
+    term: "Ngưỡng cắt trên / dưới",
+    short: "Lệnh chờ từ phân vị cắt trên trở lên tô màu đậm nhất; dưới phân vị cắt dưới để nền tối.",
+    body: "<p>Các mức lệnh chờ đang thấy được xếp từ nhỏ tới lớn. <b>Cắt trên 99%</b> nghĩa là 1% mức dày nhất cùng tô màu đỏ đậm nhất, phần còn lại trải đều trên bảng màu. <b>Cắt dưới 2%</b> nghĩa là 2% mức mỏng nhất để nền tối, đỡ rối mắt.</p><p>Hạ cắt trên (ví dụ 95%) thì nhiều tường hiện đỏ hơn; tăng cắt dưới (ví dụ 20%) thì chỉ còn chỗ dày nổi lên.</p>"
+  },
+  {
+    id: "bm-auto",
+    group: "Bookmap",
+    term: "Tự chỉnh tương phản",
+    short: "Liên tục: tính lại ngưỡng màu mỗi lần vẽ. Khi căn giữa lại: chỉ tính lại khi giá chạy ra mép hoặc khi phóng to/thu nhỏ. Giữ nguyên: khoá ngưỡng, chỉ tính lại khi phóng to / thu nhỏ hoặc đổi chế độ.",
+    body: "<p>Giữ nguyên giúp so màu giữa các thời điểm (cùng một màu là cùng một lượng lệnh chờ). Liên tục giúp bản đồ luôn rõ nhưng màu có thể đổi khi có tường lớn xuất hiện.</p>"
+  },
+  {
+    id: "bm-smooth",
+    group: "Bookmap",
+    term: "Làm mịn dọc",
+    short: "Làm mịn bản đồ theo chiều giá. Tự động chỉ làm khi thu nhỏ nhiều (nhiều mức giá trong một điểm ảnh).",
+    body: "<p>Khi thu nhỏ, mỗi điểm ảnh chứa nhiều mức giá nên bản đồ dễ bị lốm đốm. Làm mịn lấy trung bình với các điểm ảnh trên dưới để thấy vùng thanh khoản rõ hơn. Khi phóng to sát, nên tắt để thấy từng mức giá.</p>"
+  },
+  {
+    id: "bm-dim",
+    group: "Bookmap",
+    term: "Làm tối bản đồ",
+    short: "Giảm độ sáng bản đồ để bong bóng, đường giá và nến nổi lên.",
+    body: "<p>Giảm độ sáng bản đồ để bong bóng, đường giá và nến nổi lên.</p>"
+  },
+  {
+    id: "bm-aggregate",
+    group: "Bookmap",
+    term: "Sổ lệnh cộng dồn trên bản đồ",
+    short: "Mỗi mức giá tô theo tổng lệnh chờ từ giá hiện tại tới mức đó, thay vì riêng mức đó.",
+    body: "<p>Cho biết giá phải ăn hết bao nhiêu lệnh chờ để đi tới một mức. Càng xa giá càng sáng, nên chỗ màu tăng vọt là nơi có tường.</p>"
+  },
+  {
+    id: "bm-cluster",
+    group: "Bookmap",
+    term: "Gom bong bóng",
+    short: "Cách gộp lệnh khớp thành một bong bóng: thông minh, theo thời gian, theo khối lượng hoặc theo giá.",
+    body: "<ul><li><b>Thông minh:</b> mỗi nhóm điểm ảnh một bong bóng, rồi gộp các quả chồng lên nhau nhiều. Mặc định.</li><li><b>Theo thời gian:</b> mỗi N giây một bong bóng, không phụ thuộc phóng to.</li><li><b>Theo khối lượng:</b> mỗi bong bóng đủ một lượng khớp (0 là tự động: khoảng 1/120 tổng khối lượng trên màn hình). Bong bóng đều cỡ, dày đặc khi thị trường sôi động.</li><li><b>Theo giá:</b> gộp tới khi giá khớp đổi sang mức khác.</li></ul><p>Bong bóng đặt ở giá trung bình đã khớp và thời điểm trung bình của nhóm.</p>"
+  },
+  {
+    id: "bm-dotmode",
+    group: "Bookmap",
+    term: "Bong bóng theo tổng hay delta",
+    short: "Tổng: cỡ theo tổng khối lượng khớp. Delta: cỡ theo chênh lệch mua chủ động trừ bán chủ động, màu theo phe thắng.",
+    body: "<p>Tổng: cỡ theo tổng khối lượng khớp. Delta: cỡ theo chênh lệch mua chủ động trừ bán chủ động, màu theo phe thắng.</p>"
+  },
+  {
+    id: "bm-dotmin",
+    group: "Bookmap",
+    term: "Ẩn bong bóng nhỏ",
+    short: "Chỉ vẽ bong bóng có khối lượng (hoặc delta) từ mức này trở lên. 0 là hiện tất cả.",
+    body: "<p>Chỉ vẽ bong bóng có khối lượng (hoặc delta) từ mức này trở lên. 0 là hiện tất cả.</p>"
+  },
+  {
+    id: "bm-bbo",
+    group: "Bookmap",
+    term: "Đường giá mua / bán và giá khớp cuối",
+    short: "Đường bậc thang xanh là giá mua tốt nhất, đỏ là giá bán tốt nhất, trắng mảnh là giá khớp cuối.",
+    body: "<p>Khi thu nhỏ tới mức hai đường xanh đỏ gần nhau dưới ngưỡng điểm ảnh đã chọn, chúng tự ẩn và chỉ còn đường giá khớp cuối cho đỡ rối. Chúng hiện lại khi khoảng cách rộng hơn ngưỡng 20%, để khỏi nhấp nháy.</p>"
+  },
+  {
+    id: "bm-vwap",
+    group: "Bookmap",
+    term: "VWAP phiên",
+    short: "Giá trung bình theo khối lượng của mọi lệnh khớp kể từ lúc mở trang (đường tím).",
+    body: "<p>Giá trên VWAP: phe mua đang lời trung bình. Dưới VWAP: phe bán chiếm ưu thế. VWAP thường là nơi giá quay về.</p>"
+  },
+  {
+    id: "bm-poc",
+    group: "Bookmap",
+    term: "Đường POC",
+    short: "POC là giá khớp nhiều nhất. Đường vàng liền là POC của vùng đang xem, cam nét đứt là POC cả phiên.",
+    body: "<p>Đường chỉ hiện khi cột Volume Profile tương ứng đang bật.</p>"
+  },
+  {
+    id: "bm-candles",
+    group: "Bookmap",
+    term: "Nến trên Bookmap",
+    short: "Vẽ nến của khung đang chọn (1m, 5m...) chồng lên bản đồ, thân rỗng để vẫn thấy thanh khoản phía sau.",
+    body: "<p>Vẽ nến của khung đang chọn (1m, 5m...) chồng lên bản đồ, thân rỗng để vẫn thấy thanh khoản phía sau.</p>"
+  },
+  {
+    id: "bm-slices",
+    group: "Bookmap",
+    term: "Vạch chia thời gian",
+    short: "Kẻ vạch chấm dọc mỗi N giây hoặc phút để dễ đếm thời gian trên bản đồ.",
+    body: "<p>Kẻ vạch chấm dọc mỗi N giây hoặc phút để dễ đếm thời gian trên bản đồ.</p>"
+  },
+  {
+    id: "bm-recenter",
+    group: "Bookmap",
+    term: "Tự căn giữa",
+    short: "Khi đang theo dõi, bản đồ tự dời lên xuống khi giá chạy ra gần mép. Chọn theo giá mua/bán, theo giá khớp cuối, hoặc tắt.",
+    body: "<p>Khi đang theo dõi, bản đồ tự dời lên xuống khi giá chạy ra gần mép. Chọn theo giá mua/bán, theo giá khớp cuối, hoặc tắt.</p>"
+  },
+  {
+    id: "bm-cob",
+    group: "Bookmap",
+    term: "Cột COB (sổ lệnh hiện tại)",
+    short: "Thanh và con số lệnh chờ ở từng dòng giá ngay lúc này: đỏ là chờ bán, xanh là chờ mua. Có thể kèm sổ lệnh cộng dồn và hiện theo %.",
+    body: "<p>COB đi cùng dòng giá với bản đồ. Dòng tô nền là giá mua / bán tốt nhất. Khi thu nhỏ, vài mức giá được gộp chung một dòng để chữ không chồng nhau.</p><p>Chế độ % cho biết mỗi dòng chiếm bao nhiêu phần trăm tổng lệnh chờ đang thấy.</p>"
+  },
+  {
+    id: "bm-vp",
+    group: "Bookmap",
+    term: "Volume Profile vùng / phiên",
+    short: "Khối lượng đã khớp ở từng dòng giá. Vùng: trong khoảng thời gian trên màn hình. Phiên: từ lúc mở trang.",
+    body: "<p>Phần xanh là mua chủ động, đỏ là bán chủ động. Viền vàng là POC. Giá hay bị hút về POC và hay đi nhanh qua chỗ ít khối lượng.</p>"
+  },
+  {
+    id: "bm-qd",
+    group: "Bookmap",
+    term: "Cột +/− lệnh chờ",
+    short: "Lệnh chờ được thêm vào (xanh, số dương) hay rút ra hoặc bị khớp (đỏ, số âm) ở mỗi dòng giá, đặt lại mỗi khi giá tốt nhất đổi.",
+    body: "<p>Dùng để bắt người lớn đang dựng hay rút tường ngay trước mặt giá. Ví dụ giá đi lên mà các dòng phía trên liên tục âm: bên bán đang rút lệnh, đường lên dễ hơn.</p>"
+  },
+  {
+    id: "bm-tc",
+    group: "Bookmap",
+    term: "Cột đếm số lệnh khớp",
+    short: "Số lệnh khớp ở mỗi dòng giá trong khoảng thời gian đang xem.",
+    body: "<p>Nhiều lệnh mà khối lượng nhỏ thường là thuật toán hoặc đám đông nhỏ lẻ; ít lệnh mà khối lượng lớn thường là tay to.</p>"
+  },
+  {
     id: "bookmap",
     group: "Bookmap",
     term: "Bookmap (bản đồ nhiệt sổ lệnh)",

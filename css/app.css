@@ -331,3 +331,10 @@ canvas { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: n
 .btform input.reset, .btform select.reset { outline: 2px solid var(--accent); transition: outline .2s; }
 @media (max-width: 900px) { .btres .scen { height: auto; } .btres .btchart { height: 320px; } .stratlist { max-height: 260px; } }
 @media (max-width: 900px) { .backtest { grid-auto-rows: max-content; } .btform .formbody { overflow: visible; } }
+
+/* bảng cài đặt Bookmap */
+.hmcfg { width: 340px; max-height: 70vh; overflow: auto; }
+.hmcfg h4 { margin: 10px 6px 4px; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.hmcfg .row input[type=number] { width: 72px; }
+.hmcfg .note { margin: 2px 6px 6px; }
+.hmcfg input.reset, .hmcfg select.reset { outline: 2px solid var(--accent); }

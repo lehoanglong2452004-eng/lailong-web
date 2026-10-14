@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610141828">
+<link rel="stylesheet" href="css/app.css?v=202610141840">
 </head>
 <body>
 <header class="menubar">
@@ -44,7 +44,6 @@
       <div class="seg" id="chartMode">
         <button data-mode="heat" class="on" data-g="bookmap">Bookmap</button>
         <button data-mode="box" data-g="footprint">Footprint</button>
-        <button data-mode="candle" data-tip="Nến giá kèm hồ sơ khối lượng, delta, CVD và OI. Rê chuột lên nến để xem ý nghĩa">Nến</button>
       </div>
       <div class="dropdown">
         <button id="layerBtn" data-tip="Bật/tắt các lớp dữ liệu vẽ trên biểu đồ">Lớp hiển thị ▾</button>
@@ -56,15 +55,55 @@
           <label data-g="liq-map"><input type="checkbox" data-layer="liqMap" checked> Bản đồ thanh lý ước tính</label>
           <label data-g="trade-bubble"><input type="checkbox" data-layer="bubbles" checked> Bong bóng khớp lệnh (Bookmap)</label>
           <label data-g="big-trade"><input type="checkbox" data-layer="bigOnly"> Chỉ hiện lệnh lớn (Bookmap)</label>
-          <label data-g="absorption"><input type="checkbox" data-layer="absorb" checked> Chỉ báo hấp thụ (nến, footprint)</label>
-          <label data-g="big-trades"><input type="checkbox" data-layer="big" checked> Big Trades (nến, footprint)</label>
-          <label data-g="signal-score"><input type="checkbox" data-layer="score" checked> Điểm tín hiệu ≥ 60 (nến, footprint)</label>
-          <label data-g="algo-twap"><input type="checkbox" data-layer="algo" checked> Dấu vết lệnh chia đều (nến, footprint)</label>
-          <label data-g="spoofing"><input type="checkbox" data-layer="spoof" checked> Tường giả bị rút (nến, footprint)</label>
+          <label data-g="absorption"><input type="checkbox" data-layer="absorb" checked> Chỉ báo hấp thụ (footprint)</label>
+          <label data-g="big-trades"><input type="checkbox" data-layer="big" checked> Big Trades (footprint)</label>
+          <label data-g="signal-score"><input type="checkbox" data-layer="score" checked> Điểm tín hiệu ≥ 60 (footprint)</label>
+          <label data-g="algo-twap"><input type="checkbox" data-layer="algo" checked> Dấu vết lệnh chia đều (footprint)</label>
+          <label data-g="spoofing"><input type="checkbox" data-layer="spoof" checked> Tường giả bị rút (footprint)</label>
           <label data-g="volume-profile"><input type="checkbox" data-layer="profile" checked> Hồ sơ khối lượng vùng đang xem</label>
           <label data-g="range-profile"><input type="checkbox" data-layer="dayProfile"> Hồ sơ khối lượng từng ngày</label>
-          <label data-g="delta"><input type="checkbox" data-layer="delta" checked> Delta (nến)</label>
-          <label data-g="cvd-oi-combo"><input type="checkbox" data-layer="cvd" checked> CVD + open interest (nến)</label>
+          <label data-g="delta"><input type="checkbox" data-layer="delta" checked> Delta (footprint)</label>
+          <label data-g="cvd-oi-combo"><input type="checkbox" data-layer="cvd" checked> CVD + open interest (footprint)</label>
+        </div>
+      </div>
+      <div class="dropdown heatOnly">
+        <button id="hmCfgBtn" data-g="bm-settings">⚙ Cài đặt ▾</button>
+        <div class="menu hmcfg" id="hmCfgMenu">
+          <p class="note">Nhấp đúp vào ô để về mặc định.</p>
+          <h4>Màu bản đồ</h4>
+          <label class="row" data-g="bm-colors">Bảng màu <select data-hm="palette"><option value="bookmap" selected>Bookmap</option><option value="gray">Xám</option></select></label>
+          <label class="row" data-g="bm-cutoff">Ngưỡng cắt trên (phân vị %) <input type="number" data-hm="upper" value="99" min="50" max="100" step="0.5"></label>
+          <label class="row" data-g="bm-cutoff">Ngưỡng cắt dưới (phân vị %) <input type="number" data-hm="lower" value="2" min="0" max="60" step="0.5"></label>
+          <label class="row" data-g="bm-auto">Tự chỉnh tương phản <select data-hm="auto"><option value="live" selected>Liên tục</option><option value="recenter">Khi căn giữa lại</option><option value="off">Giữ nguyên (chỉ đổi khi phóng)</option></select></label>
+          <label class="row" data-g="bm-smooth">Làm mịn dọc <select data-hm="smooth"><option value="auto" selected>Tự động</option><option value="none">Tắt</option><option value="1">Nhẹ</option><option value="2">Vừa</option><option value="3">Mạnh</option></select></label>
+          <label class="row" data-g="bm-dim">Làm tối (%) <input type="number" data-hm="dim" value="0" min="0" max="90" step="5"></label>
+          <label data-g="bm-aggregate"><input type="checkbox" data-hm="aggregate"> Sổ lệnh cộng dồn trên bản đồ</label>
+          <h4>Bong bóng khối lượng</h4>
+          <label class="row" data-g="trade-bubble">Dạng <select data-hm="dots"><option value="3d" selected>3D</option><option value="2d">2D</option></select></label>
+          <label class="row" data-g="trade-bubble">Kiểu tô <select data-hm="dotStyle"><option value="pie" selected>Chia miếng</option><option value="gradient">Pha màu</option><option value="solid">Hai màu đặc</option></select></label>
+          <label class="row" data-g="bm-cluster">Gom bong bóng <select data-hm="cluster"><option value="smart" selected>Thông minh</option><option value="time">Theo thời gian</option><option value="volume">Theo khối lượng</option><option value="price">Theo giá</option></select></label>
+          <label class="row" data-g="bm-cluster">Gom theo thời gian (giây) <input type="number" data-hm="clusterSec" value="1" min="0.5" max="300" step="0.5"></label>
+          <label class="row" data-g="bm-cluster">Gom theo khối lượng (0 = tự động) <input type="number" data-hm="clusterVol" value="0" min="0" step="any"></label>
+          <label class="row" data-g="bm-dotmode">Hiện theo <select data-hm="dotMode"><option value="total" selected>Tổng khối lượng</option><option value="delta">Delta (mua − bán)</option></select></label>
+          <label class="row" data-g="bm-dotmin">Ẩn bong bóng nhỏ hơn <input type="number" data-hm="dotMin" value="0" min="0" step="any"></label>
+          <label class="row" data-g="trade-bubble">Cỡ bong bóng (×) <input type="number" data-hm="dotSize" value="1" min="0.2" max="4" step="0.1"></label>
+          <label class="row" data-g="trade-bubble">Độ đậm (%) <input type="number" data-hm="dotAlpha" value="100" min="10" max="100" step="5"></label>
+          <h4>Đường trên bản đồ</h4>
+          <label class="row" data-g="bm-bbo">Ẩn giá mua/bán khi gần nhau dưới (điểm ảnh) <input type="number" data-hm="bboHide" value="3" min="0" max="30" step="1"></label>
+          <label data-g="bm-bbo"><input type="checkbox" data-hm="lastLine" checked> Đường giá khớp cuối</label>
+          <label data-g="bm-vwap"><input type="checkbox" data-hm="vwap" checked> VWAP phiên</label>
+          <label data-g="bm-poc"><input type="checkbox" data-hm="poc" checked> Đường POC (từ cột Volume Profile)</label>
+          <label data-g="bm-candles"><input type="checkbox" data-hm="candles"> Nến của khung đang chọn</label>
+          <label class="row" data-g="bm-slices">Vạch chia thời gian <select data-hm="slices"><option value="0" selected>Tắt</option><option value="10">10 giây</option><option value="15">15 giây</option><option value="30">30 giây</option><option value="60">1 phút</option><option value="120">2 phút</option><option value="300">5 phút</option><option value="600">10 phút</option><option value="900">15 phút</option><option value="1800">30 phút</option><option value="3600">60 phút</option></select></label>
+          <label class="row" data-g="bm-recenter">Tự căn giữa theo <select data-hm="recenter"><option value="bbo" selected>Giá mua/bán</option><option value="last">Giá khớp cuối</option><option value="none">Tắt</option></select></label>
+          <h4>Cột bên phải</h4>
+          <label data-g="bm-cob"><input type="checkbox" data-hm="colCob" checked> COB: sổ lệnh hiện tại</label>
+          <label data-g="bm-cob"><input type="checkbox" data-hm="colCum"> Kèm sổ lệnh cộng dồn</label>
+          <label data-g="bm-cob"><input type="checkbox" data-hm="cobPct"> COB hiện % thay vì số</label>
+          <label data-g="bm-vp"><input type="checkbox" data-hm="colCvp" checked> Volume Profile vùng đang xem</label>
+          <label data-g="bm-vp"><input type="checkbox" data-hm="colSvp"> Volume Profile cả phiên</label>
+          <label data-g="bm-qd"><input type="checkbox" data-hm="colQd"> +/− lệnh chờ thêm hay rút</label>
+          <label data-g="bm-tc"><input type="checkbox" data-hm="colTc"> Đếm số lệnh khớp</label>
         </div>
       </div>
       <label class="field small flowOnly" data-g="cvd-pro">Ô dưới
@@ -315,6 +354,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610141828"></script>
+<script type="module" src="js/app.js?v=202610141840"></script>
 </body>
 </html>

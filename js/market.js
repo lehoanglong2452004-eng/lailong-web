@@ -5,8 +5,8 @@
 //   kèm khối lượng mua/bán chủ động khớp trong cột đó.
 // - Bars: nến của khung đang xem, nến cuối được cập nhật theo từng lệnh khớp, kèm footprint.
 
-import { niceStep, INTERVALS } from "./util.js?v=202610141828";
-import { TapeAggregator, quantile } from "./orderflow.js?v=202610141828";
+import { niceStep, INTERVALS } from "./util.js?v=202610141840";
+import { TapeAggregator, quantile } from "./orderflow.js?v=202610141840";
 
 export const COL_MS = 500;
 const MAX_COLS = 7200;       // 1 giờ ở 0,5 giây mỗi cột (bộ ghi trên laptop giữ lâu hơn)
@@ -64,6 +64,8 @@ export class MarketState {
     this.tradedGrid = new Map(); // khối lượng đã khớp theo ô lưới của bản đồ nhiệt (cho bộ theo dõi tường)
     this._pb = null; this._pa = null; this.ofiPend = new Map(); // OFI: thay đổi lệnh chờ ở giá mua/bán tốt nhất
     this.dayVol = new Map(); this.dayStart = Math.floor(Date.now() / 864e5) * 864e5; // khối lượng tại giá trong ngày (UTC)
+    this.sessPV = 0; this.sessV = 0; // VWAP phiên: tính từ lúc mở trang
+    this.quoteDelta = new Map(); this._qdPrev = null; this._qdBB = null; this._qdBA = null; // cột +/- lệnh chờ
   }
 
   on(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
@@ -101,7 +103,10 @@ export class MarketState {
       if (this.tick) { const k = Math.round(t.p / this.tick), e = this.tradedAt.get(k) || [0, 0]; e[t.side === "buy" ? 1 : 0] += t.q; this.tradedAt.set(k, e); }
       const col = this._ensureCol(now);
       if (t.side === "buy") { col.bv += t.q; col.bpv += t.p * t.q; } else { col.sv += t.q; col.spv += t.p * t.q; }
-      col.hi = Math.max(col.hi, t.p); col.lo = Math.min(col.lo, t.p);
+      col.hi = Math.max(col.hi, t.p); col.lo = Math.min(col.lo, t.p); col.lp = t.p;
+      // khớp lệnh theo từng mức giá trong cột: [bán, mua, số lệnh], dùng cho Volume Profile và đếm lệnh
+      if (this.tick) { const k = Math.round(t.p / this.tick), vp = col.vp || (col.vp = new Map()), e = vp.get(k) || [0, 0, 0]; e[t.side === "buy" ? 1 : 0] += t.q; e[2]++; vp.set(k, e); }
+      this.sessPV += t.p * t.q; this.sessV += t.q; col.vwap = this.sessPV / this.sessV;
       this.cvd += t.side === "buy" ? t.q : -t.q;
       this.sizes.push(t.q);
       if (t.q >= this.bigTrade) (col.big || (col.big = [])).push(t);
@@ -175,24 +180,39 @@ export class MarketState {
     const { bids, asks } = this.book.sorted(), g = this.grid, mid = this.book.mid();
     if (!mid) return;
     const lo = mid * (1 - BAND), hi = mid * (1 + BAND), agg = new Map();
+    let knb = 0;
     for (const side of [bids, asks]) {
       let n = 0;
       for (const [p, q] of side) {
         if (p < lo || p > hi || n++ > MAX_LEVELS) break;
         const k = Math.round(p / g); agg.set(k, (agg.get(k) || 0) + q);
       }
+      if (side === bids) knb = agg.size; // số ô của phía mua (đứng trước trong danh sách)
     }
     const keys = new Int32Array(agg.size), sizes = new Float32Array(agg.size); let i = 0;
     for (const [k, q] of agg) { keys[i] = k; sizes[i] = q; i++; }
-    col.keys = keys; col.sizes = sizes; col.bookTs = this.book.ts;
+    col.keys = keys; col.sizes = sizes; col.knb = knb; col.bookTs = this.book.ts;
     // bản chi tiết theo đúng bước giá gốc, chỉ quanh giá hiện tại
     const tk = this.tick;
+    // +/- lệnh chờ: cộng dồn phần lệnh chờ được thêm (dương) hay rút (âm) ở mỗi mức giá,
+    // đặt lại mỗi khi giá mua hoặc bán tốt nhất đổi (như cột +/- của Bookmap)
+    const nbb = bids.length ? bids[0][0] : null, nba = asks.length ? asks[0][0] : null;
+    if (tk > 0) {
+      if (nbb !== this._qdBB || nba !== this._qdBA) { this.quoteDelta.clear(); this._qdBB = nbb; this._qdBA = nba; }
+      const cur = new Map();
+      for (const side of [bids, asks]) for (let j = 0; j < Math.min(side.length, FINE_LEVELS); j++) cur.set(Math.round(side[j][0] / tk), side[j][1]);
+      if (this._qdPrev) {
+        for (const [k, q] of cur) { const d = q - (this._qdPrev.get(k) || 0); if (d) this.quoteDelta.set(k, (this.quoteDelta.get(k) || 0) + d); }
+        for (const [k, q] of this._qdPrev) if (!cur.has(k) && Math.abs(k * tk - (nbb ?? k * tk)) < FINE_LEVELS * tk) this.quoteDelta.set(k, (this.quoteDelta.get(k) || 0) - q);
+      }
+      this._qdPrev = cur;
+    }
     if (tk > 0) {
       const nb = Math.min(bids.length, FINE_LEVELS), na = Math.min(asks.length, FINE_LEVELS);
       const fk = new Int32Array(nb + na), fq = new Float32Array(nb + na);
       for (let j = 0; j < nb; j++) { fk[j] = Math.round(bids[j][0] / tk); fq[j] = bids[j][1]; }
       for (let j = 0; j < na; j++) { fk[nb + j] = Math.round(asks[j][0] / tk); fq[nb + j] = asks[j][1]; }
-      col.fk = fk; col.fq = fq;
+      col.fk = fk; col.fq = fq; col.fnb = nb;
     }
     col.bb = bids.length ? bids[0][0] : null; col.ba = asks.length ? asks[0][0] : null;
   }
