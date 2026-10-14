@@ -792,6 +792,81 @@ export const GLOSSARY = [
     body: "<p>Các lỗi phổ biến: vào sớm, FOMO đuổi giá, ngoài kế hoạch, dời cắt lỗ ra xa, chốt lời quá sớm, khối lượng quá lớn, gỡ lỗ, vào sát giờ ra tin, vào trễ. Bảng <b>Theo lỗi đã mắc</b> xếp lỗi gây thiệt hại nhiều nhất lên đầu: đó là thứ cần sửa trước tiên.</p>"
   },
   {
+    id: "derivs", group: "Phái sinh", term: "Dữ liệu phái sinh",
+    short: "Đám đông đang long hay short, tiền lớn nghiêng về đâu, futures đắt hay rẻ hơn spot, và thị trường quyền chọn đang đặt cược gì.",
+    body: "<p>Lấy thẳng từ API công khai: Binance Futures (tỷ lệ long/short, mua/bán chủ động, basis, funding, open interest; khung 1 giờ, 48 giờ gần nhất) và Deribit (quyền chọn BTC, ETH).</p><p><b>Cách dùng:</b> đây là bối cảnh, không phải tín hiệu vào lệnh. Đám đông nghiêng quá một phía cộng funding cao thường là nhiên liệu cho một cú quét ngược. Kết hợp với Bookmap để tìm điểm vào cụ thể.</p><p>Dòng tiền ETF và dòng coin nạp/rút sàn (on-chain) cần nguồn trả phí (Glassnode, CryptoQuant), chưa có trong app.</p>"
+  },
+  {
+    id: "ls-ratio", group: "Phái sinh", term: "Tỷ lệ long/short",
+    short: "Số tài khoản đang LONG chia số tài khoản đang SHORT trên Binance. Top trader là 20% tài khoản có ký quỹ lớn nhất, tính theo vị thế.",
+    body: "<p>Tỷ lệ 2,0 nghĩa là cứ 2 tài khoản long thì có 1 tài khoản short (67% long). Nhỏ lẻ thường đứng sai phía ở các điểm cực: khi gần 70% tài khoản long mà giá không lên được, phe long dễ bị quét.</p><p>So <b>top trader</b> với <b>mọi tài khoản</b>: top trader long nhiều hơn đám đông là tiền lớn đang nghiêng về mua, và ngược lại.</p>"
+  },
+  {
+    id: "taker-ratio", group: "Phái sinh", term: "Tỷ lệ mua/bán chủ động",
+    short: "Khối lượng mua chủ động chia khối lượng bán chủ động trên Binance Futures trong mỗi giờ. Trên 1 là phe mua đánh mạnh hơn.",
+    body: "<p>Giống delta nhưng tính cho cả sàn, theo giờ. Giá đi ngang trong khi tỷ lệ này liên tục trên 1 nghĩa là có người đang hấp thụ lệnh mua (bán chờ lớn phía trên).</p>"
+  },
+  {
+    id: "basis", group: "Phái sinh", term: "Basis (chênh futures so với spot)",
+    short: "Giá hợp đồng vĩnh cửu trừ giá chỉ số spot, tính theo %. Dương là futures đắt hơn spot: phe long đang hăng.",
+    body: "<p>Basis dương lớn cùng funding cao là thị trường đang dùng đòn bẩy để mua, dễ có cú xả. Basis âm là phe short đông, hoặc tiền thật đang mua spot nhiều hơn (thường là dấu hiệu tốt hơn cho giá tăng bền).</p>"
+  },
+  {
+    id: "funding", group: "Phái sinh", term: "Funding rate",
+    short: "Phí mà phe long trả cho phe short (hoặc ngược lại) mỗi 8 giờ để giá futures bám giá spot.",
+    body: "<p>Funding 0,01% mỗi 8 giờ là mức bình thường. Trên khoảng 0,05% là phe long đang trả phí rất đắt, giữ lệnh lâu sẽ mất tiền, và đám đông long quá đông. Funding âm sâu là ngược lại.</p>"
+  },
+  {
+    id: "put-call", group: "Phái sinh", term: "Tỷ lệ Put/Call",
+    short: "Tổng quyền chọn bán (put) chia tổng quyền chọn mua (call) trên Deribit, theo open interest hoặc theo khối lượng 24 giờ.",
+    body: "<p>Put là bảo hiểm giảm giá, call là cược tăng giá. Tỷ lệ trên 1 nghĩa là thị trường đang mua bảo hiểm nhiều hơn cược tăng: tâm lý phòng thủ. Tỷ lệ rất thấp (dưới 0,5) là hưng phấn.</p><p>Tính theo khối lượng 24 giờ phản ánh tâm lý hôm nay; theo OI phản ánh vị thế tích luỹ.</p>"
+  },
+  {
+    id: "max-pain", group: "Phái sinh", term: "Max pain",
+    short: "Giá đáo hạn mà người mua quyền chọn nhận được ít tiền nhất, nghĩa là bên bán quyền chọn có lợi nhất.",
+    body: "<p>Tính từ open interest của từng giá thực hiện trong một kỳ đáo hạn. Gần ngày đáo hạn (Deribit đáo hạn 8 giờ sáng UTC, tức 15 giờ Việt Nam, thứ Sáu), giá BTC hay bị hút về quanh max pain và các giá thực hiện có OI lớn, vì bên bán quyền chọn phòng hộ.</p><p>Hiệu ứng mạnh nhất ở kỳ đáo hạn lớn (cuối tháng, cuối quý).</p>"
+  },
+  {
+    id: "iv-skew", group: "Phái sinh", term: "Lệch IV put − call",
+    short: "Biến động kỳ vọng của put cách giá 10% trừ của call cách giá 10%, cùng kỳ đáo hạn. Dương là thị trường sợ giảm hơn sợ lỡ cú tăng.",
+    body: "<p>Khi người ta trả giá cao cho put xa giá, đó là đang lo có cú sập. Lệch chuyển sang âm (call đắt hơn) thường thấy khi thị trường đang FOMO.</p>"
+  },
+  {
+    id: "forward-test", group: "Backtest", term: "Kiểm tra tiến (forward test)",
+    short: "Khoá bộ thông số tại một thời điểm, rồi chấm riêng các lệnh xảy ra sau đó. Đây là dữ liệu chiến lược chưa từng thấy lúc chọn thông số.",
+    body: "<p>Backtest dù có chia trong mẫu / ngoài mẫu vẫn bị ảnh hưởng vì người chọn thông số đã nhìn thấy dữ liệu. Kiểm tra tiến thì không: chỉ các lệnh vào <b>sau</b> lúc bấm khoá mới được tính.</p><p>Không cần để máy chạy liên tục: nến lịch sử luôn tải lại được từ sàn, nên mỗi lần mở trang Backtest (hoặc bấm Cập nhật), app chạy lại chiến lược với đúng thông số đã khoá và chấm các lệnh mới.</p><p><b>Đọc kết quả:</b> dưới 10 lệnh thì chưa nói lên gì. Từ 30 lệnh mà cận dưới khoảng tin cậy vẫn trên 0 là lợi thế được xác nhận. Kỳ vọng sau khoá thấp hơn một nửa so với backtest là dấu hiệu thông số đã bị khớp quá mức với dữ liệu cũ.</p><p>Danh sách lưu trên trình duyệt của máy này.</p>"
+  },
+  {
+    id: "econ-calendar", group: "Công cụ", term: "Lịch kinh tế",
+    short: "Các tin kinh tế tác động mạnh trong tuần (CPI, việc làm, Fed...). Giờ hiển thị theo giờ máy của bro.",
+    body: "<p>Nguồn: lịch ForexFactory, lọc giữ tin tác động <b>mạnh</b> (chấm đỏ) của mọi nước và tin <b>trung bình</b> (chấm cam) của Mỹ, vì crypto chạy theo đồng USD và lãi suất Mỹ.</p><p>Trong 3 giờ trước tin mạnh, trên thanh menu hiện dòng nhắc ⚠ đếm ngược; còn 30 phút thì chuyển đỏ. Bật cảnh báo trong nút 🔔 để được kêu trước 15 phút.</p><p>Quanh giờ ra tin, giá thường giật mạnh hai chiều và chênh lệch giá mua bán giãn rộng, cắt lỗ dễ bị trượt. Trader chuyên nghiệp thường đứng ngoài từ 5 đến 15 phút trước và sau tin.</p><p>Bản web cập nhật mỗi 30 phút; bản trên laptop lấy trực tiếp mỗi 10 phút.</p>"
+  },
+  {
+    id: "crypto-news", group: "Công cụ", term: "Tin crypto",
+    short: "Tin mới từ CoinDesk, Cointelegraph, Decrypt, The Block, Bitcoin Magazine. 🔥 là tin nóng (SEC, ETF, hack, Fed, thanh lý...).",
+    body: "<p>Mỗi tin ghi nguồn, giờ và các đồng coin được nhắc tới. Nút <b>Mọi tin / Chỉ tin về ...</b> lọc theo đồng đang xem. Bấm vào tin để mở bài gốc.</p><p>Tin nóng được nhận ra bằng từ khoá trong tiêu đề, nên chỉ là gợi ý. Bật \"Tin crypto nóng mới\" trong nút 🔔 để được báo khi có tin nóng mới.</p>"
+  },
+  {
+    id: "multibook", group: "Bookmap", term: "Multibook (gộp nhiều sàn)",
+    short: "Cộng sổ lệnh và lệnh khớp của Binance, OKX và Bybit cho cùng một mã thành một bản đồ, như Bookmap Multibook.",
+    body: "<p>Mỗi sàn chỉ là một phần thị trường. Một tường lệnh nhỏ trên Binance có thể là tường lớn khi cộng cả ba sàn. Khối lượng các sàn đều đổi ra số coin rồi cộng ở cùng mức giá (làm tròn theo bước giá của sàn đang chọn).</p><p><b>Lưu ý:</b> giá giữa các sàn lệch nhau vài bước giá là bình thường, nên quanh giá hiện tại sổ gộp hơi nhoè. Bong bóng, Smart Tape, footprint đều cộng lệnh khớp của cả ba sàn. Mã nào sàn khác không có thì sàn đó bị bỏ qua (xem Nhật ký kết nối). Tốn băng thông gấp khoảng 3 lần.</p>"
+  },
+  {
+    id: "recorder", group: "Công cụ", term: "Máy ghi 24/7 (laptop)",
+    short: "Chương trình chạy nền trên laptop, ghi sổ lệnh và lệnh khớp Binance Futures mỗi 2 giây, để Bookmap có lịch sử cả ngày.",
+    body: "<p>Bấm đúp <b>Ghi du lieu 24-7.bat</b> trong thư mục Lai Long và để cửa sổ đó mở (thu nhỏ được). Muốn tự chạy khi bật máy: Win+R, gõ <code>shell:startup</code>, kéo một lối tắt của file đó vào thư mục vừa mở.</p><p>Chọn mã cần ghi, số ngày giữ lại và số giờ lịch sử nạp khi mở Bookmap trong nút ⚙ Cài đặt của Bookmap (chỉ hiện khi mở bằng \"Mo Lai Long.bat\"). Máy ghi tự nhận mã mới sau khoảng 1 phút.</p><p>Mỗi mã tốn khoảng 30 đến 60 MB mỗi ngày (file nén, trong thư mục data/record). Lịch sử được ghi trong ±1% quanh giá, mỗi 2 giây, nên chi tiết kém hơn phần trực tiếp một chút.</p>"
+  },
+  {
+    id: "drawing", group: "Công cụ", term: "Vẽ đường và vùng giá",
+    short: "Đánh dấu mức giá hoặc vùng giá quan trọng lên Bookmap và Footprint. Lưu theo từng mã trên máy này.",
+    body: "<p><b>─ Đường:</b> bấm nút rồi bấm vào biểu đồ, có ngay một đường ngang tại giá đó. <b>▤ Vùng:</b> bấm nút rồi kéo dọc trên biểu đồ. Nét vẽ hiện trên cả Bookmap lẫn Footprint, có nhãn giá ở trục bên phải.</p><p>Bấm đúp lên đường (hoặc mép vùng) để xoá một hình; nút ✕ xoá hết của mã đang xem. Muốn được báo khi giá chạm, đặt mức giá trong nút 🔔.</p>"
+  },
+  {
+    id: "tape-speed", group: "Bookmap", term: "Tốc độ băng",
+    short: "Số lệnh khớp mỗi giây, vẽ bằng đường xanh lơ ở ô dưới Bookmap. Chấm sáng là lúc tốc độ vượt 3 lần mức thường.",
+    body: "<p>Tốc độ băng tăng vọt nghĩa là nhiều người cùng lao vào một lúc: thường là lúc bắt đầu một cú chạy, lúc quét cắt lỗ, hoặc lúc ra tin. Tốc độ cao mà giá không đi được là dấu hiệu hấp thụ.</p><p>Mức \"thường\" là trung vị của vùng đang xem trên màn hình.</p>"
+  },
+  {
     id: "alerts", group: "Công cụ", term: "Cảnh báo",
     short: "Phát tiếng và hiện thông báo khi có lệnh lớn, tường bị rút, nghi iceberg, hoặc giá chạm mức bro đặt.",
     body: "<p>Mở nút <b>🔔</b> trên thanh menu để bật từng loại. Thông báo của trình duyệt cần bro cho phép một lần; khi tab đang mở thì có tiếng và dòng chữ ở góc dưới.</p><p>Cảnh báo giá: gõ mức giá rồi bấm Thêm. Khi giá đi qua mức đó, cảnh báo kêu một lần rồi tự xoá. Danh sách mức giá được lưu lại trên máy này.</p><p>Để tránh ồn, mỗi loại kêu tối đa một lần mỗi 5 giây.</p>"
@@ -843,4 +918,4 @@ export const GLOSSARY = [
   }
 ];
 
-export const GROUPS = ["Fractal & kiểm chứng", "Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest", "Công cụ"];
+export const GROUPS = ["Fractal & kiểm chứng", "Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest", "Phái sinh", "Công cụ"];

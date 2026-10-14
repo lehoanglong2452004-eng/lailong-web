@@ -5,9 +5,9 @@
 //   kèm khối lượng mua/bán chủ động khớp trong cột đó.
 // - Bars: nến của khung đang xem, nến cuối được cập nhật theo từng lệnh khớp, kèm footprint.
 
-import { niceStep, INTERVALS } from "./util.js?v=202610141959";
-import { TapeAggregator, quantile } from "./orderflow.js?v=202610141959";
-import { IcebergTracker } from "./iceberg.js?v=202610141959";
+import { niceStep, INTERVALS } from "./util.js?v=202610142021";
+import { TapeAggregator, quantile } from "./orderflow.js?v=202610142021";
+import { IcebergTracker } from "./iceberg.js?v=202610142021";
 
 export const COL_MS = 500;
 const MAX_COLS = 7200;       // 1 giờ ở 0,5 giây mỗi cột (bộ ghi trên laptop giữ lâu hơn)
@@ -53,7 +53,7 @@ export class MarketState {
     this.tick = opts.tick || 0; this.grid = 0; this.interval = opts.interval || "1m";
     this.intervalMs = INTERVALS[this.interval];
     this.book = new Book();
-    this.cols = []; this._col = null;
+    this.cols = []; this._col = null; this.maxCols = MAX_COLS;
     this.trades = []; this.liqs = [];
     this.bars = []; this.fpStep = 0;
     this.last = null; this.cvd = 0; this.liveStart = null;
@@ -108,7 +108,7 @@ export class MarketState {
       if (this.tick) { const k = Math.round(t.p / this.tick), e = this.tradedAt.get(k) || [0, 0]; e[t.side === "buy" ? 1 : 0] += t.q; this.tradedAt.set(k, e); }
       const col = this._ensureCol(now);
       if (t.side === "buy") { col.bv += t.q; col.bpv += t.p * t.q; } else { col.sv += t.q; col.spv += t.p * t.q; }
-      col.hi = Math.max(col.hi, t.p); col.lo = Math.min(col.lo, t.p); col.lp = t.p;
+      col.hi = Math.max(col.hi, t.p); col.lo = Math.min(col.lo, t.p); col.lp = t.p; col.tn = (col.tn || 0) + 1;
       // khớp lệnh theo từng mức giá trong cột: [bán, mua, số lệnh], dùng cho Volume Profile và đếm lệnh
       if (this.tick) { const k = Math.round(t.p / this.tick), vp = col.vp || (col.vp = new Map()), e = vp.get(k) || [0, 0, 0]; e[t.side === "buy" ? 1 : 0] += t.q; e[2]++; vp.set(k, e); }
       this.sessPV += t.p * t.q; this.sessV += t.q; col.vwap = this.sessPV / this.sessV;
@@ -167,6 +167,25 @@ export class MarketState {
     this.emit("liq");
   }
 
+  // Lịch sử từ máy ghi 24/7 trên laptop: mỗi dòng 2 giây (hoặc dài hơn nếu đã giãn), đổi về bước gộp giá hiện tại
+  addRecorded(rows) {
+    const g = this.grid; if (!g || !rows.length) return 0;
+    const first = this.cols.length ? this.cols[0].t : Infinity, out = [];
+    for (const r of rows) {
+      if (r.t + (r.span || 2000) > first) break;
+      const f = r.g / g, agg = new Map(); let knb = 0;
+      for (const [k, q] of r.b) { const kk = Math.round(k * f); agg.set(kk, (agg.get(kk) || 0) + q); }
+      knb = agg.size;
+      for (const [k, q] of r.a) { const kk = Math.round(k * f); agg.set(kk, (agg.get(kk) || 0) + q); }
+      const keys = new Int32Array(agg.size), sizes = new Float32Array(agg.size); let i = 0;
+      for (const [k, q] of agg) { keys[i] = k; sizes[i] = q; i++; }
+      out.push({ t: r.t, span: r.span || 2000, rec: true, tn: r.n || 0, bv: r.bv || 0, sv: r.sv || 0, bpv: r.bpv || 0, spv: r.spv || 0, hi: r.hi ?? -Infinity, lo: r.lo ?? Infinity, lp: r.lp ?? null,
+        keys, sizes, knb, bb: r.b.length ? r.b[0][0] * r.g : null, ba: r.a.length ? r.a[0][0] * r.g : null });
+    }
+    this.cols = out.concat(this.cols); this.maxCols = MAX_COLS + out.length;
+    return out.length;
+  }
+
   // Chụp sổ lệnh vào cột hiện tại; cột mới mở mỗi COL_MS
   _ensureCol(now) {
     const t = Math.floor(now / COL_MS) * COL_MS;
@@ -174,7 +193,7 @@ export class MarketState {
     if (!col || col.t !== t) {
       col = { t, bv: 0, sv: 0, bpv: 0, spv: 0, hi: -Infinity, lo: Infinity, keys: null, sizes: null, bb: null, ba: null };
       this.cols.push(col); this._col = col;
-      if (this.cols.length > MAX_COLS) this.cols.splice(0, this.cols.length - MAX_COLS);
+      if (this.cols.length > this.maxCols) this.cols.splice(0, this.cols.length - this.maxCols);
       const old = this.cols[this.cols.length - 1 - FINE_COLS]; if (old && old.fk) { old.fk = old.fq = null; }
     }
     if (this.grid && this.book.ts !== col.bookTs) this._snapshot(col);

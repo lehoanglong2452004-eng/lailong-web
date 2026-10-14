@@ -1,13 +1,15 @@
 // Lai Long Web: trang Backtest (giao diện). Chiến lược nằm trong strategies.js, bộ máy chạy lệnh trong backtest.js.
-import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610141959";
-import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610141959";
-import { EquityChart } from "./fractalview.js?v=202610141959";
-import { sampleLevel } from "./fractal.js?v=202610141959";
-import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610141959";
-import { isDeltaApprox } from "./analytics.js?v=202610141959";
-import { robustness } from "./robust.js?v=202610141959";
+import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610142021";
+import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610142021";
+import { EquityChart } from "./fractalview.js?v=202610142021";
+import { sampleLevel } from "./fractal.js?v=202610142021";
+import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610142021";
+import { isDeltaApprox } from "./analytics.js?v=202610142021";
+import { robustness } from "./robust.js?v=202610142021";
+import { forwardVerdict, barsNeeded } from "./forward.js?v=202610142021";
+import { EXCHANGES } from "./exchanges.js?v=202610142021";
 
-const PIN_KEY = "lailong.btPins", SEL_KEY = "lailong.btStrat", LEG_KEY = "lailong.btLeg";
+const FWD_KEY = "lailong.forward.v1", PIN_KEY = "lailong.btPins", SEL_KEY = "lailong.btStrat", LEG_KEY = "lailong.btLeg";
 const sgn = (x, d = 2) => (x >= 0 ? "+" : "") + x.toFixed(d);
 const fmtPF = x => isFinite(x) ? x.toFixed(2) : x === Infinity ? "∞" : "-";
 const cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
@@ -265,6 +267,51 @@ export function initBacktest({ $, S, ex, esc, table, market, chart }) {
       table(["Trạng thái", "Số lệnh", "WR", "PF", "Kỳ vọng / lệnh (95%)", "Tổng R"], R.regimes.map(({ name, st }) => `<tr><td class="t">${name}</td><td>${st.n}</td><td>${st.n ? (st.wr * 100).toFixed(1) + "%" : "-"}</td><td class="${st.pf > 1 ? "pos" : st.pf < 1 ? "neg" : ""}">${fmtPF(st.pf)}</td><td class="${evCls(st)}">${ev(st)}</td><td class="${cls(st.totalR)}">${sgn(st.totalR, 1)}R</td></tr>`), "") +
       `<p class="note">${R.regNote.length ? `Chiến lược kiếm được tiền khi ${R.regNote.join(", ")}.` : "Chưa thấy trạng thái thị trường nào cho kỳ vọng dương."} Mỗi đoạn thời gian dùng đúng thông số đặt từ trước, không chỉnh lại theo dữ liệu, nên mỗi đoạn là một lần thử độc lập. Nếu bro chỉnh thông số cho đến khi bảng này đẹp thì nó lại mất tác dụng.</p></div>`;
   }
+
+
+  // ---------- kiểm tra tiến (forward test) ----------
+  let fwd = store.get(FWD_KEY, []), fwdRes = {}, fwdBusy = false;
+  $("btLock").onclick = () => {
+    if (!last) return status("Chạy backtest trước, rồi bấm khoá để theo dõi bộ thông số đó.");
+    const { o, id, params, res, symbol } = last, pre = tradeStats(res.both.trades, leg, o.sim.riskPct);
+    if (fwd.some(f => f.strat === id && f.sym === symbol && f.tf === o.tf && f.ex === S.ex && JSON.stringify(f.params) === JSON.stringify(params) && f.leg === leg)) return status("Bộ thông số này đã được khoá rồi.");
+    fwd.push({ k: Date.now(), strat: id, params, sym: symbol, ex: S.ex, tf: o.tf, sim: o.sim, leg, lockT: Date.now(), pre: { n: pre.n, avgR: pre.avgR, wr: pre.wr, pf: pre.pf, lo: pre.ci.lo } });
+    store.set(FWD_KEY, fwd); renderFwd(); status(`Đã khoá ${STRATEGIES[id].short} trên ${symbol} ${o.tf}. Từ giờ mọi lệnh mới sẽ được chấm riêng ở mục Kiểm tra tiến.`);
+    $("btFwd").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  async function updateFwd() {
+    if (fwdBusy || !fwd.length) return; fwdBusy = true; $("btFwdRun").disabled = true;
+    for (const f of fwd) {
+      try {
+        if (!STRATEGIES[f.strat]) throw new Error("chiến lược không còn");
+        const X = EXCHANGES[f.ex]; if (!X) throw new Error("sàn không còn");
+        const ms = INTERVALS[f.tf]; let bars = await X.klines(f.sym, f.tf, barsNeeded(f.lockT, ms));
+        bars = bars.filter(b => b.t + ms <= Date.now());
+        const tr = simulate(bars, f.strat, { ...defaultParams(f.strat), ...f.params }, { ...f.sim, side: "both" }).trades.filter(t => t.t >= f.lockT);
+        fwdRes[f.k] = { t: Date.now(), st: tradeStats(tr, f.leg, f.sim.riskPct), lastBar: bars.length ? bars[bars.length - 1].t : null };
+      } catch (e) { fwdRes[f.k] = { t: Date.now(), err: e.message }; }
+      renderFwd();
+    }
+    fwdBusy = false; $("btFwdRun").disabled = false; store.set(FWD_KEY + ".at", Date.now());
+  }
+  function renderFwd() {
+    $("btFwd").hidden = false;
+    const day = t => fmtDate(t).slice(0, 10), days = t => ((Date.now() - t) / 864e5).toFixed(1);
+    $("btFwdBody").innerHTML = !fwd.length ? `<div class="empty">Chưa khoá bộ thông số nào. Chạy backtest, thấy kết quả tốt thì bấm "Khoá thông số, kiểm tra tiến".</div>` :
+      table(["Chiến lược", "Mã / khung", "Khoá lúc", "Backtest trước khoá", "Sau khi khoá", "Thắng", "Kết luận", ""], fwd.map(f => {
+        const r = fwdRes[f.k], st = r && r.st, v = st ? forwardVerdict({ avgR: f.pre.avgR }, st) : null;
+        return `<tr><td class="t">${esc(STRATEGIES[f.strat] ? STRATEGIES[f.strat].short : f.strat)} <small class="muted">TP${f.leg}</small></td><td>${esc(f.sym)} ${f.tf} <small class="muted">${esc(f.ex)}</small></td><td>${day(f.lockT)} <small class="muted">(${days(f.lockT)} ngày)</small></td>` +
+          `<td class="${cls(f.pre.avgR)}">${sgn(f.pre.avgR)}R × ${f.pre.n}</td>` +
+          `<td class="${st ? cls(st.avgR) : ""}">${r ? r.err ? `<span class="muted">Lỗi: ${esc(r.err)}</span>` : st.n ? `${sgn(st.avgR)}R × ${st.n} <small>${st.n >= 5 ? `${sgn(st.ci.lo)}…${sgn(st.ci.hi)}` : ""}</small>` : "0 lệnh" : `<span class="muted">đang tính...</span>`}</td>` +
+          `<td>${st && st.n ? (st.wr * 100).toFixed(0) + "%" : "-"}</td><td class="t ${v ? v.cls : ""}">${v ? v.txt : "-"}</td><td><button class="icon" data-fwdrm="${f.k}" data-tip="Bỏ theo dõi">✕</button></td></tr>`;
+      }), "");
+  }
+  $("btFwdRun").onclick = updateFwd;
+  $("btFwdBody").onclick = e => { const b = e.target.closest("[data-fwdrm]"); if (!b) return; const f = fwd.find(x => x.k === +b.dataset.fwdrm); if (f && confirm(`Bỏ theo dõi ${f.strat} ${f.sym} ${f.tf}?`)) { fwd = fwd.filter(x => x !== f); store.set(FWD_KEY, fwd); renderFwd(); } };
+  renderFwd();
+  // tự cập nhật khi mở trang Backtest (tối đa mỗi 15 phút)
+  const fwdAuto = () => { if (!$("view-backtest").hidden && Date.now() - store.get(FWD_KEY + ".at", 0) > 15 * 60e3) updateFwd(); };
+  new MutationObserver(fwdAuto).observe($("view-backtest"), { attributes: true, attributeFilter: ["hidden"] }); setTimeout(fwdAuto, 3000);
 
   // MIDOTI nằm ở file riêng, chỉ có trong bản trên máy của Lai Long; không có thì bỏ qua
   import("./midoti.js").catch(() => null).finally(() => { if (!STRATEGIES[cur]) cur = STRATEGY_ORDER[0]; renderList(); renderForm(); });

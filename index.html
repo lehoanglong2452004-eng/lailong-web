@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610141959">
+<link rel="stylesheet" href="css/app.css?v=202610142021">
 </head>
 <body>
 <header class="menubar">
@@ -37,6 +37,8 @@
       <label data-g="iceberg"><input type="checkbox" data-al="ice"> Nghi lệnh băng chìm (iceberg)</label>
       <label data-g="spoofing"><input type="checkbox" data-al="spoof"> Tường bị rút khi giá tới gần</label>
       <label data-g="big-trades"><input type="checkbox" data-al="big"> Big Trade (top 0,5% lệnh gốc)</label>
+      <label data-g="econ-calendar"><input type="checkbox" data-al="newsEv"> Tin kinh tế mạnh (báo trước 15 phút)</label>
+      <label data-g="crypto-news"><input type="checkbox" data-al="newsHot"> Tin crypto nóng mới</label>
       <div class="mh">Giá chạm mức</div>
       <div class="row aladd"><input type="number" id="alPrice" step="any" placeholder="Mức giá"><button id="alAdd">Thêm</button></div>
       <div id="alList"></div>
@@ -47,6 +49,7 @@
     </div>
   </div>
   <div class="spacer"></div>
+  <div class="pill evpill" id="evPill" hidden></div>
   <div class="pill" id="connPill" data-tip="Trạng thái kết nối dữ liệu trực tiếp với sàn"><i></i><span>Đang kết nối</span></div>
   <button id="installBtn" class="tool" hidden data-tip="Cài Lai Long Quant như một ứng dụng trên máy này (mở từ màn hình chính, không cần thanh địa chỉ)">⬇ Cài app</button>
   <button id="glossBtn" class="tool" data-tip="Mở danh sách giải thích thuật ngữ">?<span class="lbl"> Giải thích</span></button>
@@ -89,6 +92,16 @@
         <button id="hmCfgBtn" data-g="bm-settings">⚙ Cài đặt ▾</button>
         <div class="menu hmcfg" id="hmCfgMenu">
           <p class="note">Nhấp đúp vào ô để về mặc định.</p>
+          <h4>Multibook</h4>
+          <label data-g="multibook"><input type="checkbox" id="multiBook"> Gộp sổ lệnh và khớp lệnh Binance + OKX + Bybit</label>
+          <div id="recWrap" hidden>
+            <h4 data-g="recorder">Máy ghi 24/7 (laptop)</h4>
+            <div id="recStatus" class="note"></div>
+            <label class="row" data-g="recorder">Mã cần ghi <input type="text" id="recSyms" placeholder="BTCUSDT, ETHUSDT" spellcheck="false"></label>
+            <label class="row" data-g="recorder">Giữ lại (ngày) <input type="number" id="recKeep" min="1" max="90" step="1" value="7"></label>
+            <label class="row" data-g="recorder">Nạp lịch sử khi mở (giờ) <input type="number" id="recHours" min="0" max="72" step="1" value="6"></label>
+            <button class="tool" id="recSave">Lưu cài đặt máy ghi</button>
+          </div>
           <h4>Màu bản đồ</h4>
           <label class="row" data-g="bm-colors">Bảng màu <select data-hm="palette"><option value="bookmap" selected>Bookmap</option><option value="gray">Xám</option></select></label>
           <label class="row" data-g="bm-cutoff">Ngưỡng cắt trên (phân vị %) <input type="number" data-hm="upper" value="99" min="50" max="100" step="0.5"></label>
@@ -113,6 +126,7 @@
           <label data-g="bm-vwap"><input type="checkbox" data-hm="vwap" checked> VWAP phiên</label>
           <label data-g="bm-poc"><input type="checkbox" data-hm="poc" checked> Đường POC (từ cột Volume Profile)</label>
           <label data-g="bm-candles"><input type="checkbox" data-hm="candles"> Nến của khung đang chọn</label>
+          <label data-g="tape-speed"><input type="checkbox" data-hm="speed" checked> Tốc độ băng (lệnh mỗi giây) ở ô dưới</label>
           <label class="row" data-g="bm-slices">Vạch chia thời gian <select data-hm="slices"><option value="0" selected>Tắt</option><option value="10">10 giây</option><option value="15">15 giây</option><option value="30">30 giây</option><option value="60">1 phút</option><option value="120">2 phút</option><option value="300">5 phút</option><option value="600">10 phút</option><option value="900">15 phút</option><option value="1800">30 phút</option><option value="3600">60 phút</option></select></label>
           <label class="row" data-g="bm-recenter">Tự căn giữa theo <select data-hm="recenter"><option value="bbo" selected>Giá mua/bán</option><option value="last">Giá khớp cuối</option><option value="none">Tắt</option></select></label>
           <h4>Cột bên phải</h4>
@@ -128,6 +142,11 @@
       <label class="field small flowOnly" data-g="cvd-pro">Ô dưới
         <select id="paneMode"><option value="deltaCvd">Delta + CVD</option><option value="delta">Delta</option><option value="cvd">CVD</option><option value="cvdpro">CVD Pro</option><option value="ofi">OFI (áp lực sổ lệnh)</option><option value="vpin">VPIN (dòng lệnh độc)</option><option value="groups">Delta theo nhóm người chơi</option></select>
       </label>
+      <div class="seg" id="drawTools">
+        <button data-draw="line" data-g="drawing">─ Đường</button>
+        <button data-draw="zone" data-g="drawing">▤ Vùng</button>
+        <button data-draw="clear" data-tip="Xoá mọi đường và vùng đã vẽ của mã này">✕</button>
+      </div>
       <button id="selBtn" class="tool" data-g="range-profile">▭ Chọn vùng</button>
       <div class="dropdown">
         <button id="clusterBtn" data-g="cluster-search">Tìm cụm ▾</button>
@@ -210,6 +229,14 @@
 <!-- ============ PHÂN TÍCH ============ -->
 <main class="view analysis" id="view-analysis" hidden>
   <div class="cards">
+    <section class="card">
+      <h3>Lịch kinh tế tuần này <button class="q" data-g="econ-calendar">?</button></h3>
+      <div id="calBody" class="tablewrap newsbox"></div>
+    </section>
+    <section class="card">
+      <h3>Tin crypto <button class="q" data-g="crypto-news">?</button> <button class="tool" id="newsOnly">Mọi tin</button> <small id="newsUpd"></small></h3>
+      <div id="newsBody" class="newsbox"></div>
+    </section>
     <section class="card wide">
       <h3>Xu hướng, động lượng và độ biến động theo khung thời gian <button class="q" data-g="mtf">?</button></h3>
       <div id="mtfTable" class="tablewrap"></div>
@@ -230,6 +257,11 @@
     <section class="card">
       <h3>Hồ sơ khối lượng <button class="q" data-g="volume-profile">?</button></h3>
       <div id="vpStats"></div>
+    </section>
+    <section class="card wide">
+      <h3>Dữ liệu phái sinh: long/short, basis, quyền chọn <button class="q" data-g="derivs">?</button> <small id="drvInfo"></small></h3>
+      <div class="drvgrid"><div id="drvStats"></div><div id="optStats"></div></div>
+      <div class="mini"><canvas id="drvCanvas"></canvas></div>
     </section>
     <section class="card">
       <h3>Biến động quyền chọn (Deribit DVOL) <button class="q" data-g="dvol">?</button></h3>
@@ -261,6 +293,7 @@
       <label class="row" data-g="bt-slippage">Trượt giá (bps) <input type="number" id="btSlip" value="2" min="0" step="0.5"></label>
       <button class="primary" id="btRun">Chạy backtest</button>
       <button class="tool" id="btRunAll" data-g="bt-rank">Chạy tất cả, xếp hạng</button>
+      <button class="tool" id="btLock" data-g="forward-test">Khoá thông số, kiểm tra tiến</button>
       <hr>
       <label class="row col" data-g="bt-robust">Các coin để kiểm tra độ bền <input type="text" id="btSyms" value="BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT" spellcheck="false"></label>
       <label class="row" data-g="bt-segs">Số đoạn thời gian <input type="number" id="btSegs" value="5" min="2" max="12" step="1"></label>
@@ -271,6 +304,7 @@
   <section class="frresult btres">
     <div class="legbar" id="btLegBar" hidden><span data-g="bt-tp">Kết quả theo</span><button class="tool on" data-leg="1">TP1</button><button class="tool" data-leg="2">TP2</button><small id="btLegNote"></small></div>
     <div class="statgrid" id="btStats"></div>
+    <div class="card" id="btFwd" hidden><h3>Kiểm tra tiến: chiến lược trên dữ liệu mới sau khi khoá <button class="q" data-g="forward-test">?</button> <button class="tool" id="btFwdRun">Cập nhật</button></h3><div class="tablewrap" id="btFwdBody"></div></div>
     <div class="card" id="btRank" hidden></div>
     <div class="card" id="btRobust" hidden></div>
     <div class="card" id="btScen" hidden>
@@ -408,6 +442,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610141959"></script>
+<script type="module" src="js/app.js?v=202610142021"></script>
 </body>
 </html>

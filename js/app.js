@@ -1,25 +1,29 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610141959";
-import { MarketState } from "./market.js?v=202610141959";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610141959";
-import { FlowChart } from "./flowchart.js?v=202610141959";
-import { Dom } from "./dom.js?v=202610141959";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610141959";
-import { initBacktest } from "./backtestview.js?v=202610141959";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610141959";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610141959";
-import { Tape } from "./tape.js?v=202610141959";
-import { LiqMap } from "./liqmap.js?v=202610141959";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610141959";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610141959";
-import { Alerts } from "./alerts.js?v=202610141959";
-import { DOM_COLS } from "./dom.js?v=202610141959";
-import { initFractal } from "./fractalview.js?v=202610141959";
-import { initJournal } from "./journalview.js?v=202610141959";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610141959";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610141959";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610141959";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610142021";
+import { MarketState, Book } from "./market.js?v=202610142021";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610142021";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610142021";
+import { FlowChart } from "./flowchart.js?v=202610142021";
+import { Dom } from "./dom.js?v=202610142021";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610142021";
+import { initBacktest } from "./backtestview.js?v=202610142021";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610142021";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610142021";
+import { Tape } from "./tape.js?v=202610142021";
+import { LiqMap } from "./liqmap.js?v=202610142021";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610142021";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610142021";
+import { Alerts } from "./alerts.js?v=202610142021";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610142021";
+import { initNews } from "./newsview.js?v=202610142021";
+import { Drawings } from "./drawings.js?v=202610142021";
+import { DOM_COLS } from "./dom.js?v=202610142021";
+import { initFractal } from "./fractalview.js?v=202610142021";
+import { initJournal } from "./journalview.js?v=202610142021";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610142021";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610142021";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610142021";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -35,11 +39,12 @@ const S = {
   view: qs.get("v") || saved.view || "terminal",
   mode: saved.mode === "box" ? "box" : "heat", // trang Nến đã bỏ: chỉ còn Bookmap và Footprint
   tab: "clusters",
+  multi: !!saved.multi, // Multibook: gộp sổ lệnh nhiều sàn
 };
 if (!EXCHANGES[S.ex]) S.ex = "BINANCE";
 if (!INTERVALS[S.interval]) S.interval = "1m";
 const persist = () => {
-  try { localStorage.setItem("lailong.ui", JSON.stringify({ ex: S.ex, symbol: S.symbol, interval: S.interval, view: S.view, mode: S.mode })); } catch { /* bỏ qua */ }
+  try { localStorage.setItem("lailong.ui", JSON.stringify({ ex: S.ex, symbol: S.symbol, interval: S.interval, view: S.view, mode: S.mode, multi: S.multi })); } catch { /* bỏ qua */ }
   const u = new URL(location.href); u.searchParams.set("ex", S.ex); u.searchParams.set("s", S.symbol); u.searchParams.set("i", S.interval); u.searchParams.set("v", S.view);
   history.replaceState(null, "", u);
 };
@@ -59,7 +64,8 @@ const logs = [];
 function log(text) { logs.unshift({ t: Date.now(), text }); if (logs.length > 300) logs.pop(); if (S.tab === "logs") renderTab(); }
 function toast(text, err) { const el = $("toast"); el.textContent = text; el.className = "toast" + (err ? " err" : ""); el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => { el.hidden = true; }, 4000); }
 
-const heat = new Heatmap($("heat"), market, { exchangeName: () => ex().name });
+let peers = null;
+const heat = new Heatmap($("heat"), market, { exchangeName: () => peers && peers.names().length ? [ex().name, ...peers.names()].join(" + ") : ex().name });
 const flow = new FlowChart($("flow"));
 const dom = new Dom($("dom"), market);
 const tape = new Tape($("tape"), market);
@@ -74,6 +80,7 @@ async function load() {
   const token = ++loadToken; persist();
   if (conn) { conn.close(); conn = null; }
   market.reset({ symbol: S.symbol, exchange: S.ex, interval: S.interval });
+  draw.sym = S.symbol;
   alPrevP = null; heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
   heat.resetView(); dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; scores = null; algo = []; walls.reset(); flow.setOverlays({ spoofs: walls.events, algoRuns: [], scores: [], vpinVals: null, groupVals: null }); tape.reset(); renderSignals(); renderTab();
   setConn("Đang tải dữ liệu", null);
@@ -81,16 +88,27 @@ async function load() {
   try { info = await ex().info(S.symbol); } catch (e) { log(`Không lấy được thông tin mã: ${e.message}`); }
   if (token !== loadToken) return;
   market.tick = info.tick;
-  conn = ex().connect(S.symbol, info, market.book, {
-    onBook: () => {
-      if (token !== loadToken) return;
-      if (!market.tick) { const s = market.book.sorted(); market.tick = inferTick(s.bids.slice(0, 30).map(x => x[0])); }
-      market.onBook(); dom.update();
-    },
+  // Multibook: sàn chính ghi vào sổ riêng, các sàn khác cũng vậy; sổ của market là bản gộp
+  const multi = S.multi && multiPeers(S.ex).length > 0, pBook = multi ? new Book() : market.book;
+  let mergeT = 0, mergeTimer = null;
+  const afterBook = () => {
+    if (!market.tick) { const s = pBook.sorted(); market.tick = inferTick(s.bids.slice(0, 30).map(x => x[0])); }
+    if (multi) { mergeTimer = null; mergeT = Date.now(); mergeBooks(market.book, [pBook, ...peers.books()], market.tick); }
+    market.onBook(); dom.update();
+  };
+  const onBook = () => { if (token !== loadToken) return; if (!multi || Date.now() - mergeT > 100) afterBook(); else if (!mergeTimer) mergeTimer = setTimeout(() => token === loadToken && afterBook(), 100); };
+  peers = multi ? connectPeers(EXCHANGES, S.ex, S.symbol, {
+    onBook, onTrades: list => { if (token === loadToken) market.onTrades(list); }, onLiq: list => { if (token === loadToken) market.onLiq(list); },
+    log: text => { if (token === loadToken) log(text); },
+  }) : null;
+  const c0 = ex().connect(S.symbol, info, pBook, {
+    onBook,
     onTrades: list => { if (token !== loadToken) return; market.onTrades(list); },
     onLiq: list => { if (token !== loadToken) return; market.onLiq(list); },
-    onStatus: (text, ok) => { if (token === loadToken) { setConn(text, ok); log(text); } },
+    onStatus: (text, ok) => { if (token === loadToken) { setConn(multi ? `${text} · Multibook` : text, ok); log(text); } },
   });
+  const pr = peers; conn = { close() { c0.close(); if (pr) pr.close(); } };
+  if (laptop) loadRecorded(token);
   try {
     const bars = await ex().klines(S.symbol, S.interval, 1500);
     if (ex().hasOi && bars.length) {
@@ -257,6 +275,7 @@ $("alAdd").onclick = () => { const p = parseFloat($("alPrice").value); if (!(p >
 $("alPrice").onkeydown = e => { if (e.key === "Enter") $("alAdd").click(); };
 $("alList").onclick = e => { const b = e.target.closest("[data-alrm]"); if (b) { alerts.removeLevel(+b.dataset.alrm); renderAlertMenu(); } };
 heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
+const newsView = initNews({ $, esc, alerts, coin });
 
 function scheduleFlow() { if (flowTimer) return; flowTimer = setTimeout(() => { flowTimer = null; recomputeFlow(); }, 1500); }
 
@@ -345,7 +364,7 @@ async function renderAnalysis() {
   const vp = volumeProfile(market.bars.slice(-500));
   const near = (arr, n) => arr.slice().sort((a, b) => Math.abs(a - last) - Math.abs(b - last)).slice(0, n).sort((a, b) => b - a).map(x => x.toFixed(dec)).join(", ") || "-";
   $("vpStats").innerHTML = `<div class="kv"><span>Phạm vi</span><b>500 nến ${S.interval} gần nhất</b><span data-g="poc">POC (giá nhiều KL nhất)</span><b>${vp.poc == null ? "-" : vp.poc.toFixed(dec)}</b><span data-g="value-area">Vùng giá trị 70%</span><b>${vp.val == null ? "-" : vp.val.toFixed(dec) + " – " + vp.vah.toFixed(dec)}</b><span data-g="hvn">Nút khối lượng cao (HVN)</span><b>${near(vp.hvn, 6)}</b><span data-g="lvn">Nút khối lượng thấp (LVN)</span><b>${near(vp.lvn, 6)}</b></div><p class="note">HVN thường là vùng giá dễ bị hút về và đi ngang; LVN là vùng giá dễ chạy nhanh qua.</p>`;
-  renderDvol();
+  renderDvol(); renderDerivs(); newsView.render();
   const tfs = ["5m", "15m", "1h", "4h", "1d"], rows = [];
   for (const tf of tfs) {
     const ck = `${S.ex}:${S.symbol}:${tf}`; let c = mtfCache.get(ck);
@@ -376,6 +395,60 @@ async function renderAbsorptionCard() {
   }
   $("absInfo").textContent = `${S.symbol} · ${ex().name}`;
   $("absTable").innerHTML = table([["Khung", "mtf"], "Số nến", ["Hấp thụ bán", "absorption"], "Đúng", ["Hấp thụ mua", "absorption"], "Đúng", "Gần nhất"], rows, "");
+}
+
+// ---------- dữ liệu phái sinh ----------
+let drvCache = null, optCache = null;
+async function renderDerivs() {
+  const sym = S.symbol, c = coin(), box = $("drvStats"), ob = $("optStats");
+  $("drvInfo").textContent = `${sym} · long/short và basis từ Binance Futures, khung 1 giờ, 48 giờ gần nhất`;
+  try {
+    if (!drvCache || drvCache.sym !== sym || Date.now() - drvCache.t > 120e3) drvCache = { sym, t: Date.now(), d: await binanceDerivs(sym) };
+    const d = drvCache.d, lv = a => a && a.length ? a[a.length - 1].v : null, ch = a => a && a.length > 24 ? a[a.length - 1].v - a[a.length - 25].v : null;
+    const f2 = (x, k = 2) => x == null || !isFinite(x) ? "-" : x.toFixed(k), sg = (x, k = 2) => x == null || !isFinite(x) ? "" : ` <small class="${x >= 0 ? "pos" : "neg"}">(${x >= 0 ? "+" : ""}${x.toFixed(k)} / 24h)</small>`;
+    const accL = d.accLong, topL = d.topLong, bas = lv(d.basis), fr = d.funding, tk = lv(d.taker), oi = lv(d.oi), oiCh = d.oi && d.oi.length > 24 ? (lv(d.oi) / d.oi[d.oi.length - 25].v - 1) * 100 : null;
+    const crowd = accL == null ? "" : accL >= 0.65 ? "Đám đông nghiêng hẳn về LONG: dễ bị quét xuống trước khi đi tiếp." : accL <= 0.4 ? "Đám đông nghiêng hẳn về SHORT: dễ bị ép lên (short squeeze)." : "Đám đông khá cân bằng.";
+    const smart = accL != null && topL != null ? (topL - accL >= 0.05 ? " Top trader long nhiều hơn đám đông: tiền lớn đang nghiêng về phía mua." : accL - topL >= 0.05 ? " Top trader long ít hơn đám đông: tiền lớn thận trọng hơn nhỏ lẻ." : "") : "";
+    box.innerHTML = d.errors.length >= 6 ? `<p class="note">Binance Futures không có dữ liệu phái sinh cho ${esc(sym)}: ${esc(d.errors[0])}</p>` :
+      `<div class="kv"><span data-g="ls-ratio">Tài khoản đang LONG (mọi người)</span><b>${accL == null ? "-" : (accL * 100).toFixed(1) + "%"}</b>` +
+      `<span data-g="ls-ratio">Tỷ lệ long/short mọi tài khoản</span><b>${f2(lv(d.acc))}${sg(ch(d.acc))}</b>` +
+      `<span data-g="ls-ratio">Top trader: vị thế LONG</span><b>${topL == null ? "-" : (topL * 100).toFixed(1) + "%"}</b>` +
+      `<span data-g="taker-ratio">Mua/bán chủ động (1 giờ gần nhất)</span><b class="${tk >= 1 ? "pos" : "neg"}">${f2(tk)}</b>` +
+      `<span data-g="basis">Chênh futures − chỉ số spot (basis)</span><b class="${bas >= 0 ? "pos" : "neg"}">${bas == null ? "-" : (bas * 100).toFixed(3) + "%"}</b>` +
+      `<span data-g="funding">Funding hiện tại (mỗi 8 giờ)</span><b class="${fr >= 0 ? "pos" : "neg"}">${fr == null ? "-" : (fr * 100).toFixed(4) + "%"}</b>` +
+      `<span data-g="oi">Open interest</span><b>${oi == null ? "-" : fmtUsd(oi)}${oiCh == null ? "" : ` <small class="${oiCh >= 0 ? "pos" : "neg"}">(${oiCh >= 0 ? "+" : ""}${oiCh.toFixed(1)}% / 24h)</small>`}</b></div>` +
+      `<p class="note">${crowd}${smart}${fr != null && Math.abs(fr) >= 0.0005 ? ` Funding ${fr > 0 ? "dương" : "âm"} cao: phe ${fr > 0 ? "long" : "short"} đang trả phí đắt để giữ lệnh, dễ bị xả.` : ""}</p>`;
+    drawDerivs(d);
+  } catch (e) { box.innerHTML = `<p class="note">Không tải được dữ liệu phái sinh từ Binance: ${esc(e.message)}</p>`; }
+  if (c !== "BTC" && c !== "ETH") { ob.innerHTML = `<p class="note">Deribit chỉ có quyền chọn đủ thanh khoản cho BTC và ETH.</p>`; return; }
+  try {
+    if (!optCache || optCache.c !== c || Date.now() - optCache.t > 300e3) optCache = { c, t: Date.now(), o: await deribitOptions(c) };
+    const o = optCache.o; if (!o) { ob.innerHTML = `<p class="note">Deribit chưa có dữ liệu quyền chọn.</p>`; return; }
+    const day = t => new Date(t).toISOString().slice(0, 10), strikes = a => a.map(x => `${fmtVol(x.strike)} (${fmtVol(x.oi)})`).join(", ");
+    ob.innerHTML = `<div class="kv"><span data-g="put-call">Put/Call theo OI</span><b class="${o.pcOi > 1 ? "neg" : "pos"}">${o.pcOi == null ? "-" : o.pcOi.toFixed(2)}</b>` +
+      `<span data-g="put-call">Put/Call theo khối lượng 24h</span><b class="${o.pcVol > 1 ? "neg" : "pos"}">${o.pcVol == null ? "-" : o.pcVol.toFixed(2)}</b>` +
+      `<span data-g="max-pain">Max pain kỳ ${day(o.mainExpiry)}</span><b>${fmtVol(o.maxPain)}</b>` +
+      `<span data-g="max-pain">Max pain kỳ lớn nhất ${day(o.bigExpiry)}</span><b>${fmtVol(o.bigMaxPain)}</b>` +
+      `<span>Call OI lớn nhất (kỳ ${day(o.mainExpiry)})</span><b class="pos">${strikes(o.topCalls)}</b>` +
+      `<span>Put OI lớn nhất</span><b class="neg">${strikes(o.topPuts)}</b>` +
+      `<span data-g="iv-skew">Lệch IV put − call (cách 10%)</span><b class="${o.skew > 0 ? "neg" : "pos"}">${o.skew == null ? "-" : (o.skew >= 0 ? "+" : "") + o.skew.toFixed(1) + " điểm"}</b></div>` +
+      `<p class="note">Giá spot ${o.under ? fmtVol(o.under) : "-"}. Put/Call trên 1 là thị trường mua bảo hiểm giảm giá nhiều hơn. Gần ngày đáo hạn, giá hay bị hút về max pain và các giá thực hiện có OI lớn.</p>`;
+  } catch (e) { ob.innerHTML = `<p class="note">Không tải được quyền chọn từ Deribit: ${esc(e.message)}</p>`; }
+}
+function drawDerivs(d) {
+  const cv = $("drvCanvas"), F = cv._fit || (cv._fit = fitCanvas(cv, () => drvCache && drawDerivs(drvCache.d))), ctx = F.ctx;
+  ctx.fillStyle = T.bg; ctx.fillRect(0, 0, F.w, F.h);
+  const lines = [[d.acc, "#f5c542", "Long/short mọi TK"], [d.top, "#56b6ff", "Long/short top trader"], [d.taker, "#c678dd", "Mua/bán chủ động"]].filter(x => x[0] && x[0].length > 1);
+  if (!lines.length) return;
+  const all = lines.flatMap(x => x[0].map(p => p.v)), lo = Math.min(1, ...all), hi = Math.max(1, ...all), t0 = Math.min(...lines.map(x => x[0][0].t)), t1 = Math.max(...lines.map(x => x[0][x[0].length - 1].t));
+  const X = t => 4 + (t - t0) / (t1 - t0 || 1) * (F.w - 48), Y = v => 18 + (hi - v) / (hi - lo || 1) * (F.h - 34);
+  ctx.strokeStyle = alpha(T.text, 0.35); ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(4, Y(1)); ctx.lineTo(F.w - 44, Y(1)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.font = `11px ${MONO}`; let lx = 6;
+  for (const [a, col, name] of lines) {
+    ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath(); a.forEach((p, i) => i ? ctx.lineTo(X(p.t), Y(p.v)) : ctx.moveTo(X(p.t), Y(p.v))); ctx.stroke();
+    ctx.fillStyle = col; ctx.textAlign = "left"; ctx.fillText(name, lx, 11); lx += ctx.measureText(name).width + 14;
+  }
+  ctx.fillStyle = T.muted; ctx.textAlign = "left"; ctx.fillText(hi.toFixed(2), F.w - 40, 22); ctx.fillText(lo.toFixed(2), F.w - 40, F.h - 14); ctx.fillText("1.00", F.w - 40, Y(1) + 4);
 }
 
 let dvolCache = null;
@@ -412,7 +485,7 @@ const backtest = initBacktest({ $, S, ex, esc, table, market, chart: btChart });
 const journal = initJournal({ $, S, esc, table, market, toast });
 // nhấp đúp vào ô thông số (Backtest, FRACTAL) để trả về giá trị mặc định
 document.addEventListener("dblclick", e => {
-  const el = e.target.closest(".btform input[type=number], .btform input[type=text], .btform select, .hmcfg input, .hmcfg select"); if (!el) return;
+  const el = e.target.closest(".btform input[type=number], .btform input[type=text], .btform select, .hmcfg input:not(#multiBook), .hmcfg select"); if (!el) return;
   if (el.type === "checkbox") { el.checked = el.defaultChecked; } else if (el.tagName === "SELECT") { const d = [...el.options].findIndex(o => o.defaultSelected); el.selectedIndex = d < 0 ? 0 : d; } else el.value = el.defaultValue;
   el.dispatchEvent(new Event("change", { bubbles: true }));
   el.classList.add("reset"); setTimeout(() => el.classList.remove("reset"), 500);
@@ -592,6 +665,80 @@ $("views").onclick = e => { const b = e.target.closest("[data-view]"); if (b) se
 $("chartMode").onclick = e => { const b = e.target.closest("[data-mode]"); if (b) setMode(b.dataset.mode); };
 $("layerBtn").onclick = e => { e.stopPropagation(); $("layerBtn").parentElement.classList.toggle("open"); };
 $("hmCfgBtn").onclick = e => { e.stopPropagation(); $("hmCfgBtn").parentElement.classList.toggle("open"); };
+// ---------- máy ghi 24/7 (chỉ khi chạy trên laptop) ----------
+let laptop = null;
+const recHours = () => { const v = +localStorage.getItem("lailong.recHours"); return isFinite(v) && localStorage.getItem("lailong.recHours") != null ? v : 6; };
+async function checkLaptop() {
+  try { laptop = await getJson("/api/record/info"); } catch { laptop = null; }
+  $("recWrap").hidden = !laptop; if (!laptop) return;
+  const syms = Object.entries(laptop.symbols || {});
+  $("recStatus").innerHTML = laptop.running ? `<b class="pos">Đang ghi</b>: ${syms.map(([k, v]) => `${esc(k)} (${fmtVol(v.lines)} dòng, ${esc(v.status)})`).join(", ") || "chưa có mã"}` : `<b class="neg">Máy ghi chưa chạy.</b> Bấm đúp "Ghi du lieu 24-7.bat" trong thư mục Lai Long.`;
+  if (document.activeElement !== $("recSyms")) $("recSyms").value = (laptop.config.symbols || []).join(", ");
+  $("recKeep").value = laptop.config.keep_days; $("recHours").value = recHours();
+}
+$("recSave").onclick = async () => {
+  try {
+    const cfg = await postJson("/api/record/config", { symbols: $("recSyms").value.split(/[\s,;]+/).filter(Boolean), keep_days: +$("recKeep").value || 7 });
+    try { localStorage.setItem("lailong.recHours", String(Math.max(0, Math.min(72, +$("recHours").value || 0)))); } catch { /* bỏ qua */ }
+    toast(`Đã lưu: ghi ${cfg.symbols.join(", ") || "không mã nào"}, giữ ${cfg.keep_days} ngày. Máy ghi tự nhận sau khoảng 1 phút.`); checkLaptop();
+  } catch (e) { toast(`Không lưu được: ${e.message}`, true); }
+};
+// nạp lịch sử đã ghi vào bản đồ nhiệt, ngay khi biết bước gộp giá
+async function loadRecorded(token) {
+  if (!laptop || S.ex !== "BINANCE" || !recHours()) return;
+  if (!(laptop.config.symbols || []).includes(S.symbol) && !(laptop.symbols || {})[S.symbol]) return;
+  for (let i = 0; i < 50 && !market.grid; i++) await sleep(200);
+  if (token !== loadToken || !market.grid) return;
+  try {
+    const rows = await getJson(`/api/record/cols?symbol=${S.symbol}&hours=${recHours()}`);
+    if (token !== loadToken) return;
+    const n = market.addRecorded(rows);
+    if (n) { heat.dirty = true; log(`Đã nạp ${n} cột lịch sử (${((rows[rows.length - 1].t - rows[0].t) / 36e5).toFixed(1)} giờ) từ máy ghi 24/7`); toast(`Đã nạp ${((rows[rows.length - 1].t - rows[0].t) / 36e5).toFixed(1)} giờ lịch sử sổ lệnh từ máy ghi`); }
+  } catch (e) { log(`Không nạp được lịch sử máy ghi: ${e.message}`); }
+}
+checkLaptop().then(() => { if (laptop) loadRecorded(loadToken); }); setInterval(checkLaptop, 30e3);
+
+// ---------- vẽ đường / vùng giá ----------
+const draw = new Drawings(); draw.sym = S.symbol; heat.drawings = flow.drawings = draw;
+const setTool = t => { draw.tool = t; for (const b of $("drawTools").querySelectorAll("[data-draw]")) b.classList.toggle("on", b.dataset.draw === t); for (const id of ["heat", "flow"]) $(id).style.cursor = t ? "crosshair" : ""; };
+$("drawTools").onclick = e => {
+  const b = e.target.closest("[data-draw]"); if (!b) return;
+  if (b.dataset.draw === "clear") { if (draw.list().length && confirm(`Xoá mọi đường và vùng đã vẽ của ${S.symbol}?`)) { draw.clear(); heat.dirty = flow.dirty = true; } return; }
+  setTool(draw.tool === b.dataset.draw ? null : b.dataset.draw);
+  if (draw.tool) toast(draw.tool === "line" ? "Bấm vào biểu đồ để đặt đường ngang. Bấm đúp lên đường để xoá." : "Kéo dọc trên biểu đồ để đánh dấu vùng giá. Bấm đúp lên mép vùng để xoá.");
+};
+for (const [id, chart] of [["heat", heat], ["flow", flow]]) {
+  const cv = $(id), yAt = e => { const r = cv.getBoundingClientRect(); return (e.touches ? e.touches[0] || e.changedTouches[0] : e).clientY - r.top; };
+  let start = null;
+  const down = e => {
+    if (!draw.tool || (e.button != null && e.button !== 0)) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    start = { y: yAt(e), p: chart.pAt(yAt(e)) };
+    if (draw.tool === "zone") draw.preview = { type: "zone", p: start.p, p2: start.p, color: "#ffffff" };
+  };
+  const move = e => { if (!start || draw.tool !== "zone") return; e.stopImmediatePropagation(); draw.preview.p2 = chart.pAt(yAt(e)); chart.dirty = true; };
+  const up = e => {
+    if (!start) return; e.stopImmediatePropagation();
+    const p2 = chart.pAt(yAt(e));
+    if (draw.tool === "line") draw.add({ type: "line", p: start.p });
+    else if (Math.abs(yAt(e) - start.y) > 4) draw.add({ type: "zone", p: start.p, p2 });
+    start = null; draw.preview = null; setTool(null); heat.dirty = flow.dirty = true;
+  };
+  cv.addEventListener("mousedown", down, true); cv.addEventListener("touchstart", down, { capture: true, passive: false });
+  window.addEventListener("mousemove", move, true); cv.addEventListener("touchmove", move, { capture: true, passive: false });
+  window.addEventListener("mouseup", up, true); cv.addEventListener("touchend", up, true);
+  cv.addEventListener("dblclick", e => {
+    const y = yAt(e), s = draw.hit(y, p => chart.yOf(p)); if (!s) return;
+    e.stopImmediatePropagation(); draw.remove(s.id); heat.dirty = flow.dirty = true; toast("Đã xoá");
+  }, true);
+}
+
+$("multiBook").checked = S.multi;
+$("multiBook").onchange = () => {
+  S.multi = $("multiBook").checked; persist();
+  if (S.multi && !multiPeers(S.ex).length) toast("Multibook chỉ có cho Binance, OKX và Bybit", true);
+  else { toast(S.multi ? "Đang gộp sổ lệnh Binance + OKX + Bybit..." : "Đã tắt Multibook, chỉ dùng một sàn"); load(); }
+};
 // Cài đặt Bookmap: đọc từ máy, gắn vào từng ô, lưu lại mỗi khi đổi
 {
   const KEY = "lailong.hmcfg";

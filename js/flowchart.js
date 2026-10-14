@@ -4,12 +4,13 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610141959";
-import { cvd as cvdOf } from "./analytics.js?v=202610141959";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610141959";
-import { GROUPS } from "./flowtools.js?v=202610141959";
-import { WALL_KIND } from "./walls.js?v=202610141959";
-import { T, alpha } from "./theme.js?v=202610141959";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610142021";
+import { cvd as cvdOf } from "./analytics.js?v=202610142021";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610142021";
+import { GROUPS } from "./flowtools.js?v=202610142021";
+import { WALL_KIND } from "./walls.js?v=202610142021";
+import { T, alpha } from "./theme.js?v=202610142021";
+import { drawShapes } from "./drawings.js?v=202610142021";
 
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
@@ -139,6 +140,7 @@ export class FlowChart {
     if (this.show.liqMap && this.liqMap) this._liqMap(L);
     this._markers(first, last);
     this._ownLines(L);
+    if (this.drawings) drawShapes(ctx, this.drawings.list(), this.drawings.preview, { yOf: p => this.yOf(p), pw: L.pw, ph: L.priceH, dec: decimalsFor(this.info.tick || this.step) });
     ctx.restore();
     if (L.deltaH) this._delta(first, last, L);
     if (L.cvdH) this._cvdPane(first, last, L);

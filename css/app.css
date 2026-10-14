@@ -364,3 +364,16 @@ canvas { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: n
 .journal .jeq { height: 220px; }
 .journal #jGroups h4 { margin: 12px 0 4px; color: var(--accent); font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; }
 .journal td.jreason { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.drvgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .drvgrid { grid-template-columns: 1fr; } }
+.newsbox { max-height: 360px; overflow: auto; }
+.newsit { display: block; padding: 5px 4px; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 12.5px; }
+.newsit:hover { background: var(--panel-2); }
+.newsit.hot { border-left: 3px solid #ff7b39; padding-left: 6px; }
+.newsit .nt { display: block; color: var(--muted); font-size: 11px; font-family: var(--mono); }
+.imp { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.imp.hi { background: var(--sell); } .imp.md { background: #f5a623; }
+tr.evsoon td { background: color-mix(in srgb, #f5a623 14%, transparent); }
+.evpill { cursor: help; max-width: 340px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #f5c542; border-color: #f5c542; }
+.evpill.hot { color: #fff; background: var(--sell); border-color: var(--sell); }
+@media (max-width: 900px) { .evpill { order: -1; max-width: 100%; flex-basis: 100%; } }

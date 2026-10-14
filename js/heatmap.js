@@ -4,9 +4,10 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202610141959";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610141959";
-import { T, alpha } from "./theme.js?v=202610141959";
+import { COL_MS } from "./market.js?v=202610142021";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610142021";
+import { T, alpha } from "./theme.js?v=202610142021";
+import { drawShapes } from "./drawings.js?v=202610142021";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
 
@@ -30,6 +31,7 @@ export const HM_DEFAULTS = {
   slices: 0,            // vạch chia thời gian (giây), 0 = tự động
   recenter: "bbo",      // tự căn giữa theo bbo, last (giá khớp) hoặc none
   candles: false,       // vẽ nến chồng lên bản đồ
+  speed: true,          // đường tốc độ băng (số lệnh khớp mỗi giây) ở ô dưới
 };
 
 // bảng màu kiểu Bookmap: nền xanh đen -> xanh thép -> xanh nhạt -> vàng -> cam -> đỏ (tường dày nhất)
@@ -177,6 +179,7 @@ export class Heatmap {
     if (this.show.ice) this._icebergs(L);
     this._ownLines(L);
     this._alertLines(L);
+    if (this.drawings) this._axisTags.push(...drawShapes(ctx, this.drawings.list(), this.drawings.preview, { yOf: p => this.yOf(p), pw: L.pw, ph: L.ph, dec: decimalsFor(this.m.tick || this.m.grid) }));
     ctx.restore();
     this._pane(cols, i0, i1, L);
     this._pocs = [];
@@ -241,7 +244,7 @@ export class Heatmap {
     let x = Math.max(0, Math.floor(this.xOf(cols[Math.max(0, i0)].t))), lastC = null;
     for (let i = Math.max(0, i0); i <= i1; i++) {
       const c = carry(cols, i), xa = Math.max(0, Math.floor(this.xOf(cols[i].t)));
-      const xb = Math.min(W, Math.floor(this.xOf(cols[i].t + COL_MS)));
+      const xb = Math.min(W, Math.floor(this.xOf(cols[i].t + (cols[i].span || COL_MS))));
       if (!c || xb <= xa || xb <= x) continue;
       if (c !== lastC) { build(c); lastC = c; }
       for (let y = 0; y < H; y++) {
@@ -329,7 +332,7 @@ export class Heatmap {
     const push = () => { if (cur && cur.bv + cur.sv > 0) groups.push(cur); cur = null; };
     const add = (c) => {
       if (!cur) cur = { bv: 0, sv: 0, pv: 0, tv: 0, big: [], k: null };
-      cur.bv += c.bv; cur.sv += c.sv; cur.pv += c.bpv + c.spv; cur.tv += (c.t + COL_MS / 2) * (c.bv + c.sv);
+      cur.bv += c.bv; cur.sv += c.sv; cur.pv += c.bpv + c.spv; cur.tv += (c.t + (c.span || COL_MS) / 2) * (c.bv + c.sv);
       if (c.big) cur.big.push(...c.big);
     };
     let visV = 0; for (let i = Math.max(0, i0); i <= i1; i++) visV += cols[i].bv + cols[i].sv;
@@ -486,8 +489,8 @@ export class Heatmap {
     ctx.strokeStyle = T.line; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.stroke();
     const bucketPx = Math.max(3, COL_MS / this.msPerPx), groups = new Map();
     for (let i = Math.max(0, i0); i <= i1; i++) {
-      const c = cols[i], gx = Math.floor(this.xOf(c.t) / bucketPx), e = groups.get(gx) || { b: 0, s: 0 };
-      e.b += c.bv; e.s += c.sv; groups.set(gx, e);
+      const c = cols[i], gx = Math.floor(this.xOf(c.t) / bucketPx), e = groups.get(gx) || { b: 0, s: 0, n: 0 };
+      e.b += c.bv; e.s += c.sv; e.n += c.tn || 0; groups.set(gx, e);
     }
     let maxV = 0; for (const e of groups.values()) maxV = Math.max(maxV, e.b, e.s);
     if (maxV) for (const [gx, e] of groups) {
@@ -505,6 +508,19 @@ export class Heatmap {
     }
     ctx.fillStyle = T.muted; ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left";
     ctx.fillText("Mua / bán chủ động", 6, top + 13); ctx.fillStyle = "#f5c542"; ctx.fillText(`CVD ${cum >= 0 ? "+" : ""}${fmtVol(cum)}`, 130, top + 13);
+    // tốc độ băng: số lệnh khớp mỗi giây; chấm sáng là lúc tốc độ vượt 3 lần mức thường (thường đi trước cú chạy)
+    this._speedNow = null;
+    if (this.cfg.speed && groups.size > 3) {
+      const secs = bucketPx * this.msPerPx / 1000, arr = [...groups].sort((a, b) => a[0] - b[0]).map(([gx, e]) => [gx * bucketPx + bucketPx / 2, e.n / secs]);
+      const rates = arr.map(a => a[1]).filter(v => v > 0).sort((a, b) => a - b), med = rates.length ? rates[rates.length >> 1] : 0, mx = rates.length ? rates[rates.length - 1] : 0;
+      if (mx > 0) {
+        const y = v => top + H - 1 - v / mx * (H - 18);
+        ctx.strokeStyle = alpha("#39d5ff", 0.85); ctx.lineWidth = 1; ctx.beginPath(); arr.forEach(([x, v], k) => k ? ctx.lineTo(x, y(v)) : ctx.moveTo(x, y(v))); ctx.stroke();
+        ctx.fillStyle = "#39d5ff"; for (const [x, v] of arr) if (med > 0 && v >= 3 * med && v >= 2) { ctx.beginPath(); ctx.arc(x, y(v), 2.5, 0, 7); ctx.fill(); }
+        let n5 = 0; const tNow = Date.now(); for (let i = cols.length - 1; i >= 0 && cols[i].t > tNow - 5000; i--) n5 += cols[i].tn || 0;
+        this._speedNow = { now: n5 / 5, med }; ctx.textAlign = "left"; ctx.fillText(`Tốc độ ${(n5 / 5).toFixed(1)} lệnh/giây${med ? ` (thường ${med.toFixed(1)})` : ""}`, L.pw >= 420 ? 250 : 6, L.pw >= 420 ? top + 13 : top + 26);
+      }
+    }
   }
 
   // Lưới dòng dùng chung cho các cột bên phải: cùng dòng giá với bản đồ; khi thu nhỏ thì gộp vài mức giá
@@ -731,7 +747,7 @@ export class Heatmap {
     if (this._bub) for (const b of this._bub) if (Math.hypot(x - b.x, y - b.y) <= b.r + 2) { const v = b.bv + b.sv; return `Đã khớp ${fmtVol(v)} quanh giá ${b.p.toFixed(dec)}: mua chủ động ${fmtVol(b.bv)} (${(b.bv / v * 100).toFixed(0)}%, phần xanh), bán chủ động ${fmtVol(b.sv)} (${(b.sv / v * 100).toFixed(0)}%, phần đỏ). Thể tích bong bóng tỷ lệ với khối lượng.`; }
     if (inCol("liq")) return `Bản đồ thanh lý ước tính quanh ${this.pAt(y).toFixed(dec)}: hồng là vùng long có thể bị thanh lý, vàng là vùng short. Ước tính từ open interest, không phải dữ liệu thật.`;
     if (y >= 28 && y <= 46 && x < 272) return "Lệch sổ lệnh: lệnh chờ mua trừ lệnh chờ bán, chia tổng, trong vùng giá đang xem. Lệch khớp: mua chủ động trừ bán chủ động trong khoảng thời gian đang xem. Dương (xanh nhiều) là phe mua lấn át.";
-    if (y > L.paneTop && y < L.timeTop && x < L.pw) return "Cột xanh: khối lượng mua chủ động, cột đỏ: bán chủ động theo thời gian. Đường vàng là CVD (mua trừ bán cộng dồn) trong vùng đang xem.";
+    if (y > L.paneTop && y < L.timeTop && x < L.pw) return `Cột xanh: khối lượng mua chủ động, cột đỏ: bán chủ động theo thời gian. Đường vàng là CVD (mua trừ bán cộng dồn) trong vùng đang xem.${this.cfg.speed ? " Đường xanh lơ là tốc độ băng (số lệnh khớp mỗi giây); chấm sáng là lúc tốc độ vượt 3 lần mức thường, hay báo trước một cú chạy hoặc lúc ra tin." : ""}`;
     if (x > L.pw || y > L.ph) return null;
     const cols = this.m.cols, t = this.tAt(x), i0 = lowerBound(cols, t - 4 * this.msPerPx - COL_MS), i1 = lowerBound(cols, t + 4 * this.msPerPx);
     for (let i = Math.max(0, i0); i < Math.min(cols.length, i1 + 1); i++) {

@@ -3,7 +3,7 @@
 // Cài đặt và các mức giá được lưu trên máy này (localStorage). Mỗi loại kêu tối đa một lần mỗi 5 giây.
 
 const KEY = "lailong.alerts";
-const DEF = { ice: true, spoof: true, big: false, sound: true, notify: false, levels: [] };
+const DEF = { ice: true, spoof: true, big: false, newsEv: true, newsHot: false, sound: true, notify: false, levels: [] };
 const TONES = { up: [880, 1175], down: [523, 392], ice: [988, 988], price: [1319, 1047, 1319] };
 
 export class Alerts {
