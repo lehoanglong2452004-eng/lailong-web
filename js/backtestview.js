@@ -1,11 +1,11 @@
 // Lai Long Web: trang Backtest (giao diện). Chiến lược nằm trong strategies.js, bộ máy chạy lệnh trong backtest.js.
-import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610141901";
-import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610141901";
-import { EquityChart } from "./fractalview.js?v=202610141901";
-import { sampleLevel } from "./fractal.js?v=202610141901";
-import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610141901";
-import { isDeltaApprox } from "./analytics.js?v=202610141901";
-import { robustness } from "./robust.js?v=202610141901";
+import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610141924";
+import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610141924";
+import { EquityChart } from "./fractalview.js?v=202610141924";
+import { sampleLevel } from "./fractal.js?v=202610141924";
+import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610141924";
+import { isDeltaApprox } from "./analytics.js?v=202610141924";
+import { robustness } from "./robust.js?v=202610141924";
 
 const PIN_KEY = "lailong.btPins", SEL_KEY = "lailong.btStrat", LEG_KEY = "lailong.btLeg";
 const sgn = (x, d = 2) => (x >= 0 ? "+" : "") + x.toFixed(d);

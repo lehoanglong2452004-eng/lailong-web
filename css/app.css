@@ -96,6 +96,7 @@ input[type=number] { font-family: var(--mono); }
 #bottomFold { flex: none; }
 .dom-panel { grid-area: dom; }
 .tape-panel { grid-area: tape; }
+.tape-panel > .panel-head { flex-wrap: wrap; row-gap: 4px; padding-top: 4px; padding-bottom: 4px; }
 .lmap-panel { grid-area: lmap; border-right: 0; }
 .lmap-panel .panel-head { gap: 4px; overflow: hidden; }
 .lmap-panel .panel-head select { max-width: 76px; }
