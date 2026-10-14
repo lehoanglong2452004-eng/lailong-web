@@ -1,0 +1,33 @@
+name: Cập nhật lịch kinh tế và tin crypto
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: news
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Lấy lịch và tin
+        run: python scripts/news.py data
+      - name: Lưu nếu có thay đổi
+        run: |
+          git config user.name "lailong-bot"
+          git config user.email "lailong-bot@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then echo "Không có gì mới"; exit 0; fi
+          git commit -m "Cập nhật lịch kinh tế và tin"
+          for i in 1 2 3; do git pull --rebase -q origin main && git push -q origin HEAD:main && break; sleep 5; done
