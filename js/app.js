@@ -1,23 +1,23 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610132215";
-import { MarketState } from "./market.js?v=202610132215";
-import { Heatmap } from "./heatmap.js?v=202610132215";
-import { FlowChart } from "./flowchart.js?v=202610132215";
-import { Dom } from "./dom.js?v=202610132215";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610132215";
-import { initBacktest } from "./backtestview.js?v=202610132215";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610132215";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610132215";
-import { Tape } from "./tape.js?v=202610132215";
-import { LiqMap } from "./liqmap.js?v=202610132215";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610132215";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610132215";
-import { DOM_COLS } from "./dom.js?v=202610132215";
-import { initFractal } from "./fractalview.js?v=202610132215";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610132215";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610132215";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610132215";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610141828";
+import { MarketState } from "./market.js?v=202610141828";
+import { Heatmap } from "./heatmap.js?v=202610141828";
+import { FlowChart } from "./flowchart.js?v=202610141828";
+import { Dom } from "./dom.js?v=202610141828";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610141828";
+import { initBacktest } from "./backtestview.js?v=202610141828";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610141828";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610141828";
+import { Tape } from "./tape.js?v=202610141828";
+import { LiqMap } from "./liqmap.js?v=202610141828";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610141828";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610141828";
+import { DOM_COLS } from "./dom.js?v=202610141828";
+import { initFractal } from "./fractalview.js?v=202610141828";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610141828";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610141828";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610141828";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -139,11 +139,21 @@ function recompute() {
   const zones = zonesAll.filter(z => z.active).slice(-8);
   const liqMap = bars.some(b => b.oi != null) ? liquidationMap(bars) : null;
   analysis = { levels, zones, zonesAll, liqMap, sum: summary(bars, market.intervalMs) };
-  heat.setOverlays({ levels, zones, liqMap });
+  heat.setOverlays({ levels, zones, liqMap, marks: priceMarks(bars) });
   flow.setOverlays({ levels, zones, liqMap });
   recomputeFlow();
   renderSignals();
   if (S.view === "analysis") renderAnalysis();
+}
+// Các mốc giá trong ngày (giờ UTC) từ nến đang có: giá mở cửa, đỉnh, đáy hôm nay và đỉnh, đáy hôm qua
+function priceMarks(bars) {
+  if (!bars.length) return [];
+  const D = 864e5, today = Math.floor(bars[bars.length - 1].t / D) * D, out = [];
+  const span = (from, to) => { let h = -Infinity, l = Infinity, o = null; for (const b of bars) if (b.t >= from && b.t < to) { if (o === null) o = b.o; h = Math.max(h, b.h); l = Math.min(l, b.l); } return o === null ? null : { o, h, l }; };
+  const td = span(today, today + D), yd = span(today - D, today);
+  if (td) out.push({ price: td.o, label: "Mở cửa ngày", kind: "open" }, { price: td.h, label: "Đỉnh hôm nay", kind: "hi" }, { price: td.l, label: "Đáy hôm nay", kind: "lo" });
+  if (yd && bars[0].t <= today - D + market.intervalMs) out.push({ price: yd.h, label: "Đỉnh hôm qua", kind: "hi", prev: true }, { price: yd.l, label: "Đáy hôm qua", kind: "lo", prev: true });
+  return out;
 }
 market.on(kind => {
   if (kind === "newbar") recompute();
@@ -556,7 +566,7 @@ for (const cb of document.querySelectorAll("[data-layer]")) {
   cb.onchange = () => { const k = cb.dataset.layer; if (k in heat.show) heat.show[k] = cb.checked; if (k in flow.show) flow.show[k] = cb.checked; heat.dirty = flow.dirty = true; };
   cb.onchange();
 }
-$("contrast").oninput = () => { heat.contrast = +$("contrast").value; heat.dirty = true; };
+$("contrast").oninput = () => { heat.contrast = lmap.contrast = +$("contrast").value; heat.dirty = lmap.dirty = true; };
 $("rowSize").onchange = () => { flow.rowMult = $("rowSize").value; flow.dirty = true; };
 $("domMult").onchange = () => dom.setMult(+$("domMult").value);
 $("domCenter").onclick = () => dom.recenter();

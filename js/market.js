@@ -5,13 +5,15 @@
 //   kèm khối lượng mua/bán chủ động khớp trong cột đó.
 // - Bars: nến của khung đang xem, nến cuối được cập nhật theo từng lệnh khớp, kèm footprint.
 
-import { niceStep, INTERVALS } from "./util.js?v=202610132215";
-import { TapeAggregator, quantile } from "./orderflow.js?v=202610132215";
+import { niceStep, INTERVALS } from "./util.js?v=202610141828";
+import { TapeAggregator, quantile } from "./orderflow.js?v=202610141828";
 
 export const COL_MS = 500;
 const MAX_COLS = 7200;       // 1 giờ ở 0,5 giây mỗi cột (bộ ghi trên laptop giữ lâu hơn)
 const BAND = 0.03;           // chỉ chụp các mức giá trong ±3% quanh giá giữa
 const MAX_LEVELS = 700;
+const FINE_LEVELS = 400;      // mỗi phía: số mức giá giữ nguyên bước giá gốc (cho khung Thanh khoản và khi phóng to)
+const FINE_COLS = 1900;       // giữ bản chi tiết ~16 phút gần nhất cho đỡ tốn bộ nhớ
 
 export class Book {
   constructor() { this.bids = new Map(); this.asks = new Map(); this.ts = 0; this._sorted = null; }
@@ -163,6 +165,7 @@ export class MarketState {
       col = { t, bv: 0, sv: 0, bpv: 0, spv: 0, hi: -Infinity, lo: Infinity, keys: null, sizes: null, bb: null, ba: null };
       this.cols.push(col); this._col = col;
       if (this.cols.length > MAX_COLS) this.cols.splice(0, this.cols.length - MAX_COLS);
+      const old = this.cols[this.cols.length - 1 - FINE_COLS]; if (old && old.fk) { old.fk = old.fq = null; }
     }
     if (this.grid && this.book.ts !== col.bookTs) this._snapshot(col);
     return col;
@@ -182,6 +185,15 @@ export class MarketState {
     const keys = new Int32Array(agg.size), sizes = new Float32Array(agg.size); let i = 0;
     for (const [k, q] of agg) { keys[i] = k; sizes[i] = q; i++; }
     col.keys = keys; col.sizes = sizes; col.bookTs = this.book.ts;
+    // bản chi tiết theo đúng bước giá gốc, chỉ quanh giá hiện tại
+    const tk = this.tick;
+    if (tk > 0) {
+      const nb = Math.min(bids.length, FINE_LEVELS), na = Math.min(asks.length, FINE_LEVELS);
+      const fk = new Int32Array(nb + na), fq = new Float32Array(nb + na);
+      for (let j = 0; j < nb; j++) { fk[j] = Math.round(bids[j][0] / tk); fq[j] = bids[j][1]; }
+      for (let j = 0; j < na; j++) { fk[nb + j] = Math.round(asks[j][0] / tk); fq[nb + j] = asks[j][1]; }
+      col.fk = fk; col.fq = fq;
+    }
     col.bb = bids.length ? bids[0][0] : null; col.ba = asks.length ? asks[0][0] : null;
   }
 

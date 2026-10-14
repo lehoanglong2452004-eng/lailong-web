@@ -10,7 +10,7 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610132215";
+import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610141828";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
 function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
@@ -444,16 +444,22 @@ const sim = {
     const r = prng(Date.now() & 0xffff), tick = 0.1;
     let mid = this._price, drift = 0, twap = null;
     const walls = new Map(), spoofs = new Set();
+    // lệnh chờ ở mỗi mức giá đứng yên khá lâu và thay đổi dần như sổ lệnh thật; phân phối lệch (đa số mỏng, ít mức dày)
+    const lv = new Map(), lvl = (p, d) => {
+      let q = lv.get(p);
+      if (q === undefined || r() < 0.01) { q = Math.exp(gauss(r) * 0.9) * 0.35 * (1 + d * 0.004); lv.set(p, q); }
+      return q;
+    };
     const rebuild = () => {
+      if (lv.size > 20000) lv.clear();
       book.clear();
       const bb = Math.floor(mid / tick) * tick;
       for (let i = 0; i < 1200; i++) {
         // gần giá: từng bước 0,1; xa giá: thưa dần như sổ lệnh thật
         const d = i < 200 ? i : 200 + (i - 200) * 5;
         const pb = +(bb - d * tick).toFixed(1), pa = +(bb + (d + 1) * tick).toFixed(1);
-        const base = (0.2 + r() * 1.2) * (1 + d * 0.004);
-        book.set("bid", pb, base + (walls.get(pb) || 0));
-        book.set("ask", pa, base + (walls.get(pa) || 0));
+        book.set("bid", pb, lvl(pb, d) + (walls.get(pb) || 0));
+        book.set("ask", pa, lvl(pa, d) + (walls.get(pa) || 0));
       }
       book.ts = Date.now();
     };

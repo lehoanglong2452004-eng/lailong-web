@@ -5,20 +5,14 @@
 // màu sáng là lệnh chờ dày, đường trắng là dấu vết giá giữa, đường xanh/đỏ mảnh là giá mua/bán tốt nhất,
 // bong bóng là lệnh gốc đã khớp, khung vàng là tường lệnh chờ đang đứng, dấu × cam là tường bị rút.
 
-import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610132215";
-import { T, alpha } from "./theme.js?v=202610132215";
-import { COL_MS } from "./market.js?v=202610132215";
-import { ROW_H, HDR_H } from "./dom.js?v=202610132215";
+import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610141828";
+import { T, alpha } from "./theme.js?v=202610141828";
+import { COL_MS } from "./market.js?v=202610141828";
+import { heatIndex, HEAT_LUT, HEAT_BG, drawBubble } from "./heatmap.js?v=202610141828";
+import { ROW_H, HDR_H } from "./dom.js?v=202610141828";
 
 export const LMAP_WINDOWS = [30e3, 60e3, 120e3, 300e3, 900e3];
 
-// tối -> xanh -> vàng -> trắng
-const HEAT = [[0, 10, 14, 30], [0.25, 0, 90, 180], [0.5, 0, 190, 160], [0.72, 240, 210, 40], [0.88, 255, 120, 20], [1, 255, 250, 240]];
-function heatColor(x) {
-  let j = 0; while (j < HEAT.length - 2 && x > HEAT[j + 1][0]) j++;
-  const a = HEAT[j], b = HEAT[j + 1], f = Math.min(1, Math.max(0, (x - a[0]) / (b[0] - a[0])));
-  return `rgb(${a[1] + (b[1] - a[1]) * f | 0},${a[2] + (b[2] - a[2]) * f | 0},${a[3] + (b[3] - a[3]) * f | 0})`;
-}
 const secs = ms => ms >= 60e3 ? `${(ms / 60e3).toFixed(ms % 60e3 ? 1 : 0)} phút` : `${Math.round(ms / 1000)} giây`;
 
 export class LiqMap {
@@ -39,7 +33,7 @@ export class LiqMap {
   _draw() {
     if (!this.cv.offsetParent) return;
     const ctx = this.ctx, w = this.S.w, h = this.S.h, d = this.dom, now = Date.now();
-    ctx.fillStyle = "#05070d"; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = HEAT_BG; ctx.fillRect(0, 0, w, h);
     this._header(now);
     if (d.center === null || !d.tick) { ctx.fillStyle = T.muted; ctx.font = "13px Segoe UI, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("Đang chờ sổ lệnh...", w / 2, h / 2); return; }
     const rows = d._rows(), cols = this.m.cols, g = this.m.grid, top = HDR_H, bottom = top + rows * ROW_H;
@@ -48,24 +42,34 @@ export class LiqMap {
     this._cells = null;
     if (g && cols.length) {
       let i0 = cols.length; while (i0 > 0 && now - cols[i0 - 1].t < this.windowMs + COL_MS) i0--;
-      // gộp mỗi cột thời gian vào các dòng của DOM; ô trống thì lấy ảnh chụp gần nhất trước đó
-      const cells = [], all = []; let carry = null;
+      // gộp mỗi cột thời gian vào các dòng của DOM. Ưu tiên bản chi tiết theo bước giá gốc (mỗi mức giá
+      // rơi đúng vào dòng DOM của nó); chỉ khi chưa có mới chia đều ô lưới thô cho các dòng nó phủ.
+      // Nhiều cột rơi vào cùng một điểm ảnh ngang thì chỉ vẽ cột mới nhất.
+      const cells = [], all = []; let carry = null, tk = this.m.tick;
       for (let i = i0; i < cols.length; i++) {
         const c = cols[i].keys ? cols[i] : carry; if (!c || !c.keys) continue; carry = c;
+        const x = this._x(cols[i].t, now), px = Math.floor(x);
+        if (i < cols.length - 1 && Math.floor(this._x(cols[i + 1].t, now)) === px) continue;
         const agg = new Map();
-        for (let j = 0; j < c.keys.length; j++) {
-          // một ô lưới của bản đồ nhiệt có thể phủ nhiều dòng DOM (bước giá DOM nhỏ hơn): chia đều cho các dòng đó
+        if (c.fk && tk > 0) {
+          for (let j = 0; j < c.fk.length; j++) { const r = d._rowOf(c.fk[j] * tk); if (r >= 0 && r < rows) agg.set(r, (agg.get(r) || 0) + c.fq[j]); }
+        } else for (let j = 0; j < c.keys.length; j++) {
           const pc = c.keys[j] * g, rA = d._rowOf(pc + g / 2 - d.tick / 2), rB = d._rowOf(pc - g / 2 + d.tick / 2);
           const lo = Math.min(rA, rB), hi = Math.max(rA, rB); if (hi < 0 || lo >= rows) continue;
           const q = c.sizes[j] / (hi - lo + 1);
           for (let r = Math.max(0, lo); r <= Math.min(rows - 1, hi); r++) agg.set(r, (agg.get(r) || 0) + q);
         }
-        for (const [r, q] of agg) { cells.push(this._x(cols[i].t, now), r, q); all.push(q); }
+        for (const [r, q] of agg) { cells.push(x, r, q); all.push(q); }
       }
-      // chuẩn hoá theo phân vị 98% để một bức tường lớn không làm tối cả bản đồ
+      // mức tham chiếu: phân vị 98% để một bức tường lớn không làm tối cả bản đồ; cùng thang màu với Bookmap
       all.sort((a, b) => a - b);
-      const ref = (all.length ? all[Math.floor(all.length * 0.98)] : 1) / this.contrast || 1;
-      for (let j = 0; j < cells.length; j += 3) { ctx.fillStyle = heatColor(Math.min(1, Math.pow(cells[j + 2] / ref, 0.5))); ctx.fillRect(cells[j], d._yOf(cells[j + 1]), cw, ROW_H); }
+      const ref = (all.length ? all[Math.floor(all.length * 0.98)] : 1) || 1;
+      const gapH = ROW_H >= 8 ? 1 : 0;
+      for (let j = 0; j < cells.length; j += 3) {
+        const li = heatIndex(cells[j + 2], ref, this.contrast); if (li < 0) continue;
+        ctx.fillStyle = `rgb(${HEAT_LUT[li * 3]},${HEAT_LUT[li * 3 + 1]},${HEAT_LUT[li * 3 + 2]})`;
+        ctx.fillRect(cells[j], d._yOf(cells[j + 1]), cw, ROW_H - gapH);
+      }
       this._cells = { cells, ref };
       // giá mua/bán tốt nhất và dấu vết giá giữa
       const line = (f, col, width) => {
@@ -73,8 +77,8 @@ export class LiqMap {
         for (let i = i0; i < cols.length; i++) { const c = cols[i], p = f(c); if (p == null) { on = false; continue; } const x = this._x(c.t, now) + cw / 2, y = d._yOf(d._rowOf(p)) + ROW_H / 2; on ? ctx.lineTo(x, y) : ctx.moveTo(x, y); on = true; }
         ctx.stroke(); ctx.lineWidth = 1;
       };
-      line(c => c.bb, alpha(T.up, 0.9), 1);
-      line(c => c.ba, alpha(T.down, 0.9), 1);
+      line(c => c.bb, "#22d36b", 1.5);
+      line(c => c.ba, "#ff3b30", 1.5);
       line(c => c.bb != null && c.ba != null ? (c.bb + c.ba) / 2 : null, "#ffffff", 1.6);
     }
     // tường đang đứng: khung vàng từ lúc xuất hiện tới bây giờ
@@ -91,8 +95,8 @@ export class LiqMap {
       const p = pr[i], x = this._x(p.t, now), y = d._yOf(d._rowOf(p.vwap)) + ROW_H / 2;
       if (y < top || y > bottom) continue;
       const rad = Math.max(1.5, Math.sqrt(p.q / (maxB || 1)) * ROW_H * 1.1);
-      ctx.fillStyle = alpha(p.side === "buy" ? T.up : T.down, 0.72); ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
-      if (p.q >= this.m.bigPrint) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.2; ctx.stroke(); ctx.lineWidth = 1; }
+      drawBubble(ctx, x, y, rad, p.side === "buy" ? 1 : 0);
+      if (p.q >= this.m.bigPrint) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x, y, rad + 1, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 1; }
       this._vis.push({ p, x, y, r: rad });
     }
     // tường bị rút khi giá tới gần
