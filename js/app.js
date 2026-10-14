@@ -1,23 +1,24 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610141924";
-import { MarketState } from "./market.js?v=202610141924";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610141924";
-import { FlowChart } from "./flowchart.js?v=202610141924";
-import { Dom } from "./dom.js?v=202610141924";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610141924";
-import { initBacktest } from "./backtestview.js?v=202610141924";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610141924";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610141924";
-import { Tape } from "./tape.js?v=202610141924";
-import { LiqMap } from "./liqmap.js?v=202610141924";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610141924";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610141924";
-import { DOM_COLS } from "./dom.js?v=202610141924";
-import { initFractal } from "./fractalview.js?v=202610141924";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610141924";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610141924";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610141924";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610141932";
+import { MarketState } from "./market.js?v=202610141932";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610141932";
+import { FlowChart } from "./flowchart.js?v=202610141932";
+import { Dom } from "./dom.js?v=202610141932";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610141932";
+import { initBacktest } from "./backtestview.js?v=202610141932";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610141932";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610141932";
+import { Tape } from "./tape.js?v=202610141932";
+import { LiqMap } from "./liqmap.js?v=202610141932";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610141932";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610141932";
+import { Alerts } from "./alerts.js?v=202610141932";
+import { DOM_COLS } from "./dom.js?v=202610141932";
+import { initFractal } from "./fractalview.js?v=202610141932";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610141932";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610141932";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, fitCanvas, MONO } from "./util.js?v=202610141932";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -72,6 +73,7 @@ async function load() {
   const token = ++loadToken; persist();
   if (conn) { conn.close(); conn = null; }
   market.reset({ symbol: S.symbol, exchange: S.ex, interval: S.interval });
+  alPrevP = null; heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
   heat.resetView(); dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; scores = null; algo = []; walls.reset(); flow.setOverlays({ spoofs: walls.events, algoRuns: [], scores: [], vpinVals: null, groupVals: null }); tape.reset(); renderSignals(); renderTab();
   setConn("Đang tải dữ liệu", null);
   let info = { tick: 0, ctVal: 1 };
@@ -159,6 +161,7 @@ market.on(kind => {
   if (kind === "newbar") recompute();
   if (kind === "footprint") { flow.refresh(); scheduleFlow(); }
   if (kind === "trades" || kind === "liq") { flow.refresh(); scheduleUi(); }
+  if (kind === "trades") checkAlerts();
 });
 let uiTimer = null;
 function scheduleUi() { if (uiTimer) return; uiTimer = setTimeout(() => { uiTimer = null; flow.bigQ = market.bigPrint; if (S.tab === "big") renderTab(); }, 1000); }
@@ -218,8 +221,42 @@ setInterval(() => { if (S.mode !== "heat" || S.tab === "algo") recomputePrints()
 setInterval(() => {
   const cols = market.cols; let col = null; for (let i = cols.length - 1; i >= Math.max(0, cols.length - 4); i--) if (cols[i].keys) { col = cols[i]; break; }
   const done = walls.step(Date.now(), col, market.book.mid(), market.grid, market.tradedGrid);
+  for (const e of done) if (e.kind === "spoof" && alerts.cfg.spoof) alerts.fire("spoof", `${S.symbol}: tường ${e.side === "bid" ? "chờ mua" : "chờ bán"} ${fmtVol(e.q)} tại ${e.price.toFixed(decimalsFor(market.tick))} bị rút khi giá tới gần (nghi tường giả)`, e.side === "bid" ? "down" : "up");
   if (done.length) { flow.dirty = true; if (S.tab === "spoof") renderTab(); }
 }, 1000);
+// ---------- cảnh báo ----------
+const alerts = new Alerts(text => toast("🔔 " + text));
+let alPrevP = null, alPrintT = 0;
+function checkAlerts() {
+  const dec = decimalsFor(market.tick), cur = market.last ? market.last.p : null;
+  alerts.checkPrice(S.symbol, alPrevP, cur, dec); alPrevP = cur;
+  for (const e of market.newIce.splice(0)) if (alerts.cfg.ice) alerts.fire("ice", `${S.symbol}: nghi lệnh băng chìm ${e.side === "bid" ? "CHỜ MUA" : "CHỜ BÁN"} tại ${e.price.toFixed(dec)}, đã khớp ${fmtVol(e.filled)} trong khi sổ chỉ hiện ${fmtVol(e.disp)}`, "ice");
+  const pr = market.prints;
+  if (alerts.cfg.big && isFinite(market.bigPrint)) for (let i = pr.length - 1; i >= 0 && pr[i].t > alPrintT; i--) if (pr[i].q >= market.bigPrint) { const p = pr[i]; alerts.fire("big", `${S.symbol}: Big Trade ${p.side === "buy" ? "MUA" : "BÁN"} ${fmtVol(p.q)} tại ${p.vwap.toFixed(dec)} (${fmtUsd(p.vwap * p.q)})`, p.side === "buy" ? "up" : "down"); break; }
+  if (pr.length) alPrintT = pr[pr.length - 1].t;
+}
+function renderAlertMenu() {
+  const dec = decimalsFor(market.tick), lv = alerts.levelsOf(S.symbol);
+  for (const cb of document.querySelectorAll("[data-al]")) cb.checked = !!alerts.cfg[cb.dataset.al];
+  $("alList").innerHTML = lv.length ? lv.map(l => `<div class="alrow"><span>${esc(S.symbol)} chạm <b>${l.price.toFixed(dec)}</b></span><button class="icon" data-alrm="${l.i}" data-tip="Xoá">✕</button></div>`).join("") : `<div class="muted">Chưa có mức giá nào cho ${esc(S.symbol)}.</div>`;
+  $("alHist").innerHTML = alerts.hist.length ? "<b>Vừa kêu</b>" + alerts.hist.slice(0, 6).map(h => `<div>${fmtTime(h.t, true)} · ${esc(h.text)}</div>`).join("") : "";
+  heat.setOverlays({ alertLevels: lv });
+}
+alerts.onFire = () => { if ($("alertBtn").parentElement.classList.contains("open")) renderAlertMenu(); else heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) }); };
+$("alertBtn").onclick = e => { e.stopPropagation(); const d = $("alertBtn").parentElement; d.classList.toggle("open"); if (d.classList.contains("open")) { if (market.last && !$("alPrice").value) $("alPrice").value = market.last.p; renderAlertMenu(); } };
+for (const cb of document.querySelectorAll("[data-al]")) cb.onchange = async () => {
+  alerts.cfg[cb.dataset.al] = cb.checked; alerts.save();
+  if (cb.dataset.al === "notify" && cb.checked && typeof Notification !== "undefined" && Notification.permission !== "granted") {
+    const r = await Notification.requestPermission().catch(() => "denied");
+    if (r !== "granted") { alerts.cfg.notify = false; alerts.save(); cb.checked = false; toast("Trình duyệt chưa cho phép thông báo", true); }
+  }
+  if (cb.dataset.al === "sound" && cb.checked) alerts.beep("price");
+};
+$("alAdd").onclick = () => { const p = parseFloat($("alPrice").value); if (!(p > 0)) return toast("Nhập mức giá cần cảnh báo", true); alerts.addLevel(S.symbol, p); $("alPrice").value = ""; renderAlertMenu(); };
+$("alPrice").onkeydown = e => { if (e.key === "Enter") $("alAdd").click(); };
+$("alList").onclick = e => { const b = e.target.closest("[data-alrm]"); if (b) { alerts.removeLevel(+b.dataset.alrm); renderAlertMenu(); } };
+heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
+
 function scheduleFlow() { if (flowTimer) return; flowTimer = setTimeout(() => { flowTimer = null; recomputeFlow(); }, 1500); }
 
 // khối lượng tại giá trong ngày (UTC) cho cột "Hôm nay" của Smart DOM, dựng từ nến 1 phút

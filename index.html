@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610141924">
+<link rel="stylesheet" href="css/app.css?v=202610141932">
 </head>
 <body>
 <header class="menubar">
@@ -29,6 +29,22 @@
   <datalist id="symbolList"></datalist>
   <div class="seg" id="intervals" data-tip="Khung thời gian của mỗi nến"></div>
   <button id="toolsBtn" class="tool on" data-tip="Ẩn/hiện thanh công cụ của biểu đồ (Bookmap, Footprint, Nến, lớp hiển thị...) để biểu đồ cao hơn">☰<span class="lbl"> Công cụ</span></button>
+  <div class="dropdown alertdd">
+    <button id="alertBtn" class="tool" data-g="alerts">🔔<span class="lbl"> Cảnh báo</span></button>
+    <div class="menu right alertmenu" id="alertMenu">
+      <div class="mh">Báo khi có</div>
+      <label data-g="iceberg"><input type="checkbox" data-al="ice"> Nghi lệnh băng chìm (iceberg)</label>
+      <label data-g="spoofing"><input type="checkbox" data-al="spoof"> Tường bị rút khi giá tới gần</label>
+      <label data-g="big-trades"><input type="checkbox" data-al="big"> Big Trade (top 0,5% lệnh gốc)</label>
+      <div class="mh">Giá chạm mức</div>
+      <div class="row aladd"><input type="number" id="alPrice" step="any" placeholder="Mức giá"><button id="alAdd">Thêm</button></div>
+      <div id="alList"></div>
+      <div class="mh">Cách báo</div>
+      <label><input type="checkbox" data-al="sound"> Phát tiếng</label>
+      <label data-tip="Hiện thông báo của máy khi bro đang ở tab hoặc ứng dụng khác"><input type="checkbox" data-al="notify"> Thông báo của trình duyệt</label>
+      <div id="alHist" class="alhist"></div>
+    </div>
+  </div>
   <div class="spacer"></div>
   <div class="pill" id="connPill" data-tip="Trạng thái kết nối dữ liệu trực tiếp với sàn"><i></i><span>Đang kết nối</span></div>
   <button id="installBtn" class="tool" hidden data-tip="Cài Lai Long Quant như một ứng dụng trên máy này (mở từ màn hình chính, không cần thanh địa chỉ)">⬇ Cài app</button>
@@ -55,6 +71,8 @@
           <label data-g="liq-map"><input type="checkbox" data-layer="liqMap" checked> Bản đồ thanh lý ước tính</label>
           <label data-g="trade-bubble"><input type="checkbox" data-layer="bubbles" checked> Bong bóng khớp lệnh (Bookmap)</label>
           <label data-g="big-trade"><input type="checkbox" data-layer="bigOnly"> Chỉ hiện lệnh lớn (Bookmap)</label>
+          <label data-g="iceberg"><input type="checkbox" data-layer="ice" checked> Lệnh băng chìm / nạp lại (Bookmap)</label>
+          <label data-g="stacked-imbalance"><input type="checkbox" data-layer="imb" checked> Mất cân bằng xếp chồng (footprint)</label>
           <label data-g="absorption"><input type="checkbox" data-layer="absorb" checked> Chỉ báo hấp thụ (footprint)</label>
           <label data-g="big-trades"><input type="checkbox" data-layer="big" checked> Big Trades (footprint)</label>
           <label data-g="signal-score"><input type="checkbox" data-layer="score" checked> Điểm tín hiệu ≥ 60 (footprint)</label>
@@ -335,6 +353,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610141924"></script>
+<script type="module" src="js/app.js?v=202610141932"></script>
 </body>
 </html>

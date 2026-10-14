@@ -4,9 +4,9 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202610141924";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610141924";
-import { T, alpha } from "./theme.js?v=202610141924";
+import { COL_MS } from "./market.js?v=202610141932";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610141932";
+import { T, alpha } from "./theme.js?v=202610141932";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
 
@@ -102,7 +102,7 @@ export class Heatmap {
     this.off = document.createElement("canvas"); this.offCtx = this.off.getContext("2d");
     this.msPerPx = 120; this.follow = true; this.tEnd = Date.now(); this.rightPad = 70;
     this.pCenter = null; this.pxPerPrice = null; this.contrast = 1; this.cfg = { ...HM_DEFAULTS };
-    this.show = { bubbles: true, liq: true, levels: true, zones: true, liqMap: true, bigOnly: false };
+    this.show = { bubbles: true, liq: true, levels: true, zones: true, liqMap: true, bigOnly: false, ice: true };
     this.levels = []; this.zones = []; this.liqMap = null; this.orders = []; this.position = null;
     this.mouse = null; this.drag = null; this.dirty = true; this._lastDraw = 0;
     this._bind();
@@ -174,7 +174,9 @@ export class Heatmap {
     if (this.show.levels) { this._levels(L); this._marks(L); }
     if (this.show.bubbles) this._bubbles(cols, i0, i1, L);
     if (this.show.liq) this._liqs(cols, i0, i1);
+    if (this.show.ice) this._icebergs(L);
     this._ownLines(L);
+    this._alertLines(L);
     ctx.restore();
     this._pane(cols, i0, i1, L);
     this._pocs = [];
@@ -374,6 +376,26 @@ export class Heatmap {
     }
   }
 
+  // lệnh băng chìm / nạp lại: vạch ngang suốt thời gian bị khớp, ô "I" ở cuối, nét đứt khi đã bị xuyên thủng
+  _icebergs(L) {
+    const ctx = this.ctx, now = Date.now(), t0 = this.tAt(0); this._iceVis = [];
+    const evs = this.m.ice ? this.m.ice.events : [];
+    let maxH = 0; for (const e of evs) maxH = Math.max(maxH, e.hidden);
+    for (const e of evs) {
+      const tEnd = e.status === "live" ? now : e.tEnd || e.t1; if (tEnd < t0) continue;
+      const y = Math.round(this.yOf(e.price)) + 0.5; if (y < -10 || y > L.ph + 10) continue;
+      const xa = Math.max(0, this.xOf(e.t)), xb = Math.min(L.pw, this.xOf(e.status === "live" ? e.t1 : tEnd)), col = e.side === "bid" ? "#3cf0b4" : "#ff6fae";
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.setLineDash(e.status === "broken" ? [4, 3] : []);
+      ctx.beginPath(); ctx.moveTo(xa, y); ctx.lineTo(Math.max(xa + 2, xb), y); ctx.stroke(); ctx.setLineDash([]);
+      const r = 5 + 4 * Math.sqrt(e.hidden / (maxH || 1)), x = Math.max(xa + r, xb);
+      ctx.fillStyle = "#06121c"; ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+      ctx.beginPath(); for (let a = 0; a < 6; a++) { const an = Math.PI / 6 + a * Math.PI / 3; ctx.lineTo(x + r * Math.cos(an), y + r * Math.sin(an)); } ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = col; ctx.font = `bold ${Math.round(r * 1.2)}px ${MONO}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("I", x, y + 0.5); ctx.textBaseline = "alphabetic";
+      if (L.pw >= 300) { ctx.font = `10px ${MONO}`; ctx.textAlign = "left"; ctx.fillText(`ẩn ${fmtVol(e.hidden)}`, x + r + 3, y - 4); }
+      this._iceVis.push({ x, y, r, e });
+    }
+  }
+
   _liqs(cols, i0, i1) {
     const ctx = this.ctx;
     for (let i = Math.max(0, i0); i <= i1; i++) {
@@ -412,6 +434,18 @@ export class Heatmap {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]);
       const t = `${mk.label} ${mk.price.toFixed(dec)}`; ctx.font = "10px Segoe UI, sans-serif"; const tw = ctx.measureText(t).width + 8;
       ctx.fillStyle = alpha("#000000", 0.6); ctx.fillRect(L.pw - tw - 2, y - 13, tw, 12); ctx.fillStyle = col; ctx.textAlign = "left"; ctx.fillText(t, L.pw - tw + 2, y - 4);
+    }
+  }
+
+  // mức giá đã đặt cảnh báo: nét chấm cam, có chuông ở mép trái
+  _alertLines(L) {
+    const ctx = this.ctx, dec = decimalsFor(this.m.tick || this.m.grid);
+    for (const a of this.alertLevels || []) {
+      const y = Math.round(this.yOf(a.price)) + 0.5; if (y < 0 || y > L.ph) continue;
+      ctx.strokeStyle = "#ffa940"; ctx.lineWidth = 1; ctx.setLineDash([1, 3]);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.fillStyle = "#ffa940"; ctx.fillText(`🔔 ${a.price.toFixed(dec)}`, 4, y - 3);
+      (this._axisTags || (this._axisTags = [])).push({ y, col: "#ffa940", txt: a.price.toFixed(dec) });
     }
   }
 
@@ -693,6 +727,7 @@ export class Heatmap {
     if (inCol("tc")) return "Số lệnh khớp ở mỗi dòng giá trong khoảng thời gian đang xem. Nhiều lệnh nhỏ dồn vào một giá thường là thuật toán hoặc nhiều người cùng đánh.";
     const cob = L.colsL.cob;
     if (cob && inCol("cob")) return x < cob.x + cob.w / 2 || !this.cfg.colCum ? "Sổ lệnh hiện tại (COB), cùng dòng giá với bản đồ: thanh đỏ là lệnh chờ bán, xanh là lệnh chờ mua, con số là khối lượng. Dòng tô nền là giá mua / bán tốt nhất. Khi thu nhỏ, vài mức giá được gộp chung một dòng." : "Sổ lệnh cộng dồn: tổng lệnh chờ từ giá hiện tại tới mức giá đó. Cho biết giá phải ăn hết bao nhiêu để đi tới đó.";
+    if (this.show.ice && this._iceVis) for (const v of this._iceVis) if (Math.hypot(x - v.x, y - v.y) <= v.r + 3) { const e = v.e; return `Nghi lệnh băng chìm (iceberg) phía ${e.side === "bid" ? "CHỜ MUA" : "CHỜ BÁN"} tại ${e.price.toFixed(dec)}: đã khớp ${fmtVol(e.filled)} qua ${e.n} lệnh trong ${((e.t1 - e.t) / 1000).toFixed(0)} giây, trong khi sổ lệnh chỉ hiện tối đa ${fmtVol(e.disp)}. Phần ẩn hoặc nạp lại ước tính ${fmtVol(e.hidden)}. ${e.status === "live" ? "Đang còn bị khớp." : e.status === "held" ? "Kết quả: GIỮ được giá (nét liền)." : "Kết quả: bị XUYÊN THỦNG (nét đứt)."}`; }
     if (this._bub) for (const b of this._bub) if (Math.hypot(x - b.x, y - b.y) <= b.r + 2) { const v = b.bv + b.sv; return `Đã khớp ${fmtVol(v)} quanh giá ${b.p.toFixed(dec)}: mua chủ động ${fmtVol(b.bv)} (${(b.bv / v * 100).toFixed(0)}%, phần xanh), bán chủ động ${fmtVol(b.sv)} (${(b.sv / v * 100).toFixed(0)}%, phần đỏ). Thể tích bong bóng tỷ lệ với khối lượng.`; }
     if (inCol("liq")) return `Bản đồ thanh lý ước tính quanh ${this.pAt(y).toFixed(dec)}: hồng là vùng long có thể bị thanh lý, vàng là vùng short. Ước tính từ open interest, không phải dữ liệu thật.`;
     if (y >= 28 && y <= 46 && x < 272) return "Lệch sổ lệnh: lệnh chờ mua trừ lệnh chờ bán, chia tổng, trong vùng giá đang xem. Lệch khớp: mua chủ động trừ bán chủ động trong khoảng thời gian đang xem. Dương (xanh nhiều) là phe mua lấn át.";

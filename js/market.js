@@ -5,8 +5,9 @@
 //   kèm khối lượng mua/bán chủ động khớp trong cột đó.
 // - Bars: nến của khung đang xem, nến cuối được cập nhật theo từng lệnh khớp, kèm footprint.
 
-import { niceStep, INTERVALS } from "./util.js?v=202610141924";
-import { TapeAggregator, quantile } from "./orderflow.js?v=202610141924";
+import { niceStep, INTERVALS } from "./util.js?v=202610141932";
+import { TapeAggregator, quantile } from "./orderflow.js?v=202610141932";
+import { IcebergTracker } from "./iceberg.js?v=202610141932";
 
 export const COL_MS = 500;
 const MAX_COLS = 7200;       // 1 giờ ở 0,5 giây mỗi cột (bộ ghi trên laptop giữ lâu hơn)
@@ -65,6 +66,7 @@ export class MarketState {
     this._pb = null; this._pa = null; this.ofiPend = new Map(); // OFI: thay đổi lệnh chờ ở giá mua/bán tốt nhất
     this.dayVol = new Map(); this.dayStart = Math.floor(Date.now() / 864e5) * 864e5; // khối lượng tại giá trong ngày (UTC)
     this.sessPV = 0; this.sessV = 0; // VWAP phiên: tính từ lúc mở trang
+    this.ice = new IcebergTracker(); this.newIce = []; this._iceT = 0; // lệnh băng chìm / nạp lại
     this.quoteDelta = new Map(); this._qdPrev = null; this._qdBB = null; this._qdBA = null; // cột +/- lệnh chờ
   }
 
@@ -85,8 +87,10 @@ export class MarketState {
       const mid = this.book.mid();
       if (mid) this.grid = Math.max(this.tick || 0, niceStep(mid * 0.00004));
     }
-    this._ofi(Date.now());
-    this._ensureCol(Date.now());
+    const now = Date.now();
+    this._ofi(now);
+    if (now - this._iceT > 250) { this._iceT = now; this.ice.onBook(now, this.book); }
+    this._ensureCol(now);
     this.emit("book");
   }
 
@@ -95,6 +99,7 @@ export class MarketState {
     if (this.tick && !this.tape.tick) this.tape.tick = this.tick;
     for (const t of list) {
       this.trades.push(t); this.last = t;
+      if (this.tick) { const ice = this.ice.onTrade(t, (t.side === "buy" ? this.book.asks : this.book.bids).get(t.p) || 0, this.tick, this.midPrint); if (ice) this.newIce.push(ice); }
       const done = this.tape.add(t);
       if (this.tape.started) { const b = this.book.sorted(); this.tape.cur.meta = { bb: b.bids[0] ? b.bids[0][0] : null, ba: b.asks[0] ? b.asks[0][0] : null, bq: b.bids[0] ? b.bids[0][1] : 0, aq: b.asks[0] ? b.asks[0][1] : 0 }; }
       if (done) this.prints.push(done);

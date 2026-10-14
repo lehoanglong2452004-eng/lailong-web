@@ -762,6 +762,21 @@ export const GLOSSARY = [
     body: "<p>Mỗi giây hệ thống tìm \"tường\": mức giá có lệnh chờ ≥ 6 lần trung vị và thuộc top 3% trong ±1% quanh giá. Khi tường mất ≥ 75% khối lượng:</p><ul><li><b>Bị ăn</b> (tường thật): khối lượng khớp tại đó ≥ một nửa phần mất.</li><li><b>Rút khi giá tới gần</b> (nghi tường giả): khớp rất ít và giá đã tới sát.</li><li><b>Rút khi giá còn xa</b>: đổi ý bình thường.</li></ul><p>Trên Smart DOM, cột <b>Tường</b> tô vàng tường đang đứng và ghi \"G×n\" (giả) màu cam. Trên biểu đồ, dấu × cam là chỗ tường bị rút. Một mức giá có nhiều lần \"giả\" thì đừng coi tường ở đó là hỗ trợ/kháng cự thật.</p>"
   },
   {
+    id: "iceberg", group: "Order flow nâng cao", term: "Lệnh băng chìm (iceberg)",
+    short: "Một mức giá bị khớp nhiều hơn hẳn lượng đang hiện trên sổ lệnh mà vẫn đứng: có người giấu lệnh lớn hoặc liên tục nạp lại.",
+    body: "<p>Ở mỗi mức giá đang bị khớp chủ động, hệ thống so tổng khối lượng đã khớp với lượng lớn nhất từng hiện trên sổ ở giá đó. Khi khớp được <b>gấp 2 lần</b> lượng hiện ra, qua ít nhất 3 lệnh, và phần dư ít nhất bằng một lệnh lớn (top 5%), đó là nghi iceberg.</p><p>Trên Bookmap hiện thành vạch ngang và ô <b>I</b>: xanh ngọc là lệnh chờ MUA ẩn (đỡ giá), hồng là lệnh chờ BÁN ẩn (chặn giá). Nét liền là đã <b>giữ</b> được giá, nét đứt là đã bị <b>xuyên thủng</b>.</p><p><b>Lưu ý:</b> sàn crypto không công bố lệnh iceberg, nên đây là ước tính. Sổ lệnh Binance gửi 10 lần mỗi giây, nên một tường được nạp lại thật nhanh trông giống hệt iceberg; về mặt giao dịch hai thứ có cùng ý nghĩa: có người rất muốn mua hoặc bán ở giá đó.</p>"
+  },
+  {
+    id: "stacked-imbalance", group: "Order flow nâng cao", term: "Mất cân bằng xếp chồng (stacked imbalance)",
+    short: "Từ 3 ô footprint liền nhau trở lên mà mua chủ động gấp 3 lần bán (theo đường chéo) hoặc ngược lại. Vùng này hay thành hỗ trợ/kháng cự.",
+    body: "<p>Cách so giống ATAS và Sierra Chart: mua chủ động ở giá P so với bán chủ động ở giá ngay dưới (P − 1 dòng), vì người mua chủ động khớp vào giá bán (ask) còn người bán chủ động khớp vào giá mua (bid). Ô nào gấp 3 lần trở lên được tô viền: xanh là mua lấn át, đỏ là bán lấn át.</p><p>Khi có từ 3 ô cùng phía liền nhau, hệ thống vẽ một <b>dải</b> kéo sang phải: dải xanh là vùng phe mua đã đẩy mạnh (thường đỡ giá khi quay lại), dải đỏ là vùng phe bán đẩy mạnh. Dải dừng lại khi có nến đóng cửa xuyên qua.</p><p>Chỉ có cho nến có footprint thật (từ lúc mở trang, hoặc tải lại lệnh khớp với Binance).</p>"
+  },
+  {
+    id: "alerts", group: "Công cụ", term: "Cảnh báo",
+    short: "Phát tiếng và hiện thông báo khi có lệnh lớn, tường bị rút, nghi iceberg, hoặc giá chạm mức bro đặt.",
+    body: "<p>Mở nút <b>🔔</b> trên thanh menu để bật từng loại. Thông báo của trình duyệt cần bro cho phép một lần; khi tab đang mở thì có tiếng và dòng chữ ở góc dưới.</p><p>Cảnh báo giá: gõ mức giá rồi bấm Thêm. Khi giá đi qua mức đó, cảnh báo kêu một lần rồi tự xoá. Danh sách mức giá được lưu lại trên máy này.</p><p>Để tránh ồn, mỗi loại kêu tối đa một lần mỗi 5 giây.</p>"
+  },
+  {
     id: "algo-twap", group: "Order flow nâng cao", term: "Dấu vết lệnh chia đều (TWAP)",
     short: "Chuỗi lệnh cùng phía, cùng kích thước, cách nhau đều đặn: dấu vết của quỹ hoặc tổ chức đang mua/bán rải bằng thuật toán.",
     body: "<p>Tổ chức cần mua lượng lớn thường không đặt một lệnh mà chia nhỏ theo thời gian (TWAP) để không đẩy giá. Người thường không đặt lệnh đều như máy, nên chuỗi lệnh giống hệt nhau, nhịp đều là dấu vết rõ.</p><p><b>Điều kiện:</b> ít nhất 6 lệnh gốc cùng phía, cùng kích thước (3 chữ số có nghĩa), khoảng cách giữa các lệnh lệch không quá 30%. <b>Độ đều</b> 100% là cách nhau tuyệt đối đều.</p><p>Trên biểu đồ: hình thoi viền tím nối nét đứt. Tab \"Lệnh chia đều\" liệt kê tổng khối lượng, giá trị và giá đã đi thế nào trong lúc thuật toán chạy.</p><p><b>Giới hạn:</b> thuật toán đổi kích thước ngẫu nhiên thì không nhận ra được.</p>"
@@ -808,4 +823,4 @@ export const GLOSSARY = [
   }
 ];
 
-export const GROUPS = ["Fractal & kiểm chứng", "Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest"];
+export const GROUPS = ["Fractal & kiểm chứng", "Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest", "Công cụ"];

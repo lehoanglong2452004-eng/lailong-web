@@ -4,15 +4,55 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610141924";
-import { cvd as cvdOf } from "./analytics.js?v=202610141924";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610141924";
-import { GROUPS } from "./flowtools.js?v=202610141924";
-import { WALL_KIND } from "./walls.js?v=202610141924";
-import { T, alpha } from "./theme.js?v=202610141924";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610141932";
+import { cvd as cvdOf } from "./analytics.js?v=202610141932";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610141932";
+import { GROUPS } from "./flowtools.js?v=202610141932";
+import { WALL_KIND } from "./walls.js?v=202610141932";
+import { T, alpha } from "./theme.js?v=202610141932";
 
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
+
+// gộp footprint của một nến theo dòng giá (mult bước giá gốc mỗi dòng): Map(k -> [bán, mua])
+function fpRows(b, mult) {
+  const rows = new Map();
+  for (const [k0, cell] of b.fp) { const k = Math.floor(k0 / mult); const r = rows.get(k) || [0, 0]; r[0] += cell[0]; r[1] += cell[1]; rows.set(k, r); }
+  return rows;
+}
+// mất cân bằng theo đường chéo (như ATAS): mua ở dòng k so với bán ở dòng k − 1, bán ở dòng k so với mua ở dòng k + 1
+// (dòng ở mép nến không có dòng kề để so thì bỏ qua)
+export function imbalances(rows, ratio = 3) {
+  let maxC = 0; for (const r of rows.values()) maxC = Math.max(maxC, r[0], r[1]);
+  const buy = new Set(), sell = new Set(), minQ = maxC * 0.05;
+  for (const [k, r] of rows) {
+    const below = rows.get(k - 1), above = rows.get(k + 1), sb = below ? below[0] : 0, ba = above ? above[1] : 0;
+    if (below && r[1] > minQ && (sb ? r[1] >= ratio * sb : r[1] >= maxC * 0.1)) buy.add(k);
+    if (above && r[0] > minQ && (ba ? r[0] >= ratio * ba : r[0] >= maxC * 0.1)) sell.add(k);
+  }
+  return { buy, sell };
+}
+// dải mất cân bằng xếp chồng: từ `stack` dòng liền nhau cùng phía trở lên, kéo tới khi có nến đóng cửa xuyên qua
+export function stackedZones(bars, rowStep, step, { ratio = 3, stack = 3 } = {}) {
+  const mult = Math.max(1, Math.round(rowStep / step)), out = [];
+  for (let i = 0; i < bars.length; i++) {
+    const b = bars[i]; if (!b.fp || !b.fp.size) continue;
+    const im = imbalances(fpRows(b, mult), ratio);
+    for (const [side, set] of [["buy", im.buy], ["sell", im.sell]]) {
+      const ks = [...set].sort((a, c) => a - c);
+      for (let a = 0; a < ks.length;) {
+        let e = a; while (e + 1 < ks.length && ks[e + 1] === ks[e] + 1) e++;
+        if (e - a + 1 >= stack) {
+          const lo = ks[a] * rowStep, hi = (ks[e] + 1) * rowStep; let end = null;
+          for (let j = i + 1; j < bars.length; j++) if (side === "buy" ? bars[j].c < lo : bars[j].c > hi) { end = j; break; }
+          out.push({ i, t: b.t, side, lo, hi, n: e - a + 1, end });
+        }
+        a = e + 1;
+      }
+    }
+  }
+  return out;
+}
 
 export class FlowChart {
   constructor(canvas, opts = {}) {
@@ -20,7 +60,7 @@ export class FlowChart {
     this.S = fitCanvas(canvas, () => { this.dirty = true; }); this.ctx = this.S.ctx;
     this.bars = []; this.info = {}; this.step = 1; this.type = "candle"; this.rowMult = "auto";
     this.spacing = { candle: 8, box: 72 }; this.offset = 6; this.yZoom = 1;
-    this.show = { profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true };
+    this.show = { profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true };
     this.levels = []; this.zones = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
     this.absorb = []; this.prints = null; this.bigQ = Infinity; this.clusters = []; this.ranges = []; this.pane = "deltaCvd";
     this.vpinVals = null; this.vpinHi = null; this.groupVals = null; this.algoRuns = []; this.spoofs = []; this.scores = []; this.scoreMin = 60;
@@ -85,6 +125,7 @@ export class FlowChart {
     this._ranges(first, last, L);
     if (this.show.zones) this._zones(first, L);
     if (this.show.levels) this._levels(L);
+    if (this.type === "box" && this.show.imb) this._stacked(first, last, rowStep, L);
     if (this.type === "box") this._boxes(first, last, rowStep); else this._candles(first, last);
     this._lines(first, last);
     if (this.show.cluster) this._clusters(first, last, rowStep);
@@ -146,8 +187,7 @@ export class FlowChart {
         const y1 = this.yOf(Math.max(b.o, b.c)), y2 = this.yOf(Math.min(b.o, b.c)); ctx.fillRect(x - w * 0.12, y1, w * 0.24, Math.max(1, y2 - y1));
         continue;
       }
-      const rows = new Map(); let maxTot = 0, pocK = null;
-      for (const [k0, cell] of b.fp) { const k = Math.floor(k0 / mult); const r = rows.get(k) || [0, 0]; r[0] += cell[0]; r[1] += cell[1]; rows.set(k, r); }
+      const rows = fpRows(b, mult), im = this.show.imb ? imbalances(rows) : null; let maxTot = 0, pocK = null;
       for (const [k, r] of rows) { const t = r[0] + r[1]; if (t > maxTot) { maxTot = t; pocK = k; } }
       const kLo = Math.floor(b.l / rowStep + 1e-9), kHi = Math.floor(b.h / rowStep + 1e-9), strip = Math.min(6, w * 0.08);
       for (let k = kLo; k <= kHi; k++) {
@@ -155,18 +195,36 @@ export class FlowChart {
         const a = (maxTot ? 0.08 + 0.55 * tot / maxTot : 0.05) * (b.fpApprox ? 0.75 : 1);
         ctx.fillStyle = alpha(r[1] >= r[0] ? T.up : T.down, a.toFixed(3));
         ctx.fillRect(x0 + strip + 1, yTop + 0.5, w - strip - 1, Math.max(1, hgt - 1));
+        const bI = im && im.buy.has(k), sI = im && im.sell.has(k);
+        if (bI || sI) { ctx.fillStyle = alpha(bI ? T.up : T.down, 0.85); if (bI) ctx.fillRect(x0 + w - 3, yTop + 0.5, 3, Math.max(1, hgt - 1)); if (sI) ctx.fillRect(x0 + strip + 1, yTop + 0.5, 3, Math.max(1, hgt - 1)); }
         if (k === pocK) { ctx.strokeStyle = C.poc; ctx.lineWidth = 1; ctx.strokeRect(x0 + strip + 1.5, yTop + 1, w - strip - 2, Math.max(1, hgt - 2)); }
         if (showText && tot > 0) {
-          const cx = x0 + strip + (w - strip) / 2, buyImb = r[1] >= 3 * r[0] && r[1] > 0, sellImb = r[0] >= 3 * r[1] && r[0] > 0;
-          ctx.textAlign = "right"; ctx.fillStyle = sellImb ? T.down : C.text; ctx.fillText(fmtVol(r[0]), cx - 5, yTop + hgt / 2);
+          const cx = x0 + strip + (w - strip) / 2, buyImb = im ? im.buy.has(k) : false, sellImb = im ? im.sell.has(k) : false;
+          ctx.font = `${sellImb ? "bold " : ""}${Math.min(11, Math.max(9, rowPx - 2)).toFixed(0)}px ${MONO}`; ctx.textAlign = "right"; ctx.fillStyle = sellImb ? T.down : C.text; ctx.fillText(fmtVol(r[0]), cx - 5, yTop + hgt / 2);
           ctx.textAlign = "center"; ctx.fillStyle = C.axis; ctx.fillText("x", cx, yTop + hgt / 2);
-          ctx.textAlign = "left"; ctx.fillStyle = buyImb ? T.up : C.text; ctx.fillText(fmtVol(r[1]), cx + 5, yTop + hgt / 2);
+          ctx.font = `${buyImb ? "bold " : ""}${Math.min(11, Math.max(9, rowPx - 2)).toFixed(0)}px ${MONO}`; ctx.textAlign = "left"; ctx.fillStyle = buyImb ? T.up : C.text; ctx.fillText(fmtVol(r[1]), cx + 5, yTop + hgt / 2);
         }
       }
       const col = up ? C.up : C.down, yo = this.yOf(Math.max(b.o, b.c)), yc = this.yOf(Math.min(b.o, b.c));
       ctx.fillStyle = col; ctx.fillRect(x0, yo, strip, Math.max(1, yc - yo));
       ctx.strokeStyle = col; ctx.lineWidth = 1; if (b.fpApprox) ctx.setLineDash([3, 3]); // nét đứt: footprint ước tính
       ctx.strokeRect(x0 + 0.5, this.yOf((kHi + 1) * rowStep) + 0.5, w - 1, this.yOf(kLo * rowStep) - this.yOf((kHi + 1) * rowStep) - 1); ctx.setLineDash([]);
+    }
+  }
+
+  _stacked(first, last, rowStep, L) {
+    const lb = this.bars[this.bars.length - 1], key = `${this.bars.length}:${rowStep}:${lb ? lb.v : 0}:${this.bars[0] ? this.bars[0].t : 0}`;
+    if (!this._stk || this._stk.key !== key) this._stk = { key, zones: stackedZones(this.bars, rowStep, this.step) };
+    const ctx = this.ctx; this._stkVis = [];
+    for (const z of this._stk.zones) {
+      if (z.end != null && z.end < first) continue; if (z.i > last) continue;
+      const xa = this.xOf(z.i) + this.sp * 0.44, xb = z.end != null ? this.xOf(z.end) : L.pw, ya = this.yOf(z.hi), yb = this.yOf(z.lo);
+      if (yb < 0 || ya > L.priceH || xb < xa) continue;
+      const col = z.side === "buy" ? T.up : T.down;
+      ctx.fillStyle = alpha(col, 0.13); ctx.fillRect(xa, ya, xb - xa, Math.max(2, yb - ya));
+      ctx.strokeStyle = alpha(col, 0.6); ctx.lineWidth = 1; ctx.setLineDash(z.end != null ? [3, 3] : []);
+      ctx.beginPath(); ctx.moveTo(xa, Math.round(ya) + 0.5); ctx.lineTo(xb, Math.round(ya) + 0.5); ctx.moveTo(xa, Math.round(yb) - 0.5); ctx.lineTo(xb, Math.round(yb) - 0.5); ctx.stroke(); ctx.setLineDash([]);
+      this._stkVis.push({ xa, xb, ya, yb, z });
     }
   }
 
@@ -633,6 +691,8 @@ export class FlowChart {
       for (const [p, name] of [[r.prof.poc, "POC (giá khớp nhiều nhất)"], [r.prof.vah, "VAH (cạnh trên vùng giá trị 70%)"], [r.prof.val, "VAL (cạnh dưới vùng giá trị 70%)"]]) if (Math.abs(y - this.yOf(p)) < 4) return `${name} của vùng tự chọn ${fmtTime(this.bars[r.from].t, true)} → ${fmtTime(this.bars[r.to].t, true)}: ${p.toFixed(dec)}. Tổng khối lượng ${fmtVol(r.prof.total)}, delta ${r.prof.delta >= 0 ? "+" : ""}${fmtVol(r.prof.delta)}. HVN: ${r.prof.hvn.slice(0, 4).map(v => v.toFixed(dec)).join(", ") || "-"} · LVN: ${r.prof.lvn.slice(0, 4).map(v => v.toFixed(dec)).join(", ") || "-"}. Bấm chuột phải vào vùng để xoá.`;
     }
     for (const mk of this.markers) if (mk.t === b.t && Math.abs(y - this.yOf(mk.price)) < 8) return mk.exit ? `Thoát lệnh tại ${mk.price.toFixed(dec)}` : `Vào lệnh ${mk.dir > 0 ? "LONG" : "SHORT"} tại ${mk.price.toFixed(dec)}`;
+    const st = this.show.imb && this.type === "box" && this._stkVis && this._stkVis.find(v => x >= v.xa && x <= v.xb && y >= v.ya - 2 && y <= v.yb + 2 && !(b.fp && b.fp.size && x >= this.xOf(i) - this.sp * 0.44 && x <= this.xOf(i) + this.sp * 0.44 && y >= this.yOf(b.h) && y <= this.yOf(b.l)));
+    if (st) { const z = st.z; return `Mất cân bằng xếp chồng ${z.n} dòng liền nhau, phe ${z.side === "buy" ? "MUA" : "BÁN"} chủ động gấp ít nhất 3 lần phe kia (so theo đường chéo), vùng ${z.lo.toFixed(dec)} – ${z.hi.toFixed(dec)}, nến ${fmtTime(z.t)}. ${z.end != null ? "Đã có nến đóng cửa xuyên qua (nét đứt)." : `Chưa bị xuyên qua: vùng ${z.side === "buy" ? "hỗ trợ" : "kháng cự"} tiềm năng.`}`; }
     if (this.show.levels) for (const lv of this.levels) if (Math.abs(y - this.yOf(lv.price)) < 4) return `${lv.kind === "support" ? "Hỗ trợ" : "Kháng cự"} ${lv.price.toFixed(dec)}: chạm ${lv.touches} lần, bị test ${lv.tests} lần, độ mạnh ${Math.round(lv.strength)}/100${lv.flipped ? ", đã đảo vai" : lv.broken ? ", đã bị phá (nét đứt)" : ", còn giữ"}.`;
     if (this.show.zones) for (const z of this.zones) if (y >= this.yOf(z.high) && y <= this.yOf(z.low) && b.t >= z.t) return `Vùng khối lượng bất thường ${z.low.toFixed(dec)} – ${z.high.toFixed(dec)}: khối lượng cao hơn bình thường ${z.z.toFixed(1)} độ lệch chuẩn, phe ${z.side === "buy" ? "mua" : "bán"} chủ động chiếm ưu thế.`;
     const d = b.d != null ? b.d : (typeof b.bv === "number" ? 2 * b.bv - b.v : null), chg = b.o ? (b.c / b.o - 1) * 100 : 0;
