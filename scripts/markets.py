@@ -444,7 +444,9 @@ def whale_positions(whales: list[dict], now_ms: int | None = None) -> dict:
                 {"type": "userFillsByTime", "user": w["addr"], "startTime": now_ms - 7 * 86400_000}
             )
             for f in fills or []:
-                if f.get("liquidation"):
+                lq = f.get("liquidation") or {}
+                # chỉ tính khi chính ví này bị thanh lý (không tính lúc ví đứng ra nhận lệnh thanh lý)
+                if str(lq.get("liquidatedUser", "")).lower() == w["addr"].lower():
                     liqs.append(
                         {
                             "t": f.get("time"),
