@@ -131,7 +131,12 @@ def term_structure(front: float, nxt: float, months_apart: int) -> dict:
     pct = spread / front * 100 if front else 0
     ann = pct * 12 / max(1, months_apart)
     state = "contango" if spread > 0 else "backwardation" if spread < 0 else "flat"
-    return {"spread": round(spread, 6), "pct": round(pct, 3), "annual": round(ann, 2), "state": state}
+    return {
+        "spread": round(spread, 6),
+        "pct": round(pct, 3),
+        "annual": round(ann, 2),
+        "state": state,
+    }
 
 
 def _commodity(row, now: datetime) -> dict:
@@ -148,12 +153,25 @@ def _commodity(row, now: datetime) -> dict:
         d = _yahoo_daily(f"{code}{mc}{y % 100:02d}.{ex}", "10d")
         if not d or d["t"] < fresh:
             continue  # kỳ hạn đã đáo hạn hoặc chưa có giao dịch
-        legs.append({"contract": f"{code}{mc}{y % 100:02d}", "month": f"{MONTH_CODES.index(mc) + 1:02d}/{y}",
-                     "price": d["price"], "volume": d["volume"], "_m": y * 12 + MONTH_CODES.index(mc)})
-        if len(legs) == 2:
+        legs.append(
+            {
+                "contract": f"{code}{mc}{y % 100:02d}",
+                "month": f"{MONTH_CODES.index(mc) + 1:02d}/{y}",
+                "price": d["price"],
+                "volume": d["volume"],
+                "_m": y * 12 + MONTH_CODES.index(mc),
+            }
+        )
+        if len(legs) == 4:
             break
+    # hợp đồng chính = kỳ hạn có khối lượng lớn nhất trong các kỳ gần; so với kỳ hạn liền sau nó
+    if legs:
+        i = max(range(min(3, len(legs))), key=lambda k: legs[k]["volume"] or 0)
+        legs = legs[i : i + 2]
     if len(legs) == 2:
-        out["curve"] = term_structure(legs[0]["price"], legs[1]["price"], legs[1]["_m"] - legs[0]["_m"])
+        out["curve"] = term_structure(
+            legs[0]["price"], legs[1]["price"], legs[1]["_m"] - legs[0]["_m"]
+        )
     for x in legs:
         x.pop("_m")
     out["legs"] = legs
@@ -172,32 +190,27 @@ def fetch_commodities(now: datetime | None = None) -> list[dict]:
 
 
 def parse_bis_cbpol(text: str) -> dict:
-    """Lãi suất điều hành mới nhất của từng nước và lần đổi gần nhất (từ CSV của BIS)."""
+    """Lãi suất điều hành mới nhất của từng nước, từ ngày nào, và mức trước đó (từ CSV của BIS)."""
     by: dict[str, list[tuple[str, float]]] = {}
     for row in csv.DictReader(io.StringIO(text)):
         try:
-            by.setdefault(row["REF_AREA"], []).append((row["TIME_PERIOD"], float(row["OBS_VALUE"])))
+            v = float(row["OBS_VALUE"])
         except (KeyError, ValueError):
             continue
+        if v != v:  # NaN: ngày không có số liệu
+            continue
+        by.setdefault(row["REF_AREA"], []).append((row["TIME_PERIOD"], v))
     out = {}
     for area, obs in by.items():
         obs.sort()
         last_d, last_v = obs[-1]
-        change = None
+        since, prev = obs[0][0], None
         for d, v in reversed(obs):
             if v != last_v:
-                change = {"date": d, "from": v}
-                break
-        out[area] = {"rate": last_v, "date": last_d, "changed": change}
-    # ngày đổi lãi suất là ngày đầu tiên có mức mới
-    for area, obs in by.items():
-        last_v = out[area]["rate"]
-        since = obs[-1][0]
-        for d, v in reversed(sorted(obs)):
-            if v != last_v:
+                prev = {"date": d, "rate": v}
                 break
             since = d
-        out[area]["since"] = since
+        out[area] = {"rate": last_v, "date": last_d, "since": since, "prev": prev}
     return out
 
 
@@ -219,33 +232,81 @@ def fetch_fx() -> list[dict]:
     out = []
     for code, name, area, sym, bank in CURRENCIES:
         q = quotes.get(sym) if sym else quotes.get("DX-Y.NYB")
-        row = {"code": code, "name": name, "bank": bank, "pair": sym or "DXY", "rate": rates.get(area)}
+        row = {
+            "code": code,
+            "name": name,
+            "bank": bank,
+            "pair": sym or "DXY",
+            "rate": rates.get(area),
+        }
         if q:
             row.update(price=q["price"], chg=q["chg"], closes=q["closes"])
         out.append(row)
     return out if not err else [*out, {"error": err}]
 
 
+STABLE_OR_WRAPPED = re.compile(
+    r"usd|eur|dai$|^w(btc|eth|steth|eeth|bnb)$|^(st|we|cb|r|ez|ws)eth$|heloc|^bsc-usd$", re.I
+)
+
+
+def _skip_coin(c: dict) -> bool:
+    """Bỏ stablecoin, coin bọc (wrapped) và token staking để top 10 chỉ còn tài sản thật."""
+    name = (c.get("name") or "").lower()
+    return bool(
+        STABLE_OR_WRAPPED.search(c.get("symbol") or "")
+        or STABLE_OR_WRAPPED.search(c.get("id") or "")
+        or any(w in name for w in ("wrapped", "staked", "bridged", "stablecoin", "usd"))
+    )
+
+
 def fetch_crypto() -> dict:
     out: dict = {}
     try:
+        coins = json.loads(
+            _get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=40")
+        )
         out["top"] = [
-            {k: c.get(k) for k in ("id", "symbol", "name", "current_price", "market_cap", "total_volume",
-                                   "price_change_percentage_24h", "market_cap_rank", "image")}
-            for c in json.loads(_get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=10"))
-        ]
+            {
+                k: c.get(k)
+                for k in (
+                    "id",
+                    "symbol",
+                    "name",
+                    "current_price",
+                    "market_cap",
+                    "total_volume",
+                    "price_change_percentage_24h",
+                    "market_cap_rank",
+                    "image",
+                )
+            }
+            for c in coins
+            if not _skip_coin(c)
+        ][:10]
     except Exception as exc:
         out["top_error"] = str(exc)
     for coin in ("bitcoin", "ethereum"):
         try:
-            d = json.loads(_get(f"https://api.coingecko.com/api/v3/companies/public_treasury/{coin}"))
+            d = json.loads(
+                _get(f"https://api.coingecko.com/api/v3/companies/public_treasury/{coin}")
+            )
             out[f"treasury_{coin}"] = {
                 "total": d.get("total_holdings"),
                 "value": d.get("total_value_usd"),
                 "dominance": d.get("market_cap_dominance"),
                 "companies": [
-                    {k: c.get(k) for k in ("name", "symbol", "country", "total_holdings", "total_current_value_usd",
-                                           "percentage_of_total_supply")}
+                    {
+                        k: c.get(k)
+                        for k in (
+                            "name",
+                            "symbol",
+                            "country",
+                            "total_holdings",
+                            "total_current_value_usd",
+                            "percentage_of_total_supply",
+                        )
+                    }
                     for c in d.get("companies", [])[:25]
                 ],
             }
@@ -253,7 +314,9 @@ def fetch_crypto() -> dict:
             out[f"treasury_{coin}_error"] = str(exc)
     for coin, path in (("btc", "btc"), ("eth", "eth")):
         try:
-            out[f"etf_{coin}"] = parse_farside(_get(f"https://farside.co.uk/{path}/", timeout=40).decode("utf-8", "replace"))
+            out[f"etf_{coin}"] = parse_farside(
+                _get(f"https://farside.co.uk/{path}/", timeout=40).decode("utf-8", "replace")
+            )
         except Exception as exc:
             out[f"etf_{coin}_error"] = str(exc)
     return out
@@ -271,10 +334,17 @@ def parse_farside(page: str, days: int = 30) -> dict:
         [_cell(c) for c in re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", tr, re.S | re.I)]
         for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", best, re.S | re.I)
     ]
-    head = next((r for r in rows if len(r) > 3 and any(x.upper() in ("IBIT", "ETHA", "FBTC", "FETH") for x in r)), None)
+    head = next(
+        (
+            r
+            for r in rows
+            if len(r) > 3 and any(x.upper() in ("IBIT", "ETHA", "FBTC", "FETH") for x in r)
+        ),
+        None,
+    )
     if not head:
         return {"funds": [], "days": []}
-    funds = head[1:]
+    funds = [x or "Tổng" for x in head[1:]]
     out = []
     for r in rows:
         if len(r) != len(head):
@@ -308,7 +378,7 @@ def _hl(body: dict) -> object:
     return json.loads(_get(HL, data=json.dumps(body).encode(), timeout=20))
 
 
-def top_whales(n: int = 40) -> list[dict]:
+def top_whales(n: int = 150) -> list[dict]:
     """Các ví có tài khoản lớn nhất trên bảng xếp hạng Hyperliquid (bỏ ví của sàn và ví quỹ)."""
     data = json.loads(_get("https://stats-data.hyperliquid.xyz/Mainnet/leaderboard", timeout=90))
     rows = []
@@ -317,15 +387,21 @@ def top_whales(n: int = 40) -> list[dict]:
             av = float(r.get("accountValue") or 0)
         except ValueError:
             continue
-        perf = {p[0]: p[1] for p in r.get("windowPerformances", []) if isinstance(p, list) and len(p) == 2}
-        rows.append({
-            "addr": r.get("ethAddress"),
-            "name": r.get("displayName"),
-            "account": av,
-            "pnlDay": float((perf.get("day") or {}).get("pnl") or 0),
-            "pnlMonth": float((perf.get("month") or {}).get("pnl") or 0),
-            "pnlAll": float((perf.get("allTime") or {}).get("pnl") or 0),
-        })
+        perf = {
+            p[0]: p[1]
+            for p in r.get("windowPerformances", [])
+            if isinstance(p, list) and len(p) == 2
+        }
+        rows.append(
+            {
+                "addr": r.get("ethAddress"),
+                "name": r.get("displayName"),
+                "account": av,
+                "pnlDay": float((perf.get("day") or {}).get("pnl") or 0),
+                "pnlMonth": float((perf.get("month") or {}).get("pnl") or 0),
+                "pnlAll": float((perf.get("allTime") or {}).get("pnl") or 0),
+            }
+        )
     rows.sort(key=lambda x: -x["account"])
     return rows[:n]
 
@@ -348,34 +424,55 @@ def whale_positions(whales: list[dict], now_ms: int | None = None) -> dict:
             if not szi:
                 continue
             lev = p.get("leverage") or {}
-            pos.append({
-                "coin": p.get("coin"),
-                "side": "LONG" if szi > 0 else "SHORT",
-                "size": abs(szi),
-                "value": float(p.get("positionValue") or 0),
-                "entry": float(p.get("entryPx") or 0),
-                "liq": float(p["liquidationPx"]) if p.get("liquidationPx") else None,
-                "lev": lev.get("value"),
-                "pnl": float(p.get("unrealizedPnl") or 0),
-            })
+            pos.append(
+                {
+                    "coin": p.get("coin"),
+                    "side": "LONG" if szi > 0 else "SHORT",
+                    "size": abs(szi),
+                    "value": float(p.get("positionValue") or 0),
+                    "entry": float(p.get("entryPx") or 0),
+                    "liq": float(p["liquidationPx"]) if p.get("liquidationPx") else None,
+                    "lev": lev.get("value"),
+                    "pnl": float(p.get("unrealizedPnl") or 0),
+                }
+            )
         liqs = []
         try:
-            fills = _hl({"type": "userFillsByTime", "user": w["addr"], "startTime": now_ms - 7 * 86400_000})
+            fills = _hl(
+                {"type": "userFillsByTime", "user": w["addr"], "startTime": now_ms - 7 * 86400_000}
+            )
             for f in fills or []:
                 if f.get("liquidation"):
-                    liqs.append({"t": f.get("time"), "coin": f.get("coin"), "px": float(f.get("px") or 0),
-                                 "size": float(f.get("sz") or 0), "dir": f.get("dir"),
-                                 "pnl": float(f.get("closedPnl") or 0)})
+                    liqs.append(
+                        {
+                            "t": f.get("time"),
+                            "coin": f.get("coin"),
+                            "px": float(f.get("px") or 0),
+                            "size": float(f.get("sz") or 0),
+                            "dir": f.get("dir"),
+                            "pnl": float(f.get("closedPnl") or 0),
+                        }
+                    )
         except Exception:
             pass
         return w, pos, liqs
 
-    with ThreadPoolExecutor(8) as ex:
+    with ThreadPoolExecutor(10) as ex:
         res = list(ex.map(one, whales))
     out = []
     for w, pos, liqs in res:
-        out.append({**w, "positions": sorted(pos, key=lambda p: -p["value"]), "liquidations": liqs})
-    return {"updated": now_ms, "whales": out}
+        if not pos and not liqs:
+            continue  # ví quỹ, ví sàn hoặc đang không giữ vị thế
+        out.append(
+            {
+                **w,
+                "positions": sorted(pos, key=lambda p: -p["value"]),
+                "liquidations": liqs,
+                "exposure": round(sum(p["value"] for p in pos)),
+            }
+        )
+    out.sort(key=lambda w: -w["exposure"])
+    return {"updated": now_ms, "whales": out[:40]}
 
 
 def build(outdir: Path) -> dict:
@@ -389,10 +486,14 @@ def build(outdir: Path) -> dict:
         except Exception as exc:
             errors.append(f"{key}: {exc}")
     res["errors"] = errors
-    (outdir / "markets.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (outdir / "markets.json").write_text(
+        json.dumps(res, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
+    )
     try:
         wh = whale_positions(top_whales())
-        (outdir / "whales.json").write_text(json.dumps(wh, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        (outdir / "whales.json").write_text(
+            json.dumps(wh, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
+        )
     except Exception as exc:
         errors.append(f"whales: {exc}")
     res["seconds"] = round(time.time() - started, 1)
@@ -410,7 +511,12 @@ def cached(name: str, ttl: float = 900) -> dict:
     if name == "whales":
         data = whale_positions(top_whales())
     else:
-        data = {"updated": int(now * 1000), "commodities": fetch_commodities(), "fx": fetch_fx(), "crypto": fetch_crypto()}
+        data = {
+            "updated": int(now * 1000),
+            "commodities": fetch_commodities(),
+            "fx": fetch_fx(),
+            "crypto": fetch_crypto(),
+        }
     _cache[name] = (now, data)
     return data
 
