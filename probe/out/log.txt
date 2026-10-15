@@ -1,1 +1,10 @@
-ok
+GLD: 3078 hợp đồng, 76 KB
+IWM: 2444 hợp đồng, 62 KB
+NDX: 4885 hợp đồng, 126 KB
+QQQ: 5134 hợp đồng, 129 KB
+SLV: 1398 hợp đồng, 34 KB
+SPX: 17205 hợp đồng, 447 KB
+SPY: 6021 hợp đồng, 152 KB
+TLT: 1537 hợp đồng, 38 KB
+USO: 1851 hợp đồng, 45 KB
+2.6 giây
