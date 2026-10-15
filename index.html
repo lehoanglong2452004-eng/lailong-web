@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610152106">
+<link rel="stylesheet" href="css/app.css?v=202610152113">
 </head>
 <body>
 <header class="menubar">
@@ -70,6 +70,7 @@
       <div class="seg" id="chartMode">
         <button data-mode="heat" class="on" data-g="bookmap">Bookmap</button>
         <button data-mode="box" data-g="footprint">Footprint</button>
+        <button data-mode="tpo" data-g="tpo">TPO</button>
       </div>
       <div class="dropdown">
         <button id="layerBtn" data-tip="Bật/tắt các lớp dữ liệu vẽ trên biểu đồ">Lớp hiển thị ▾</button>
@@ -171,7 +172,7 @@
       <button class="icon minb" data-min="mainPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng (bấm vào tên khung ở đó để mở lại)">—</button>
       <button class="icon max" data-max="mainPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">⤢</button>
     </div>
-    <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas></div>
+    <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas><canvas id="tpo" hidden></canvas></div>
     <div class="signalbar" id="signalbar"></div>
     <div class="dom-hint" id="chartHint"></div>
   </section>
@@ -529,6 +530,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610152106"></script>
+<script type="module" src="js/app.js?v=202610152113"></script>
 </body>
 </html>

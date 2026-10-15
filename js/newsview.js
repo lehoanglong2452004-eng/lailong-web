@@ -1,7 +1,7 @@
 // Lai Long Web: lịch kinh tế, tin tức 6 mục, bản đồ tác động và phản ứng giá sau tin.
 // Bản web đọc data/calendar.json, data/news.json, data/reactions.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/news.py).
-import { getJson, fmtTime, fmtDate } from "./util.js?v=202610152106";
+import { getJson, fmtTime, fmtDate } from "./util.js?v=202610152113";
 
 const FLAG = { USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", JPY: "🇯🇵", CNY: "🇨🇳", CAD: "🇨🇦", AUD: "🇦🇺", NZD: "🇳🇿", CHF: "🇨🇭" };
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],

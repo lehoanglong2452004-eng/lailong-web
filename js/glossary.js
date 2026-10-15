@@ -932,6 +932,11 @@ export const GLOSSARY = [
     body: "<p>Màu xanh là IV thấp, đỏ là IV cao. Kéo chuột (hoặc kéo ngón tay) để xoay.</p><p>Mặt dốc lên ở phía các hạn gần nghĩa là thị trường đang lo một sự kiện sắp tới. Mặt dốc mạnh về phía strike thấp nghĩa là nhu cầu mua bảo hiểm giảm giá lớn.</p><p>Có thể dùng để chọn hạn và strike khi mua hoặc bán quyền chọn: mua ở vùng IV thấp (màu xanh), bán ở vùng IV cao (màu đỏ), và luôn so sánh với biến động thực tế.</p>"
   },
   {
+    id: "tpo", group: "Hồ sơ khối lượng", term: "TPO (Market Profile)",
+    short: "Mỗi phiên (một ngày UTC) là một cột; mỗi 30 phút là một chữ cái A, B, C… đặt vào mọi mức giá đã chạm trong 30 phút đó. Mức nhiều chữ nhất là nơi thị trường chấp nhận lâu nhất.",
+    body: "<p><b>Cách đọc</b>: chữ càng về sau càng chuyển màu từ xanh sang đỏ. Mức giá có nhiều chữ là nơi giá dừng lâu, tức là thị trường chấp nhận mức đó.</p><ul><li><b>POC</b> (tô cam): mức có nhiều chữ nhất trong phiên.</li><li><b>Vùng giá trị</b> (nền cam nhạt): 70% số chữ quanh POC. Giá mở cửa ngoài vùng giá trị phiên trước rồi quay vào lại thường chạy sang phía bên kia của vùng.</li><li><b>IB</b> (vạch xanh dương bên trái): biên độ của 2 chữ đầu tiên (1 giờ đầu phiên). Phá IB mạnh thường là ngày có xu hướng.</li><li><b>Chữ đơn lẻ</b> (vạch tím): giá đi qua rất nhanh, chỉ có 1 chữ. Đây là vùng mất cân bằng mà giá hay quay lại lấp.</li><li><b>Naked POC</b> (đường cam nét đứt kéo dài): POC phiên cũ mà giá chưa quay lại chạm. Chúng thường hút giá như nam châm.</li><li>▸ là giá mở phiên, ◂ là giá hiện tại hoặc giá đóng phiên.</li></ul><p>Thanh mờ phía sau các chữ là khối lượng tại mỗi mức giá. Lăn chuột để đổi độ cao tầng giá, Ctrl + lăn để giãn dòng, kéo để xem các phiên cũ. Dữ liệu dựng từ nến 5 phút của 7 ngày gần nhất.</p>"
+  },
+  {
     id: "alerts", group: "Công cụ", term: "Cảnh báo",
     short: "Phát tiếng và hiện thông báo khi có lệnh lớn, tường bị rút, nghi iceberg, hoặc giá chạm mức bro đặt.",
     body: "<p>Mở nút <b>🔔</b> trên thanh menu để bật từng loại. Thông báo của trình duyệt cần bro cho phép một lần; khi tab đang mở thì có tiếng và dòng chữ ở góc dưới.</p><p>Cảnh báo giá: gõ mức giá rồi bấm Thêm. Khi giá đi qua mức đó, cảnh báo kêu một lần rồi tự xoá. Danh sách mức giá được lưu lại trên máy này.</p><p>Để tránh ồn, mỗi loại kêu tối đa một lần mỗi 5 giây.</p>"

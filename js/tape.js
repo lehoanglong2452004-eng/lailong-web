@@ -3,13 +3,13 @@
 // Một lệnh market lớn ăn qua nhiều lệnh chờ bị sàn báo thành hàng trăm lệnh khớp nhỏ cùng thời điểm.
 // Băng này ghép lại (market.prints) để thấy đúng kích thước lệnh gốc. Tắt "Ghép lệnh" để xem băng thô.
 
-import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202610152106";
-import { T, alpha } from "./theme.js?v=202610152106";
-import { GROUPS, playerGroup } from "./flowtools.js?v=202610152106";
+import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202610152113";
+import { T, alpha } from "./theme.js?v=202610152113";
+import { GROUPS, playerGroup } from "./flowtools.js?v=202610152113";
 
 const GROUP = Object.fromEntries(GROUPS.map(g => [g.id, g]));
 
-const ROW_H = 18, HDR_H = 22;
+const ROW_H = 18, BAR_H = 30, HDR_H = 22 + BAR_H;
 const COLS = [
   ["time", "Thời gian", 1.1, "Thời điểm khớp lệnh (giờ máy bạn)."],
   ["price", "Giá", 1.05, "Giá khớp cuối cùng của lệnh gốc."],
@@ -21,6 +21,19 @@ const COLS = [
   ["avg", "TB", 0.75, "Khối lượng trung bình mỗi lệnh nhỏ: khối lượng chia số lệnh nhỏ được ghép."],
   ["group", "Nhóm", 0.75, "Nhóm người chơi theo kích thước lệnh gốc: Voi (cá voi) = top 0,5%, Vừa = top 5%, Lẻ (nhỏ lẻ) = còn lại. \"Máy\" = lệnh thuộc một chuỗi chia đều (thuật toán kiểu TWAP)."],
 ];
+
+// nhịp băng lệnh: tốc độ, mua/bán chủ động và lệnh lớn nhất trong cửa sổ gần nhất, so với nhịp trung bình 5 phút
+export function tapeStats(prints, now = Date.now(), win = 60e3) {
+  let buy = 0, sell = 0, n = 0, n5 = 0, big = null, oldest = now;
+  for (let i = prints.length - 1; i >= 0; i--) {
+    const p = prints[i], age = now - p.t; if (age > 300e3) break; if (age < 0) continue;
+    n5++; oldest = p.t;
+    if (age <= win) { n++; if (p.side === "buy") buy += p.q; else sell += p.q; if (!big || p.q > big.q) big = p; }
+  }
+  // mới mở trang chưa đủ dữ liệu thì chưa so sánh tốc độ
+  const span = (now - oldest) / 1000, rate = n / (win / 1000), avg = span >= 2 * win / 1000 ? n5 / Math.min(300, span) : null;
+  return { buy, sell, delta: buy - sell, n, rate, avg, speed: avg ? rate / avg : null, big };
+}
 
 function hms(t) { const d = new Date(t); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`; }
 
@@ -60,8 +73,9 @@ export class Tape {
     ctx.fillStyle = T.bg; ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = T.panel2; ctx.fillRect(0, 0, w, HDR_H);
     const small = w < 420, font = small ? 10.5 : 11.5;
+    this._statsBar(w, small);
     ctx.font = `bold ${small ? 9.5 : 10.5}px Segoe UI, sans-serif`; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillStyle = T.accent;
-    for (const c of C) ctx.fillText(c.label.toUpperCase(), c.x + c.w / 2, HDR_H / 2);
+    for (const c of C) ctx.fillText(c.label.toUpperCase(), c.x + c.w / 2, BAR_H + (HDR_H - BAR_H) / 2);
     const data = this._rowsData(), rows = Math.floor((h - HDR_H) / ROW_H), dec = decimalsFor(this.m.tick || 0.01);
     this.scroll = Math.max(0, Math.min(this.scroll, Math.max(0, data.length - rows)));
     this._data = data;
@@ -71,6 +85,7 @@ export class Tape {
       const p = data[r + this.scroll]; if (!p) break;
       const y = HDR_H + r * ROW_H, cy = y + ROW_H / 2, buy = p.side === "buy", col = buy ? T.up : T.down;
       if (p.q >= big) { ctx.fillStyle = alpha(col, 0.28); ctx.fillRect(0, y, w, ROW_H); }
+      else if (p.q >= this.m.midPrint) { ctx.fillStyle = alpha(col, 0.12); ctx.fillRect(0, y, w, ROW_H); }
       else if (r % 2) { ctx.fillStyle = alpha(T.text, 0.03); ctx.fillRect(0, y, w, ROW_H); }
       const m = p.meta || {}, sw = p.levels > 9 ? `${buy ? "+" : "−"}${p.levels}` : (buy ? "+" : "−").repeat(p.levels);
       const cells = { time: hms(p.t), price: p.p.toFixed(dec), sweep: sw, vol: fmtVol(p.q), bid: m.bb != null ? m.bb.toFixed(dec) : "", ask: m.ba != null ? m.ba.toFixed(dec) : "", sizes: m.bb != null ? `${fmtVol(m.bq)}×${fmtVol(m.aq)}` : "", avg: fmtVol(p.q / p.n) };
@@ -84,12 +99,34 @@ export class Tape {
       }
     }
     if (!data.length) { ctx.fillStyle = T.muted; ctx.textAlign = "center"; ctx.font = "13px Segoe UI, sans-serif"; ctx.fillText("Đang chờ lệnh khớp...", w / 2, h / 2); }
-    ctx.strokeStyle = T.line; ctx.beginPath(); for (const c of C) { ctx.moveTo(Math.round(c.x) + 0.5, 0); ctx.lineTo(Math.round(c.x) + 0.5, h); } ctx.moveTo(0, HDR_H - 0.5); ctx.lineTo(w, HDR_H - 0.5); ctx.stroke();
+    ctx.strokeStyle = T.line; ctx.beginPath(); for (const c of C) { ctx.moveTo(Math.round(c.x) + 0.5, BAR_H); ctx.lineTo(Math.round(c.x) + 0.5, h); } ctx.moveTo(0, HDR_H - 0.5); ctx.lineTo(w, HDR_H - 0.5); ctx.stroke();
     if (this.scroll > 0) { ctx.fillStyle = alpha(T.accent, 0.9); ctx.fillRect(0, HDR_H, w, 3); }
+  }
+
+  // dải nhịp băng lệnh phía trên: mua/bán 60 giây, tốc độ so với trung bình 5 phút, lệnh lớn nhất
+  _statsBar(w, small) {
+    const ctx = this.ctx, st = this._st = tapeStats(this.smart ? this.m.prints : this.m.trades), dec = decimalsFor(this.m.tick || 0.01);
+    const tot = st.buy + st.sell, mid = w / 2;
+    ctx.fillStyle = T.bg; ctx.fillRect(0, 0, w, BAR_H);
+    if (tot > 0) {
+      ctx.fillStyle = alpha(T.up, 0.55); ctx.fillRect(0, BAR_H - 6, w * st.buy / tot, 4);
+      ctx.fillStyle = alpha(T.down, 0.55); ctx.fillRect(w * st.buy / tot, BAR_H - 6, w * st.sell / tot, 4);
+      ctx.fillStyle = T.text; ctx.fillRect(mid - 0.5, BAR_H - 8, 1, 8);
+    }
+    ctx.font = `${small ? 10 : 11}px ${MONO}`; ctx.textBaseline = "middle"; const yy = (BAR_H - 6) / 2;
+    ctx.textAlign = "left"; ctx.fillStyle = T.up; ctx.fillText(`M ${fmtVol(st.buy)}`, 4, yy);
+    const sp = st.speed, hot = sp != null && sp >= 2;
+    ctx.textAlign = "center"; ctx.fillStyle = hot ? T.accent : T.muted;
+    ctx.fillText(`${st.rate.toFixed(1)} lệnh/s${sp != null ? ` (${sp >= 1 ? "×" + sp.toFixed(1) : "chậm"})` : ""} · Δ ${st.delta >= 0 ? "+" : "−"}${fmtVol(Math.abs(st.delta))}${!small && st.big ? ` · lớn nhất ${fmtVol(st.big.q)} @ ${st.big.p.toFixed(dec)}` : ""}`, mid, yy);
+    ctx.textAlign = "right"; ctx.fillStyle = T.down; ctx.fillText(`B ${fmtVol(st.sell)}`, w - 4, yy);
   }
 
   hitTest(x, y) {
     const C = this._C; if (!C) return null;
+    if (y < BAR_H && this._st) {
+      const st = this._st;
+      return `Nhịp băng lệnh 60 giây qua: mua chủ động ${fmtVol(st.buy)}, bán chủ động ${fmtVol(st.sell)}, chênh lệch ${st.delta >= 0 ? "+" : "−"}${fmtVol(Math.abs(st.delta))}. Tốc độ ${st.rate.toFixed(1)} lệnh mỗi giây${st.speed != null ? `, bằng ${st.speed.toFixed(1)} lần trung bình 5 phút` : ""}. Tốc độ tăng vọt (chữ cam, từ 2 lần) thường đi kèm phá vỡ, tin tức hoặc thanh lý dây chuyền.`;
+    }
     const col = C.find(c => x >= c.x && x < c.x + c.w);
     if (y < HDR_H) return col ? `${col.label}: ${col.tip}` : null;
     const p = this._data && this._data[Math.floor((y - HDR_H) / ROW_H) + this.scroll]; if (!p) return null;
