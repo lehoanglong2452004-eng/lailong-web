@@ -1,4 +1,4 @@
-"""Lịch kinh tế và tin crypto nóng cho Lai Long.
+"""Lịch kinh tế, tin tức theo 6 mục và phản ứng giá sau tin cho Lai Long.
 
 Chỉ dùng thư viện chuẩn để chạy được ở cả hai nơi:
   - máy chủ terminal trên laptop (lấy trực tiếp, lưu tạm 10 phút);
@@ -14,6 +14,7 @@ import json
 import re
 import sys
 import time
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import UTC, datetime
@@ -25,13 +26,223 @@ CALENDAR_URLS = [
     "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
     "https://nfs.faireconomy.media/ff_calendar_nextweek.json",
 ]
+# (nguồn, đường dẫn, mục mặc định); mục thật của từng tin còn được chỉnh lại theo từ khoá
 FEEDS = [
-    ("CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss/"),
-    ("Cointelegraph", "https://cointelegraph.com/rss"),
-    ("Decrypt", "https://decrypt.co/feed"),
-    ("The Block", "https://www.theblock.co/rss.xml"),
-    ("Bitcoin Magazine", "https://bitcoinmagazine.com/.rss/full/"),
+    ("CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss/", "crypto"),
+    ("Cointelegraph", "https://cointelegraph.com/rss", "crypto"),
+    ("Decrypt", "https://decrypt.co/feed", "crypto"),
+    ("The Block", "https://www.theblock.co/rss.xml", "crypto"),
+    ("Bitcoin Magazine", "https://bitcoinmagazine.com/.rss/full/", "crypto"),
+    ("CNBC", "https://www.cnbc.com/id/20910258/device/rss/rss.html", "econ"),
+    ("CNBC", "https://www.cnbc.com/id/10000664/device/rss/rss.html", "fin"),
+    ("CNBC", "https://www.cnbc.com/id/100727362/device/rss/rss.html", "geo"),
+    ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_topstories", "fin"),
+    ("Investing.com", "https://www.investing.com/rss/news_14.rss", "econ"),
+    ("Investing.com", "https://www.investing.com/rss/news_11.rss", "energy"),
+    ("Investing.com", "https://www.investing.com/rss/news_1.rss", "fin"),
+    ("ForexLive", "https://www.forexlive.com/feed/news", "econ"),
+    ("OilPrice", "https://oilprice.com/rss/main", "energy"),
+    ("Mining.com", "https://www.mining.com/feed/", "metal"),
+    ("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml", "geo"),
+    ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml", "geo"),
+    ("Fed", "https://www.federalreserve.gov/feeds/press_all.xml", "econ"),
+    ("ECB", "https://www.ecb.europa.eu/rss/press.html", "econ"),
 ]
+CATS = ["econ", "fin", "metal", "energy", "geo", "crypto"]
+# thứ tự ưu tiên khi một tin khớp nhiều mục
+CAT_WORDS = [
+    ("metal", r"\b(gold|silver|copper|platinum|palladium|bullion|precious metal|lithium|nickel)\b"),
+    (
+        "energy",
+        r"\b(oil|crude|brent|wti|opec\+?|natural gas|lng|gasoline|diesel|refiner\w*|barrels?|energy)\b",
+    ),
+    (
+        "geo",
+        r"\b(war|military|missiles?|airstrikes?|sanctions?|iran\w*|israel\w*|gaza|ukrain\w*|russia\w*|"
+        r"taiwan|nato|ceasefire|hormuz|houthis?|north korea|geopolitic\w*|troops|invasion|coup)\b",
+    ),
+    (
+        "econ",
+        r"\b(inflation|cpi|ppi|pce|gdp|payrolls?|nonfarm|jobless|unemployment|retail sales|pmi|"
+        r"fed|fomc|ecb|boj|boe|pboc|central bank|interest rates?|rate (cut|hike)s?|recession|economy|tariffs?)\b",
+    ),
+    (
+        "fin",
+        r"\b(stocks?|shares|s&p|nasdaq|dow|bonds?|yields?|treasur\w*|banks?|earnings|ipo|dollar|"
+        r"currenc\w*|forex|yen|euro|sterling|yuan)\b",
+    ),
+]
+# chủ đề cho bản đồ tác động: (mã, tên, ký hiệu, mục, từ khoá, tài sản hay bị ảnh hưởng)
+TOPICS = [
+    (
+        "fed",
+        "Fed và lãi suất",
+        "🏦",
+        "econ",
+        r"\b(fed|fomc|powell|warsh|rate (cut|hike)s?|interest rates?|federal reserve)\b",
+        "DXY, lợi suất Mỹ, vàng, chứng khoán, BTC",
+    ),
+    (
+        "cb",
+        "Ngân hàng trung ương khác",
+        "🏛",
+        "econ",
+        r"\b(ecb|lagarde|boj|ueda|boe|bailey|pboc|rba|boc|snb|rbnz)\b",
+        "EUR, JPY, GBP, CNY, AUD, CAD, CHF",
+    ),
+    (
+        "infl",
+        "Lạm phát",
+        "📈",
+        "econ",
+        r"\b(inflation|cpi|ppi|pce|consumer prices?|deflation)\b",
+        "DXY, lợi suất, vàng, BTC",
+    ),
+    (
+        "jobs",
+        "Việc làm",
+        "👷",
+        "econ",
+        r"\b(payrolls?|nonfarm|nfp|jobless|unemployment|labor market|jobs report|jolts)\b",
+        "DXY, lợi suất, chứng khoán",
+    ),
+    (
+        "growth",
+        "Tăng trưởng",
+        "🏭",
+        "econ",
+        r"\b(gdp|pmi|retail sales|recession|industrial production|consumer spending)\b",
+        "Chứng khoán, đồng tiền nước đó, dầu",
+    ),
+    (
+        "trade",
+        "Thuế quan, thương mại",
+        "🚢",
+        "econ",
+        r"\b(tariffs?|trade (war|deal|talks)|exports?|imports?|wto)\b",
+        "CNY, chứng khoán, đồng, đậu nành",
+    ),
+    ("usd", "Đồng USD", "💵", "fin", r"\b(dollar|dxy|greenback|usd)\b", "Vàng, EUR, JPY, hàng hoá"),
+    (
+        "bonds",
+        "Trái phiếu, lợi suất",
+        "📜",
+        "fin",
+        r"\b(bonds?|yields?|treasur\w*|gilts?|bund)\b",
+        "USD, vàng, cổ phiếu tăng trưởng",
+    ),
+    (
+        "stocks",
+        "Chứng khoán",
+        "📊",
+        "fin",
+        r"\b(stocks?|s&p|nasdaq|dow|equit\w*|earnings|wall street)\b",
+        "BTC, ETH, AUD, JPY",
+    ),
+    (
+        "banks",
+        "Ngân hàng, tín dụng",
+        "🏦",
+        "fin",
+        r"\b(banks?|banking|credit|default|bailout)\b",
+        "Lợi suất, vàng, USD",
+    ),
+    ("gold", "Vàng", "🥇", "metal", r"\b(gold|bullion)\b", "XAU, bạc, AUD"),
+    (
+        "silver",
+        "Bạc, bạch kim",
+        "🥈",
+        "metal",
+        r"\b(silver|platinum|palladium)\b",
+        "Vàng, kim loại công nghiệp",
+    ),
+    (
+        "copper",
+        "Đồng, kim loại công nghiệp",
+        "🟠",
+        "metal",
+        r"\b(copper|nickel|aluminium|aluminum|zinc|iron ore|lithium)\b",
+        "AUD, CLP, chứng khoán Trung Quốc",
+    ),
+    (
+        "oil",
+        "Dầu",
+        "🛢",
+        "energy",
+        r"\b(oil|crude|brent|wti|barrels?|refiner\w*|gasoline)\b",
+        "CAD, NOK, lạm phát, lợi suất",
+    ),
+    ("opec", "OPEC+", "🛢", "energy", r"\bopec\+?\b", "Dầu, CAD, Rúp"),
+    (
+        "gas",
+        "Khí đốt, điện",
+        "🔥",
+        "energy",
+        r"\b(natural gas|lng|power prices?|electricity)\b",
+        "EUR, lạm phát châu Âu",
+    ),
+    (
+        "mideast",
+        "Trung Đông",
+        "⚔",
+        "geo",
+        r"\b(iran\w*|israel\w*|gaza|hezbollah|houthis?|hormuz|saudi|yemen|syria\w*)\b",
+        "Dầu, vàng, USD",
+    ),
+    (
+        "ruukr",
+        "Nga, Ukraine, NATO",
+        "🛡",
+        "geo",
+        r"\b(russia\w*|ukrain\w*|putin|zelensk\w*|nato|kremlin)\b",
+        "Khí đốt châu Âu, lúa mì, EUR, vàng",
+    ),
+    (
+        "china",
+        "Trung Quốc, Đài Loan",
+        "🐉",
+        "geo",
+        r"\b(china|chinese|beijing|xi jinping|taiwan)\b",
+        "CNY, AUD, đồng, chứng khoán châu Á",
+    ),
+    (
+        "politics",
+        "Chính trị, bầu cử",
+        "🗳",
+        "geo",
+        r"\b(election|trump|white house|congress|senate|shutdown|parliament)\b",
+        "USD, chứng khoán, trái phiếu",
+    ),
+    ("btc", "Bitcoin", "₿", "crypto", r"\b(bitcoin|btc)\b", "Toàn thị trường crypto"),
+    ("eth", "Ethereum", "Ξ", "crypto", r"\b(ethereum|ether|eth)\b", "Altcoin, DeFi"),
+    (
+        "etf",
+        "Quỹ ETF, tổ chức",
+        "🏢",
+        "crypto",
+        r"\b(etfs?|blackrock|fidelity|grayscale|strategy|microstrategy|saylor|treasury firm)\b",
+        "BTC, ETH",
+    ),
+    (
+        "reg",
+        "Pháp lý crypto",
+        "⚖",
+        "crypto",
+        r"\b(sec|cftc|regulat\w*|lawsuit|stablecoin bill|mica)\b",
+        "Toàn thị trường crypto",
+    ),
+    (
+        "hack",
+        "Hack, sự cố",
+        "🛡",
+        "crypto",
+        r"\b(hack(ed|s)?|exploit\w*|drain\w*|outage|stolen)\b",
+        "Coin bị ảnh hưởng, DeFi",
+    ),
+]
+_CAT_RE = [(c, re.compile(w, re.I)) for c, w in CAT_WORDS]
+_TOPIC_RE = [(t[0], re.compile(t[4], re.I), t[3]) for t in TOPICS]
+CB_SOURCES = {"Fed", "ECB"}
 # tin có các từ này được đánh dấu "nóng"
 HOT = re.compile(
     r"\b(SEC|ETF|hack(ed)?|exploit|Fed|FOMC|CPI|rate (cut|hike)|liquidat\w*|ban(s|ned)?|"
@@ -56,6 +267,20 @@ COIN_WORDS = {
 }
 
 
+MAJORS = {"USD", "EUR", "JPY", "GBP", "CNY", "AUD", "CAD", "CHF", "NZD"}
+
+
+def classify(title: str, default: str) -> tuple[str, list[str]]:
+    """Trả về (mục, các chủ đề) của một tiêu đề."""
+    topics = [tid for tid, rx, _ in _TOPIC_RE if rx.search(title)]
+    if default == "crypto":
+        return "crypto", topics
+    for cat, rx in _CAT_RE:
+        if rx.search(title):
+            return cat, [t for t in topics if t not in ("btc", "eth", "etf", "reg", "hack")]
+    return default, [t for t in topics if t not in ("btc", "eth", "etf", "reg", "hack")]
+
+
 def _get(url: str, timeout: float = 15) -> bytes:
     req = urllib.request.Request(url, headers=UA)
     with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -70,9 +295,8 @@ def fetch_calendar() -> dict:
                 ts = datetime.fromisoformat(e["date"]).astimezone(UTC)
                 impact = e.get("impact", "")
                 country = e.get("country", "")
-                # giữ tin tác động mạnh của mọi nước và tin trung bình của Mỹ
-                # (crypto chạy theo đồng USD)
-                if impact != "High" and not (impact == "Medium" and country == "USD"):
+                # giữ tin tác động mạnh của mọi nước và tin trung bình của các đồng tiền lớn
+                if impact != "High" and not (impact == "Medium" and country in MAJORS):
                     continue
                 events.append(
                     {
@@ -100,9 +324,9 @@ def _text(el, tag):
     return (x.text or "").strip() if x is not None and x.text else ""
 
 
-def fetch_news(limit: int = 80) -> dict:
+def fetch_news(per_cat: int = 45) -> dict:
     items, errors = [], []
-    for source, url in FEEDS:
+    for source, url, default in FEEDS:
         try:
             root = ET.fromstring(_get(url))
             for it in root.iter("item"):
@@ -115,27 +339,140 @@ def fetch_news(limit: int = 80) -> dict:
                     t = int(parsedate_to_datetime(pub).timestamp() * 1000)
                 except Exception:
                     t = int(time.time() * 1000)
-                coins = [c for c in COINS if re.search(COIN_WORDS[c], title, re.I)]
+                cat, topics = classify(title, default)
+                hot = bool(HOT.search(title)) or source in CB_SOURCES
+                coins = (
+                    [c for c in COINS if re.search(COIN_WORDS[c], title, re.I)]
+                    if cat == "crypto"
+                    else []
+                )
                 items.append(
                     {
                         "t": t,
                         "title": title,
                         "link": link,
                         "source": source,
-                        "hot": bool(HOT.search(title)),
+                        "cat": cat,
+                        "topics": topics,
+                        "hot": hot,
                         "coins": coins,
                     }
                 )
         except Exception as exc:
             errors.append(f"{source}: {exc}")
-    seen, out = set(), []
+    seen, out, per = set(), [], {c: 0 for c in CATS}
     for it in sorted(items, key=lambda x: -x["t"]):
-        key = it["title"].lower()[:80]
-        if key in seen:
+        key = re.sub(r"\W+", " ", it["title"].lower())[:80]
+        if key in seen or per[it["cat"]] >= per_cat:
             continue
         seen.add(key)
+        per[it["cat"]] += 1
         out.append(it)
-    return {"updated": int(time.time() * 1000), "items": out[:limit], "errors": errors}
+    topics = [{"id": t[0], "name": t[1], "icon": t[2], "cat": t[3], "assets": t[5]} for t in TOPICS]
+    return {"updated": int(time.time() * 1000), "items": out, "topics": topics, "errors": errors}
+
+
+# ---------- phản ứng giá sau tin (Yahoo Finance, nến 5 phút, chậm khoảng 15 phút) ----------
+ASSETS = [
+    ("DXY", "DX-Y.NYB"),
+    ("Vàng", "GC=F"),
+    ("Dầu WTI", "CL=F"),
+    ("Lợi suất 10 năm", "^TNX"),
+    ("S&P 500", "ES=F"),
+    ("BTC", "BTC-USD"),
+]
+HORIZONS = [15, 30, 60]
+
+
+def _yahoo_5m(symbol: str, rng: str = "5d") -> list[tuple[int, float]]:
+    q = urllib.parse.quote(symbol)
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{q}?range={rng}&interval=5m"
+    r = json.loads(_get(url))["chart"]["result"][0]
+    ts, closes = r.get("timestamp") or [], r["indicators"]["quote"][0].get("close") or []
+    return [(int(t) * 1000, c) for t, c in zip(ts, closes, strict=False) if c is not None]
+
+
+def _at(series: list[tuple[int, float]], t: int) -> float | None:
+    """Giá đóng cửa của nến 5 phút cuối cùng bắt đầu trước thời điểm t (trong vòng 30 phút)."""
+    best = None
+    for ts, c in series:
+        if ts + 5 * 60_000 <= t + 1:
+            best = (ts, c)
+        else:
+            break
+    return best[1] if best and t - best[0] <= 35 * 60_000 else None
+
+
+def _num(x: str) -> float | None:
+    m = re.match(r"\s*(-?[\d.]+)\s*([KMBT%]?)", x or "")
+    return float(m.group(1)) if m else None
+
+
+def reactions(events: list[dict], now_ms: int | None = None) -> dict:
+    """Với mỗi tin mạnh đã ra trong 5 ngày, đo các tài sản chạy bao nhiêu % sau 15, 30, 60 phút.
+    Lợi suất đo bằng điểm cơ bản (bp)."""
+    now_ms = now_ms or int(time.time() * 1000)
+    past = [
+        e
+        for e in events
+        if e["impact"] == "High"
+        and e["country"] in MAJORS
+        and now_ms - 5 * 86400_000 < e["t"] < now_ms - 15 * 60_000
+    ]
+    series, errors = {}, []
+    if past:
+        for name, sym in ASSETS:
+            try:
+                series[name] = _yahoo_5m(sym)
+            except Exception as exc:
+                errors.append(f"{name}: {exc}")
+    out = []
+    for e in past:
+        moves = {}
+        for name, _ in ASSETS:
+            s = series.get(name)
+            if not s:
+                continue
+            p0 = _at(s, e["t"])
+            if not p0:
+                continue
+            row = {}
+            for h in HORIZONS:
+                if e["t"] + h * 60_000 > now_ms:
+                    continue
+                p1 = _at(s, e["t"] + h * 60_000)
+                if p1:
+                    row[str(h)] = (
+                        round((p1 - p0) * 100, 1)
+                        if name == "Lợi suất 10 năm"
+                        else round((p1 / p0 - 1) * 100, 3)
+                    )
+            if row:
+                moves[name] = row
+        a, f = _num(e.get("actual", "")), _num(e.get("forecast", ""))
+        surprise = None if a is None or f is None else (1 if a > f else -1 if a < f else 0)
+        out.append({**e, "surprise": surprise, "moves": moves})
+    return {
+        "updated": now_ms,
+        "assets": [a for a, _ in ASSETS],
+        "horizons": HORIZONS,
+        "events": out,
+        "errors": errors,
+    }
+
+
+def merge_history(old: dict | None, new: dict, keep_days: int = 400) -> dict:
+    """Giữ lại phản ứng của các lần ra tin trước để tính phản ứng trung bình theo từng loại tin."""
+    cutoff = new["updated"] - keep_days * 86400_000
+    rows = {
+        f"{e['t']}|{e['country']}|{e['title']}": e
+        for e in (old or {}).get("events", [])
+        if e["t"] > cutoff
+    }
+    for e in new["events"]:
+        if e["moves"]:
+            rows[f"{e['t']}|{e['country']}|{e['title']}"] = e
+    return {**new, "events": sorted(rows.values(), key=lambda e: -e["t"])}
 
 
 _cache: dict[str, tuple[float, dict]] = {}
@@ -146,7 +483,10 @@ def cached(name: str, ttl: float = 600) -> dict:
     now = time.time()
     if name in _cache and now - _cache[name][0] < ttl:
         return _cache[name][1]
-    data = fetch_calendar() if name == "calendar" else fetch_news()
+    if name == "reactions":
+        data = reactions(cached("calendar")["events"])
+    else:
+        data = fetch_calendar() if name == "calendar" else fetch_news()
     _cache[name] = (now, data)
     return data
 
@@ -172,9 +512,17 @@ if __name__ == "__main__":
     cal, news = fetch_calendar(), fetch_news()
     a = _write_if_changed(out / "calendar.json", cal, "events")
     b = _write_if_changed(out / "news.json", news, "items")
+    rp = out / "reactions.json"
+    try:
+        old = json.loads(rp.read_text(encoding="utf-8")) if rp.exists() else None
+    except Exception:
+        old = None
+    re_ = merge_history(old, reactions(cal["events"]))
+    c = _write_if_changed(rp, re_, "events")
     print(
         f"lịch: {len(cal['events'])} sự kiện {'(đã ghi)' if a else '(không đổi)'}; "
-        f"tin: {len(news['items'])} {'(đã ghi)' if b else '(không đổi)'}"
+        f"tin: {len(news['items'])} {'(đã ghi)' if b else '(không đổi)'}; "
+        f"phản ứng: {len(re_['events'])} {'(đã ghi)' if c else '(không đổi)'}"
     )
-    for e in cal["errors"] + news["errors"]:
+    for e in cal["errors"] + news["errors"] + re_["errors"]:
         print("lỗi:", e)

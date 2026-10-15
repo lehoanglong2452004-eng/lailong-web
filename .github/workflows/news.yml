@@ -1,4 +1,4 @@
-name: Cập nhật lịch kinh tế và tin crypto
+name: Cập nhật lịch kinh tế, tin tức và phản ứng giá
 
 on:
   schedule:
