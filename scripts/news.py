@@ -42,7 +42,6 @@ FEEDS = [
     ("Investing.com", "https://www.investing.com/rss/news_1.rss", "fin"),
     ("ForexLive", "https://www.forexlive.com/feed/news", "econ"),
     ("OilPrice", "https://oilprice.com/rss/main", "energy"),
-    ("Mining.com", "https://www.mining.com/feed/", "metal"),
     (
         "Google News",
         "https://news.google.com/rss/search?q=gold+OR+silver+OR+copper+OR+platinum+price+when:2d&hl=en-US&gl=US&ceid=US:en",
