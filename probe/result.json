@@ -1,0 +1,47 @@
+{
+ "cboe_qqq": {
+  "code": 200,
+  "len": 4941428,
+  "ms": 180,
+  "head": "{\"timestamp\": \"2026-10-15 20:24:11\", \"data\": {\"options\": [{\"option\": \"QQQ261015C00450000\", \"bid\": 276.11, \"bid_size\": 10.0, \"ask\": 279.66, \"ask_size\": 1.0, \"iv\": 0.0, \"open_interest\": 0.0, \"volume\": 11.0, \"delta\": 1.0, \"gamma\": 0.0, \"vega\": 0.0, \"theta\": 0.0, \"rho\": 0.0, \"theo\": 277.5405, \"change\": -0.945, \"open\": 272.36, \"high\": 279.14, \"low\": 272.36, \"tick\": \"no_change\", \"last_trade_price\": 278.",
+  "cors": null
+ },
+ "cboe_spx": {
+  "code": 200,
+  "len": 13543769,
+  "ms": 121,
+  "head": "{\"timestamp\": \"2026-10-15 20:24:39\", \"data\": {\"options\": [{\"option\": \"SPX261016C00200000\", \"bid\": 7532.3, \"bid_size\": 1.0, \"ask\": 7555.3, \"ask_size\": 1.0, \"iv\": 0.0, \"open_interest\": 8486.0, \"volume\": 0.0, \"delta\": 1.0, \"gamma\": 0.0, \"vega\": 0.0, \"theta\": 0.0, \"rho\": 0.0164, \"theo\": 7543.5489, \"change\": 0.0, \"open\": 0.0, \"high\": 0.0, \"low\": 0.0, \"tick\": \"down\", \"last_trade_price\": 7608.62, \"last_t",
+  "cors": null
+ },
+ "cboe_gld": {
+  "code": 200,
+  "len": 3462915,
+  "ms": 77,
+  "head": "{\"timestamp\": \"2026-10-15 20:24:11\", \"data\": {\"options\": [{\"option\": \"GLD261015C00275000\", \"bid\": 106.75, \"bid_size\": 8.0, \"ask\": 108.85, \"ask_size\": 10.0, \"iv\": 0.0, \"open_interest\": 0.0, \"volume\": 1.0, \"delta\": 1.0, \"gamma\": 0.0, \"vega\": 0.0, \"theta\": 0.0, \"rho\": 0.0, \"theo\": 107.4508, \"change\": 5.07, \"open\": 105.92, \"high\": 105.92, \"low\": 105.92, \"tick\": \"up\", \"last_trade_price\": 105.92, \"last_",
+  "cors": null
+ },
+ "yahoo_tnx": {
+  "code": 200,
+  "len": 348268,
+  "ms": 135,
+  "head": "{\"chart\":{\"result\":[{\"meta\":{\"currency\":\"USD\",\"symbol\":\"^TNX\",\"exchangeName\":\"CGI\",\"fullExchangeName\":\"Cboe Indices\",\"instrumentType\":\"INDEX\",\"firstTradeDate\":-252326400,\"regularMarketTime\":1792090795,\"hasPrePostMarketData\":false,\"gmtoffset\":-18000,\"timezone\":\"CDT\",\"exchangeTimezoneName\":\"America/Chicago\",\"regularMarketPrice\":5.089,\"regularMarketChangePercent\":-1.946,\"fulldayPrice\":5.089,\"fulldayC",
+  "cors": null
+ },
+ "yahoo_btc1h": {
+  "code": 200,
+  "len": 1285675,
+  "ms": 162,
+  "head": "{\"chart\":{\"result\":[{\"meta\":{\"currency\":\"USD\",\"symbol\":\"BTC-USD\",\"exchangeName\":\"CCC\",\"fullExchangeName\":\"CCC\",\"instrumentType\":\"CRYPTOCURRENCY\",\"firstTradeDate\":1410912000,\"regularMarketTime\":1792095907,\"hasPrePostMarketData\":false,\"gmtoffset\":0,\"timezone\":\"UTC\",\"exchangeTimezoneName\":\"UTC\",\"regularMarketPrice\":82280.02,\"regularMarketChangePercent\":0.739,\"fulldayPrice\":82280.02,\"fulldayChange\":60",
+  "cors": null
+ },
+ "farside_eth": {
+  "code": 200,
+  "len": 198313,
+  "ms": 663,
+  "head": "\n<!DOCTYPE html>\n<html class=\"no-js\" lang=\"en-US\">\n<head>\n    <link rel=\"shortcut icon\" type=\"image/jpg\" href=\"/wp-content/themes/twentytwenty/assets/images/favicon.ico\"/>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" >\n    <link rel=\"profile\" href=\"https://gmpg.org/xfn/11\">\n    <title>Ethereum ETF Flow (US$m) &#8211; Farside Investors</title>",
+  "cors": null
+ },
+ "fred_dff": {
+  "err": "The read operation timed out"
+ }
+}
