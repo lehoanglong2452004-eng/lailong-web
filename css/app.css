@@ -130,7 +130,7 @@ body.resizing canvas { pointer-events: none; }
 .dom-hint { font-size: 11px; color: var(--muted); padding: 3px 8px; border-top: 1px solid var(--line); text-align: center; font-weight: 400; }
 
 /* phóng to một khung: khung đó phủ kín màn hình, Esc hoặc bấm lại để thu nhỏ */
-.panel.maxed { height: auto !important; position: fixed; inset: calc(var(--topH, 42px) + 4px) 4px 4px 4px; z-index: 30; box-shadow: 0 0 0 9999px var(--bg); }
+.panel.maxed { height: auto !important; width: auto !important; position: fixed !important; inset: calc(var(--topH, 42px) + 4px) 4px 4px 4px !important; z-index: 30; box-shadow: 0 0 0 9999px var(--bg); }
 .panel.maxed .max { color: var(--accent); }
 
 /* ---- tab dưới ---- */
@@ -377,3 +377,31 @@ tr.evsoon td { background: color-mix(in srgb, #f5a623 14%, transparent); }
 .evpill { cursor: help; max-width: 340px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #f5c542; border-color: #f5c542; }
 .evpill.hot { color: #fff; background: var(--sell); border-color: var(--sell); }
 @media (max-width: 900px) { .evpill { order: -1; max-width: 100%; flex-basis: 100%; } }
+
+/* ---- bố cục lưới ghép tuỳ chỉnh (máy tính) ---- */
+.workspace.tiled { display: block; position: relative; padding: 0; }
+.workspace.tiled > .panel { position: absolute; }
+.workspace.tiled > .panel.minimized { display: none; }
+.workspace.tiled > .splitter { display: none; }
+.workspace.tiled > .panel > .panel-head { cursor: grab; }
+.workspace.tiled > .panel > .panel-head :is(button, select, input, label) { cursor: pointer; }
+.tsplit { position: absolute; z-index: 5; }
+.tsplit::after { content: ""; position: absolute; background: var(--line); }
+.tsplit.v { cursor: col-resize; } .tsplit.v::after { left: 2px; width: 1px; top: 0; bottom: 0; }
+.tsplit.h { cursor: row-resize; } .tsplit.h::after { top: 2px; height: 1px; left: 0; right: 0; }
+.tsplit:hover::after, .tsplit.drag::after { background: var(--accent); width: auto; height: auto; inset: 1px; }
+.dock { position: absolute; left: 4px; right: 4px; bottom: 2px; height: 26px; display: flex; gap: 4px; align-items: center; overflow-x: auto; }
+.dock[hidden] { display: none; }
+.dock .dock-l { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.dock button { font-size: 11px; padding: 2px 10px; white-space: nowrap; border-color: var(--accent); color: var(--accent); }
+.dropzone { position: absolute; z-index: 35; background: rgba(255, 152, 0, .18); border: 2px dashed var(--accent); pointer-events: none; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); font-size: 13px; }
+.dropzone[hidden] { display: none; }
+body.dragging-panel, body.dragging-panel * { cursor: grabbing !important; }
+.panel.dragsrc { opacity: .45; }
+.layoutdd .menu { min-width: 260px; }
+.layoutdd .menu .li { display: flex; align-items: center; gap: 6px; padding: 4px 6px; }
+.layoutdd .menu .li:hover { background: var(--panel-2); }
+.layoutdd .menu .li > button:first-child { flex: 1; text-align: left; border: 0; background: transparent; padding: 2px 0; }
+.layoutdd .menu .hint { color: var(--muted); font-size: 11px; padding: 4px 6px; line-height: 1.4; }
+.icon.minb { font-weight: 800; }
+@media (max-width: 900px) { .icon.minb, .layoutdd { display: none !important; } }

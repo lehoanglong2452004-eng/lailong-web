@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610142021">
+<link rel="stylesheet" href="css/app.css?v=202610152029">
 </head>
 <body>
 <header class="menubar">
@@ -54,6 +54,10 @@
   <button id="installBtn" class="tool" hidden data-tip="Cài Lai Long Quant như một ứng dụng trên máy này (mở từ màn hình chính, không cần thanh địa chỉ)">⬇ Cài app</button>
   <button id="glossBtn" class="tool" data-tip="Mở danh sách giải thích thuật ngữ">?<span class="lbl"> Giải thích</span></button>
   <button id="themeBtn" class="tool" data-tip="Đổi màu giao diện"><span class="mob">Màu</span><span class="lbl">Màu sắc</span></button>
+  <div class="dropdown layoutdd">
+    <button id="layoutBtn" class="tool" data-tip="Bố cục Terminal: kéo tiêu đề khung để đổi chỗ, kéo đường chia để đổi kích thước">▦<span class="lbl"> Bố cục</span></button>
+    <div class="menu right" id="layoutMenu"></div>
+  </div>
   <button id="fullscreenBtn" class="icon" data-tip="Toàn màn hình (Esc để thoát)">⛶</button>
 </header>
 
@@ -162,6 +166,7 @@
         <select id="rowSize"><option value="auto" selected>Tự động</option><option>1</option><option>2</option><option>5</option><option>10</option><option>20</option><option>50</option></select>
       </label>
       <div class="spacer"></div>
+      <button class="icon minb" data-min="mainPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng (bấm vào tên khung ở đó để mở lại)">—</button>
       <button class="icon max" data-max="mainPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">⤢</button>
     </div>
     <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas></div>
@@ -177,6 +182,7 @@
       <select id="lmapWin" data-tip="Khoảng thời gian bản đồ hiển thị (bên phải là bây giờ)"><option value="30000">30s</option><option value="60000" selected>1 phút</option><option value="120000">2 phút</option><option value="300000">5 phút</option><option value="900000">15 phút</option></select>
       <div class="spacer"></div>
       <button class="icon" id="lmapHide" data-tip="Ẩn khung này (bật lại trong Lớp hiển thị)">✕</button>
+      <button class="icon minb" data-min="lmapPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng (bấm vào tên khung ở đó để mở lại)">—</button>
       <button class="icon max" data-max="lmapPanel" data-tip="Phóng to bản đồ thanh khoản">⤢</button>
     </div>
     <div class="dom-wrap"><canvas id="lmap"></canvas></div>
@@ -196,6 +202,7 @@
       </div>
       <button class="icon" id="domClear" data-tip="Xoá cột Bán / Mua đã khớp để đếm lại từ bây giờ">⌫</button>
       <button class="icon" id="domCenter" data-tip="Căn giữa giá hiện tại">◎</button>
+      <button class="icon minb" data-min="domPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng (bấm vào tên khung ở đó để mở lại)">—</button>
       <button class="icon max" data-max="domPanel" data-tip="Phóng to sổ lệnh">⤢</button>
     </div>
     <div class="dom-wrap"><canvas id="dom"></canvas></div>
@@ -212,6 +219,7 @@
       <select id="tapeGroup" class="small" data-g="player-groups"><option value="">Mọi nhóm</option><option value="whale">Cá voi</option><option value="mid">Vừa</option><option value="retail">Nhỏ lẻ</option><option value="algo">Lệnh chia đều</option></select>
       <label class="field small" data-tip="Ẩn các lệnh nhỏ hơn số này (đơn vị coin)">≥ <input type="number" id="tapeMin" min="0" step="any" placeholder="0" style="width:64px"></label>
       <div class="spacer"></div>
+      <button class="icon minb" data-min="tapePanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng (bấm vào tên khung ở đó để mở lại)">—</button>
       <button class="icon max" data-max="tapePanel" data-tip="Phóng to Smart Tape">⤢</button>
     </div>
     <div class="dom-wrap"><canvas id="tape"></canvas></div>
@@ -442,6 +450,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610142021"></script>
+<script type="module" src="js/app.js?v=202610152029"></script>
 </body>
 </html>

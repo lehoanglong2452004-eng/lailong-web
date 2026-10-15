@@ -1,13 +1,13 @@
 // Lai Long Web: trang Backtest (giao diện). Chiến lược nằm trong strategies.js, bộ máy chạy lệnh trong backtest.js.
-import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610142021";
-import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610142021";
-import { EquityChart } from "./fractalview.js?v=202610142021";
-import { sampleLevel } from "./fractal.js?v=202610142021";
-import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610142021";
-import { isDeltaApprox } from "./analytics.js?v=202610142021";
-import { robustness } from "./robust.js?v=202610142021";
-import { forwardVerdict, barsNeeded } from "./forward.js?v=202610142021";
-import { EXCHANGES } from "./exchanges.js?v=202610142021";
+import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610152029";
+import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610152029";
+import { EquityChart } from "./fractalview.js?v=202610152029";
+import { sampleLevel } from "./fractal.js?v=202610152029";
+import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610152029";
+import { isDeltaApprox } from "./analytics.js?v=202610152029";
+import { robustness } from "./robust.js?v=202610152029";
+import { forwardVerdict, barsNeeded } from "./forward.js?v=202610152029";
+import { EXCHANGES } from "./exchanges.js?v=202610152029";
 
 const FWD_KEY = "lailong.forward.v1", PIN_KEY = "lailong.btPins", SEL_KEY = "lailong.btStrat", LEG_KEY = "lailong.btLeg";
 const sgn = (x, d = 2) => (x >= 0 ? "+" : "") + x.toFixed(d);

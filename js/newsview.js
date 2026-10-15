@@ -1,7 +1,7 @@
 // Lai Long Web: lịch kinh tế và tin crypto nóng.
 // Bản web đọc data/calendar.json và data/news.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/news.py).
-import { getJson, fmtTime, fmtDate } from "./util.js?v=202610142021";
+import { getJson, fmtTime, fmtDate } from "./util.js?v=202610152029";
 
 const FLAG = { USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", JPY: "🇯🇵", CNY: "🇨🇳", CAD: "🇨🇦", AUD: "🇦🇺", NZD: "🇳🇿", CHF: "🇨🇭" };
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],

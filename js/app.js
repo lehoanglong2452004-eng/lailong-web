@@ -1,29 +1,30 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610142021";
-import { MarketState, Book } from "./market.js?v=202610142021";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610142021";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610142021";
-import { FlowChart } from "./flowchart.js?v=202610142021";
-import { Dom } from "./dom.js?v=202610142021";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610142021";
-import { initBacktest } from "./backtestview.js?v=202610142021";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610142021";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610142021";
-import { Tape } from "./tape.js?v=202610142021";
-import { LiqMap } from "./liqmap.js?v=202610142021";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610142021";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610142021";
-import { Alerts } from "./alerts.js?v=202610142021";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610142021";
-import { initNews } from "./newsview.js?v=202610142021";
-import { Drawings } from "./drawings.js?v=202610142021";
-import { DOM_COLS } from "./dom.js?v=202610142021";
-import { initFractal } from "./fractalview.js?v=202610142021";
-import { initJournal } from "./journalview.js?v=202610142021";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610142021";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610142021";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610142021";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610152029";
+import { MarketState, Book } from "./market.js?v=202610152029";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610152029";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610152029";
+import { FlowChart } from "./flowchart.js?v=202610152029";
+import { Dom } from "./dom.js?v=202610152029";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610152029";
+import { initBacktest } from "./backtestview.js?v=202610152029";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610152029";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610152029";
+import { Tape } from "./tape.js?v=202610152029";
+import { LiqMap } from "./liqmap.js?v=202610152029";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610152029";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610152029";
+import { Alerts } from "./alerts.js?v=202610152029";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610152029";
+import { initNews } from "./newsview.js?v=202610152029";
+import { Drawings } from "./drawings.js?v=202610152029";
+import { Layout, NAMES as PANEL_NAMES } from "./layout.js?v=202610152029";
+import { DOM_COLS } from "./dom.js?v=202610152029";
+import { initFractal } from "./fractalview.js?v=202610152029";
+import { initJournal } from "./journalview.js?v=202610152029";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610152029";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610152029";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610152029";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -784,10 +785,44 @@ $("tapeSmart").onchange = () => { tape.smart = $("tapeSmart").checked; tape.dirt
 $("tapeBig").onchange = () => { tape.bigOnly = $("tapeBig").checked; tape.dirty = true; };
 $("tapeMin").oninput = () => { tape.minQ = +$("tapeMin").value || 0; tape.dirty = true; };
 $("lmapWin").onchange = () => lmap.setWindow(+$("lmapWin").value);
-const lmapShow = on => { ws.classList.toggle("nolmap", !on); $("lmapShow").checked = on; setLayout("lmapOff", on ? null : 1); heat.dirty = flow.dirty = dom.dirty = tape.dirty = lmap.dirty = true; };
+// bố cục lưới ghép: kéo tiêu đề khung để đổi chỗ, nút — để thu nhỏ, menu ▦ Bố cục để lưu / về mặc định
+let tiles = null;
+tiles = new Layout(ws, ["mainPanel", "lmapPanel", "domPanel", "tapePanel"], {
+  legacy: { lmapW: layout.lmapW, rightW: layout.rightW, tapeW: layout.tapeW },
+  onChange: () => {
+    if (!tiles) return;
+    const off = tiles.isMin("lmapPanel");
+    ws.classList.toggle("nolmap", off); $("lmapShow").checked = !off;
+    heat.dirty = flow.dirty = dom.dirty = tape.dirty = lmap.dirty = true;
+  },
+});
+if (layout.lmapOff && !tiles.isMin("lmapPanel")) { tiles.minimize("lmapPanel"); setLayout("lmapOff", null); }
+tiles.onChange();
+const lmapShow = on => on ? tiles.restore("lmapPanel") : tiles.minimize("lmapPanel");
 $("lmapShow").onchange = () => lmapShow($("lmapShow").checked);
 $("lmapHide").onclick = () => lmapShow(false);
-if (layout.lmapOff) lmapShow(false);
+for (const b of document.querySelectorAll("[data-min]")) b.onclick = e => { e.stopPropagation(); setMax(null); tiles.minimize(b.dataset.min); };
+function renderLayoutMenu() {
+  const pr = Object.keys(tiles.presets()), mins = tiles.ids.filter(id => tiles.isMin(id));
+  $("layoutMenu").innerHTML = `<div class="mh">Bố cục</div>
+    <div class="li"><button data-lay="reset">↺ Về mặc định</button></div>
+    <div class="li"><button data-lay="save">＋ Lưu bố cục đang dùng…</button></div>
+    ${pr.length ? `<div class="mh">Đã lưu</div>` + pr.map(n => `<div class="li"><button data-lay="load" data-n="${esc(n)}">${esc(n)}</button><button class="icon" data-lay="del" data-n="${esc(n)}" data-tip="Xoá bố cục này">✕</button></div>`).join("") : ""}
+    ${mins.length ? `<div class="mh">Đang thu nhỏ</div>` + mins.map(id => `<div class="li"><button data-lay="restore" data-n="${id}">▣ ${PANEL_NAMES[id]}</button></div>`).join("") : ""}
+    <div class="hint">Kéo tiêu đề một khung thả lên khung khác: mép trái, phải, trên, dưới để ghép cạnh; giữa để đổi chỗ. Kéo đường chia để đổi kích thước. Nút — thu nhỏ, ⤢ phóng to.</div>`;
+}
+$("layoutBtn").onclick = e => { e.stopPropagation(); const d = $("layoutBtn").parentElement; d.classList.toggle("open"); if (d.classList.contains("open")) renderLayoutMenu(); };
+$("layoutMenu").onclick = e => {
+  const b = e.target.closest("[data-lay]"); if (!b) return;
+  e.stopPropagation();
+  const a = b.dataset.lay, n = b.dataset.n;
+  if (a === "reset") tiles.reset();
+  else if (a === "save") { const name = (prompt("Đặt tên cho bố cục này (ví dụ: Scalp, Swing)") || "").trim().slice(0, 30); if (name) tiles.savePreset(name); }
+  else if (a === "load") tiles.loadPreset(n);
+  else if (a === "del") tiles.deletePreset(n);
+  else if (a === "restore") tiles.restore(n);
+  renderLayoutMenu();
+};
 // thu gọn khung dưới và ẩn thanh công cụ biểu đồ để biểu đồ cao hơn
 const redrawAll = () => { heat.dirty = flow.dirty = dom.dirty = tape.dirty = lmap.dirty = true; };
 const toolsShow = on => { ws.classList.toggle("notools", !on); $("toolsBtn").classList.toggle("on", on); setLayout("toolsOff", on ? null : 1); redrawAll(); };
