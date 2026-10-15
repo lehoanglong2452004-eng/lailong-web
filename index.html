@@ -13,13 +13,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610152113">
+<link rel="stylesheet" href="css/app.css?v=202610152132">
 </head>
 <body>
 <header class="menubar">
   <div class="brand">LAI LONG <span>QUANT</span></div>
   <nav class="seg views" id="views">
     <button data-view="terminal" class="on" data-tip="Bookmap, footprint, nến và sổ lệnh trực tiếp">Terminal</button>
+    <button data-view="multi" data-tip="Nhiều biểu đồ nến cùng lúc, mỗi ô một mã và khung thời gian riêng; kéo thả, đổi cỡ, thu nhỏ từng ô">Đa biểu đồ</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
     <button data-view="markets" data-tip="Hàng hoá phái sinh, forex và lãi suất, crypto, quỹ ETF, cá voi và thanh lý">Thị trường</button>
     <button data-view="options" data-tip="GEX, tường call/put, điểm lật gamma, max pain, bề mặt IV 3D: BTC, ETH, S&amp;P 500, Nasdaq, vàng, dầu…">Quyền chọn</button>
@@ -229,15 +230,45 @@
     <div class="dom-hint">Lăn chuột: xem lại · Bấm đúp: về mới nhất · Dòng đậm: lệnh lớn</div>
   </section>
 
+  <section class="panel order-panel" id="orderPanel">
+    <div class="panel-head">
+      <span class="title" data-g="paper-trading">Lệnh giả lập</span>
+      <small class="muted" id="ptAcct"></small>
+      <div class="spacer"></div>
+      <button class="icon minb" data-min="orderPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng">—</button>
+    </div>
+    <div class="ptbody">
+      <div class="ptrow">
+        <div class="seg" id="ptType"><button data-pt="market" class="on">Market</button><button data-pt="limit">Limit</button></div>
+        <label class="field small" data-tip="Đòn bẩy (ký quỹ cô lập)">x <input type="number" id="ptLev" min="1" max="125" value="10" style="width:52px"></label>
+      </div>
+      <div class="ptgrid">
+        <label>Khối lượng <input type="number" id="ptQty" min="0" step="any" placeholder="0.01"></label>
+        <label id="ptPriceBox" hidden>Giá limit <input type="number" id="ptPrice" step="any"></label>
+        <label data-tip="Cắt lỗ: giá chạm thì đóng vị thế. Để trống nếu không dùng. Sau khi vào lệnh có thể kéo trên biểu đồ">SL <input type="number" id="ptSl" step="any" placeholder="tuỳ chọn"></label>
+        <label data-tip="Chốt lời: giá chạm thì đóng vị thế. Để trống nếu không dùng">TP <input type="number" id="ptTp" step="any" placeholder="tuỳ chọn"></label>
+      </div>
+      <div class="ptrow ptbtns"><button class="buy" id="ptBuy">MUA</button><button class="sell" id="ptSell">BÁN</button></div>
+      <div id="ptPos"></div>
+      <div id="ptOrders"></div>
+      <div id="ptFills"></div>
+      <div class="ptrow"><button class="tool" id="ptReset" data-tip="Đặt lại tài khoản giả lập về 10.000 USDT">Đặt lại tài khoản</button></div>
+      <p class="note">Tiền ảo, khớp theo sổ lệnh thật. Trên Bookmap/Footprint: kéo đường lệnh, SL, TP để sửa giá; bấm đúp lên đường để huỷ; Alt + bấm chuột để đặt nhanh lệnh limit tại giá đó.</p>
+    </div>
+  </section>
+
 </main>
 
 <nav class="mnav" id="mnav" aria-label="Chọn khung">
   <button data-panel="mainPanel" class="on"><i>▦</i>Biểu đồ</button>
   <button data-panel="domPanel"><i>☰</i>Sổ lệnh</button>
   <button data-panel="tapePanel"><i>≋</i>Tape</button>
+  <button data-panel="orderPanel"><i>⇅</i>Lệnh</button>
 </nav>
 
 <!-- ============ PHÂN TÍCH ============ -->
+<main class="view mcview" id="view-multi" hidden></main>
+
 <main class="view analysis" id="view-analysis" hidden>
   <div class="cards">
     <section class="card wide">
@@ -530,6 +561,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610152113"></script>
+<script type="module" src="js/app.js?v=202610152132"></script>
 </body>
 </html>

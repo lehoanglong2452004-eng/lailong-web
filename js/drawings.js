@@ -7,10 +7,10 @@ export const DRAW_COLORS = ["#ffd166", "#4dd0e1", "#ef476f", "#06d6a0", "#c792ea
 
 export class Drawings {
   constructor() {
-    try { this.all = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { this.all = {}; }
+    try { this.all = JSON.parse(sessionStorage.getItem(KEY) || "{}"); } catch { this.all = {}; }
     this.sym = ""; this.tool = null; this.preview = null; this.colorI = 0;
   }
-  save() { try { localStorage.setItem(KEY, JSON.stringify(this.all)); } catch { /* chế độ riêng tư */ } }
+  save() { try { sessionStorage.setItem(KEY, JSON.stringify(this.all)); } catch { /* chế độ riêng tư */ } }
   list() { return this.all[this.sym] || []; }
   add(shape) { (this.all[this.sym] || (this.all[this.sym] = [])).push({ ...shape, color: DRAW_COLORS[this.colorI++ % DRAW_COLORS.length], id: Date.now() + Math.random() }); this.save(); }
   remove(id) { this.all[this.sym] = this.list().filter(s => s.id !== id); this.save(); }

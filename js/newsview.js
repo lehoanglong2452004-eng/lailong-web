@@ -1,7 +1,7 @@
 // Lai Long Web: lịch kinh tế, tin tức 6 mục, bản đồ tác động và phản ứng giá sau tin.
 // Bản web đọc data/calendar.json, data/news.json, data/reactions.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/news.py).
-import { getJson, fmtTime, fmtDate } from "./util.js?v=202610152113";
+import { getJson, fmtTime, fmtDate } from "./util.js?v=202610152132";
 
 const FLAG = { USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", JPY: "🇯🇵", CNY: "🇨🇳", CAD: "🇨🇦", AUD: "🇦🇺", NZD: "🇳🇿", CHF: "🇨🇭" };
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],
@@ -76,7 +76,7 @@ export function avgReaction(events, assets) {
 
 export function initNews({ $, esc, alerts, coin }) {
   let cal = null, news = null, react = null, onlyCoin = false, cat = "", seenHot = null, sel = null; const firedEv = new Set();
-  try { cat = localStorage.getItem("lailong.newscat") || ""; } catch { /* bỏ qua */ }
+  try { cat = sessionStorage.getItem("lailong.newscat") || ""; } catch { /* bỏ qua */ }
   async function load() {
     const get = async u => { try { return await getJson(`${u}?t=${Math.floor(Date.now() / 60e3)}`); } catch { return null; } };
     const [c, n, r] = await Promise.all([get("data/calendar.json"), get("data/news.json"), get("data/reactions.json")]);
@@ -202,7 +202,7 @@ export function initNews({ $, esc, alerts, coin }) {
       if (sel) $("impactDetail").scrollIntoView({ block: "nearest", behavior: "smooth" });
     });
   }
-  $("newsTabs").onclick = e => { const b = e.target.closest("[data-cat]"); if (!b) return; cat = b.dataset.cat; try { localStorage.setItem("lailong.newscat", cat); } catch { /* bỏ qua */ } renderNews(); };
+  $("newsTabs").onclick = e => { const b = e.target.closest("[data-cat]"); if (!b) return; cat = b.dataset.cat; try { sessionStorage.setItem("lailong.newscat", cat); } catch { /* bỏ qua */ } renderNews(); };
   $("newsOnly").onclick = () => { onlyCoin = !onlyCoin; renderNews(); };
   load(); setInterval(load, 5 * 60e3); setInterval(tick, 30e3);
   return { render, load };

@@ -1,19 +1,19 @@
 // Lai Long Web: trang Backtest (giao diện). Chiến lược nằm trong strategies.js, bộ máy chạy lệnh trong backtest.js.
-import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610152113";
-import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610152113";
-import { EquityChart } from "./fractalview.js?v=202610152113";
-import { sampleLevel } from "./fractal.js?v=202610152113";
-import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610152113";
-import { isDeltaApprox } from "./analytics.js?v=202610152113";
-import { robustness } from "./robust.js?v=202610152113";
-import { forwardVerdict, barsNeeded } from "./forward.js?v=202610152113";
-import { EXCHANGES } from "./exchanges.js?v=202610152113";
+import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610152132";
+import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610152132";
+import { EquityChart } from "./fractalview.js?v=202610152132";
+import { sampleLevel } from "./fractal.js?v=202610152132";
+import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610152132";
+import { isDeltaApprox } from "./analytics.js?v=202610152132";
+import { robustness } from "./robust.js?v=202610152132";
+import { forwardVerdict, barsNeeded } from "./forward.js?v=202610152132";
+import { EXCHANGES } from "./exchanges.js?v=202610152132";
 
 const FWD_KEY = "lailong.forward.v1", PIN_KEY = "lailong.btPins", SEL_KEY = "lailong.btStrat", LEG_KEY = "lailong.btLeg";
 const sgn = (x, d = 2) => (x >= 0 ? "+" : "") + x.toFixed(d);
 const fmtPF = x => isFinite(x) ? x.toFixed(2) : x === Infinity ? "∞" : "-";
 const cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
-const store = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* bỏ qua */ } } };
+const store = { get(k, d) { try { const v = sessionStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch { /* bỏ qua */ } } };
 // Kết luận: cần ít nhất 30 lệnh và cận dưới khoảng tin cậy 95% của kỳ vọng R phải trên 0
 export function verdict(st) {
   if (!st.n) return { txt: "Không có lệnh", cls: "" };

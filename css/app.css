@@ -507,3 +507,40 @@ body.dragging-panel, body.dragging-panel * { cursor: grabbing !important; }
 .gexsurf { grid-column: span 2; }
 .gexsurf .gexcv.surfcv { height: 380px; }
 @media (max-width: 1400px) { .gexsurf { grid-column: auto; } }
+
+/* ---------- khung lệnh giả lập ---------- */
+.order-panel { grid-area: tape; }
+.ptbody { flex: 1; overflow: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+.ptrow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ptgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ptgrid label { display: flex; flex-direction: column; gap: 2px; color: var(--muted); font-size: 11px; }
+.ptgrid input { width: 100%; }
+.ptbtns button { flex: 1; font-weight: 800; padding: 7px; border: 0; color: #fff; }
+.ptbtns .buy { background: var(--buy); } .ptbtns .sell { background: var(--sell); }
+.ptbody table { font-size: 11.5px; }
+.ptpos { border: 1px solid var(--line); padding: 6px 8px; background: var(--panel-2); line-height: 1.6; }
+.ptpos b.up { color: var(--buy); } .ptpos b.dn { color: var(--sell); }
+.ptpos .ptrow button { font-size: 11px; padding: 2px 8px; }
+
+/* ---- tab Đa biểu đồ ---- */
+.mcview { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mcbar { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-bottom: 1px solid var(--line); background: var(--panel-2); flex-wrap: wrap; }
+.mcbar .title { font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; font-size: 12px; }
+.mcbar .hint { color: var(--muted); font-size: 11px; flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.mcws { flex: 1; min-height: 0; position: relative; }
+.mcws.tiled > .panel { position: absolute; }
+.mcws.tiled > .panel.minimized { display: none; }
+.mcws.tiled > .panel > .panel-head { cursor: grab; }
+.mcws.tiled > .panel > .panel-head :is(button, select, input, label) { cursor: pointer; }
+.mc-panel .panel-head { gap: 6px; padding-left: 6px; flex-wrap: nowrap; overflow: hidden; }
+.mc-panel .mcnum { color: var(--accent); }
+.mc-panel .mcsym { width: 100px; padding: 2px 6px; text-transform: uppercase; }
+.mc-panel .mciv { padding: 2px 4px; }
+.mc-panel .mcpx { font-family: var(--mono); white-space: nowrap; }
+.mc-panel .hint { flex: 1; }
+@media (max-width: 900px) {
+  .mcws { overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 4px; }
+  .mcws > .panel { flex: 0 0 340px; }
+  .mcws > .panel.mcoff, .mc-panel [data-mcmin] { display: none; }
+  .mcbar .hint { display: none; }
+}

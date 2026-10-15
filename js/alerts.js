@@ -1,6 +1,6 @@
 // Lai Long Web: cảnh báo bằng tiếng và thông báo trình duyệt.
 // Loại cảnh báo: nghi iceberg, tường bị rút khi giá tới gần, Big Trade, giá chạm mức đã đặt.
-// Cài đặt và các mức giá được lưu trên máy này (localStorage). Mỗi loại kêu tối đa một lần mỗi 5 giây.
+// Cài đặt và các mức giá được lưu trên máy này (sessionStorage). Mỗi loại kêu tối đa một lần mỗi 5 giây.
 
 const KEY = "lailong.alerts";
 const DEF = { ice: true, spoof: true, big: false, newsEv: true, newsHot: false, sound: true, notify: false, levels: [] };
@@ -9,10 +9,10 @@ const TONES = { up: [880, 1175], down: [523, 392], ice: [988, 988], price: [1319
 export class Alerts {
   constructor(show) {
     this.show = show; this.last = {}; this.hist = [];
-    try { this.cfg = { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || "{}") }; } catch { this.cfg = { ...DEF }; }
+    try { this.cfg = { ...DEF, ...JSON.parse(sessionStorage.getItem(KEY) || "{}") }; } catch { this.cfg = { ...DEF }; }
     if (!Array.isArray(this.cfg.levels)) this.cfg.levels = [];
   }
-  save() { try { localStorage.setItem(KEY, JSON.stringify(this.cfg)); } catch { /* chế độ riêng tư */ } }
+  save() { try { sessionStorage.setItem(KEY, JSON.stringify(this.cfg)); } catch { /* chế độ riêng tư */ } }
 
   fire(kind, text, tone = "price", force = false) {
     const now = Date.now();

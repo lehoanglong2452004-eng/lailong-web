@@ -22,12 +22,12 @@ export function applyTheme(t) {
   r.setProperty("--bg", T.bg); r.setProperty("--panel", T.panel); r.setProperty("--panel-2", T.panel2);
   r.setProperty("--line", T.line); r.setProperty("--ink", T.text); r.setProperty("--muted", T.muted);
   r.setProperty("--accent", T.accent); r.setProperty("--buy", T.up); r.setProperty("--sell", T.down);
-  try { localStorage.setItem(STORE, JSON.stringify(T)); } catch { /* bỏ qua */ }
+  try { sessionStorage.setItem(STORE, JSON.stringify(T)); } catch { /* bỏ qua */ }
   window.dispatchEvent(new Event("lailong-theme"));
 }
 
 export function loadTheme() {
   let t = null;
-  try { t = JSON.parse(localStorage.getItem(STORE) || "null"); } catch { t = null; }
+  try { t = JSON.parse(sessionStorage.getItem(STORE) || "null"); } catch { t = null; }
   applyTheme({ ...THEMES.bloomberg, ...(t || {}) });
 }

@@ -4,13 +4,13 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610152113";
-import { cvd as cvdOf } from "./analytics.js?v=202610152113";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610152113";
-import { GROUPS } from "./flowtools.js?v=202610152113";
-import { WALL_KIND } from "./walls.js?v=202610152113";
-import { T, alpha } from "./theme.js?v=202610152113";
-import { drawShapes } from "./drawings.js?v=202610152113";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610152132";
+import { cvd as cvdOf } from "./analytics.js?v=202610152132";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610152132";
+import { GROUPS } from "./flowtools.js?v=202610152132";
+import { WALL_KIND } from "./walls.js?v=202610152132";
+import { T, alpha } from "./theme.js?v=202610152132";
+import { drawShapes } from "./drawings.js?v=202610152132";
 
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
@@ -114,6 +114,7 @@ export class FlowChart {
     ctx.fillStyle = C.bg; ctx.fillRect(0, 0, L.w, L.h);
     if (!this.bars.length) { ctx.fillStyle = C.axis; ctx.font = "14px Segoe UI, sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.opts.emptyText || "Đang tải dữ liệu...", L.pw / 2, L.ph / 2); return; }
     const [first, last] = this._visible();
+    if (last < first) return; // khung quá hẹp hoặc đã kéo hết nến ra ngoài
     let lo = Infinity, hi = -Infinity;
     for (let i = first; i <= last; i++) { lo = Math.min(lo, this.bars[i].l); hi = Math.max(hi, this.bars[i].h); }
     const mid = (hi + lo) / 2, half = Math.max((hi - lo) / 2, mid * 0.0005) * 1.1 * this.yZoom;
@@ -341,6 +342,7 @@ export class FlowChart {
   }
 
   _ownLines(L) {
+    if (this.ol) return this.ol.draw(this.ctx, L);
     const ctx = this.ctx, dec = decimalsFor(this.info.tick || this.step);
     const line = (p, color, text, dash) => {
       const y = Math.round(this.yOf(p)) + 0.5; if (y < 0 || y > L.priceH) return;

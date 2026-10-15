@@ -4,10 +4,10 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202610152113";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610152113";
-import { T, alpha } from "./theme.js?v=202610152113";
-import { drawShapes } from "./drawings.js?v=202610152113";
+import { COL_MS } from "./market.js?v=202610152132";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610152132";
+import { T, alpha } from "./theme.js?v=202610152132";
+import { drawShapes } from "./drawings.js?v=202610152132";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
 
@@ -467,6 +467,7 @@ export class Heatmap {
   }
 
   _ownLines(L) {
+    if (this.ol) return this.ol.draw(this.ctx, L);
     const ctx = this.ctx, dec = decimalsFor(this.m.tick || this.m.grid);
     const line = (p, color, text, dash) => {
       const y = Math.round(this.yOf(p)) + 0.5; if (y < 0 || y > L.ph) return;

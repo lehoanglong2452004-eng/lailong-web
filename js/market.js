@@ -5,9 +5,9 @@
 //   kèm khối lượng mua/bán chủ động khớp trong cột đó.
 // - Bars: nến của khung đang xem, nến cuối được cập nhật theo từng lệnh khớp, kèm footprint.
 
-import { niceStep, INTERVALS } from "./util.js?v=202610152113";
-import { TapeAggregator, quantile } from "./orderflow.js?v=202610152113";
-import { IcebergTracker } from "./iceberg.js?v=202610152113";
+import { niceStep, INTERVALS } from "./util.js?v=202610152132";
+import { TapeAggregator, quantile } from "./orderflow.js?v=202610152132";
+import { IcebergTracker } from "./iceberg.js?v=202610152132";
 
 export const COL_MS = 500;
 const MAX_COLS = 7200;       // 1 giờ ở 0,5 giây mỗi cột (bộ ghi trên laptop giữ lâu hơn)
@@ -274,7 +274,7 @@ export class MarketState {
   }
 }
 
-function deltaOf(b) {
+export function deltaOf(b) {
   if (typeof b.bv === "number" && isFinite(b.bv)) return 2 * b.bv - b.v;
   const r = b.h - b.l; return r > 0 ? b.v * (b.c - b.o) / r : 0;
 }

@@ -1,40 +1,47 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610152113";
-import { MarketState, Book } from "./market.js?v=202610152113";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610152113";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610152113";
-import { FlowChart } from "./flowchart.js?v=202610152113";
-import { TpoChart } from "./tpo.js?v=202610152113";
-import { Dom } from "./dom.js?v=202610152113";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610152113";
-import { initBacktest } from "./backtestview.js?v=202610152113";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610152113";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610152113";
-import { Tape } from "./tape.js?v=202610152113";
-import { LiqMap } from "./liqmap.js?v=202610152113";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610152113";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610152113";
-import { Alerts } from "./alerts.js?v=202610152113";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610152113";
-import { initNews } from "./newsview.js?v=202610152113";
-import { initMarkets } from "./marketsview.js?v=202610152113";
-import { initGex } from "./gexview.js?v=202610152113";
-import { Drawings } from "./drawings.js?v=202610152113";
-import { Layout, NAMES as PANEL_NAMES } from "./layout.js?v=202610152113";
-import { DOM_COLS } from "./dom.js?v=202610152113";
-import { initFractal } from "./fractalview.js?v=202610152113";
-import { initJournal } from "./journalview.js?v=202610152113";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610152113";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610152113";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610152113";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610152132";
+import { MarketState, Book } from "./market.js?v=202610152132";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610152132";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610152132";
+import { FlowChart } from "./flowchart.js?v=202610152132";
+import { TpoChart } from "./tpo.js?v=202610152132";
+import { Dom } from "./dom.js?v=202610152132";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610152132";
+import { initBacktest } from "./backtestview.js?v=202610152132";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610152132";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610152132";
+import { Tape } from "./tape.js?v=202610152132";
+import { LiqMap } from "./liqmap.js?v=202610152132";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610152132";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610152132";
+import { Alerts } from "./alerts.js?v=202610152132";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610152132";
+import { initNews } from "./newsview.js?v=202610152132";
+import { initMarkets } from "./marketsview.js?v=202610152132";
+import { initGex } from "./gexview.js?v=202610152132";
+import { Drawings } from "./drawings.js?v=202610152132";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610152132";
+import { PaperBroker } from "./paper.js?v=202610152132";
+import { OrderLines } from "./orderlines.js?v=202610152132";
+import { MultiChart } from "./multichart.js?v=202610152132";
+import { DOM_COLS } from "./dom.js?v=202610152132";
+import { initFractal } from "./fractalview.js?v=202610152132";
+import { initJournal } from "./journalview.js?v=202610152132";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610152132";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610152132";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610152132";
 
 const $ = id => document.getElementById(id);
+// Tuỳ chỉnh (bố cục, cột, khung, màu, cài đặt biểu đồ…) chỉ giữ trong lúc tab còn mở (sessionStorage).
+// Đóng tab rồi mở lại là về mặc định. Chỉ giữ lâu dài: nhật ký giao dịch, tài khoản giả lập và bố cục bro tự bấm "Lưu".
+const KEEP = new Set(["lailong.journal.v1", "lailong.paper.v1", "lailong.layout.presets"]);
+try { for (const k of Object.keys(localStorage)) if (k.startsWith("lailong.") && !KEEP.has(k)) localStorage.removeItem(k); } catch { /* bỏ qua */ }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 loadTheme();
 
 // ---------- trạng thái ----------
-const saved = (() => { try { return JSON.parse(localStorage.getItem("lailong.ui") || "{}"); } catch { return {}; } })();
+const saved = (() => { try { return JSON.parse(sessionStorage.getItem("lailong.ui") || "{}"); } catch { return {}; } })();
 const qs = new URLSearchParams(location.search);
 const S = {
   ex: qs.get("ex") || saved.ex || "BINANCE",
@@ -48,7 +55,7 @@ const S = {
 if (!EXCHANGES[S.ex]) S.ex = "BINANCE";
 if (!INTERVALS[S.interval]) S.interval = "1m";
 const persist = () => {
-  try { localStorage.setItem("lailong.ui", JSON.stringify({ ex: S.ex, symbol: S.symbol, interval: S.interval, view: S.view, mode: S.mode, multi: S.multi })); } catch { /* bỏ qua */ }
+  try { sessionStorage.setItem("lailong.ui", JSON.stringify({ ex: S.ex, symbol: S.symbol, interval: S.interval, view: S.view, mode: S.mode, multi: S.multi })); } catch { /* bỏ qua */ }
   const u = new URL(location.href); u.searchParams.set("ex", S.ex); u.searchParams.set("s", S.symbol); u.searchParams.set("i", S.interval); u.searchParams.set("v", S.view);
   history.replaceState(null, "", u);
 };
@@ -124,7 +131,7 @@ async function load() {
   }) : null;
   const c0 = ex().connect(S.symbol, info, pBook, {
     onBook,
-    onTrades: list => { if (token !== loadToken) return; market.onTrades(list); },
+    onTrades: list => { if (token !== loadToken) return; market.onTrades(list); paperTrades(list); },
     onLiq: list => { if (token !== loadToken) return; market.onLiq(list); },
     onStatus: (text, ok) => { if (token === loadToken) { setConn(multi ? `${text} · Multibook` : text, ok); log(text); } },
   });
@@ -300,6 +307,7 @@ heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
 const newsView = initNews({ $, esc, alerts, coin });
 const marketsView = initMarkets({ $, esc });
 const gexView = initGex({ $, esc });
+const multiChart = new MultiChart($("view-multi"), { ex: () => ex() });
 
 function scheduleFlow() { if (flowTimer) return; flowTimer = setTimeout(() => { flowTimer = null; recomputeFlow(); }, 1500); }
 
@@ -514,7 +522,7 @@ document.addEventListener("dblclick", e => {
   el.dispatchEvent(new Event("change", { bubbles: true }));
   el.classList.add("reset"); setTimeout(() => el.classList.remove("reset"), 500);
 });
-const CANVAS_TIP = { heat, flow, tpo, dom, tape, lmap, btChart, ...fractal.tips, ...backtest.tips };
+const CANVAS_TIP = { heat, flow, tpo, dom, tape, lmap, btChart, ...fractal.tips, ...backtest.tips, ...multiChart.tips };
 let tipFrame = 0, lastMove = null;
 function showTip(html, x, y) {
   tipEl.innerHTML = html; tipEl.hidden = false;
@@ -617,10 +625,10 @@ window.addEventListener("lailong-theme", () => {
 // ---------- kéo giãn khung và phóng to ----------
 const LAYOUT_KEY = "lailong.layout";
 const ws = $("view-terminal");
-const layout = (() => { try { return JSON.parse(localStorage.getItem(LAYOUT_KEY) || "{}"); } catch { return {}; } })();
+const layout = (() => { try { return JSON.parse(sessionStorage.getItem(LAYOUT_KEY) || "{}"); } catch { return {}; } })();
 function setLayout(k, v) {
   if (v == null) { delete layout[k]; ws.style.removeProperty("--" + k); } else { layout[k] = v; ws.style.setProperty("--" + k, v + "px"); }
-  try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch { /* bỏ qua */ }
+  try { sessionStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch { /* bỏ qua */ }
 }
 for (const k of ["rightW", "bottomH", "tapeW", "lmapW"]) if (layout[k]) ws.style.setProperty("--" + k, layout[k] + "px");
 function splitter(el, k, calc) {
@@ -658,13 +666,14 @@ function setConn(text, ok) { const p = $("connPill"); p.className = "pill" + (ok
 function setView(v) {
   S.view = v; persist();
   for (const b of $("views").children) b.classList.toggle("on", b.dataset.view === v);
-  for (const id of ["terminal", "analysis", "markets", "options", "backtest", "fractal", "journal"]) $("view-" + id).hidden = id !== v;
+  for (const id of ["terminal", "multi", "analysis", "markets", "options", "backtest", "fractal", "journal"]) $("view-" + id).hidden = id !== v;
   document.body.classList.toggle("not-terminal", v !== "terminal");
   heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
   if (v === "analysis") renderAnalysis();
   if (v === "journal") journal.show();
   if (v === "markets") marketsView.show(); else marketsView.hide();
   if (v === "options") gexView.show(); else gexView.hide();
+  if (v === "multi") multiChart.show(); else multiChart.hide();
 }
 function setMode(m) {
   S.mode = m; persist();
@@ -694,7 +703,7 @@ $("layerBtn").onclick = e => { e.stopPropagation(); $("layerBtn").parentElement.
 $("hmCfgBtn").onclick = e => { e.stopPropagation(); $("hmCfgBtn").parentElement.classList.toggle("open"); };
 // ---------- máy ghi 24/7 (chỉ khi chạy trên laptop) ----------
 let laptop = null;
-const recHours = () => { const v = +localStorage.getItem("lailong.recHours"); return isFinite(v) && localStorage.getItem("lailong.recHours") != null ? v : 6; };
+const recHours = () => { const v = +sessionStorage.getItem("lailong.recHours"); return isFinite(v) && sessionStorage.getItem("lailong.recHours") != null ? v : 6; };
 async function checkLaptop() {
   try { laptop = await getJson("/api/record/info"); } catch { laptop = null; }
   $("recWrap").hidden = !laptop; if (!laptop) return;
@@ -706,7 +715,7 @@ async function checkLaptop() {
 $("recSave").onclick = async () => {
   try {
     const cfg = await postJson("/api/record/config", { symbols: $("recSyms").value.split(/[\s,;]+/).filter(Boolean), keep_days: +$("recKeep").value || 7 });
-    try { localStorage.setItem("lailong.recHours", String(Math.max(0, Math.min(72, +$("recHours").value || 0)))); } catch { /* bỏ qua */ }
+    try { sessionStorage.setItem("lailong.recHours", String(Math.max(0, Math.min(72, +$("recHours").value || 0)))); } catch { /* bỏ qua */ }
     toast(`Đã lưu: ghi ${cfg.symbols.join(", ") || "không mã nào"}, giữ ${cfg.keep_days} ngày. Máy ghi tự nhận sau khoảng 1 phút.`); checkLaptop();
   } catch (e) { toast(`Không lưu được: ${e.message}`, true); }
 };
@@ -769,7 +778,7 @@ $("multiBook").onchange = () => {
 // Cài đặt Bookmap: đọc từ máy, gắn vào từng ô, lưu lại mỗi khi đổi
 {
   const KEY = "lailong.hmcfg";
-  let saved = {}; try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { /* bỏ qua */ }
+  let saved = {}; try { saved = JSON.parse(sessionStorage.getItem(KEY) || "{}"); } catch { /* bỏ qua */ }
   for (const [k, v] of Object.entries(saved)) if (k in HM_DEFAULTS && typeof v === typeof HM_DEFAULTS[k]) heat.cfg[k] = v;
   for (const el of document.querySelectorAll("[data-hm]")) {
     const k = el.dataset.hm, d = HM_DEFAULTS[k];
@@ -778,7 +787,7 @@ $("multiBook").onchange = () => {
       let v = el.type === "checkbox" ? el.checked : el.value;
       if (typeof d === "number") { v = +v; if (!isFinite(v) || el.value === "") v = d; if (el.min !== "") v = Math.max(+el.min, v); if (el.max !== "") v = Math.min(+el.max, v); }
       heat.cfg[k] = v; heat._cut = null; heat.dirty = true;
-      try { localStorage.setItem(KEY, JSON.stringify(heat.cfg)); } catch { /* bỏ qua */ }
+      try { sessionStorage.setItem(KEY, JSON.stringify(heat.cfg)); } catch { /* bỏ qua */ }
     });
   }
 }
@@ -803,14 +812,14 @@ for (const id of ["clOn", "clMetric", "clTop", "clMin"]) $(id).onchange = clUpda
 // điện thoại chưa chọn cột: mặc định ít cột cho vừa màn hình nhỏ (đổi trong "Cột ▾")
 const domColsSaved = (() => {
   try {
-    const v = JSON.parse(localStorage.getItem("lailong.domcols") || "null");
+    const v = JSON.parse(sessionStorage.getItem("lailong.domcols") || "null");
     // bản mới thêm cột "Cân bằng": bật một lần cho người đã lưu lựa chọn cột trước đó
-    if (v && !localStorage.getItem("lailong.domcols.v2")) { localStorage.setItem("lailong.domcols.v2", "1"); if (!matchMedia("(max-width: 600px)").matches) v.push("imb"); localStorage.setItem("lailong.domcols", JSON.stringify(v)); }
+    if (v && !sessionStorage.getItem("lailong.domcols.v2")) { sessionStorage.setItem("lailong.domcols.v2", "1"); if (!matchMedia("(max-width: 600px)").matches) v.push("imb"); sessionStorage.setItem("lailong.domcols", JSON.stringify(v)); }
     return v;
   } catch { return null; }
 })() || (matchMedia("(max-width: 600px)").matches ? ["bid", "sells", "buys", "ask", "walls"] : null);
 $("domColMenu").innerHTML = DOM_COLS.filter(c => c.id !== "price").map(c => `<label data-tip="${esc(c.tip)}"><input type="checkbox" data-domcol="${c.id}" ${domColsSaved ? (domColsSaved.includes(c.id) ? "checked" : "") : c.off ? "" : "checked"}> ${esc(c.label)}</label>`).join("");
-const domColUpdate = () => { const ids = [...document.querySelectorAll("[data-domcol]")].filter(x => x.checked).map(x => x.dataset.domcol); dom.setColumns(ids); try { localStorage.setItem("lailong.domcols", JSON.stringify(ids)); } catch { /* bỏ qua */ } };
+const domColUpdate = () => { const ids = [...document.querySelectorAll("[data-domcol]")].filter(x => x.checked).map(x => x.dataset.domcol); dom.setColumns(ids); try { sessionStorage.setItem("lailong.domcols", JSON.stringify(ids)); } catch { /* bỏ qua */ } };
 $("domColMenu").onchange = domColUpdate; domColUpdate();
 $("domColBtn").onclick = e => { e.stopPropagation(); $("domColBtn").parentElement.classList.toggle("open"); };
 $("domClear").onclick = () => { market.tradedAt.clear(); dom.dirty = true; };
@@ -818,10 +827,64 @@ $("tapeSmart").onchange = () => { tape.smart = $("tapeSmart").checked; tape.dirt
 $("tapeBig").onchange = () => { tape.bigOnly = $("tapeBig").checked; tape.dirty = true; };
 $("tapeMin").oninput = () => { tape.minQ = +$("tapeMin").value || 0; tape.dirty = true; };
 $("lmapWin").onchange = () => lmap.setWindow(+$("lmapWin").value);
+// ---------- lệnh giả lập: khung đặt lệnh và đường lệnh kéo được trên biểu đồ ----------
+const paper = new PaperBroker(() => schedulePaper());
+const pkey = () => `${S.ex}:${S.symbol}`;
+let paperTimer = null, ptType = "market";
+function schedulePaper() { if (!paperTimer) paperTimer = setTimeout(() => { paperTimer = null; renderPaper(); }, 150); }
+function paperTrades(list) {
+  const k = pkey(); if (!paper.openOrders(k).length && !paper.pos(k).qty) return;
+  paper.onTrades(k, list); paper.checkBrackets(k, market.book); schedulePaper();
+}
+const olOpts = plotH => ({
+  tick: () => market.tick, plotH,
+  onDrag: (kind, id, price) => kind === "order" ? paper.modify(id, price, market.book) : paper.setBracket(pkey(), kind, price),
+  onCancel: (kind, id) => kind === "order" ? paper.cancel(id) : paper.setBracket(pkey(), kind, null),
+  onPlace: price => {
+    const qty = +$("ptQty").value, mid = market.book.mid();
+    if (!(qty > 0)) { toast("Nhập khối lượng trong khung Lệnh giả lập trước", true); if (tiles.isMin("orderPanel")) tiles.restore("orderPanel"); return; }
+    const r = paper.place({ key: pkey(), side: mid != null && price > mid ? "sell" : "buy", type: "limit", qty, price, lev: +$("ptLev").value }, market.book);
+    if (r.error) toast(r.error, true);
+  },
+});
+heat.ol = new OrderLines(heat, $("heat"), olOpts(L => L.ph));
+flow.ol = new OrderLines(flow, $("flow"), olOpts(L => L.priceH));
+for (const c of [heat, flow]) { const h = c.hitTest.bind(c); c.hitTest = (x, y) => c.ol.hitTest(x, y) || h(x, y); }
+function renderPaper() {
+  const k = pkey(), pv = paper.positionView(k), orders = paper.openOrders(k), a = paper.account(), dec = decimalsFor(market.tick || 0.01);
+  heat.ol.set(orders, pv); flow.ol.set(orders, pv);
+  $("ptAcct").textContent = `Vốn ${a.equity.toFixed(2)} · khả dụng ${a.available.toFixed(2)} USDT`;
+  $("ptPos").innerHTML = pv.qty ? `<div class="ptpos"><b class="${pv.qty > 0 ? "up" : "dn"}">${pv.qty > 0 ? "LONG" : "SHORT"} ${+Math.abs(pv.qty).toFixed(6)} ${esc(coin())}</b> @ ${pv.avg.toFixed(dec)} · x${pv.lev}<br>
+    Lãi/lỗ <b class="${pv.upnl >= 0 ? "up" : "dn"}">${pv.upnl >= 0 ? "+" : ""}${pv.upnl.toFixed(2)} USDT</b> · thanh lý ${pv.liq.toFixed(dec)}<br>
+    SL ${pv.sl != null ? pv.sl.toFixed(dec) : "–"} · TP ${pv.tp != null ? pv.tp.toFixed(dec) : "–"}
+    <div class="ptrow"><button data-pa="close">Đóng vị thế</button><button data-pa="sl" data-tip="Đặt SL theo ô SL ở trên">Đặt SL</button><button data-pa="tp" data-tip="Đặt TP theo ô TP ở trên">Đặt TP</button></div></div>` : `<div class="muted">Chưa có vị thế ${esc(S.symbol)}.</div>`;
+  $("ptOrders").innerHTML = orders.length ? `<table><tbody>${orders.map(o => `<tr><td class="${o.side === "buy" ? "pos" : "neg"}">${o.side === "buy" ? "MUA" : "BÁN"}</td><td>${+o.remaining.toFixed(6)}</td><td>@ ${o.price.toFixed(dec)}</td><td><button class="icon" data-pc="${o.id}" data-tip="Huỷ lệnh">✕</button></td></tr>`).join("")}</tbody></table>` : "";
+  const fills = paper.s.fills.filter(f => f.key === k).slice(0, 5);
+  $("ptFills").innerHTML = fills.length ? `<div class="mh">Khớp gần đây</div><table><tbody>${fills.map(f => `<tr><td>${fmtTime(f.t)}</td><td class="${f.side === "buy" ? "pos" : "neg"}">${f.side === "buy" ? "MUA" : "BÁN"}</td><td>${+f.qty.toFixed(6)}</td><td>@ ${f.price.toFixed(dec)}</td></tr>`).join("")}</tbody></table>` : "";
+}
+$("ptType").onclick = e => { const b = e.target.closest("[data-pt]"); if (!b) return; ptType = b.dataset.pt; for (const x of $("ptType").children) x.classList.toggle("on", x === b); $("ptPriceBox").hidden = ptType !== "limit"; if (ptType === "limit" && !$("ptPrice").value) { const m = market.book.mid(); if (m != null) $("ptPrice").value = (Math.round(m / (market.tick || 1)) * (market.tick || 1)).toFixed(decimalsFor(market.tick || 0.01)); } };
+const ptPlace = side => {
+  const r = paper.place({ key: pkey(), side, type: ptType, qty: +$("ptQty").value, price: +$("ptPrice").value, lev: +$("ptLev").value, sl: $("ptSl").value || null, tp: $("ptTp").value || null }, market.book);
+  if (r.error) toast(r.error, true);
+};
+$("ptBuy").onclick = () => ptPlace("buy"); $("ptSell").onclick = () => ptPlace("sell");
+$("ptReset").onclick = () => { if (confirm("Đặt lại tài khoản giả lập về 10.000 USDT? Mọi lệnh và vị thế giả lập sẽ bị xoá.")) paper.reset(); };
+$("ptOrders").onclick = e => { const b = e.target.closest("[data-pc]"); if (b) paper.cancel(b.dataset.pc); };
+$("ptPos").onclick = e => {
+  const b = e.target.closest("[data-pa]"); if (!b) return;
+  if (b.dataset.pa === "close") paper.closePosition(pkey(), market.book);
+  else { const v = +$(b.dataset.pa === "sl" ? "ptSl" : "ptTp").value; if (v > 0) paper.setBracket(pkey(), b.dataset.pa, v); else toast("Nhập giá vào ô " + b.dataset.pa.toUpperCase(), true); }
+};
+setInterval(() => { const k = pkey(); if (paper.openOrders(k).length) paper.onBook(k, market.book); if (paper.pos(k).qty) { const m = market.book.mid(); if (m != null) paper.pos(k).mark = market.last ? market.last.p : m; schedulePaper(); } }, 1000);
+renderPaper();
+
 // bố cục lưới ghép: kéo tiêu đề khung để đổi chỗ, nút — để thu nhỏ, menu ▦ Bố cục để lưu / về mặc định
 let tiles = null;
-tiles = new Layout(ws, ["mainPanel", "lmapPanel", "domPanel", "tapePanel"], {
+tiles = new Layout(ws, ["mainPanel", "lmapPanel", "domPanel", "tapePanel", "orderPanel"], {
   legacy: { lmapW: layout.lmapW, rightW: layout.rightW, tapeW: layout.tapeW },
+  // mặc định như bản cũ; khung Lệnh giả lập nằm dưới Smart Tape và thu nhỏ sẵn
+  tree: legacy => { const t = defaultTree(legacy); t.kids[3] = { dir: "col", flex: 0, kids: ["tapePanel", "orderPanel"], size: [0, 380] }; return t; },
+  hiddenDefault: ["orderPanel"],
   onChange: () => {
     if (!tiles) return;
     const off = tiles.isMin("lmapPanel");
@@ -866,11 +929,11 @@ const mShow = id => {
   for (const b of $("mnav").children) b.classList.toggle("on", b.dataset.panel === id);
   // sổ lệnh đi kèm bản đồ thanh khoản bên trái (cùng dòng giá)
   for (const p of ws.querySelectorAll(":scope > .panel")) p.classList.toggle("mshow", p.id === id || (id === "domPanel" && p.id === "lmapPanel"));
-  try { localStorage.setItem("lailong.mpanel", id); } catch { /* bỏ qua */ }
+  try { sessionStorage.setItem("lailong.mpanel", id); } catch { /* bỏ qua */ }
   redrawAll();
 };
 $("mnav").onclick = e => { const b = e.target.closest("[data-panel]"); if (b) mShow(b.dataset.panel); };
-{ let id = null; try { id = localStorage.getItem("lailong.mpanel"); } catch { /* bỏ qua */ } mShow(id && $(id) && $("mnav").querySelector(`[data-panel="${id}"]`) ? id : "mainPanel"); }
+{ let id = null; try { id = sessionStorage.getItem("lailong.mpanel"); } catch { /* bỏ qua */ } mShow(id && $(id) && $("mnav").querySelector(`[data-panel="${id}"]`) ? id : "mainPanel"); }
 // cài như ứng dụng (PWA): chạy được khi mạng chập chờn, mở từ màn hình chính
 let installEv = null;
 addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEv = e; $("installBtn").hidden = false; });

@@ -2,7 +2,7 @@
 // crypto top 10, công ty và quỹ ETF nắm giữ BTC/ETH, cá voi dùng đòn bẩy trên Hyperliquid, thanh lý lớn trực tiếp.
 // Bản web đọc data/markets.json và data/whales.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/markets.py).
-import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202610152113";
+import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202610152132";
 
 const HL = "https://api.hyperliquid.xyz/info";
 const LIQ_WS = "wss://fstream.binance.com/market/ws/!forceOrder@arr";
@@ -76,7 +76,7 @@ const mflow = v => v == null ? "–" : `${v > 0 ? "+" : ""}${v.toFixed(1)}M`;
 export function initMarkets({ $, esc }) {
   let mk = null, wh = null, news = null, cal = null, fxSel = "USD", trCoin = "btc", etfCoin = "btc", openW = null, live = false;
   let showAll = false, sock = null, liqs = [], liqMin = 100e3, timer = null;
-  try { liqMin = +localStorage.getItem("lailong.liqmin") || liqMin; } catch { /* bỏ qua */ }
+  try { liqMin = +sessionStorage.getItem("lailong.liqmin") || liqMin; } catch { /* bỏ qua */ }
 
   async function load() {
     const get = async u => { try { return await getJson(`${u}?t=${Math.floor(Date.now() / 60e3)}`); } catch { return null; } };
@@ -245,7 +245,7 @@ export function initMarkets({ $, esc }) {
   $("whBody").onclick = e => { if (e.target.closest("a")) return; const r = e.target.closest("[data-w]"); if (r) { openW = openW === r.dataset.w ? null : r.dataset.w; renderWhales(); } };
   $("whLive").onclick = refreshLive;
   $("liqMin").value = String(liqMin);
-  $("liqMin").onchange = () => { liqMin = +$("liqMin").value; try { localStorage.setItem("lailong.liqmin", liqMin); } catch { /* bỏ qua */ } liqs = liqs.filter(l => l.usd >= liqMin); renderLiq(); };
+  $("liqMin").onchange = () => { liqMin = +$("liqMin").value; try { sessionStorage.setItem("lailong.liqmin", liqMin); } catch { /* bỏ qua */ } liqs = liqs.filter(l => l.usd >= liqMin); renderLiq(); };
 
   let loaded = false;
   return {

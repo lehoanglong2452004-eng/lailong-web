@@ -48,7 +48,7 @@ export class PaperBroker {
   }
 
   // ----- đặt / huỷ lệnh -----
-  place({ key, side, type, qty, price, lev }, book) {
+  place({ key, side, type, qty, price, lev, sl = null, tp = null }, book) {
     qty = +qty; lev = Math.max(1, Math.min(125, +lev || 1));
     const reject = why => { this.log(`Từ chối lệnh: ${why}`); this._changed(); return { error: why }; };
     if (!(qty > 0)) return reject("khối lượng phải lớn hơn 0");
@@ -61,7 +61,7 @@ export class PaperBroker {
     const need = (qty - reducing) * refPx / lev + qty * refPx * TAKER_FEE;
     if (need > this.account().available + 1e-9) return reject(`không đủ ký quỹ (cần ${need.toFixed(2)} USDT)`);
     p.lev = lev;
-    const o = { id: "P" + this.s.seq++, key, side, type, qty, remaining: qty, price: type === "limit" ? price : 0, lev, status: "open", t: Date.now(), queueAhead: 0, avgFill: 0, filled: 0 };
+    const o = { id: "P" + this.s.seq++, key, side, type, qty, remaining: qty, price: type === "limit" ? price : 0, lev, status: "open", t: Date.now(), queueAhead: 0, avgFill: 0, filled: 0, sl: +sl || null, tp: +tp || null };
     this.s.orders.unshift(o); this.s.orders.length = Math.min(this.s.orders.length, 500);
     // phần khớp ngay với sổ lệnh (taker)
     const levels = side === "buy" ? book.sorted().asks : book.sorted().bids;
@@ -83,6 +83,35 @@ export class PaperBroker {
   cancel(id) {
     const o = this.s.orders.find(x => x.id === id && x.status === "open");
     if (o) { o.status = o.filled ? "partial" : "cancelled"; this.log(`Huỷ lệnh ${id}`); this._changed(); }
+  }
+  // sửa giá lệnh chờ (kéo đường lệnh trên biểu đồ): xếp hàng lại từ cuối ở mức giá mới
+  modify(id, price, book) {
+    const o = this.s.orders.find(x => x.id === id && x.status === "open"); if (!o || !(price > 0)) return;
+    const best = o.side === "buy" ? book.bestAsk() : book.bestBid();
+    if (best !== null && (o.side === "buy" ? price >= best : price <= best)) { this.log(`Không dời ${id} qua giá thị trường (${best}), dùng lệnh market nếu muốn khớp ngay`); this._changed(); return; }
+    o.price = price; o.queueAhead = (o.side === "buy" ? book.bids.get(price) : book.asks.get(price)) || 0;
+    this.log(`Dời lệnh ${id} tới ${price}, phía trước còn ${o.queueAhead.toFixed(4)} đang chờ`); this._changed();
+  }
+  // cắt lỗ / chốt lời của vị thế; null là bỏ
+  setBracket(key, kind, price) {
+    const p = this.pos(key); if (!p.qty && price != null) return;
+    const v = price == null ? null : +price;
+    if (v != null) {
+      const mark = p.mark || p.avg, bad = kind === "sl" ? (p.qty > 0 ? v >= mark : v <= mark) : (p.qty > 0 ? v <= mark : v >= mark);
+      if (bad) { this.log(`${kind.toUpperCase()} ${v} nằm sai phía so với giá hiện tại ${mark}`); this._changed(); return; }
+    }
+    p[kind] = v; this.log(v == null ? `Bỏ ${kind.toUpperCase()}` : `Đặt ${kind.toUpperCase()} tại ${v}`); this._changed();
+  }
+  // giá chạm SL/TP thì đóng vị thế bằng lệnh market
+  checkBrackets(key, book) {
+    const p = this.pos(key);
+    if (!p.qty) { if (p.sl != null || p.tp != null) { p.sl = p.tp = null; this.save(); } return; }
+    const m = p.mark, long = p.qty > 0;
+    const hitSl = p.sl != null && (long ? m <= p.sl : m >= p.sl), hitTp = p.tp != null && (long ? m >= p.tp : m <= p.tp);
+    if (!hitSl && !hitTp) return;
+    this.log(`${hitSl ? "Chạm cắt lỗ" : "Chạm chốt lời"} ${hitSl ? p.sl : p.tp}, đóng vị thế bằng lệnh market`);
+    p.sl = p.tp = null;
+    this.closePosition(key, book);
   }
   cancelAll(key) { for (const o of this.openOrders(key)) o.status = o.filled ? "partial" : "cancelled"; this.log("Huỷ tất cả lệnh"); this._changed(); }
   closePosition(key, book) {
@@ -130,7 +159,7 @@ export class PaperBroker {
       this.s.balance -= loss; p.realized -= loss;
       this.log(`THANH LÝ ${p.qty > 0 ? "LONG" : "SHORT"} ${Math.abs(p.qty)} ${p.key} tại ${lp.toFixed(4)}, mất ${loss.toFixed(2)} USDT ký quỹ`);
       this.s.fills.unshift({ id: "L" + this.s.seq++, orderId: "-", key: p.key, side: p.qty > 0 ? "sell" : "buy", qty: Math.abs(p.qty), price: lp, fee: 0, liquidity: "thanh lý", t: Date.now() });
-      p.qty = 0; p.avg = 0;
+      p.qty = 0; p.avg = 0; p.sl = p.tp = null;
       for (const o of this.openOrders(p.key)) o.status = "cancelled";
       return true;
     }
@@ -145,11 +174,13 @@ export class PaperBroker {
     this.s.balance -= fee;
     const p = this.pos(o.key), dq = o.side === "buy" ? q : -q;
     if (!p.qty || Math.sign(p.qty) === Math.sign(dq)) { // mở thêm
+      if (o.sl) p.sl = o.sl;
+      if (o.tp) p.tp = o.tp;
       p.avg = (p.avg * Math.abs(p.qty) + px * q) / (Math.abs(p.qty) + q); p.qty = +(p.qty + dq).toFixed(10); p.lev = o.lev;
     } else { // giảm / đảo vị thế
       const close = Math.min(Math.abs(p.qty), q), pnl = (px - p.avg) * close * Math.sign(p.qty);
       this.s.balance += pnl; p.realized += pnl; p.qty = +(p.qty + dq).toFixed(10);
-      if (Math.abs(p.qty) < 1e-10) { p.qty = 0; p.avg = 0; } else if (Math.sign(p.qty) === Math.sign(dq)) p.avg = px;
+      if (Math.abs(p.qty) < 1e-10) { p.qty = 0; p.avg = 0; p.sl = p.tp = null; } else if (Math.sign(p.qty) === Math.sign(dq)) p.avg = px;
     }
     p.mark = p.mark || px;
     this.s.fills.unshift({ id: "F" + this.s.seq++, orderId: o.id, key: o.key, side: o.side, qty: q, price: px, fee, liquidity, t: Date.now() });

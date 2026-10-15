@@ -1,8 +1,8 @@
 // Lai Long Web: tab Quyền chọn. GEX theo strike, đường GEX theo giá (điểm lật gamma), OI, nụ cười IV và bề mặt IV 3D.
 // BTC/ETH lấy trực tiếp từ Deribit trong trình duyệt; chỉ số và ETF Mỹ đọc data/gex_<mã>.json (CBOE, chậm 15 phút)
 // do GitHub Actions cập nhật mỗi 30 phút, hoặc máy chủ laptop lấy trực tiếp (lailong/terminal/gex.py).
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610152113";
-import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610152113";
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610152132";
+import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610152132";
 
 export const ASSETS = [
   { id: "BTC", src: "deribit", name: "Bitcoin (Deribit)" }, { id: "ETH", src: "deribit", name: "Ethereum (Deribit)" },
@@ -34,8 +34,8 @@ export function readGex(L, spot) {
 
 export function initGex({ $, esc }) {
   let asset = "BTC", horiz = "30", exp = null, zoom = 0.1, mode = "gex", chain = null, L = null, err = "", loading = false, rot = { a: -0.6, b: 0.85 };
-  try { const s = JSON.parse(localStorage.getItem("lailong.gex") || "{}"); asset = s.asset || asset; horiz = s.horiz || horiz; } catch { /* bỏ qua */ }
-  const save = () => { try { localStorage.setItem("lailong.gex", JSON.stringify({ asset, horiz })); } catch { /* bỏ qua */ } };
+  try { const s = JSON.parse(sessionStorage.getItem("lailong.gex") || "{}"); asset = s.asset || asset; horiz = s.horiz || horiz; } catch { /* bỏ qua */ }
+  const save = () => { try { sessionStorage.setItem("lailong.gex", JSON.stringify({ asset, horiz })); } catch { /* bỏ qua */ } };
   const cache = new Map();
   const cvs = { bars: fitCanvas($("gexBars"), () => drawBars()), prof: fitCanvas($("gexProf"), () => drawProf()), smile: fitCanvas($("gexSmile"), () => drawSmile()), surf: fitCanvas($("gexSurf"), () => drawSurf()) };
   let hoverK = null;
