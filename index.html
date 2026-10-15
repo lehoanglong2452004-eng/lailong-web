@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610152054">
+<link rel="stylesheet" href="css/app.css?v=202610152106">
 </head>
 <body>
 <header class="menubar">
@@ -22,6 +22,7 @@
     <button data-view="terminal" class="on" data-tip="Bookmap, footprint, nến và sổ lệnh trực tiếp">Terminal</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
     <button data-view="markets" data-tip="Hàng hoá phái sinh, forex và lãi suất, crypto, quỹ ETF, cá voi và thanh lý">Thị trường</button>
+    <button data-view="options" data-tip="GEX, tường call/put, điểm lật gamma, max pain, bề mặt IV 3D: BTC, ETH, S&amp;P 500, Nasdaq, vàng, dầu…">Quyền chọn</button>
     <button data-view="backtest" data-tip="Kiểm tra chiến lược trên dữ liệu lịch sử">Backtest</button>
     <button data-view="fractal" data-g="fractal">FRACTAL</button>
     <button data-view="journal" data-g="journal">Nhật ký</button>
@@ -326,6 +327,37 @@
   </div>
 </main>
 
+<main class="view analysis" id="view-options" hidden>
+  <div class="gexbar">
+    <span class="newstabs" id="gexAssets"></span>
+    <span class="newstabs" id="gexHoriz"></span>
+    <small class="muted" id="gexSrc"></small>
+  </div>
+  <div class="kpis gexkpis" id="gexKpis"></div>
+  <div class="cards">
+    <section class="card gexmain">
+      <h3>GEX theo strike <button class="q" data-g="gex">?</button>
+        <span class="newstabs inl" id="gexMode"><button data-gm="gex" class="on">GEX</button><button data-gm="oi">OI</button></span>
+        <span class="newstabs inl" id="gexZoom"><button data-gz="0.03">±3%</button><button data-gz="0.06">±6%</button><button data-gz="0.1">±10%</button><button data-gz="0.15">±15%</button><button data-gz="0.25">±25%</button></span></h3>
+      <div class="gexcv tallcv"><canvas id="gexBars"></canvas></div>
+    </section>
+    <section class="card">
+      <h3>Cách đọc lúc này <button class="q" data-g="gamma-flip">?</button></h3>
+      <ul class="gexread" id="gexRead"></ul>
+      <h3>GEX tổng theo giá <button class="q" data-g="gamma-flip">?</button></h3>
+      <div class="gexcv"><canvas id="gexProf"></canvas></div>
+    </section>
+    <section class="card">
+      <h3>Nụ cười IV các hạn gần <button class="q" data-g="iv-smile">?</button></h3>
+      <div class="gexcv"><canvas id="gexSmile"></canvas></div>
+    </section>
+    <section class="card gexsurf">
+      <h3>Bề mặt IV 3D <button class="q" data-g="iv-surface">?</button></h3>
+      <div class="gexcv surfcv"><canvas id="gexSurf"></canvas></div>
+    </section>
+  </div>
+</main>
+
 <!-- ============ BACKTEST ============ -->
 <main class="view backtest" id="view-backtest" hidden>
   <aside class="panel btform">
@@ -497,6 +529,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610152054"></script>
+<script type="module" src="js/app.js?v=202610152106"></script>
 </body>
 </html>

@@ -483,3 +483,27 @@ body.dragging-panel, body.dragging-panel * { cursor: grabbing !important; }
   .fxcols { grid-template-columns: 1fr; }
   .card h3 select, .card h3 .tool { float: none; }
 }
+
+/* ---------- tab Quyền chọn ---------- */
+.gexbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.gexbar .newstabs { margin: 0; }
+.gexbar .sep { width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+.gexbar select { font-size: 11.5px; padding: 3px 6px; }
+.gexkpis > div { flex: 1 1 120px; cursor: help; }
+.gexkpis b small { font-size: 11px; font-weight: 500; }
+.gexcv { position: relative; height: 230px; }
+.gexcv.tallcv { height: 560px; }
+.gexcv.surfcv { height: 300px; cursor: grab; }
+.gexcv canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.gexmain { grid-row: span 3; }
+.gexread { margin: 0 0 10px; padding-left: 18px; font-size: 12px; line-height: 1.5; color: var(--ink); font-weight: 400; }
+.gexread li { margin-bottom: 4px; }
+#view-options .card h3 .newstabs.inl { float: right; margin-left: 6px; }
+@media (max-width: 900px) {
+  .gexmain { grid-row: auto; }
+  .gexcv.tallcv { height: 440px; }
+  #view-options .card h3 .newstabs.inl { float: none; margin: 4px 4px 0 0; }
+}
+.gexsurf { grid-column: span 2; }
+.gexsurf .gexcv.surfcv { height: 380px; }
+@media (max-width: 1400px) { .gexsurf { grid-column: auto; } }

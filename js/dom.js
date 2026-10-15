@@ -4,8 +4,8 @@
 // bán chủ động đã khớp | footprint nến hiện tại | mua chủ động đã khớp | chờ bán |
 // thay đổi lệnh chờ bán | tường lệnh chờ. Bản đồ thanh khoản nằm ở khung riêng (liqmap.js), cùng dòng giá.
 
-import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610152054";
-import { T, alpha } from "./theme.js?v=202610152054";
+import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610152106";
+import { T, alpha } from "./theme.js?v=202610152106";
 
 export const ROW_H = 18, HDR_H = 22;
 const CHG_MS = 5000;

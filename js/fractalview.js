@@ -1,7 +1,7 @@
 // Lai Long Web: trang FRACTAL (giao diện). Phần tính toán nằm trong fractal.js.
-import { HOLDS, buildIndex, search, summarize, paths, quantiles, walkForward, sampleLevel, breakeven, equityStats } from "./fractal.js?v=202610152054";
-import { T, alpha } from "./theme.js?v=202610152054";
-import { fitCanvas, MONO, INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610152054";
+import { HOLDS, buildIndex, search, summarize, paths, quantiles, walkForward, sampleLevel, breakeven, equityStats } from "./fractal.js?v=202610152106";
+import { T, alpha } from "./theme.js?v=202610152106";
+import { fitCanvas, MONO, INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610152106";
 
 const TFS = ["5m", "15m", "1h", "4h", "1d"];
 const TREND = { 1: "H1 tăng", 0: "H1 ngang", "-1": "H1 giảm" }, POS = ["đáy H4", "giữa H4", "đỉnh H4"];

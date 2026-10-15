@@ -912,6 +912,26 @@ export const GLOSSARY = [
     body: "<p>Hyperliquid là sàn phi tập trung nên mọi vị thế đều công khai theo địa chỉ ví. Danh sách lấy từ bảng xếp hạng tài khoản lớn nhất, chỉ giữ ví đang có vị thế.</p><p><b>Đòn bẩy thực</b> = tổng vị thế mở / tiền trong tài khoản. <b>Cách thanh lý</b>: giá còn phải chạy bao nhiêu % ngược chiều thì ví bị thanh lý; ô tô đỏ là dưới 10%.</p><p>Ô trên cùng cho biết nhóm cá voi đang nghiêng LONG hay SHORT với BTC và ETH. Bấm một ví để xem toàn bộ vị thế, bấm tên ví để mở trên Hypurrscan. Nút \"Lấy lại trực tiếp\" hỏi thẳng Hyperliquid để có số mới nhất.</p><p><b>Lưu ý</b>: cá voi cũng có thể sai, và một vị thế có thể đang được phòng hộ ở sàn khác.</p>"
   },
   {
+    id: "gex", group: "Phái sinh", term: "GEX (gamma exposure) theo strike",
+    short: "Ở mỗi mức strike, nhà tạo lập quyền chọn phải mua hoặc bán bao nhiêu USD tài sản cơ sở khi giá đi 1% để giữ vị thế trung lập.",
+    body: "<p>Người bán quyền chọn (nhà tạo lập, dealer) luôn phòng hộ bằng cách mua/bán tài sản cơ sở. Gamma cho biết lượng phòng hộ đó thay đổi nhanh cỡ nào khi giá chạy. GEX = gamma × số hợp đồng mở (OI) × hệ số hợp đồng × giá² × 1%.</p><p><b>Quy ước</b>: dealer thường mua call của nhà đầu tư và bán put cho họ, nên GEX của call tính dương (xanh, bên phải), của put tính âm (đỏ, bên trái). Vạch cam là GEX ròng ở strike đó.</p><p><b>Tường call</b> là strike trên giá có GEX call lớn nhất, thường đóng vai kháng cự vì dealer bán ra khi giá tiến lại gần. <b>Tường put</b> là strike dưới giá có GEX put lớn nhất, thường là hỗ trợ, nhưng nếu bị phá thì giá dễ rơi nhanh.</p><p>Nút <b>OI</b> chuyển sang số hợp đồng đang mở theo strike. Chọn khoảng hạn (≤ 7 ngày, ≤ 30 ngày…) hoặc một hạn cụ thể ở thanh trên cùng. Rê chuột lên biểu đồ để xem số liệu từng strike.</p><p><b>Nguồn</b>: BTC/ETH lấy trực tiếp từ Deribit, sàn quyền chọn crypto lớn nhất. Chỉ số và ETF Mỹ lấy từ CBOE, chậm 15 phút, cập nhật mỗi 30 phút. Đây là ước tính theo quy ước phổ biến (như SpotGamma, SqueezeMetrics): vị thế thật của dealer không ai công bố.</p>"
+  },
+  {
+    id: "gamma-flip", group: "Phái sinh", term: "Điểm lật gamma và GEX tổng",
+    short: "Mức giá mà tổng GEX đổi dấu. Trên mức này thị trường thường êm và đi ngang; dưới mức này biến động dễ bị khuếch đại.",
+    body: "<p>Biểu đồ \"GEX tổng theo giá\" tính lại toàn bộ GEX nếu giá nằm ở từng mức trong khoảng ±10%. Đoạn xanh là gamma dương, đoạn đỏ là gamma âm; chỗ chuyển màu là <b>điểm lật gamma</b>.</p><p><b>Gamma dương</b>: dealer bán khi giá lên, mua khi giá xuống, nên giá bị \"ghìm\", hợp với đánh hồi về trung bình và bán biên độ.</p><p><b>Gamma âm</b>: dealer phải mua đuổi khi giá lên, bán đuổi khi giá xuống, nên giá dễ chạy mạnh một chiều, hợp với đánh theo xu hướng và cần dừng lỗ chặt hơn.</p><p><b>Max pain</b> là giá đáo hạn khiến người mua quyền chọn mất nhiều nhất; gần ngày đáo hạn giá hay bị hút về quanh mức này.</p>"
+  },
+  {
+    id: "iv-smile", group: "Phái sinh", term: "Nụ cười IV",
+    short: "Độ biến động ngụ ý (IV) theo từng strike của mỗi hạn. Phía trái cao hơn phía phải nghĩa là thị trường trả giá đắt hơn để bảo hiểm giảm giá.",
+    body: "<p>Mỗi đường là một hạn đáo hạn. Bên trái giá hiện tại dùng IV của put, bên phải dùng IV của call (lấy phía ngoài tiền vì thanh khoản tốt hơn).</p><p><b>Nghiêng trái</b> (put đắt hơn call): thị trường sợ giảm, thường thấy ở chứng khoán. <b>Nghiêng phải</b>: thị trường muốn đặt cược tăng, hay gặp ở crypto khi hưng phấn.</p><p>Đường của hạn gần thường nằm cao và cong hơn trước các sự kiện lớn (CPI, FOMC). Nếu hạn gần cao hơn hạn xa (đảo ngược), thị trường đang căng thẳng.</p>"
+  },
+  {
+    id: "iv-surface", group: "Phái sinh", term: "Bề mặt IV 3D",
+    short: "Ghép nụ cười IV của nhiều hạn thành một mặt 3 chiều: ngang là độ lệch strike so với giá, sâu là số ngày tới hạn, cao và màu là IV.",
+    body: "<p>Màu xanh là IV thấp, đỏ là IV cao. Kéo chuột (hoặc kéo ngón tay) để xoay.</p><p>Mặt dốc lên ở phía các hạn gần nghĩa là thị trường đang lo một sự kiện sắp tới. Mặt dốc mạnh về phía strike thấp nghĩa là nhu cầu mua bảo hiểm giảm giá lớn.</p><p>Có thể dùng để chọn hạn và strike khi mua hoặc bán quyền chọn: mua ở vùng IV thấp (màu xanh), bán ở vùng IV cao (màu đỏ), và luôn so sánh với biến động thực tế.</p>"
+  },
+  {
     id: "alerts", group: "Công cụ", term: "Cảnh báo",
     short: "Phát tiếng và hiện thông báo khi có lệnh lớn, tường bị rút, nghi iceberg, hoặc giá chạm mức bro đặt.",
     body: "<p>Mở nút <b>🔔</b> trên thanh menu để bật từng loại. Thông báo của trình duyệt cần bro cho phép một lần; khi tab đang mở thì có tiếng và dòng chữ ở góc dưới.</p><p>Cảnh báo giá: gõ mức giá rồi bấm Thêm. Khi giá đi qua mức đó, cảnh báo kêu một lần rồi tự xoá. Danh sách mức giá được lưu lại trên máy này.</p><p>Để tránh ồn, mỗi loại kêu tối đa một lần mỗi 5 giây.</p>"
