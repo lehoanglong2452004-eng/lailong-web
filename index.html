@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610152037">
+<link rel="stylesheet" href="css/app.css?v=202610152054">
 </head>
 <body>
 <header class="menubar">
@@ -21,6 +21,7 @@
   <nav class="seg views" id="views">
     <button data-view="terminal" class="on" data-tip="Bookmap, footprint, nến và sổ lệnh trực tiếp">Terminal</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
+    <button data-view="markets" data-tip="Hàng hoá phái sinh, forex và lãi suất, crypto, quỹ ETF, cá voi và thanh lý">Thị trường</button>
     <button data-view="backtest" data-tip="Kiểm tra chiến lược trên dữ liệu lịch sử">Backtest</button>
     <button data-view="fractal" data-g="fractal">FRACTAL</button>
     <button data-view="journal" data-g="journal">Nhật ký</button>
@@ -289,6 +290,42 @@
   </div>
 </main>
 
+<main class="view analysis" id="view-markets" hidden>
+  <div class="cards">
+    <section class="card wide">
+      <h3>Hàng hoá phái sinh: top theo giá trị giao dịch <button class="q" data-g="term-structure">?</button> <small id="mkUpd"></small> <button class="tool" id="cmdAll">Xem tất cả</button></h3>
+      <div id="cmdBody" class="tablewrap tall"></div>
+      <p class="note">Nguồn Yahoo Finance (sàn CME, NYMEX, COMEX, ICE), chậm khoảng 10 – 15 phút. HĐ gần là hợp đồng đang giao dịch nhiều nhất, HĐ kế tiếp là tháng liền sau nó.</p>
+    </section>
+    <section class="card wide">
+      <h3>Forex: 10 đồng tiền lớn và lãi suất điều hành <button class="q" data-g="policy-rate">?</button></h3>
+      <div id="fxBody" class="tablewrap tall"></div>
+      <div id="fxDetail" class="fxdetail"></div>
+    </section>
+    <section class="card wide">
+      <h3>Crypto: top 10 vốn hoá <button class="q" data-g="crypto-top">?</button></h3>
+      <div id="cryBody" class="tablewrap"></div>
+    </section>
+    <section class="card">
+      <h3>Dòng tiền quỹ ETF <button class="q" data-g="etf-flow">?</button> <span class="newstabs inl" id="etfTabs"><button data-etf="btc" class="on">BTC</button><button data-etf="eth">ETH</button></span></h3>
+      <div id="etfBody"></div>
+    </section>
+    <section class="card">
+      <h3>Công ty nắm giữ <button class="q" data-g="treasury">?</button> <span class="newstabs inl" id="trTabs"><button data-tr="btc" class="on">BTC</button><button data-tr="eth">ETH</button></span></h3>
+      <div id="trBody"></div>
+    </section>
+    <section class="card">
+      <h3>Thanh lý lớn trực tiếp (Binance Futures) <button class="q" data-g="live-liq">?</button>
+        <select id="liqMin"><option value="50000">từ $50K</option><option value="100000">từ $100K</option><option value="250000">từ $250K</option><option value="1000000">từ $1M</option></select></h3>
+      <div id="liqBody" class="tablewrap"></div>
+    </section>
+    <section class="card wide">
+      <h3>Cá voi dùng đòn bẩy trên Hyperliquid <button class="q" data-g="whales">?</button> <small id="whUpd"></small> <button class="tool" id="whLive">Lấy lại trực tiếp</button></h3>
+      <div id="whBody"></div>
+    </section>
+  </div>
+</main>
+
 <!-- ============ BACKTEST ============ -->
 <main class="view backtest" id="view-backtest" hidden>
   <aside class="panel btform">
@@ -460,6 +497,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610152037"></script>
+<script type="module" src="js/app.js?v=202610152054"></script>
 </body>
 </html>

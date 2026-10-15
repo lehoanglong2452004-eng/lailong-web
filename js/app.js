@@ -1,30 +1,31 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610152037";
-import { MarketState, Book } from "./market.js?v=202610152037";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610152037";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610152037";
-import { FlowChart } from "./flowchart.js?v=202610152037";
-import { Dom } from "./dom.js?v=202610152037";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610152037";
-import { initBacktest } from "./backtestview.js?v=202610152037";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610152037";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610152037";
-import { Tape } from "./tape.js?v=202610152037";
-import { LiqMap } from "./liqmap.js?v=202610152037";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610152037";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610152037";
-import { Alerts } from "./alerts.js?v=202610152037";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610152037";
-import { initNews } from "./newsview.js?v=202610152037";
-import { Drawings } from "./drawings.js?v=202610152037";
-import { Layout, NAMES as PANEL_NAMES } from "./layout.js?v=202610152037";
-import { DOM_COLS } from "./dom.js?v=202610152037";
-import { initFractal } from "./fractalview.js?v=202610152037";
-import { initJournal } from "./journalview.js?v=202610152037";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610152037";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610152037";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610152037";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610152054";
+import { MarketState, Book } from "./market.js?v=202610152054";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610152054";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610152054";
+import { FlowChart } from "./flowchart.js?v=202610152054";
+import { Dom } from "./dom.js?v=202610152054";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610152054";
+import { initBacktest } from "./backtestview.js?v=202610152054";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610152054";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610152054";
+import { Tape } from "./tape.js?v=202610152054";
+import { LiqMap } from "./liqmap.js?v=202610152054";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610152054";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610152054";
+import { Alerts } from "./alerts.js?v=202610152054";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610152054";
+import { initNews } from "./newsview.js?v=202610152054";
+import { initMarkets } from "./marketsview.js?v=202610152054";
+import { Drawings } from "./drawings.js?v=202610152054";
+import { Layout, NAMES as PANEL_NAMES } from "./layout.js?v=202610152054";
+import { DOM_COLS } from "./dom.js?v=202610152054";
+import { initFractal } from "./fractalview.js?v=202610152054";
+import { initJournal } from "./journalview.js?v=202610152054";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610152054";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610152054";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610152054";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -277,6 +278,7 @@ $("alPrice").onkeydown = e => { if (e.key === "Enter") $("alAdd").click(); };
 $("alList").onclick = e => { const b = e.target.closest("[data-alrm]"); if (b) { alerts.removeLevel(+b.dataset.alrm); renderAlertMenu(); } };
 heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
 const newsView = initNews({ $, esc, alerts, coin });
+const marketsView = initMarkets({ $, esc });
 
 function scheduleFlow() { if (flowTimer) return; flowTimer = setTimeout(() => { flowTimer = null; recomputeFlow(); }, 1500); }
 
@@ -635,11 +637,12 @@ function setConn(text, ok) { const p = $("connPill"); p.className = "pill" + (ok
 function setView(v) {
   S.view = v; persist();
   for (const b of $("views").children) b.classList.toggle("on", b.dataset.view === v);
-  for (const id of ["terminal", "analysis", "backtest", "fractal", "journal"]) $("view-" + id).hidden = id !== v;
+  for (const id of ["terminal", "analysis", "markets", "backtest", "fractal", "journal"]) $("view-" + id).hidden = id !== v;
   document.body.classList.toggle("not-terminal", v !== "terminal");
   heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
   if (v === "analysis") renderAnalysis();
   if (v === "journal") journal.show();
+  if (v === "markets") marketsView.show(); else marketsView.hide();
 }
 function setMode(m) {
   S.mode = m; persist();

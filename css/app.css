@@ -442,3 +442,44 @@ body.dragging-panel, body.dragging-panel * { cursor: grabbing !important; }
 .rtab td.up, .up { color: var(--buy); } .rtab td.dn, .dn { color: var(--sell); }
 @media (max-width: 1100px) { .impactmap { grid-template-columns: repeat(3, minmax(0, 1fr)); } .imdg { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .impactmap { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- tab Thị trường ---------- */
+.tablewrap.tall { max-height: 520px; }
+.mktab { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.mktab th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-weight: 600; font-size: 11.5px; text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.mktab td { text-align: right; padding: 4px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); white-space: nowrap; vertical-align: middle; }
+.mktab th:first-child, .mktab td:first-child, .mktab td.t, .mktab th:nth-child(2) { text-align: left; }
+.mktab td.t { white-space: normal; }
+.mktab small { font-size: 10.5px; }
+.mktab tr.focus td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.mktab tr.sel td { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.fxtab tbody tr, .whtab tr.wrow { cursor: pointer; }
+.fxtab tbody tr:hover td, .whtab tr.wrow:hover td { background: var(--panel-2); }
+.spark { display: block; margin-left: auto; }
+.tag.ctg { background: color-mix(in srgb, #4ea1ff 22%, transparent); color: #7db9ff; padding: 1px 6px; }
+.tag.bwd { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); padding: 1px 6px; }
+.fxdetail { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
+.fxcols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.kpis { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.kpis > div { flex: 1 1 140px; background: var(--panel-2); border: 1px solid var(--line); padding: 6px 8px; }
+.kpis small { display: block; color: var(--muted); font-size: 11px; }
+.kpis b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.bar { display: inline-block; width: 40px; height: 6px; margin-right: 6px; background: linear-gradient(90deg, var(--accent) var(--w), var(--panel-2) var(--w)); vertical-align: middle; }
+.etfbars { display: flex; align-items: center; gap: 2px; height: 120px; position: relative; border-bottom: 1px dashed var(--line); margin-bottom: 0; }
+.etfbars > div { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+.etfbars i { display: block; width: 100%; height: calc(var(--h) / 2); }
+.etfbars i.pos { background: var(--buy); margin-bottom: 0; transform: translateY(-50%); }
+.etfbars i.neg { background: var(--sell); transform: translateY(50%); }
+.etfund { font-size: 11.5px; margin-top: 8px; line-height: 1.6; }
+.newstabs.inl { display: inline-flex; margin: 0 0 0 6px; vertical-align: middle; }
+.card h3 select, .card h3 .tool { font-size: 11px; padding: 2px 6px; text-transform: none; letter-spacing: 0; float: right; margin-left: 6px; }
+.pchip { display: inline-block; font-size: 11px; padding: 1px 6px; margin: 1px 0; border: 1px solid var(--line); white-space: nowrap; }
+.pchip.lg { border-color: color-mix(in srgb, var(--buy) 60%, transparent); color: var(--buy); }
+.pchip.sh { border-color: color-mix(in srgb, var(--sell) 60%, transparent); color: var(--sell); }
+.pchip.near { background: color-mix(in srgb, var(--sell) 18%, transparent); color: var(--ink); }
+.whwrap { max-height: 480px; }
+.whtab tr.wdet td { white-space: normal; text-align: left; background: var(--panel-2); }
+@media (max-width: 900px) {
+  .fxcols { grid-template-columns: 1fr; }
+  .card h3 select, .card h3 .tool { float: none; }
+}

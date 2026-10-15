@@ -877,6 +877,41 @@ export const GLOSSARY = [
     body: "<p>Giá trước tin là giá đóng cửa của nến 5 phút ngay trước giờ ra tin. Lợi suất đo bằng điểm cơ bản (bp, 1bp = 0,01%), các tài sản khác đo bằng %.</p><p>Bảng dưới cùng là mức chạy trung bình 60 phút sau tin (không tính chiều) của các lần ra tin đã lưu. Bảng này dài dần theo thời gian: hệ thống lưu lại mỗi lần ra tin trong khoảng 400 ngày. Tin nào làm thị trường chạy mạnh nhất là tin cần đứng ngoài.</p><p>Nguồn: Yahoo Finance, dữ liệu chậm khoảng 15 phút. Vàng, dầu, S&P 500 dùng hợp đồng tương lai gần nhất.</p>"
   },
   {
+    id: "term-structure", group: "Thị trường", term: "Contango và backwardation (cấu trúc kỳ hạn)",
+    short: "So sánh giá hai hợp đồng tương lai liền kề của cùng một hàng hoá. Xa đắt hơn gần là contango (hàng dư), gần đắt hơn xa là backwardation (hàng thiếu).",
+    body: "<p><b>Contango</b>: hợp đồng tháng xa đắt hơn tháng gần. Thường gặp khi hàng đang dư, vì người giữ hàng phải trả phí kho bãi, bảo hiểm và lãi vốn. Người giữ long lâu dài sẽ mất tiền mỗi lần cuộn hợp đồng sang tháng sau.</p><p><b>Backwardation</b>: tháng gần đắt hơn tháng xa. Thị trường đang thiếu hàng ngay bây giờ nên người mua trả thêm để có hàng sớm. Đây thường là dấu hiệu cầu mạnh, hay gặp ở dầu khi tồn kho thấp.</p><p>Cột <b>Chênh lệch</b> là % giá HĐ kế tiếp so với HĐ gần, và quy ra % mỗi năm để so sánh giữa các hàng hoá có khoảng cách tháng khác nhau. Bảng xếp hạng theo giá trị giao dịch trong ngày (khối lượng × giá × hệ số hợp đồng).</p><p><b>Cách dùng</b>: backwardation ngày càng sâu cho thấy thị trường hàng thật đang căng; chuyển từ backwardation sang contango thường báo hiệu cầu yếu đi.</p>"
+  },
+  {
+    id: "policy-rate", group: "Thị trường", term: "Lãi suất điều hành",
+    short: "Lãi suất ngân hàng trung ương mỗi nước đang neo. Nước nào lãi suất cao hơn hoặc đang tăng lãi suất thì đồng tiền thường được hỗ trợ.",
+    body: "<p>Lãi suất điều hành là mức ngân hàng trung ương đặt ra để điều tiết kinh tế: Fed (Mỹ), ECB (châu Âu), BOJ (Nhật), BOE (Anh), PBOC (Trung Quốc), RBA (Úc), BOC (Canada), SNB (Thuỵ Sĩ), HKMA (Hồng Kông). Số liệu lấy từ BIS (Ngân hàng Thanh toán Quốc tế).</p><p><b>Lần đổi gần nhất</b> cho biết lần cuối họ tăng hay giảm bao nhiêu điểm cơ bản (100 điểm = 1%).</p><p><b>Cách đọc</b>: chênh lệch lãi suất giữa hai nước là động lực lớn của tỷ giá. Ví dụ Fed giữ lãi suất cao trong khi BOJ giữ thấp thì USD/JPY có xu hướng tăng. Bấm vào một đồng tiền để xem lịch dữ liệu (lạm phát, việc làm, quyết định lãi suất) và tin liên quan của nước đó.</p>"
+  },
+  {
+    id: "crypto-top", group: "Thị trường", term: "Crypto top 10 vốn hoá",
+    short: "10 đồng crypto có vốn hoá lớn nhất (đã bỏ stablecoin và token bọc). BTC và ETH được tô nổi.",
+    body: "<p>Vốn hoá = giá × lượng coin đang lưu hành. Cột tỷ trọng là phần của mỗi coin trong tổng vốn hoá top 10: tỷ trọng BTC tăng thường là lúc thị trường thận trọng, tiền rút khỏi altcoin về BTC.</p><p>Nguồn CoinGecko, cập nhật mỗi 30 phút.</p>"
+  },
+  {
+    id: "etf-flow", group: "Thị trường", term: "Dòng tiền ETF BTC/ETH",
+    short: "Số tiền vào (xanh) hoặc ra (đỏ) khỏi các quỹ ETF giao ngay BTC và ETH tại Mỹ mỗi ngày, triệu USD.",
+    body: "<p>Khi tiền vào ETF, quỹ phải mua coin thật, nên dòng tiền vào liên tục là lực mua lớn của tổ chức. Dòng tiền ra liên tục nhiều phiên là dấu hiệu tổ chức đang giảm tỷ trọng.</p><p>Cột lớn nhất là IBIT (BlackRock). GBTC và ETHE (Grayscale) phí cao nên thường bị rút ra.</p><p>Nguồn Farside Investors, số liệu chốt sau giờ đóng cửa chứng khoán Mỹ. Rê chuột lên từng cột để xem ngày và số tiền.</p>"
+  },
+  {
+    id: "treasury", group: "Thị trường", term: "Công ty nắm giữ BTC/ETH",
+    short: "Các công ty niêm yết đang giữ BTC hoặc ETH trong bảng cân đối, xếp theo số coin.",
+    body: "<p>Nhiều công ty (Strategy, Metaplanet, BitMine…) phát hành cổ phiếu hoặc trái phiếu để mua coin. Khi họ mua thêm là có lực mua thật; khi cổ phiếu của họ giảm mạnh, thị trường lo họ phải bán coin.</p><p>Nguồn CoinGecko. Theo dõi thêm tin \"ETF và quỹ\" trên bản đồ tác động tin tức ở tab Phân tích.</p>"
+  },
+  {
+    id: "live-liq", group: "Thị trường", term: "Thanh lý lớn trực tiếp",
+    short: "Mọi lệnh thanh lý cưỡng bức trên Binance Futures từ ngưỡng bạn chọn trở lên, nhận trực tiếp.",
+    body: "<p>Khi vị thế dùng đòn bẩy lỗ hết ký quỹ, sàn đóng cưỡng bức. LONG bị thanh lý là lệnh bán ép, SHORT bị thanh lý là lệnh mua ép.</p><p>Một loạt LONG bị thanh lý liên tiếp thường đẩy giá xuống sâu rồi hồi; một loạt SHORT bị thanh lý (short squeeze) đẩy giá lên nhanh. Thanh lý dồn dập thường xảy ra gần đáy hoặc đỉnh ngắn hạn.</p><p>Lưu ý: Binance chỉ gửi lệnh thanh lý lớn nhất mỗi giây của mỗi cặp, nên đây là con số thấp hơn thực tế.</p>"
+  },
+  {
+    id: "whales", group: "Thị trường", term: "Cá voi dùng đòn bẩy (Hyperliquid)",
+    short: "Các ví lớn nhất trên sàn Hyperliquid đang mở vị thế gì, đòn bẩy bao nhiêu, còn cách giá thanh lý bao xa.",
+    body: "<p>Hyperliquid là sàn phi tập trung nên mọi vị thế đều công khai theo địa chỉ ví. Danh sách lấy từ bảng xếp hạng tài khoản lớn nhất, chỉ giữ ví đang có vị thế.</p><p><b>Đòn bẩy thực</b> = tổng vị thế mở / tiền trong tài khoản. <b>Cách thanh lý</b>: giá còn phải chạy bao nhiêu % ngược chiều thì ví bị thanh lý; ô tô đỏ là dưới 10%.</p><p>Ô trên cùng cho biết nhóm cá voi đang nghiêng LONG hay SHORT với BTC và ETH. Bấm một ví để xem toàn bộ vị thế, bấm tên ví để mở trên Hypurrscan. Nút \"Lấy lại trực tiếp\" hỏi thẳng Hyperliquid để có số mới nhất.</p><p><b>Lưu ý</b>: cá voi cũng có thể sai, và một vị thế có thể đang được phòng hộ ở sàn khác.</p>"
+  },
+  {
     id: "alerts", group: "Công cụ", term: "Cảnh báo",
     short: "Phát tiếng và hiện thông báo khi có lệnh lớn, tường bị rút, nghi iceberg, hoặc giá chạm mức bro đặt.",
     body: "<p>Mở nút <b>🔔</b> trên thanh menu để bật từng loại. Thông báo của trình duyệt cần bro cho phép một lần; khi tab đang mở thì có tiếng và dòng chữ ở góc dưới.</p><p>Cảnh báo giá: gõ mức giá rồi bấm Thêm. Khi giá đi qua mức đó, cảnh báo kêu một lần rồi tự xoá. Danh sách mức giá được lưu lại trên máy này.</p><p>Để tránh ồn, mỗi loại kêu tối đa một lần mỗi 5 giây.</p>"
@@ -928,4 +963,4 @@ export const GLOSSARY = [
   }
 ];
 
-export const GROUPS = ["Fractal & kiểm chứng", "Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest", "Phái sinh", "Công cụ"];
+export const GROUPS = ["Fractal & kiểm chứng", "Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest", "Phái sinh", "Thị trường", "Công cụ"];
