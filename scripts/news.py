@@ -43,6 +43,16 @@ FEEDS = [
     ("ForexLive", "https://www.forexlive.com/feed/news", "econ"),
     ("OilPrice", "https://oilprice.com/rss/main", "energy"),
     ("Mining.com", "https://www.mining.com/feed/", "metal"),
+    (
+        "Google News",
+        "https://news.google.com/rss/search?q=gold+OR+silver+OR+copper+OR+platinum+price+when:2d&hl=en-US&gl=US&ceid=US:en",
+        "metal",
+    ),
+    (
+        "Google News",
+        "https://news.google.com/rss/search?q=oil+OR+OPEC+OR+%22natural+gas%22+price+when:2d&hl=en-US&gl=US&ceid=US:en",
+        "energy",
+    ),
     ("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml", "geo"),
     ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml", "geo"),
     ("Fed", "https://www.federalreserve.gov/feeds/press_all.xml", "econ"),
@@ -332,6 +342,10 @@ def fetch_news(per_cat: int = 45) -> dict:
             for it in root.iter("item"):
                 title = re.sub(r"\s+", " ", _text(it, "title"))
                 link = _text(it, "link")
+                src = source
+                if source == "Google News" and " - " in title:
+                    # Google News ghi tên báo ở cuối tiêu đề: "Tiêu đề - Reuters"
+                    title, src = title.rsplit(" - ", 1)
                 pub = _text(it, "pubDate")
                 if not title or not link:
                     continue
@@ -351,7 +365,7 @@ def fetch_news(per_cat: int = 45) -> dict:
                         "t": t,
                         "title": title,
                         "link": link,
-                        "source": source,
+                        "source": src,
                         "cat": cat,
                         "topics": topics,
                         "hot": hot,
