@@ -370,7 +370,7 @@ canvas { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: n
 .newsit { display: block; padding: 5px 4px; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 12.5px; }
 .newsit:hover { background: var(--panel-2); }
 .newsit.hot { border-left: 3px solid #ff7b39; padding-left: 6px; }
-.newsit .nt { display: block; color: var(--muted); font-size: 11px; font-family: var(--mono); }
+.newsit .nt { display: block; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .imp { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 .imp.hi { background: var(--sell); } .imp.md { background: #f5a623; }
 tr.evsoon td { background: color-mix(in srgb, #f5a623 14%, transparent); }
@@ -405,3 +405,40 @@ body.dragging-panel, body.dragging-panel * { cursor: grabbing !important; }
 .layoutdd .menu .hint { color: var(--muted); font-size: 11px; padding: 4px 6px; line-height: 1.4; }
 .icon.minb { font-weight: 800; }
 @media (max-width: 900px) { .icon.minb, .layoutdd { display: none !important; } }
+
+/* ---- tin tức theo mục, bản đồ tác động, phản ứng giá ---- */
+.newstabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.newstabs button { font-size: 11.5px; padding: 3px 8px; }
+.newstabs button.on { background: var(--accent); color: #000; border-color: var(--accent); }
+.newstabs button small { opacity: .7; }
+.impactmap { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.imcol { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.imh { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 2px 2px 4px; border-bottom: 1px solid var(--line); }
+.imtile { --h: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 6px 8px; border: 1px solid var(--line); border-radius: 3px;
+  background: color-mix(in srgb, #ff3b30 calc(var(--h) * 75%), var(--panel-2)); color: var(--ink); min-height: 48px; cursor: pointer; }
+.imtile.big { min-height: 74px; }
+.imtile.big .nm { font-size: 13.5px; }
+.imtile:hover, .imtile.sel { outline: 2px solid var(--accent); outline-offset: -1px; }
+.imtile .ic { font-size: 18px; line-height: 1; }
+.imtile.big .ic { font-size: 24px; }
+.imtile .nm { font-weight: 700; font-size: 12px; line-height: 1.2; }
+.imtile .ct { font-size: 11px; opacity: .8; font-family: var(--mono); }
+.imnone { color: var(--muted); font-size: 11.5px; padding: 6px 2px; }
+.impactdetail { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 8px; }
+.impactdetail .hint { color: var(--muted); font-size: 12px; }
+.imdh { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.imdh .ic { font-size: 20px; } .imdh b { font-size: 14px; } .imdh .icon { margin-left: auto; }
+.imdg { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; }
+.imdg p { margin: 2px 0 8px; font-size: 12.5px; line-height: 1.5; }
+.imdg .mh, .card .mh { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; margin-top: 4px; }
+.imdn { max-height: 360px; overflow: auto; }
+.impop { position: fixed; z-index: 60; background: var(--panel); border: 1px solid var(--accent); padding: 8px 10px; font-size: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.6); pointer-events: none; }
+.impop[hidden] { display: none; }
+.impop .pi { margin-top: 5px; line-height: 1.35; }
+.impop .muted, .muted { color: var(--muted); }
+.rtab td, .rtab th { white-space: nowrap; text-align: right; font-family: var(--mono); font-size: 11.5px; }
+.rtab td.t, .rtab th:nth-child(2) { text-align: left; font-family: inherit; white-space: normal; min-width: 180px; }
+.rtab th.sub { color: var(--muted); font-weight: 500; }
+.rtab td.up, .up { color: var(--buy); } .rtab td.dn, .dn { color: var(--sell); }
+@media (max-width: 1100px) { .impactmap { grid-template-columns: repeat(3, minmax(0, 1fr)); } .imdg { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .impactmap { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

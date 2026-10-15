@@ -842,9 +842,9 @@ export const GLOSSARY = [
     body: "<p>Nguồn: lịch ForexFactory, lọc giữ tin tác động <b>mạnh</b> (chấm đỏ) của mọi nước và tin <b>trung bình</b> (chấm cam) của Mỹ, vì crypto chạy theo đồng USD và lãi suất Mỹ.</p><p>Trong 3 giờ trước tin mạnh, trên thanh menu hiện dòng nhắc ⚠ đếm ngược; còn 30 phút thì chuyển đỏ. Bật cảnh báo trong nút 🔔 để được kêu trước 15 phút.</p><p>Quanh giờ ra tin, giá thường giật mạnh hai chiều và chênh lệch giá mua bán giãn rộng, cắt lỗ dễ bị trượt. Trader chuyên nghiệp thường đứng ngoài từ 5 đến 15 phút trước và sau tin.</p><p>Bản web cập nhật mỗi 30 phút; bản trên laptop lấy trực tiếp mỗi 10 phút.</p>"
   },
   {
-    id: "crypto-news", group: "Công cụ", term: "Tin crypto",
-    short: "Tin mới từ CoinDesk, Cointelegraph, Decrypt, The Block, Bitcoin Magazine. 🔥 là tin nóng (SEC, ETF, hack, Fed, thanh lý...).",
-    body: "<p>Mỗi tin ghi nguồn, giờ và các đồng coin được nhắc tới. Nút <b>Mọi tin / Chỉ tin về ...</b> lọc theo đồng đang xem. Bấm vào tin để mở bài gốc.</p><p>Tin nóng được nhận ra bằng từ khoá trong tiêu đề, nên chỉ là gợi ý. Bật \"Tin crypto nóng mới\" trong nút 🔔 để được báo khi có tin nóng mới.</p>"
+    id: "crypto-news", group: "Công cụ", term: "Tin tức theo 6 mục",
+    short: "Tin chia 6 mục: Kinh tế, Tài chính, Kim loại quý, Năng lượng, Địa chính trị, Crypto. 🔥 là tin nóng. Cập nhật mỗi 30 phút.",
+    body: "<p>Nguồn: CNBC, MarketWatch, Investing.com, ForexLive, OilPrice, Google News (kim loại, năng lượng), BBC, Al Jazeera, thông cáo của Fed và ECB, cùng CoinDesk, Cointelegraph, Decrypt, The Block, Bitcoin Magazine.</p><p>Mục của mỗi tin được xếp tự động theo từ khoá trong tiêu đề, nên đôi khi xếp nhầm. Tiêu đề giữ nguyên tiếng Anh gốc để không sai thuật ngữ. Trong mục Crypto, nút <b>Mọi coin / Chỉ tin về ...</b> lọc theo đồng đang xem.</p><p>Bật \"Tin nóng mới\" trong nút 🔔 để được báo khi có tin nóng mới.</p>"
   },
   {
     id: "multibook", group: "Bookmap", term: "Multibook (gộp nhiều sàn)",
@@ -865,6 +865,16 @@ export const GLOSSARY = [
     id: "tape-speed", group: "Bookmap", term: "Tốc độ băng",
     short: "Số lệnh khớp mỗi giây, vẽ bằng đường xanh lơ ở ô dưới Bookmap. Chấm sáng là lúc tốc độ vượt 3 lần mức thường.",
     body: "<p>Tốc độ băng tăng vọt nghĩa là nhiều người cùng lao vào một lúc: thường là lúc bắt đầu một cú chạy, lúc quét cắt lỗ, hoặc lúc ra tin. Tốc độ cao mà giá không đi được là dấu hiệu hấp thụ.</p><p>Mức \"thường\" là trung vị của vùng đang xem trên màn hình.</p>"
+  },
+  {
+    id: "impact-map", group: "Công cụ", term: "Bản đồ tác động tin tức",
+    short: "Mỗi ô là một chủ đề đang được nói tới trong 24 giờ qua. Ô càng đỏ càng nóng; 3 ô to nhất là 3 chủ đề nóng nhất. Rê chuột để xem nhanh, bấm để xem đầy đủ.",
+    body: "<p>Độ nóng = số tin về chủ đề đó, tin có 🔥 tính gấp đôi, tin càng cũ càng nhẹ (giảm một nửa sau khoảng 8 giờ).</p><p>Bấm vào một ô để xem: các tài sản hay bị ảnh hưởng, cách đọc thường thấy (ví dụ lạm phát cao hơn dự báo thì USD tăng, vàng giảm), giá đã phản ứng thế nào sau các tin cùng loại gần đây, và toàn bộ tin của chủ đề.</p><p><b>Lưu ý:</b> \"cách đọc\" là phản ứng hay gặp, không phải quy luật. Thị trường có lúc phản ứng ngược khi tin đã được tính trước vào giá.</p>"
+  },
+  {
+    id: "news-reaction", group: "Công cụ", term: "Giá phản ứng sau tin",
+    short: "Với mỗi tin kinh tế mạnh đã ra trong 5 ngày, đo DXY, vàng, dầu, lợi suất 10 năm, S&P 500 và BTC đã chạy bao nhiêu sau 15, 30, 60 phút.",
+    body: "<p>Giá trước tin là giá đóng cửa của nến 5 phút ngay trước giờ ra tin. Lợi suất đo bằng điểm cơ bản (bp, 1bp = 0,01%), các tài sản khác đo bằng %.</p><p>Bảng dưới cùng là mức chạy trung bình 60 phút sau tin (không tính chiều) của các lần ra tin đã lưu. Bảng này dài dần theo thời gian: hệ thống lưu lại mỗi lần ra tin trong khoảng 400 ngày. Tin nào làm thị trường chạy mạnh nhất là tin cần đứng ngoài.</p><p>Nguồn: Yahoo Finance, dữ liệu chậm khoảng 15 phút. Vàng, dầu, S&P 500 dùng hợp đồng tương lai gần nhất.</p>"
   },
   {
     id: "alerts", group: "Công cụ", term: "Cảnh báo",

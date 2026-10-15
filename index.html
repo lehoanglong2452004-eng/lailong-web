@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610152029">
+<link rel="stylesheet" href="css/app.css?v=202610152037">
 </head>
 <body>
 <header class="menubar">
@@ -38,7 +38,7 @@
       <label data-g="spoofing"><input type="checkbox" data-al="spoof"> Tường bị rút khi giá tới gần</label>
       <label data-g="big-trades"><input type="checkbox" data-al="big"> Big Trade (top 0,5% lệnh gốc)</label>
       <label data-g="econ-calendar"><input type="checkbox" data-al="newsEv"> Tin kinh tế mạnh (báo trước 15 phút)</label>
-      <label data-g="crypto-news"><input type="checkbox" data-al="newsHot"> Tin crypto nóng mới</label>
+      <label data-g="crypto-news"><input type="checkbox" data-al="newsHot"> Tin nóng mới (mọi mục)</label>
       <div class="mh">Giá chạm mức</div>
       <div class="row aladd"><input type="number" id="alPrice" step="any" placeholder="Mức giá"><button id="alAdd">Thêm</button></div>
       <div id="alList"></div>
@@ -237,13 +237,23 @@
 <!-- ============ PHÂN TÍCH ============ -->
 <main class="view analysis" id="view-analysis" hidden>
   <div class="cards">
+    <section class="card wide">
+      <h3>Bản đồ tác động tin tức <button class="q" data-g="impact-map">?</button> <small id="impactUpd"></small></h3>
+      <div id="impactMap" class="impactmap"></div>
+      <div id="impactDetail" class="impactdetail"></div>
+    </section>
     <section class="card">
       <h3>Lịch kinh tế tuần này <button class="q" data-g="econ-calendar">?</button></h3>
       <div id="calBody" class="tablewrap newsbox"></div>
     </section>
     <section class="card">
-      <h3>Tin crypto <button class="q" data-g="crypto-news">?</button> <button class="tool" id="newsOnly">Mọi tin</button> <small id="newsUpd"></small></h3>
+      <h3>Tin tức <button class="q" data-g="crypto-news">?</button> <button class="tool" id="newsOnly" hidden>Mọi coin</button> <small id="newsUpd"></small></h3>
+      <div id="newsTabs" class="newstabs"></div>
       <div id="newsBody" class="newsbox"></div>
+    </section>
+    <section class="card wide">
+      <h3>Giá phản ứng sau tin <button class="q" data-g="news-reaction">?</button> <small>DXY, vàng, dầu, lợi suất 10 năm, S&amp;P 500, BTC chạy bao nhiêu sau 15, 30, 60 phút (nguồn Yahoo Finance, chậm khoảng 15 phút)</small></h3>
+      <div id="reactBody"></div>
     </section>
     <section class="card wide">
       <h3>Xu hướng, động lượng và độ biến động theo khung thời gian <button class="q" data-g="mtf">?</button></h3>
@@ -450,6 +460,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610152029"></script>
+<script type="module" src="js/app.js?v=202610152037"></script>
 </body>
 </html>
