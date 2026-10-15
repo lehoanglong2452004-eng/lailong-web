@@ -1,4 +1,4 @@
-name: Cập nhật lịch kinh tế, tin tức và phản ứng giá
+name: Cập nhật tin tức, phản ứng giá và thị trường
 
 on:
   schedule:
@@ -15,7 +15,7 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,6 +23,8 @@ jobs:
           python-version: "3.12"
       - name: Lấy lịch và tin
         run: python scripts/news.py data
+      - name: Lấy hàng hoá, forex, crypto và cá voi
+        run: python scripts/markets.py data || echo "markets lỗi, giữ dữ liệu cũ"
       - name: Lưu nếu có thay đổi
         run: |
           git config user.name "lailong-bot"
