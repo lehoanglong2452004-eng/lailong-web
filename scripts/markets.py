@@ -525,6 +525,68 @@ def cached(name: str, ttl: float = 900) -> dict:
     return data
 
 
+# Hợp đồng tương lai cho Radar (nến 1 giờ, chậm 10 đến 15 phút theo Yahoo): mã gửi từ trình duyệt -> mã Yahoo
+RADAR_FUTURES = {
+    "GC": ("GC=F", "Vàng"),
+    "SI": ("SI=F", "Bạc"),
+    "CL": ("CL=F", "Dầu WTI"),
+    "NG": ("NG=F", "Khí tự nhiên"),
+    "HG": ("HG=F", "Đồng"),
+    "6J": ("6J=F", "Yên Nhật"),
+    "6E": ("6E=F", "Euro"),
+    "ES": ("ES=F", "S&P 500"),
+    "NQ": ("NQ=F", "Nasdaq 100"),
+    "ZN": ("ZN=F", "Trái phiếu 10 năm"),
+}
+_bars_cache: dict[str, tuple[float, list[dict]]] = {}
+
+
+def parse_yahoo_bars(raw: dict) -> list[dict]:
+    """Nến từ API chart của Yahoo, bỏ nến thiếu giá; t tính bằng mili giây."""
+    r = raw["chart"]["result"][0]
+    q = r["indicators"]["quote"][0]
+    out = []
+    col = {k: q.get(k) or [] for k in ("open", "high", "low", "close", "volume")}
+    for i, t in enumerate(r.get("timestamp") or []):
+        o, h, lo, c, v = (col[k][i] if i < len(col[k]) else None for k in col)
+        if None in (o, h, lo, c):
+            continue
+        out.append({"t": int(t) * 1000, "o": o, "h": h, "l": lo, "c": c, "v": v or 0})
+    return out
+
+
+# khung của Radar -> (khoảng Yahoo, độ dài lịch sử, gộp thành mấy giờ); Yahoo không có nến 4 giờ nên gộp từ nến 1 giờ
+RADAR_IV = {"5m": ("5m", "5d", 0), "15m": ("15m", "1mo", 0), "1h": ("60m", "3mo", 0), "4h": ("60m", "6mo", 4), "1d": ("1d", "2y", 0)}
+
+
+def group_bars(bars: list[dict], hours: int) -> list[dict]:
+    """Gộp nến theo mốc UTC chia hết cho `hours` giờ."""
+    ms = hours * 3_600_000
+    out: list[dict] = []
+    for b in bars:
+        t = b["t"] // ms * ms
+        if out and out[-1]["t"] == t:
+            o = out[-1]
+            o["h"], o["l"], o["c"], o["v"] = max(o["h"], b["h"]), min(o["l"], b["l"]), b["c"], o["v"] + b["v"]
+        else:
+            out.append({**b, "t": t})
+    return out
+
+
+def radar_bars(code: str, iv: str = "1h", ttl: float = 300) -> list[dict]:
+    key = f"{code}:{iv}"
+    now = time.time()
+    if key in _bars_cache and now - _bars_cache[key][0] < ttl:
+        return _bars_cache[key][1]
+    yiv, rng, group = RADAR_IV[iv]
+    sym = urllib.parse.quote(RADAR_FUTURES[code][0])
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range={rng}&interval={yiv}"
+    bars = parse_yahoo_bars(json.loads(_get(url)))
+    if group:
+        bars = group_bars(bars, group)
+    _bars_cache[key] = (now, bars)
+    return bars
+
 if __name__ == "__main__":
     out = Path(sys.argv[1] if len(sys.argv) > 1 else "data")
     out.mkdir(parents=True, exist_ok=True)

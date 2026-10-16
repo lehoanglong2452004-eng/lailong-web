@@ -10,7 +10,7 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610152132";
+import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610160700";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
 function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
@@ -83,9 +83,21 @@ const binance = {
   async klines(symbol, interval, n) {
     const ms = INTERVALS[interval];
     return pageBackward(async end => {
-      const rows = await getJson(`${BN_REST}/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=1500&endTime=${end}`);
+      const rows = await getJson(`${BN_REST}/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${Math.min(1500, n + 1)}&endTime=${end}`);
       return rows.map(r => ({ t: r[0], o: num(r[1]), h: num(r[2]), l: num(r[3]), c: num(r[4]), v: num(r[5]), bv: num(r[9]) }));
     }, n, ms);
+  },
+  // nến trực tiếp qua một WebSocket chung cho nhiều cặp (mã, khung): onBar(symbol, interval, bar) mỗi lần có cập nhật
+  klineStream(pairs, onBar, onStatus) {
+    const streams = [...new Set(pairs.map(([s, i]) => `${s.toLowerCase()}@kline_${i}`))];
+    if (!streams.length) return { close() {} };
+    return openSocket(`${BN_WS}/stream?streams=${streams.join("/")}`, {
+      name: "nến Binance", onStatus,
+      onMessage: m => {
+        const k = m.data && m.data.k; if (!k) return;
+        onBar(k.s, k.i, { t: k.t, o: num(k.o), h: num(k.h), l: num(k.l), c: num(k.c), v: num(k.v), bv: num(k.V) });
+      },
+    });
   },
   async oiHistory(symbol, interval, from) {
     const period = oiPeriod(interval, ["5m", "15m", "1h", "4h", "1d"]);

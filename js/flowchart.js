@@ -4,13 +4,20 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610152132";
-import { cvd as cvdOf } from "./analytics.js?v=202610152132";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610152132";
-import { GROUPS } from "./flowtools.js?v=202610152132";
-import { WALL_KIND } from "./walls.js?v=202610152132";
-import { T, alpha } from "./theme.js?v=202610152132";
-import { drawShapes } from "./drawings.js?v=202610152132";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610160700";
+import { cvd as cvdOf } from "./analytics.js?v=202610160700";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610160700";
+import { GROUPS } from "./flowtools.js?v=202610160700";
+import { WALL_KIND } from "./walls.js?v=202610160700";
+import { T, alpha } from "./theme.js?v=202610160700";
+import { drawShapes } from "./drawings.js?v=202610160700";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610160700";
+
+const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
+function radarText(e, dec, ms) {
+  const st = RADAR_STATUS[e.r.status];
+  return `Radar: ${RADAR_TYPES[e.type].name} ${e.dir > 0 ? "▲" : "▼"} ở ${e.level.toFixed(dec)}. ${RADAR_TYPES[e.type].tip}. Bối cảnh ${RADAR_REGIMES[e.regime].name.toLowerCase()}, khối lượng ×${e.vRel.toFixed(1)} so với cùng thời điểm các ngày trước${e.share != null ? `, mua chủ động ${Math.round(e.share * 100)}%` : ""}. Phản ứng: ${st.name.toLowerCase()}${e.r.at && ms ? ` sau ${fmtDur(e.r.at * ms)}` : ""}.`;
+}
 
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
@@ -61,8 +68,8 @@ export class FlowChart {
     this.S = fitCanvas(canvas, () => { this.dirty = true; }); this.ctx = this.S.ctx;
     this.bars = []; this.info = {}; this.step = 1; this.type = "candle"; this.rowMult = "auto";
     this.spacing = { candle: 8, box: 72 }; this.offset = 6; this.yZoom = 1;
-    this.show = { profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true };
-    this.levels = []; this.zones = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
+    this.show = { radar: false, profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true };
+    this.radar = []; this.levels = []; this.zones = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
     this.absorb = []; this.prints = null; this.bigQ = Infinity; this.clusters = []; this.ranges = []; this.pane = "deltaCvd";
     this.vpinVals = null; this.vpinHi = null; this.groupVals = null; this.algoRuns = []; this.spoofs = []; this.scores = []; this.scoreMin = 60;
     this.selecting = false; this.sel = null;
@@ -130,6 +137,7 @@ export class FlowChart {
     if (this.type === "box" && this.show.imb) this._stacked(first, last, rowStep, L);
     if (this.type === "box") this._boxes(first, last, rowStep); else this._candles(first, last);
     this._lines(first, last);
+    if (this.show.radar) this._radar(first, last, L);
     if (this.show.cluster) this._clusters(first, last, rowStep);
     if (this.show.big) this._bigPrints(first, last);
     if (this.show.absorb) this._absorb(first, last);
@@ -261,6 +269,24 @@ export class FlowChart {
       ctx.font = `10px ${MONO}`; ctx.textAlign = "right"; ctx.fillStyle = alpha(base, 0.95); ctx.textBaseline = "alphabetic";
       ctx.fillText(`${lv.kind === "support" ? "HT" : "KC"} ${lv.price.toFixed(dec)} · chạm ${lv.touches} · test ${lv.tests} · ${Math.round(lv.strength)}đ`, L.pw - 8, y - 3);
     }
+  }
+
+  // sự kiện Radar: chấm ở mức giá của sự kiện, nét đứt kéo tới hiện tại với 48 nến gần nhất, màu theo phản ứng
+  _radar(first, last, L) {
+    const ctx = this.ctx, n = this.bars.length, idx = new Map(this.bars.map((b, i) => [b.t, i]));
+    this._radarVis = [];
+    ctx.font = `10px ${MONO}`; ctx.textBaseline = "alphabetic";
+    for (const e of this.radar) {
+      const i = idx.get(e.t); if (i === undefined || i > last) continue;
+      const col = e.r.status === "accepted" ? T.up : e.r.status === "rejected" ? T.down : "#f5a524", y = this.yOf(e.level), x = this.xOf(i);
+      if (i >= n - 49) { ctx.strokeStyle = alpha(col, 0.75); ctx.setLineDash([4, 3]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(Math.max(0, x), y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]); }
+      if (i < first) continue;
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill();
+      ctx.strokeStyle = C.bg; ctx.lineWidth = 1; ctx.stroke();
+      ctx.textAlign = "center"; ctx.fillStyle = alpha(col, 0.95); ctx.fillText(RADAR_MARK[e.type] || "", x, e.dir > 0 ? this.yOf(this.bars[i].l) + 13 : this.yOf(this.bars[i].h) - 5);
+      this._radarVis.push({ x, y, e });
+    }
+    ctx.textAlign = "left";
   }
 
   _zones(first, L) {
@@ -677,6 +703,8 @@ export class FlowChart {
     if (y > L.priceH) return this._paneText(y, i, b, L);
     const sc = this.show.score && this._scoreVis && this._scoreVis.find(v => Math.abs(x - v.x) <= v.w / 2 + 2 && Math.abs(y - v.y) <= v.h / 2 + 2);
     if (sc) return scoreText(sc.e, dec);
+    const rd = this.show.radar && this._radarVis && this._radarVis.find(v => Math.hypot(x - v.x, y - v.y) <= 7);
+    if (rd) return radarText(rd.e, dec, this.info.intervalMs);
     const al = this.show.algo && this._algoVis && this._algoVis.find(v => v.pts.some(([px, py]) => Math.hypot(x - px, y - py) <= 6));
     if (al) return algoText(al.r, dec);
     const sp = this.show.spoof && this._spoofVis && this._spoofVis.find(v => Math.hypot(x - v.x, y - v.y) <= 7);

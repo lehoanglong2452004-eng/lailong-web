@@ -990,7 +990,42 @@ export const GLOSSARY = [
     id: "fr-cost", group: "Fractal & kiểm chứng", term: "Phí và trượt giá trong kiểm chứng",
     short: "Mỗi lệnh trừ 2 lần phí taker và 2 lần trượt giá (vào và ra), quy ra R. Tín hiệu đúng 55% vẫn có thể lỗ sau phí.",
     body: "<p>Ví dụ BTC 65.000, ATR 5 phút 120 USDT, phí taker 0,05% và trượt giá 2 bps mỗi chiều: chi phí khứ hồi khoảng 0,14% × 65.000 = 91 USDT, tức gần 0,76 ATR. Với cắt lỗ 1 ATR thì mỗi lệnh mất sẵn 0,76R.</p><p>Vì vậy trên khung nhỏ, phí rất nặng. Chốt lời xa hơn (2 hoặc 3 ATR) hoặc khung lớn hơn giúp phí nhỏ đi so với lợi nhuận.</p>"
-  }
+  },
+  {
+    id: "radar", group: "Radar", term: "Radar: giá và khối lượng theo bối cảnh",
+    short: "Không hỏi phe nào thắng phe nào. Radar hỏi: thị trường đang phản ứng thế nào, phản ứng đó chính thức hay tạm thời, và trong quá khứ những lần giống vậy đã kết thúc ra sao.",
+    body: "<p>Chỉ dùng giá và khối lượng, như Wyckoff, nhưng đo bằng máy. Nến 1 giờ, khoảng 3 tuần.</p><p><b>Khối lượng bất thường</b> luôn xét theo bối cảnh. Thứ nhất, so với <b>cùng giờ trong ngày</b> của tối đa 14 ngày trước: giờ Mỹ mở cửa ngày nào cũng đông thì không tính là bất thường. Thứ hai, so với <b>nhịp 3 ngày trước đó</b>: <b>nhàm chán</b> (khối lượng và biên độ đều dưới 85% bình thường), <b>hưng phấn</b> hoặc <b>hoảng loạn</b> (giá đi một chiều, hiệu suất đường đi trên 30%, khối lượng hoặc biên độ trên 115%), còn lại là <b>bình thường</b>.</p><p><b>Các loại sự kiện</b>: <b>Đánh thức</b> (Đ): khối lượng ×3 giữa lúc nhàm chán. <b>Cao trào</b> (C): khối lượng ×3 lúc hưng phấn/hoảng loạn. <b>Khối lượng lớn</b> (K): ×3 lúc bình thường. <b>Nỗ lực không kết quả</b> (H): ×2,5 mà nến hẹp dưới 0,7 ATR, có người hấp thụ. <b>Kết quả không nỗ lực</b> (T): nến dài trên 2 ATR mà khối lượng không cao, giá trượt trong vùng trống. <b>Nghịch lý</b> (N): bên chủ động áp đảo từ 60/40 mà nến đi ngược lại. <b>Cạn khối lượng</b>: đang hưng phấn/hoảng loạn, giá vẫn sát đỉnh/đáy nhưng 6 giờ qua khối lượng dưới 60% bình thường.</p><p><b>Mức giá</b> của sự kiện là giá trung bình theo khối lượng của cây nến đó (VWAP của giờ đó), tức là nơi lượng tiền bất thường thực sự khớp. Trên biểu đồ, mức của sự kiện 72 giờ gần nhất được kéo tới hiện tại.</p><p>Các ngưỡng trên là mặc định ban đầu; thống kê lịch sử cho biết ngưỡng nào thật sự có ý nghĩa.</p>"
+  },
+  {
+    id: "radar-react", group: "Radar", term: "Phản ứng: chính thức hay tạm thời",
+    short: "Sau sự kiện, nếu giá đi thêm 1 ATR theo hướng đó trước khi quay ngược qua mức giá thì là chính thức; quay ngược qua mức quá 0,5 ATR trước thì là tạm thời (thị trường bác bỏ).",
+    body: "<p><b>Hướng</b> của sự kiện: theo bên chủ động áp đảo (mua/bán chủ động), không có thì theo màu nến; với cao trào và cạn khối lượng là hướng của xu hướng 3 ngày.</p><p><b>Chính thức</b>: giá đi thêm 1 ATR theo hướng sự kiện trước khi có nến đóng cửa ngược qua mức giá quá 0,5 ATR. <b>Tạm thời</b>: điều ngược lại xảy ra trước. <b>Giằng co</b>: 24 giờ chưa ra kết quả. <b>Đang chờ</b>: chưa đủ 24 giờ.</p><p>Với <b>nghịch lý</b>, hướng là hướng của bên chủ động; nếu sau đó \"tạm thời\" nghĩa là bên hấp thụ đã thắng, nếu \"chính thức\" nghĩa là nghịch lý tự điều chỉnh về phía bên chủ động.</p><p>Cột <b>Sau 12h</b>: giá thay đổi sau 12 giờ theo hướng sự kiện, đơn vị ATR lúc xảy ra (dương là đi đúng hướng).</p>"
+  },
+  {
+    id: "radar-history", group: "Radar", term: "Lặp lại trong lịch sử",
+    short: "Mỗi loại sự kiện đã xảy ra bao nhiêu lần, bao nhiêu % thành chính thức, bao lâu thì ra kết quả, và sau 4, 12, 24 giờ giá thường đi bao xa.",
+    body: "<p>Chọn <b>mã đang xem</b> hoặc <b>Cả rổ</b> (gộp mọi tài sản trong máy quét, nhiều mẫu hơn nhưng trộn các thị trường khác nhau). <b>Ra kết quả sau</b>: số giờ trung vị tới khi chính thức / tạm thời.</p><p>Các cột TB là thay đổi giá trung bình theo hướng sự kiện, đơn vị ATR, để so được giữa các tài sản có biên độ khác nhau. <b>Đúng hướng 12h</b>: tỷ lệ lần giá đi đúng hướng sau 12 giờ.</p><p>Dòng mờ là dưới 20 lần có kết quả: chưa đủ để tin. Dữ liệu chỉ khoảng 3 tuần nên đây là gợi ý để đào sâu; kiểm chứng đầy đủ cần kho dữ liệu dài hơn.</p>"
+  },
+  {
+    id: "radar-fuel", group: "Radar", term: "Nhiên liệu đòn bẩy",
+    short: "Đòn bẩy đang dồn ở đâu: OI, funding, tỷ lệ tài khoản long, top trader, dòng tiền spot và perp, Coinbase premium. Chỉ có cho crypto.",
+    body: "<p>Theo lý thuyết phản thân của Soros, giá đi kéo theo người đến sau, người đến sau lại đẩy giá đi tiếp, cho tới khi hết người để kéo vào thì vòng lặp đảo chiều. Phần này đo lượng \"nhiên liệu\" còn lại.</p><p><b>OI 4 góc</b> (4 giờ): giá lên OI lên là long mới mở; giá lên OI giảm là short đóng; giá giảm OI lên là short mới mở; giá giảm OI giảm là long xả.</p><p>Mỗi phép đo kèm <b>z-score</b> so với 7 ngày trước đó; ô đậm là từ ±2. Funding và tỷ lệ long lệch mạnh trong khi khối lượng cạn là dấu hiệu nhiên liệu sắp hết. Hợp đồng tương lai không có số này theo giờ (báo cáo COT chậm 3 ngày).</p>"
+  },
+  {
+    id: "radar-mtf", group: "Radar", term: "Radar đa khung",
+    short: "Cùng một tài sản trên 5 khung (5m, 15m, 1h, 4h, 1D): bối cảnh của từng khung, khối lượng nến vừa đóng, và sự kiện gần nhất.",
+    body: "<p>Mỗi khung có nhịp riêng: bối cảnh 5m nhìn 6 giờ trước đó, 15m nhìn 1 ngày, 1h nhìn 3 ngày, 4h nhìn 7 ngày, 1D nhìn 20 ngày. Khối lượng luôn so với cùng thời điểm trong ngày của các ngày trước (khung ngày thì so với 14 ngày trước).</p><p><b>Cách dùng</b>: khung nhỏ báo sớm nhưng nhiễu. Khi khung nhỏ có sự kiện ở một mức giá và khung lớn hơn cũng có sự kiện cùng hướng quanh mức đó, tín hiệu đáng tin hơn. Bấm một dòng để xem biểu đồ, sự kiện và thống kê của khung đó.</p><p>Hợp đồng tương lai: Yahoo không có nến 4 giờ nên được gộp từ nến 1 giờ theo mốc UTC.</p>"
+  },
+  {
+    id: "radar-together", group: "Radar", term: "Đồng loạt",
+    short: "Những giờ mà từ 3 tài sản trở lên (crypto và hợp đồng tương lai) cùng có sự kiện Radar. Thường là tin vĩ mô hoặc dòng tiền lớn dịch chuyển giữa các thị trường.",
+    body: "<p>Ví dụ vàng, yên và S&amp;P 500 cùng có khối lượng bất thường trong một giờ: có thể là tin, có thể là ngân hàng trung ương can thiệp, có thể là một quỹ lớn đổi vị thế. Cột hướng đếm số tài sản đi lên và đi xuống; rê chuột lên tên để xem loại sự kiện và phản ứng.</p><p>Dùng khung 1h của máy quét, khoảng 3 tuần gần nhất.</p>"
+  },
+  {
+    id: "radar-scan", group: "Radar", term: "Máy quét sự kiện",
+    short: "Mọi sự kiện 48 giờ qua trên 12 mã crypto và 10 hợp đồng tương lai, mới nhất ở trên, kèm mức giá, giá đang cách bao xa, phản ứng và lịch sử của loại đó trên cả rổ.",
+    body: "<p>Hợp đồng tương lai (vàng, bạc, dầu, khí, đồng, yên, euro, S&P 500, Nasdaq, trái phiếu 10 năm) lấy nến 1 giờ từ Yahoo, chậm khoảng 15 phút, và chỉ có trên bản chạy ở laptop. Không có số mua/bán chủ động nên không có sự kiện nghịch lý.</p><p>Bấm một dòng để mở tài sản đó. Tự quét lại mỗi 5 phút khi đang mở tab.</p>"
+  },
 ];
 
-export const GROUPS = ["Fractal & kiểm chứng", "Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest", "Phái sinh", "Thị trường", "Công cụ"];
+export const GROUPS = ["Radar", "Fractal & kiểm chứng", "Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest", "Phái sinh", "Thị trường", "Công cụ"];
