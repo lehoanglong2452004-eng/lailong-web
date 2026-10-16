@@ -1,36 +1,37 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610152132";
-import { MarketState, Book } from "./market.js?v=202610152132";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610152132";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610152132";
-import { FlowChart } from "./flowchart.js?v=202610152132";
-import { TpoChart } from "./tpo.js?v=202610152132";
-import { Dom } from "./dom.js?v=202610152132";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610152132";
-import { initBacktest } from "./backtestview.js?v=202610152132";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610152132";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610152132";
-import { Tape } from "./tape.js?v=202610152132";
-import { LiqMap } from "./liqmap.js?v=202610152132";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610152132";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610152132";
-import { Alerts } from "./alerts.js?v=202610152132";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610152132";
-import { initNews } from "./newsview.js?v=202610152132";
-import { initMarkets } from "./marketsview.js?v=202610152132";
-import { initGex } from "./gexview.js?v=202610152132";
-import { Drawings } from "./drawings.js?v=202610152132";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610152132";
-import { PaperBroker } from "./paper.js?v=202610152132";
-import { OrderLines } from "./orderlines.js?v=202610152132";
-import { MultiChart } from "./multichart.js?v=202610152132";
-import { DOM_COLS } from "./dom.js?v=202610152132";
-import { initFractal } from "./fractalview.js?v=202610152132";
-import { initJournal } from "./journalview.js?v=202610152132";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610152132";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610152132";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610152132";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610160700";
+import { MarketState, Book } from "./market.js?v=202610160700";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610160700";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610160700";
+import { FlowChart } from "./flowchart.js?v=202610160700";
+import { TpoChart } from "./tpo.js?v=202610160700";
+import { Dom } from "./dom.js?v=202610160700";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610160700";
+import { initBacktest } from "./backtestview.js?v=202610160700";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610160700";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610160700";
+import { Tape } from "./tape.js?v=202610160700";
+import { LiqMap } from "./liqmap.js?v=202610160700";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610160700";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610160700";
+import { Alerts } from "./alerts.js?v=202610160700";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610160700";
+import { initNews } from "./newsview.js?v=202610160700";
+import { initMarkets } from "./marketsview.js?v=202610160700";
+import { initGex } from "./gexview.js?v=202610160700";
+import { initRadar } from "./radarview.js?v=202610160700";
+import { Drawings } from "./drawings.js?v=202610160700";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610160700";
+import { PaperBroker } from "./paper.js?v=202610160700";
+import { OrderLines } from "./orderlines.js?v=202610160700";
+import { MultiChart } from "./multichart.js?v=202610160700";
+import { DOM_COLS } from "./dom.js?v=202610160700";
+import { initFractal } from "./fractalview.js?v=202610160700";
+import { initJournal } from "./journalview.js?v=202610160700";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610160700";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610160700";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610160700";
 
 const $ = id => document.getElementById(id);
 // Tuỳ chỉnh (bố cục, cột, khung, màu, cài đặt biểu đồ…) chỉ giữ trong lúc tab còn mở (sessionStorage).
@@ -307,6 +308,7 @@ heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
 const newsView = initNews({ $, esc, alerts, coin });
 const marketsView = initMarkets({ $, esc });
 const gexView = initGex({ $, esc });
+const radarView = initRadar({ $, esc, onPick: sym => { S.ex = "BINANCE"; $("exchange").value = S.ex; S.symbol = sym; $("symbol").value = sym; load(); setView("terminal"); } });
 const multiChart = new MultiChart($("view-multi"), { ex: () => ex() });
 
 function scheduleFlow() { if (flowTimer) return; flowTimer = setTimeout(() => { flowTimer = null; recomputeFlow(); }, 1500); }
@@ -381,8 +383,24 @@ async function loadSymbols() {
 }
 
 // ---------- trang Phân tích ----------
-const mtfCache = new Map();
+// nến các khung khác cho tab Phân tích: tải song song, dùng chung một bộ nhớ đệm 60 giây và gộp các lần hỏi trùng
+const tfCache = new Map();
+function tfBars(tf) {
+  if (tf === S.interval) return Promise.resolve(market.bars);
+  const ck = `${S.ex}:${S.symbol}:${tf}`, c = tfCache.get(ck);
+  if (c && Date.now() - c.t < 60e3) return c.p;
+  const p = ex().klines(S.symbol, tf, 500);
+  tfCache.set(ck, { t: Date.now(), p });
+  p.catch(() => tfCache.delete(ck));
+  return p;
+}
+let analysisBusy = false, analysisAgain = false;
 async function renderAnalysis() {
+  if (analysisBusy) { analysisAgain = true; return; } // đang vẽ thì chỉ hẹn vẽ lại một lần, không chồng nhiều lượt
+  analysisBusy = true;
+  try { await renderAnalysisNow(); } finally { analysisBusy = false; if (analysisAgain) { analysisAgain = false; renderAnalysis(); } }
+}
+async function renderAnalysisNow() {
   if (!analysis) { $("mtfTable").innerHTML = `<div class="empty">Đang tải dữ liệu...</div>`; return; }
   const dec = decimalsFor(market.tick || market.fpStep), last = market.bars[market.bars.length - 1].c;
   $("srInfo").textContent = `khung ${S.interval}, giá ${last.toFixed(dec)}`;
@@ -398,14 +416,11 @@ async function renderAnalysis() {
   $("vpStats").innerHTML = `<div class="kv"><span>Phạm vi</span><b>500 nến ${S.interval} gần nhất</b><span data-g="poc">POC (giá nhiều KL nhất)</span><b>${vp.poc == null ? "-" : vp.poc.toFixed(dec)}</b><span data-g="value-area">Vùng giá trị 70%</span><b>${vp.val == null ? "-" : vp.val.toFixed(dec) + " – " + vp.vah.toFixed(dec)}</b><span data-g="hvn">Nút khối lượng cao (HVN)</span><b>${near(vp.hvn, 6)}</b><span data-g="lvn">Nút khối lượng thấp (LVN)</span><b>${near(vp.lvn, 6)}</b></div><p class="note">HVN thường là vùng giá dễ bị hút về và đi ngang; LVN là vùng giá dễ chạy nhanh qua.</p>`;
   renderDvol(); renderDerivs(); newsView.render();
   const tfs = ["5m", "15m", "1h", "4h", "1d"], rows = [];
-  for (const tf of tfs) {
-    const ck = `${S.ex}:${S.symbol}:${tf}`; let c = mtfCache.get(ck);
-    if (!c || Date.now() - c.t > 60e3) {
-      try { const bars = tf === S.interval ? market.bars : await ex().klines(S.symbol, tf, 500); c = { t: Date.now(), s: summary(bars, INTERVALS[tf]) }; mtfCache.set(ck, c); }
-      catch (e) { c = { t: 0, err: e.message }; }
-    }
-    if (c.err) { rows.push(`<tr><td>${tf}</td><td colspan="7" class="t muted">Lỗi: ${esc(c.err)}</td></tr>`); continue; }
-    const { trend: t, momentum: m, volatility: v } = c.s;
+  const got = await Promise.allSettled(tfs.map(tfBars));
+  for (const [j, tf] of tfs.entries()) {
+    const g = got[j];
+    if (g.status === "rejected") { rows.push(`<tr><td>${tf}</td><td colspan="7" class="t muted">Lỗi: ${esc(g.reason.message)}</td></tr>`); continue; }
+    const { trend: t, momentum: m, volatility: v } = summary(g.value, INTERVALS[tf]);
     const sc = x => x == null ? "-" : `<span class="bar"><i style="${x >= 0 ? "left:50%" : `left:${50 + x / 2}%`};width:${Math.abs(x) / 2}%;background:${x >= 0 ? "var(--buy)" : "var(--sell)"}"></i></span>${x.toFixed(0)}`;
     rows.push(`<tr><td>${tf}</td><td>${trendTag(t.label, t.score)}</td><td>${sc(t.score)}</td><td class="t">${esc(t.structure || "-")}</td><td>${trendTag(m.label, m.score)} ${sc(m.score)}</td><td>${fmtPct(m.roc10)}</td><td class="t">${esc(v.regime || "-")} (${v.percentile == null ? "-" : v.percentile.toFixed(0)}%)</td><td>${v.realized == null ? "-" : v.realized.toFixed(0) + "%"} · ATR ${v.atrPct == null ? "-" : v.atrPct.toFixed(2) + "%"}</td></tr>`);
   }
@@ -414,14 +429,12 @@ async function renderAnalysis() {
 
 const absCache = new Map();
 async function renderAbsorptionCard() {
-  const rows = [];
-  for (const tf of ["5m", "15m", "1h", "4h", "1d"]) {
-    const ck = `${S.ex}:${S.symbol}:${tf}`; let c = absCache.get(ck);
-    if (tf === S.interval) c = { t: Date.now(), ev: absorb, bars: market.bars, exact: true };
-    else if (!c || Date.now() - c.t > 120e3) {
-      try { const bars = await ex().klines(S.symbol, tf, 500); c = { t: Date.now(), ev: absorption(bars), bars }; absCache.set(ck, c); }
-      catch (e) { rows.push(`<tr><td>${tf}</td><td colspan="7" class="t muted">Lỗi: ${esc(e.message)}</td></tr>`); continue; }
-    }
+  const rows = [], tfs = ["5m", "15m", "1h", "4h", "1d"], got = await Promise.allSettled(tfs.map(tfBars));
+  for (const [j, tf] of tfs.entries()) {
+    let c;
+    if (tf === S.interval) c = { ev: absorb, bars: market.bars };
+    else if (got[j].status === "rejected") { rows.push(`<tr><td>${tf}</td><td colspan="7" class="t muted">Lỗi: ${esc(got[j].reason.message)}</td></tr>`); continue; }
+    else { const bars = got[j].value, ck = `${S.ex}:${S.symbol}:${tf}`, old = absCache.get(ck); c = old && old.bars === bars ? old : { ev: absorption(bars), bars }; absCache.set(ck, c); }
     const st = absorptionStats(c.ev), last = c.ev[c.ev.length - 1], dec = decimalsFor(market.tick || 0.01), pct = g => isFinite(g.pct) ? `${g.pct.toFixed(0)}%` : "-";
     rows.push(`<tr><td>${tf}${tf === S.interval ? " ★" : ""}</td><td>${c.bars.length}</td><td class="neg">${st.sell.n}</td><td class="pos">${pct(st.sell)}</td><td class="pos">${st.buy.n}</td><td class="pos">${pct(st.buy)}</td><td class="t">${last ? `${last.side === "sell" ? "Hấp thụ bán" : "Hấp thụ mua"} ${last.price.toFixed(dec)} lúc ${fmtDate(last.t)}` : "-"}</td></tr>`);
   }
@@ -666,13 +679,14 @@ function setConn(text, ok) { const p = $("connPill"); p.className = "pill" + (ok
 function setView(v) {
   S.view = v; persist();
   for (const b of $("views").children) b.classList.toggle("on", b.dataset.view === v);
-  for (const id of ["terminal", "multi", "analysis", "markets", "options", "backtest", "fractal", "journal"]) $("view-" + id).hidden = id !== v;
+  for (const id of ["terminal", "radar", "multi", "analysis", "markets", "options", "backtest", "fractal", "journal"]) $("view-" + id).hidden = id !== v;
   document.body.classList.toggle("not-terminal", v !== "terminal");
   heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
   if (v === "analysis") renderAnalysis();
   if (v === "journal") journal.show();
   if (v === "markets") marketsView.show(); else marketsView.hide();
   if (v === "options") gexView.show(); else gexView.hide();
+  if (v === "radar") radarView.show(); else radarView.hide();
   if (v === "multi") multiChart.show(); else multiChart.hide();
 }
 function setMode(m) {

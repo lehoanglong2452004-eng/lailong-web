@@ -13,13 +13,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610152132">
+<link rel="stylesheet" href="css/app.css?v=202610160700">
 </head>
 <body>
 <header class="menubar">
   <div class="brand">LAI LONG <span>QUANT</span></div>
   <nav class="seg views" id="views">
     <button data-view="terminal" class="on" data-tip="Bookmap, footprint, nến và sổ lệnh trực tiếp">Terminal</button>
+    <button data-view="radar" data-tip="Radar: khối lượng bất thường theo bối cảnh, thị trường phản ứng chính thức hay tạm thời, lịch sử lặp lại; crypto và hợp đồng tương lai">Radar</button>
     <button data-view="multi" data-tip="Nhiều biểu đồ nến cùng lúc, mỗi ô một mã và khung thời gian riêng; kéo thả, đổi cỡ, thu nhỏ từng ô">Đa biểu đồ</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
     <button data-view="markets" data-tip="Hàng hoá phái sinh, forex và lãi suất, crypto, quỹ ETF, cá voi và thanh lý">Thị trường</button>
@@ -267,6 +268,47 @@
 </nav>
 
 <!-- ============ PHÂN TÍCH ============ -->
+<main class="view analysis" id="view-radar" hidden>
+  <div class="gexbar">
+    <span class="newstabs" id="radarAssets"></span>
+    <span class="newstabs" id="radarTfs"></span>
+    <button class="tool" id="radarReload" data-tip="Tải lại ngay">↻</button>
+    <button class="tool" id="radarOpen" data-tip="Mở mã này ở Terminal (Bookmap, footprint, sổ lệnh)">Mở ở Terminal</button>
+    <small class="muted" id="radarSrc"></small>
+  </div>
+  <div class="lensverdict" id="radarAnswer"></div>
+  <div class="cards">
+    <section class="card span2">
+      <h3>Đa khung: từng khung đang phản ứng thế nào <button class="q" data-g="radar-mtf">?</button></h3>
+      <div class="tablewrap" id="radarMulti"></div>
+    </section>
+    <section class="card">
+      <h3>Đồng loạt: nhiều tài sản cùng bất thường <button class="q" data-g="radar-together">?</button></h3>
+      <div class="tablewrap" id="radarTogether"></div>
+    </section>
+    <section class="card radarwide">
+      <h3>Giá, khối lượng bất thường và phản ứng <button class="q" data-g="radar">?</button> <small>chấm xanh: chính thức · đỏ: tạm thời · vàng: chưa rõ · rê chuột lên chấm để xem</small></h3>
+      <div class="gexcv radarcv"><canvas id="radarChart"></canvas><div class="radartip" id="radarTip" hidden></div></div>
+    </section>
+    <section class="card radarwide">
+      <h3>Sự kiện gần đây <button class="q" data-g="radar-react">?</button></h3>
+      <div class="tablewrap" id="radarEvents"></div>
+    </section>
+    <section class="card span2">
+      <h3>Lặp lại trong lịch sử <button class="q" data-g="radar-history">?</button> <span class="newstabs inl" id="radarPool"></span></h3>
+      <div class="tablewrap" id="radarStats"></div>
+    </section>
+    <section class="card">
+      <h3>Nhiên liệu đòn bẩy <button class="q" data-g="radar-fuel">?</button></h3>
+      <div id="radarFuel"></div>
+    </section>
+    <section class="card radarwide">
+      <h3>Máy quét: sự kiện 48 giờ qua trên cả rổ <button class="q" data-g="radar-scan">?</button> <small id="radarScanSrc"></small></h3>
+      <div class="tablewrap tall" id="radarScan"></div>
+    </section>
+  </div>
+</main>
+
 <main class="view mcview" id="view-multi" hidden></main>
 
 <main class="view analysis" id="view-analysis" hidden>
@@ -561,6 +603,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610152132"></script>
+<script type="module" src="js/app.js?v=202610160700"></script>
 </body>
 </html>

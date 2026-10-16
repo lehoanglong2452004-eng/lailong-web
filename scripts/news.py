@@ -17,6 +17,7 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -26,36 +27,73 @@ CALENDAR_URLS = [
     "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
     "https://nfs.faireconomy.media/ff_calendar_nextweek.json",
 ]
-# (nguồn, đường dẫn, mục mặc định); mục thật của từng tin còn được chỉnh lại theo từ khoá
+# (nguồn, đường dẫn, mục mặc định); mục thật của từng tin còn được chỉnh lại theo từ khoá.
+# Nguồn nào bị chặn (ví dụ Investing.com ở Việt Nam) chỉ bị bỏ qua sau vài giây, không làm chậm nguồn khác.
+GN = "https://news.google.com/rss/search?hl=en-US&gl=US&ceid=US:en&q="
 FEEDS = [
+    # crypto
     ("CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss/", "crypto"),
     ("Cointelegraph", "https://cointelegraph.com/rss", "crypto"),
     ("Decrypt", "https://decrypt.co/feed", "crypto"),
     ("The Block", "https://www.theblock.co/rss.xml", "crypto"),
     ("Bitcoin Magazine", "https://bitcoinmagazine.com/.rss/full/", "crypto"),
+    ("CryptoSlate", "https://cryptoslate.com/feed/", "crypto"),
+    ("Blockworks", "https://blockworks.co/feed", "crypto"),
+    ("Bitcoinist", "https://bitcoinist.com/feed/", "crypto"),
+    ("The Defiant", "https://thedefiant.io/api/feed", "crypto"),
+    # kinh tế, ngân hàng trung ương
     ("CNBC", "https://www.cnbc.com/id/20910258/device/rss/rss.html", "econ"),
-    ("CNBC", "https://www.cnbc.com/id/10000664/device/rss/rss.html", "fin"),
-    ("CNBC", "https://www.cnbc.com/id/100727362/device/rss/rss.html", "geo"),
-    ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_topstories", "fin"),
-    ("Investing.com", "https://www.investing.com/rss/news_14.rss", "econ"),
-    ("Investing.com", "https://www.investing.com/rss/news_11.rss", "energy"),
-    ("Investing.com", "https://www.investing.com/rss/news_1.rss", "fin"),
+    ("Bloomberg", "https://feeds.bloomberg.com/economics/news.rss", "econ"),
     ("ForexLive", "https://www.forexlive.com/feed/news", "econ"),
+    ("FXStreet", "https://www.fxstreet.com/rss/news", "econ"),
+    ("FinancialJuice", "https://www.financialjuice.com/feed.ashx?xy=rss", "econ"),
+    ("Investing.com", "https://www.investing.com/rss/news_14.rss", "econ"),
+    ("Fed", "https://www.federalreserve.gov/feeds/press_all.xml", "econ"),
+    ("Fed", "https://www.federalreserve.gov/feeds/speeches.xml", "econ"),
+    ("ECB", "https://www.ecb.europa.eu/rss/press.html", "econ"),
+    ("BoE", "https://www.bankofengland.co.uk/rss/news", "econ"),
+    ("BoJ", "https://www.boj.or.jp/en/rss/whatsnew.xml", "econ"),
+    ("Google News", GN + "%22central+bank%22+OR+inflation+OR+%22rate+decision%22+when:1d", "econ"),
+    # tài chính, chứng khoán, trái phiếu
+    ("CNBC", "https://www.cnbc.com/id/10000664/device/rss/rss.html", "fin"),
+    ("CNBC", "https://www.cnbc.com/id/100003114/device/rss/rss.html", "fin"),
+    ("CNBC", "https://www.cnbc.com/id/15839069/device/rss/rss.html", "fin"),
+    ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_topstories", "fin"),
+    ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines", "fin"),
+    ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_marketpulse", "fin"),
+    ("WSJ", "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain", "fin"),
+    ("Bloomberg", "https://feeds.bloomberg.com/markets/news.rss", "fin"),
+    ("Financial Times", "https://www.ft.com/markets?format=rss", "fin"),
+    ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex", "fin"),
+    ("NYT", "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml", "fin"),
+    ("Investing.com", "https://www.investing.com/rss/news_1.rss", "fin"),
+    ("Google News", GN + "site:reuters.com+markets+when:1d", "fin"),
+    # kim loại
+    ("Google News", GN + "gold+OR+silver+OR+copper+OR+platinum+price+when:2d", "metal"),
+    ("Mining.com", "https://www.mining.com/feed/", "metal"),
+    ("Kitco", "https://www.kitco.com/news/category/mining/rss", "metal"),
+    # năng lượng
     ("OilPrice", "https://oilprice.com/rss/main", "energy"),
-    (
-        "Google News",
-        "https://news.google.com/rss/search?q=gold+OR+silver+OR+copper+OR+platinum+price+when:2d&hl=en-US&gl=US&ceid=US:en",
-        "metal",
-    ),
-    (
-        "Google News",
-        "https://news.google.com/rss/search?q=oil+OR+OPEC+OR+%22natural+gas%22+price+when:2d&hl=en-US&gl=US&ceid=US:en",
-        "energy",
-    ),
+    ("Rigzone", "https://www.rigzone.com/news/rss/rigzone_latest.aspx", "energy"),
+    ("EIA", "https://www.eia.gov/rss/todayinenergy.xml", "energy"),
+    ("Investing.com", "https://www.investing.com/rss/news_11.rss", "energy"),
+    ("Google News", GN + "oil+OR+OPEC+OR+%22natural+gas%22+price+when:2d", "energy"),
+    # địa chính trị
+    ("CNBC", "https://www.cnbc.com/id/100727362/device/rss/rss.html", "geo"),
     ("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml", "geo"),
     ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml", "geo"),
-    ("Fed", "https://www.federalreserve.gov/feeds/press_all.xml", "econ"),
-    ("ECB", "https://www.ecb.europa.eu/rss/press.html", "econ"),
+    ("The Guardian", "https://www.theguardian.com/world/rss", "geo"),
+    ("NYT", "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", "geo"),
+    ("DW", "https://rss.dw.com/rdf/rss-en-world", "geo"),
+    ("Financial Times", "https://www.ft.com/world?format=rss", "geo"),
+    ("Bloomberg", "https://feeds.bloomberg.com/politics/news.rss", "geo"),
+    ("Google News", GN + "site:reuters.com+world+when:1d", "geo"),
+    # tiếng Việt
+    ("VnExpress", "https://vnexpress.net/rss/kinh-doanh.rss", "fin"),
+    ("VnExpress", "https://vnexpress.net/rss/the-gioi.rss", "geo"),
+    ("CafeF", "https://cafef.vn/thi-truong-chung-khoan.rss", "fin"),
+    ("CafeF", "https://cafef.vn/tai-chinh-quoc-te.rss", "fin"),
+    ("Vietstock", "https://vietstock.vn/830/the-gioi/tai-chinh-quoc-te.rss", "fin"),
 ]
 CATS = ["econ", "fin", "metal", "energy", "geo", "crypto"]
 # thứ tự ưu tiên khi một tin khớp nhiều mục
@@ -328,51 +366,90 @@ def fetch_calendar() -> dict:
     }
 
 
-def _text(el, tag):
-    x = el.find(tag)
+def _local(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _child(el, *names: str):
+    for x in el:
+        if _local(x.tag) in names:
+            return x
+    return None
+
+
+def _ctext(el, *names: str) -> str:
+    x = _child(el, *names)
     return (x.text or "").strip() if x is not None and x.text else ""
 
 
-def fetch_news(per_cat: int = 45) -> dict:
+def parse_feed(raw: bytes) -> list[tuple[str, str, str]]:
+    """(tiêu đề, đường dẫn, thời gian) từ RSS 2.0, RSS 1.0 (RDF) hoặc Atom, không phụ thuộc namespace."""
+    out = []
+    for it in ET.fromstring(raw).iter():
+        if _local(it.tag) not in ("item", "entry"):
+            continue
+        title = re.sub(r"\s+", " ", _ctext(it, "title"))
+        link = _ctext(it, "link")
+        if not link:
+            ln = _child(it, "link")
+            link = (ln.get("href") or "").strip() if ln is not None else ""
+        pub = _ctext(it, "pubDate", "published", "updated", "date")
+        if title and link:
+            out.append((title, link, pub))
+    return out
+
+
+def _when(pub: str) -> int:
+    try:
+        return int(parsedate_to_datetime(pub).timestamp() * 1000)
+    except Exception:
+        pass
+    try:
+        return int(datetime.fromisoformat(pub.replace("Z", "+00:00")).timestamp() * 1000)
+    except Exception:
+        return int(time.time() * 1000)
+
+
+def _one_feed(feed) -> tuple[list[dict], str | None]:
+    source, url, default = feed
+    try:
+        rows = parse_feed(_get(url, timeout=8))
+    except Exception as exc:
+        return [], f"{source}: {exc}"
+    items = []
+    for title, link, pub in rows[:60]:
+        src = source
+        if source == "Google News" and " - " in title:
+            # Google News ghi tên báo ở cuối tiêu đề: "Tiêu đề - Reuters"
+            title, src = title.rsplit(" - ", 1)
+        cat, topics = classify(title, default)
+        hot = bool(HOT.search(title)) or source in CB_SOURCES
+        coins = [c for c in COINS if re.search(COIN_WORDS[c], title, re.I)] if cat == "crypto" else []
+        items.append(
+            {
+                "t": _when(pub),
+                "title": title,
+                "link": link,
+                "source": src,
+                "cat": cat,
+                "topics": topics,
+                "hot": hot,
+                "coins": coins,
+            }
+        )
+    return items, None
+
+
+def fetch_news(per_cat: int = 80) -> dict:
+    """Lấy mọi nguồn cùng lúc (16 luồng): nguồn chậm hay bị chặn không làm chậm nguồn khác."""
     items, errors = [], []
-    for source, url, default in FEEDS:
-        try:
-            root = ET.fromstring(_get(url))
-            for it in root.iter("item"):
-                title = re.sub(r"\s+", " ", _text(it, "title"))
-                link = _text(it, "link")
-                src = source
-                if source == "Google News" and " - " in title:
-                    # Google News ghi tên báo ở cuối tiêu đề: "Tiêu đề - Reuters"
-                    title, src = title.rsplit(" - ", 1)
-                pub = _text(it, "pubDate")
-                if not title or not link:
-                    continue
-                try:
-                    t = int(parsedate_to_datetime(pub).timestamp() * 1000)
-                except Exception:
-                    t = int(time.time() * 1000)
-                cat, topics = classify(title, default)
-                hot = bool(HOT.search(title)) or source in CB_SOURCES
-                coins = (
-                    [c for c in COINS if re.search(COIN_WORDS[c], title, re.I)]
-                    if cat == "crypto"
-                    else []
-                )
-                items.append(
-                    {
-                        "t": t,
-                        "title": title,
-                        "link": link,
-                        "source": src,
-                        "cat": cat,
-                        "topics": topics,
-                        "hot": hot,
-                        "coins": coins,
-                    }
-                )
-        except Exception as exc:
-            errors.append(f"{source}: {exc}")
+    with ThreadPoolExecutor(16) as ex:
+        for got, err in ex.map(_one_feed, FEEDS):
+            items += got
+            if err:
+                errors.append(err)
+    now = int(time.time() * 1000)
+    items = [x for x in items if x["t"] <= now + 3_600_000]  # bỏ tin ghi giờ tương lai
     seen, out, per = set(), [], {c: 0 for c in CATS}
     for it in sorted(items, key=lambda x: -x["t"]):
         key = re.sub(r"\W+", " ", it["title"].lower())[:80]
