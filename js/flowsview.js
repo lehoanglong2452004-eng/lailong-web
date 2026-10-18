@@ -2,8 +2,8 @@
 //   - Quỹ ETF Bitcoin/Ethereum giao ngay (Farside): tiền vào/ra ròng mỗi ngày, triệu USD. Cuối ngày.
 //   - Stablecoin (DefiLlama): tổng lượng đang lưu hành, thay đổi 1/7/30 ngày. Cuối ngày.
 // Bản web đọc data/flows.json do GitHub Actions cập nhật; bản laptop lấy qua máy chủ (lailong/terminal/flows.py).
-import { getJson, fitCanvas, MONO } from "./util.js?v=202610180133";
-import { setFresh } from "./fresh.js?v=202610180133";
+import { getJson, fitCanvas, MONO } from "./util.js?v=202610180135";
+import { setFresh } from "./fresh.js?v=202610180135";
 
 const LLAMA = "https://stablecoins.llama.fi/stablecoins?includePrices=false";
 const usdM = x => x == null || !isFinite(x) ? "–" : `${x >= 0 ? "+" : "−"}${Math.abs(x) >= 1000 ? (Math.abs(x) / 1000).toFixed(2) + " tỷ" : Math.abs(x).toFixed(1) + " tr"}`;
@@ -25,13 +25,16 @@ export function etfSummary(d) {
 export function etfNote(name, s) {
   if (!s) return "";
   const dir = s.d5 > 0 ? "vào" : "ra";
-  let t = `${name}: 5 phiên gần nhất tiền ${dir} ròng ${usdM(Math.abs(s.d5))} USD`;
+  let t = `${name}: 5 phiên gần nhất tiền ${dir} ròng ${usdM(Math.abs(s.d5)).slice(1)} USD`;
   if (Math.abs(s.streak) >= 3) t += `, ${Math.abs(s.streak)} phiên liên tiếp ${s.streak > 0 ? "vào" : "ra"}`;
   t += s.d20 > 0 ? ". Tổ chức Mỹ đang gom qua quỹ ETF trong 20 phiên." : ". Tổ chức Mỹ đang rút khỏi quỹ ETF trong 20 phiên.";
   return t;
 }
 
 export function stableSummary(st) {
+  // có chuỗi tổng theo ngày thì dùng tổng của mọi stablecoin, không chỉ 8 đồng lớn nhất
+  const S = st && st.series;
+  if (S && S.length > 31) { const v = k => S[S.length - 1 - k][1]; return { now: v(0), d1: v(0) - v(1), d7: v(0) - v(7), d30: v(0) - v(30) }; }
   if (!st || !st.coins || !st.coins.length) return null;
   const tot = k => st.coins.reduce((a, c) => a + (c[k] || 0), 0), now = tot("now");
   const ch = k => { const p = st.coins.every(c => c[k]) ? tot(k) : null; return p ? now - p : null; };
@@ -57,7 +60,7 @@ export function initFlows({ $, esc }) {
     const d = data || {}, b = etfSummary(d.btc), e = etfSummary(d.eth), s = stableSummary(d.stable);
     const lastDay = Math.max(b ? b.t : 0, e ? e.t : 0);
     if (d.updated) setFresh($("flowsFresh"), "eod", d.updated, { label: `Cuối ngày${lastDay ? ` · phiên ${new Date(lastDay).toLocaleDateString("vi-VN")}` : ""}`, expect: 30 * 36e5, note: "Farside chốt số sau phiên Mỹ; DefiLlama cập nhật theo ngày" });
-    const card = (nm, x, src) => x ? `<div><small>${nm} hôm qua</small><b class="${cls(x.last)}">${usdM(x.last)}</b><small>5 phiên ${usdM(x.d5)} · 20 phiên ${usdM(x.d20)}${src && src.stale ? " · số cũ" : ""}</small></div>` : `<div><small>${nm}</small><b>–</b><small>chưa lấy được</small></div>`;
+    const card = (nm, x, src) => x ? `<div><small>${nm} phiên gần nhất</small><b class="${cls(x.last)}">${usdM(x.last)}</b><small>5 phiên ${usdM(x.d5)} · 20 phiên ${usdM(x.d20)}${src && src.stale ? " · số cũ" : ""}</small></div>` : `<div><small>${nm}</small><b>–</b><small>chưa lấy được</small></div>`;
     $("flowsKpis").innerHTML = card("ETF Bitcoin", b, d.btc) + card("ETF Ethereum", e, d.eth) +
       (s ? `<div><small>Stablecoin đang lưu hành</small><b>${usdB(s.now)}</b><small class="${cls(s.d7)}">7 ngày ${chgB(s.d7)} · 30 ngày ${chgB(s.d30)}</small></div>` : `<div><small>Stablecoin</small><b>–</b><small>chưa lấy được</small></div>`);
     const notes = [etfNote("ETF Bitcoin", b), etfNote("ETF Ethereum", e)].filter(Boolean);
@@ -79,7 +82,7 @@ export function initFlows({ $, esc }) {
     ctx.font = `10px ${MONO}`; ctx.textBaseline = "middle";
     const gap = 14, hh = (h - gap * (sets.length - 1)) / sets.length;
     sets.forEach(([nm, d], k) => {
-      const rows = d.rows.slice(-60), y0 = k * (hh + gap), pad = { l: 46, r: 8, t: 14, b: 4 };
+      const rows = d.rows.slice(-60), y0 = k * (hh + gap), pad = { l: 66, r: 8, t: 14, b: 4 };
       const m = Math.max(1, ...rows.map(r => Math.abs(r[1]))), mid = y0 + pad.t + (hh - pad.t - pad.b) / 2, sc = (hh - pad.t - pad.b) / 2 / m;
       const bw = (w - pad.l - pad.r) / rows.length;
       ctx.fillStyle = "#a3a3a3"; ctx.textAlign = "left"; ctx.fillText(`ETF ${nm}: tiền vào/ra mỗi phiên (60 phiên)`, pad.l, y0 + 6);
