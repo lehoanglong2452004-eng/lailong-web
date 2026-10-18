@@ -14,8 +14,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202610181310">
-<link rel="stylesheet" href="css/app.css?v=202610181310">
+<link rel="stylesheet" href="fonts/fonts.css?v=202610180112">
+<link rel="stylesheet" href="css/app.css?v=202610180112">
 </head>
 <body>
 <header class="menubar">
@@ -457,6 +457,16 @@
   </div>
   <div class="cards">
     <section class="card wide">
+      <h3>Nguồn dữ liệu của tài sản này <button class="q" data-g="opt-sources">?</button></h3>
+      <div id="optSources" class="tablewrap"></div>
+    </section>
+    <section class="card wide">
+      <h3>Bảng chuỗi quyền chọn (depth view) <button class="q" data-g="opt-chain">?</button> <span id="chainFresh"></span>
+        <select id="chainN" data-tip="Số strike mỗi bên quanh giá"><option value="8">±8 strike</option><option value="12">±12 strike</option><option value="20">±20 strike</option><option value="40">±40 strike</option></select></h3>
+      <div id="chainExps" class="newstabs"></div>
+      <div id="chainBody"></div>
+    </section>
+    <section class="card wide">
       <h3>Đọc tâm lý quyền chọn <button class="q" data-g="opt-read">?</button> <span id="optFresh"></span></h3>
       <div class="kpis" id="optKpis"></div>
       <ul class="gexread optread" id="optRead"></ul>
@@ -673,6 +683,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610181310"></script>
+<script type="module" src="js/app.js?v=202610180112"></script>
 </body>
 </html>

@@ -618,3 +618,30 @@ body.dragging-panel, body.dragging-panel * { cursor: grabbing !important; }
 button, h3, h4, th, .mh, .panel-head .title, .seg button, .newstabs button, .tool, .menu h4 { text-transform: uppercase; letter-spacing: .04em; }
 button.icon, button.q, .q { text-transform: none; letter-spacing: 0; }
 button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !important; }
+/* bảng chuỗi quyền chọn */
+.chainwrap { max-height: 560px; }
+.chainwrap thead th { position: sticky; top: 0; background: var(--panel); z-index: 1; }
+.chainwrap thead tr + tr th { top: 22px; }
+.chaintab { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 12px; }
+.chaintab th { color: var(--muted); font-weight: 600; text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.chaintab th.ch { text-align: center; color: var(--buy); } .chaintab th.ph { text-align: center; color: var(--sell); }
+.chaintab td { text-align: right; padding: 2px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); white-space: nowrap; }
+.chaintab td.k { text-align: center; font-weight: 700; color: var(--accent); background: var(--panel-2); border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+.chaintab td.itm { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.chaintab tr.atm td.k { color: #000; background: var(--accent); }
+.chaintab tr:hover td { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.chaintab td.oi { position: relative; min-width: 76px; }
+.chaintab td.oi i { position: absolute; top: 2px; bottom: 2px; }
+.chaintab td.oi i.c { right: 0; background: color-mix(in srgb, var(--buy) 30%, transparent); }
+.chaintab td.oi i.p { left: 0; background: color-mix(in srgb, var(--sell) 30%, transparent); }
+.chaintab td.oi span { position: relative; }
+.chaintab td.oi:last-child { text-align: left; }
+.chaintab tr.spotrow td { text-align: center; color: var(--ink); font-weight: 700; font-size: 11px; background: color-mix(in srgb, var(--accent) 22%, transparent); padding: 1px; }
+.chaintab b.cw, .chaintab b.pw, .chaintab b.mp { font-size: 9.5px; padding: 0 3px; margin-left: 2px; color: #000; }
+.chaintab b.cw { background: var(--buy); } .chaintab b.pw { background: var(--sell); } .chaintab b.mp { background: #b48cff; }
+.chainkpis > div { flex: 1 1 120px; }
+#chainN { float: right; font-size: 11px; padding: 2px 4px; }
+.srctab { width: 100%; border-collapse: collapse; font-size: 12px; }
+.srctab th { color: var(--muted); text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); }
+.srctab td { padding: 4px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); vertical-align: middle; }
+.srctab td.t { white-space: normal; }

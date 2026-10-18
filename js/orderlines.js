@@ -2,8 +2,8 @@
 //   - Lệnh chờ, giá vào, cắt lỗ (SL), chốt lời (TP) và giá thanh lý được vẽ thành đường ngang có nhãn.
 //   - Kéo đường lệnh chờ, SL hoặc TP để sửa giá. Bấm đúp lên nhãn để huỷ lệnh hoặc bỏ SL/TP.
 //   - Alt + bấm chuột lên biểu đồ để đặt nhanh lệnh limit tại giá đó (dưới giá hiện tại là MUA, trên là BÁN).
-import { T } from "./theme.js?v=202610181310";
-import { decimalsFor, fmtVol } from "./util.js?v=202610181310";
+import { T } from "./theme.js?v=202610180112";
+import { decimalsFor, fmtVol } from "./util.js?v=202610180112";
 
 const GRAB = 6;
 

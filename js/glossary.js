@@ -967,6 +967,16 @@ export const GLOSSARY = [
     body: "<p><b>IV rank</b> = (hiện tại − thấp nhất năm) / (cao nhất năm − thấp nhất năm). <b>IV percentile</b> = phần trăm số ngày trong năm thấp hơn hiện tại. Trên 80% là quyền chọn đắt, thị trường đã sợ sẵn; dưới 20% là rẻ, thị trường chủ quan và biến động hay bùng ra từ đây. Đường xanh nhạt nét đứt là biến động thực tế 30 ngày để so.</p>",
   },
   {
+    id: "opt-sources", group: "Phái sinh", term: "Nguồn dữ liệu quyền chọn",
+    short: "Bảng liệt kê từng phần dữ liệu của tài sản đang xem lấy từ đâu, đang trực tiếp hay trễ, và bao lâu cập nhật một lần. Nhãn chuyển đỏ khi dữ liệu cũ hơn mức nó phải có.",
+    body: "<p><b>BTC, ETH</b>: mọi thứ lấy thẳng từ Deribit (sàn quyền chọn crypto lớn nhất) trong trình duyệt, là dữ liệu trực tiếp. Giá đóng cửa ngày lấy từ Binance Futures.</p><p><b>Chỉ số và ETF Mỹ</b> (SPX, NDX, SPY, QQQ…): chuỗi quyền chọn từ CBOE, miễn phí nhưng trễ 15 phút; bản web lấy lại mỗi 30 phút nên số liệu có thể cũ tới 45 phút. Chỉ số biến động (VIX, VXN…) và giá đóng cửa từ Yahoo Finance theo ngày. Không có nguồn miễn phí cho từng lệnh khớp của quyền chọn Mỹ.</p><p>GEX, delta, max pain, biên độ dự kiến là số tự tính từ chuỗi, nên trễ đúng bằng chuỗi.</p>",
+  },
+  {
+    id: "opt-chain", group: "Phái sinh", term: "Bảng chuỗi quyền chọn (depth view)",
+    short: "Toàn bộ quyền chọn của một hạn: call bên trái, put bên phải, mỗi dòng một strike. Có OI (thanh màu), khối lượng, IV, delta, giá mua và giá bán.",
+    body: "<p><b>Cách đọc</b>: dòng cam đậm là strike sát giá (ATM), dải ngang ghi giá hiện tại. Ô tô đậm là quyền chọn đang có lãi nội tại (ITM). Thanh xanh/đỏ dài là strike có nhiều hợp đồng mở: nơi nhà tạo lập phải phòng hộ nhiều nhất. CW, PW, MP là tường call, tường put và max pain của riêng hạn này. ⚑ là strike có khối lượng hôm nay vượt OI: có người mở vị thế mới lớn.</p><p><b>Biên độ dự kiến</b> lấy từ giá straddle ATM (mua cả call và put tại strike sát giá): thị trường đang trả tiền cho mức dao động chừng đó tới ngày đáo hạn.</p><p><b>Delta</b> gần như xác suất quyền chọn kết thúc có lãi: call delta 0,25 là khoảng 25%.</p>",
+  },
+  {
     id: "opt-flow", group: "Phái sinh", term: "Dòng lệnh quyền chọn lớn",
     short: "BTC/ETH: các lệnh quyền chọn khớp trên Deribit có phí từ $100K (ETH $50K), ai mua hay bán chủ động, call hay put, có phải lệnh khối của tổ chức không. Tài sản Mỹ: hợp đồng có khối lượng hôm nay lớn nhất, đánh dấu ⚑ khi khối lượng vượt hợp đồng mở.",
     body: "<p>Thanh màu trên cùng so phí bảo hiểm của lệnh nghiêng tăng (mua call, bán put) với lệnh nghiêng giảm hoặc phòng hộ (mua put, bán call). Phía của lệnh là phía chủ động: người chấp nhận giá ngay. <b>Lệnh khối</b> là giao dịch thoả thuận riêng giữa các tổ chức rồi báo lên sàn, thường là quỹ.</p><p>Với tài sản Mỹ không có dữ liệu từng lệnh miễn phí, nên dùng khối lượng trong ngày: khối lượng lớn hơn OI nghĩa là có người mở vị thế mới lớn ở hợp đồng đó.</p>",

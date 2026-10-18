@@ -61,7 +61,10 @@ def _get(url: str, timeout: float = 40) -> bytes:
 
 
 def compact(raw: dict, now_ms: int | None = None) -> dict:
-    """Rút gọn tệp CBOE về {spot, exps, rows: [[strike, i_hạn, ±1, OI, iv, KL trong ngày]]}."""
+    """Rút gọn tệp CBOE về {spot, exps, rows}.
+
+    Mỗi hàng: [strike, i_hạn, ±1, OI, iv, KL trong ngày, giá mua, giá bán].
+    """
     now_ms = now_ms or int(time.time() * 1000)
     d = raw.get("data") or {}
     spot = float(d.get("current_price") or d.get("close") or 0)
@@ -91,6 +94,8 @@ def compact(raw: dict, now_ms: int | None = None) -> dict:
                 oi,
                 round(iv, 4),
                 int(float(o.get("volume") or 0)),
+                round(float(o.get("bid") or 0), 2),
+                round(float(o.get("ask") or 0), 2),
             ]
         )
     order = sorted(range(len(exps)), key=lambda i: exps[i])

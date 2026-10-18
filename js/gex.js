@@ -21,7 +21,9 @@ export function fromDeribit(list, now = Date.now()) {
     const t = Date.UTC(2000 + +m[3], MON[m[2]], +m[1], 8);
     if (t <= now || !(o.open_interest > 0) || !(o.mark_iv > 0)) continue;
     if (!idx.has(t)) { idx.set(t, exps.length); exps.push(t); }
-    rows.push([+m[4], idx.get(t), m[5] === "C" ? 1 : -1, o.open_interest, o.mark_iv / 100, +o.volume || 0]);
+    // giá mua/bán của Deribit tính bằng coin: đổi sang USD theo giá cơ sở
+    const u = +o.underlying_price || +o.estimated_delivery_price || 0, usd = x => x > 0 && u ? Math.round(x * u * 100) / 100 : 0;
+    rows.push([+m[4], idx.get(t), m[5] === "C" ? 1 : -1, o.open_interest, o.mark_iv / 100, +o.volume || 0, usd(+o.bid_price), usd(+o.ask_price)]);
     if (!spot && o.estimated_delivery_price) spot = o.estimated_delivery_price;
   }
   return sortExps({ spot, mult: 1, exps, rows });

@@ -2,9 +2,9 @@
 // chỉ số biến động 1 năm (DVOL của Deribit cho BTC/ETH, VIX/VXN/GVZ/OVX… cho tài sản Mỹ), dòng lệnh quyền chọn lớn.
 // BTC/ETH: Deribit trực tiếp (DVOL, lệnh khớp) + nến ngày Binance cho biến động thực tế.
 // Tài sản Mỹ: data/gex_<mã>.json có thêm closes (giá đóng cửa ngày) và volIdx (chỉ số biến động) từ Yahoo, trễ.
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610181310";
-import { setFresh } from "./fresh.js?v=202610181310";
-import { termStructure, ivRank, realizedVol, putCall, flowSummary, readSentiment } from "./optpro.js?v=202610181310";
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610180112";
+import { setFresh } from "./fresh.js?v=202610180112";
+import { termStructure, ivRank, realizedVol, putCall, flowSummary, readSentiment } from "./optpro.js?v=202610180112";
 
 const DERIBIT = "https://www.deribit.com/api/v2/public";
 const C = { atm: "#ff9f1c", call: "#1fb57a", put: "#e5484d", grid: "#2b2b2b", muted: "#a3a3a3", text: "#e6e6e6", rv: "#4ea1ff" };
@@ -48,6 +48,7 @@ export function initOptPro({ $, esc }) {
     const flow = ex.trades ? flowSummary(ex.trades, { now, bigUsd: asset === "ETH" ? 50e3 : 100e3 }) : null;
     S = { asset, chain, live, ts, pc, rank, rv, flow, ex, L, lines: readSentiment({ ts, pc, rank, rv, flow, spot: chain.spot, gex: L }) };
     render();
+    return ex;
   }
 
   function render() {
