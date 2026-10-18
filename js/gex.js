@@ -1,5 +1,5 @@
 // Lai Long Web: tính GEX (gamma exposure), tường call/put, điểm lật gamma, max pain và bề mặt IV từ chuỗi quyền chọn.
-// Dữ liệu đầu vào thống nhất: { spot, mult, exps: [ms hết hạn], rows: [[strike, iExp, +1 call / -1 put, OI, iv (0.45 = 45%)]] }.
+// Dữ liệu đầu vào thống nhất: { spot, mult, exps: [ms hết hạn], rows: [[strike, iExp, +1 call / -1 put, OI, iv (0.45 = 45%), KL 24 giờ?]] }.
 // Quy ước như SqueezeMetrics/SpotGamma: nhà tạo lập (dealer) mua call của khách, bán put cho khách,
 // nên gamma của call tính dương, của put tính âm. GEX = gamma × OI × hệ số × giá² × 1%: số USD dealer phải mua/bán khi giá đi 1%.
 
@@ -21,7 +21,7 @@ export function fromDeribit(list, now = Date.now()) {
     const t = Date.UTC(2000 + +m[3], MON[m[2]], +m[1], 8);
     if (t <= now || !(o.open_interest > 0) || !(o.mark_iv > 0)) continue;
     if (!idx.has(t)) { idx.set(t, exps.length); exps.push(t); }
-    rows.push([+m[4], idx.get(t), m[5] === "C" ? 1 : -1, o.open_interest, o.mark_iv / 100]);
+    rows.push([+m[4], idx.get(t), m[5] === "C" ? 1 : -1, o.open_interest, o.mark_iv / 100, +o.volume || 0]);
     if (!spot && o.estimated_delivery_price) spot = o.estimated_delivery_price;
   }
   return sortExps({ spot, mult: 1, exps, rows });
@@ -29,7 +29,7 @@ export function fromDeribit(list, now = Date.now()) {
 
 function sortExps(ch) {
   const order = ch.exps.map((t, i) => [t, i]).sort((a, b) => a[0] - b[0]), map = new Map(order.map(([, i], j) => [i, j]));
-  return { ...ch, exps: order.map(x => x[0]), rows: ch.rows.map(r => [r[0], map.get(r[1]), r[2], r[3], r[4]]) };
+  return { ...ch, exps: order.map(x => x[0]), rows: ch.rows.map(r => { const x = r.slice(); x[1] = map.get(r[1]); return x; }) };
 }
 
 // lọc theo hạn: maxDays (số ngày tới hạn) hoặc chỉ một hạn cụ thể
