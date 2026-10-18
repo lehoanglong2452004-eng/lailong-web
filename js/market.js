@@ -5,9 +5,9 @@
 //   kèm khối lượng mua/bán chủ động khớp trong cột đó.
 // - Bars: nến của khung đang xem, nến cuối được cập nhật theo từng lệnh khớp, kèm footprint.
 
-import { niceStep, INTERVALS } from "./util.js?v=202610160700";
-import { TapeAggregator, quantile } from "./orderflow.js?v=202610160700";
-import { IcebergTracker } from "./iceberg.js?v=202610160700";
+import { niceStep, INTERVALS } from "./util.js?v=202610180745";
+import { TapeAggregator, quantile } from "./orderflow.js?v=202610180745";
+import { IcebergTracker } from "./iceberg.js?v=202610180745";
 
 export const COL_MS = 500;
 const MAX_COLS = 7200;       // 1 giờ ở 0,5 giây mỗi cột (bộ ghi trên laptop giữ lâu hơn)
@@ -264,7 +264,7 @@ export class MarketState {
     // nến đang chạy lúc mở trang: bỏ phần ước tính, dựng lại từ lệnh khớp thật
     // (phần trước lúc mở trang được bù bằng dữ liệu lịch sử nếu sàn cho tải)
     if (!b.fp || b.fpApprox) { b.fp = new Map(); b.fpApprox = false; b.live = true; }
-    b.h = Math.max(b.h, tr.p); b.l = Math.min(b.l, tr.p); b.c = tr.p; b.v += tr.q;
+    b.h = Math.max(b.h, tr.p); b.l = Math.min(b.l, tr.p); b.c = tr.p; b.v += tr.q; b.n = (b.n || 0) + 1;
     if (tr.side === "buy") b.bv = (b.bv || 0) + tr.q;
     b.d += tr.side === "buy" ? tr.q : -tr.q;
     // đỉnh/đáy CVD trong nến (cho CVD Pro), tính từ lúc bắt đầu theo dõi nến này

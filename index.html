@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610160700">
+<link rel="stylesheet" href="css/app.css?v=202610180745">
 </head>
 <body>
 <header class="menubar">
@@ -86,6 +86,9 @@
           <label data-g="big-trade"><input type="checkbox" data-layer="bigOnly"> Chỉ hiện lệnh lớn (Bookmap)</label>
           <label data-g="iceberg"><input type="checkbox" data-layer="ice" checked> Lệnh băng chìm / nạp lại (Bookmap)</label>
           <label data-g="stacked-imbalance"><input type="checkbox" data-layer="imb" checked> Mất cân bằng xếp chồng (footprint)</label>
+          <label data-g="fp-stats"><input type="checkbox" data-layer="stats" checked> Bảng thống kê cụm (footprint)</label>
+          <label data-g="fp-auction"><input type="checkbox" data-layer="auction" checked> Đấu giá chưa xong, kiệt sức (footprint)</label>
+          <label data-g="fp-diverg"><input type="checkbox" data-layer="diverg" checked> Phân kỳ delta</label>
           <label data-g="absorption"><input type="checkbox" data-layer="absorb" checked> Chỉ báo hấp thụ (footprint)</label>
           <label data-g="big-trades"><input type="checkbox" data-layer="big" checked> Big Trades (footprint)</label>
           <label data-g="signal-score"><input type="checkbox" data-layer="score" checked> Điểm tín hiệu ≥ 60 (footprint)</label>
@@ -167,6 +170,15 @@
         </div>
       </div>
       <label class="field small" id="contrastBox" data-g="contrast">Tương phản <input type="range" id="contrast" min="0.3" max="4" step="0.1" value="1"></label>
+      <label class="field small" id="tpoSessBox" hidden data-g="tpo-read">Phiên
+        <select id="tpoSess"><option value="vn">Ngày Việt Nam</option><option value="utc">Ngày UTC</option><option value="us">Phiên Mỹ</option></select>
+      </label>
+      <label class="field small" id="fpModeBox" hidden data-g="fp-modes">Ô
+        <select id="fpMode"><option value="bidask">Mua × Bán</option><option value="bavol">Mua × Bán + tổng</option><option value="delta">Delta</option><option value="volume">Khối lượng</option><option value="histo">Thanh mua/bán</option><option value="profile">Hồ sơ trong nến</option><option value="ratio">Tỷ lệ chéo</option></select>
+      </label>
+      <label class="field small" id="fpColorBox" hidden data-g="fp-modes">Tô màu
+        <select id="fpColor"><option value="volume">Theo khối lượng</option><option value="delta">Theo delta</option><option value="imbalance">Chỉ mất cân bằng</option><option value="candle">Theo nến</option></select>
+      </label>
       <label class="field small" id="rowBox" hidden data-tip="Gộp bao nhiêu bước giá vào một dòng của footprint">Tầng giá
         <select id="rowSize"><option value="auto" selected>Tự động</option><option>1</option><option>2</option><option>5</option><option>10</option><option>20</option><option>50</option></select>
       </label>
@@ -174,7 +186,7 @@
       <button class="icon minb" data-min="mainPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng (bấm vào tên khung ở đó để mở lại)">—</button>
       <button class="icon max" data-max="mainPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">⤢</button>
     </div>
-    <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas><canvas id="tpo" hidden></canvas></div>
+    <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas><canvas id="tpo" hidden></canvas><div class="tporead" id="tpoRead" hidden><button class="tool" id="tpoReadBtn" data-g="tpo-read">Đọc phiên ▾</button><ul id="tpoReadList"></ul></div></div>
     <div class="signalbar" id="signalbar"></div>
     <div class="dom-hint" id="chartHint"></div>
   </section>
@@ -332,7 +344,7 @@
       <div id="reactBody"></div>
     </section>
     <section class="card wide">
-      <h3>Xu hướng, động lượng và độ biến động theo khung thời gian <button class="q" data-g="mtf">?</button></h3>
+      <h3>Xu hướng, động lượng và độ biến động theo khung thời gian <button class="q" data-g="mtf">?</button> <span id="fsMtf"></span></h3>
       <div id="mtfTable" class="tablewrap"></div>
     </section>
     <section class="card wide">
@@ -368,34 +380,34 @@
 <main class="view analysis" id="view-markets" hidden>
   <div class="cards">
     <section class="card wide">
-      <h3>Hàng hoá phái sinh: top theo giá trị giao dịch <button class="q" data-g="term-structure">?</button> <small id="mkUpd"></small> <button class="tool" id="cmdAll">Xem tất cả</button></h3>
+      <h3>Hàng hoá phái sinh: top theo giá trị giao dịch <button class="q" data-g="term-structure">?</button> <span id="mkUpd"></span> <button class="tool" id="cmdAll">Xem tất cả</button></h3>
       <div id="cmdBody" class="tablewrap tall"></div>
       <p class="note">Nguồn Yahoo Finance (sàn CME, NYMEX, COMEX, ICE), chậm khoảng 10 – 15 phút. HĐ gần là hợp đồng đang giao dịch nhiều nhất, HĐ kế tiếp là tháng liền sau nó.</p>
     </section>
     <section class="card wide">
-      <h3>Forex: 10 đồng tiền lớn và lãi suất điều hành <button class="q" data-g="policy-rate">?</button></h3>
+      <h3>Forex: 10 đồng tiền lớn và lãi suất điều hành <button class="q" data-g="policy-rate">?</button> <span id="fsFx"></span></h3>
       <div id="fxBody" class="tablewrap tall"></div>
       <div id="fxDetail" class="fxdetail"></div>
     </section>
     <section class="card wide">
-      <h3>Crypto: top 10 vốn hoá <button class="q" data-g="crypto-top">?</button></h3>
+      <h3>Crypto: top 10 vốn hoá <button class="q" data-g="crypto-top">?</button> <span id="fsCry"></span></h3>
       <div id="cryBody" class="tablewrap"></div>
     </section>
     <section class="card">
-      <h3>Dòng tiền quỹ ETF <button class="q" data-g="etf-flow">?</button> <span class="newstabs inl" id="etfTabs"><button data-etf="btc" class="on">BTC</button><button data-etf="eth">ETH</button></span></h3>
+      <h3>Dòng tiền quỹ ETF <button class="q" data-g="etf-flow">?</button> <span id="fsEtf"></span> <span class="newstabs inl" id="etfTabs"><button data-etf="btc" class="on">BTC</button><button data-etf="eth">ETH</button></span></h3>
       <div id="etfBody"></div>
     </section>
     <section class="card">
-      <h3>Công ty nắm giữ <button class="q" data-g="treasury">?</button> <span class="newstabs inl" id="trTabs"><button data-tr="btc" class="on">BTC</button><button data-tr="eth">ETH</button></span></h3>
+      <h3>Công ty nắm giữ <button class="q" data-g="treasury">?</button> <span id="fsTr"></span> <span class="newstabs inl" id="trTabs"><button data-tr="btc" class="on">BTC</button><button data-tr="eth">ETH</button></span></h3>
       <div id="trBody"></div>
     </section>
     <section class="card">
-      <h3>Thanh lý lớn trực tiếp (Binance Futures) <button class="q" data-g="live-liq">?</button>
+      <h3>Thanh lý lớn (Binance Futures) <button class="q" data-g="live-liq">?</button> <span id="fsLiq"></span>
         <select id="liqMin"><option value="50000">từ $50K</option><option value="100000">từ $100K</option><option value="250000">từ $250K</option><option value="1000000">từ $1M</option></select></h3>
       <div id="liqBody" class="tablewrap"></div>
     </section>
     <section class="card wide">
-      <h3>Cá voi dùng đòn bẩy trên Hyperliquid <button class="q" data-g="whales">?</button> <small id="whUpd"></small> <button class="tool" id="whLive">Lấy lại trực tiếp</button></h3>
+      <h3>Cá voi dùng đòn bẩy trên Hyperliquid <button class="q" data-g="whales">?</button> <span id="whUpd"></span> <button class="tool" id="whLive">Lấy lại trực tiếp</button></h3>
       <div id="whBody"></div>
     </section>
   </div>
@@ -603,6 +615,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610160700"></script>
+<script type="module" src="js/app.js?v=202610180745"></script>
 </body>
 </html>

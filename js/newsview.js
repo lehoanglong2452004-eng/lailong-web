@@ -1,7 +1,8 @@
 // Lai Long Web: lịch kinh tế, tin tức 6 mục, bản đồ tác động và phản ứng giá sau tin.
 // Bản web đọc data/calendar.json, data/news.json, data/reactions.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/news.py).
-import { getJson, fmtTime, fmtDate } from "./util.js?v=202610160700";
+import { setFresh } from "./fresh.js?v=202610180745";
+import { getJson, fmtTime, fmtDate } from "./util.js?v=202610180745";
 
 const FLAG = { USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", JPY: "🇯🇵", CNY: "🇨🇳", CAD: "🇨🇦", AUD: "🇦🇺", NZD: "🇳🇿", CHF: "🇨🇭" };
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],
@@ -122,7 +123,7 @@ export function initNews({ $, esc, alerts, coin }) {
     $("newsOnly").textContent = onlyCoin ? `Chỉ tin về ${c}` : "Mọi coin";
     const items = news ? news.items.filter(x => (!cat || (x.cat || "crypto") === cat) && (cat !== "crypto" || !onlyCoin || (x.coins || []).includes(c))) : [];
     nb.innerHTML = !news ? `<div class="empty">Chưa tải được tin.</div>` : !items.length ? `<div class="empty">Không có tin nào trong mục này.</div>` : items.slice(0, 60).map(newsRow).join("");
-    $("newsUpd").textContent = [cal && `lịch ${fmtTime(cal.updated)}`, news && `tin ${fmtTime(news.updated)}`].filter(Boolean).join(" · ");
+    setFresh($("newsUpd"), "delay", news ? news.updated : cal ? cal.updated : null, { label: "Tin và lịch: làm mới mỗi 30 phút", expect: 2 * 3600e3, note: `56 nguồn RSS, bản web do máy chủ GitHub gom mỗi 30 phút, bản laptop gom mỗi 10 phút.${cal ? ` Lịch cập nhật ${fmtTime(cal.updated)}.` : ""} Tin mới nhất có thể trễ tới 30 phút so với nguồn` });
   }
 
   // bản đồ tác động: mỗi ô là một chủ đề, ô càng đỏ càng nóng, ô to là 3 chủ đề nóng nhất

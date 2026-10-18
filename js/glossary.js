@@ -767,6 +767,31 @@ export const GLOSSARY = [
     body: "<p>Ở mỗi mức giá đang bị khớp chủ động, hệ thống so tổng khối lượng đã khớp với lượng lớn nhất từng hiện trên sổ ở giá đó. Khi khớp được <b>gấp 2 lần</b> lượng hiện ra, qua ít nhất 3 lệnh, và phần dư ít nhất bằng một lệnh lớn (top 5%), đó là nghi iceberg.</p><p>Trên Bookmap hiện thành vạch ngang và ô <b>I</b>: xanh ngọc là lệnh chờ MUA ẩn (đỡ giá), hồng là lệnh chờ BÁN ẩn (chặn giá). Nét liền là đã <b>giữ</b> được giá, nét đứt là đã bị <b>xuyên thủng</b>.</p><p><b>Lưu ý:</b> sàn crypto không công bố lệnh iceberg, nên đây là ước tính. Sổ lệnh Binance gửi 10 lần mỗi giây, nên một tường được nạp lại thật nhanh trông giống hệt iceberg; về mặt giao dịch hai thứ có cùng ý nghĩa: có người rất muốn mua hoặc bán ở giá đó.</p>"
   },
   {
+    id: "tpo-read", group: "Hồ sơ khối lượng", term: "Đọc phiên TPO (Market Profile)",
+    short: "Máy tự đọc từng phiên: kiểu mở cửa, kiểu ngày, hình dạng P/b/D/I, đỉnh/đáy yếu, đuôi từ chối, POC di chuyển, vùng chữ đơn lẻ chưa lấp, và thống kê phiên hôm sau.",
+    body: "<p>Theo cách đọc của Dalton (Mind Over Markets). Dòng chữ trên mỗi cột: <b>kiểu ngày · kiểu mở cửa · hình dạng</b>, mũi tên là hướng.</p><ul><li><b>Kiểu mở cửa</b>: OD (mở là chạy), OTD (thử rồi chạy), ORR (bị từ chối rồi đảo), OA (đấu giá quanh giá mở). Tính từ 2 chữ đầu (IB, 60 phút đầu).</li><li><b>Kiểu ngày</b>: Trend, Double Distribution, Normal Variation, Normal, Neutral, Non-trend. So biên độ phiên với IB và xem phá IB một hay hai phía.</li><li><b>Hình dạng</b>: P (short bị ép mua lại), b (long bỏ chạy), D (cân bằng), I (xu hướng).</li><li><b>Đỉnh/đáy yếu</b> (vạch cam): mép phẳng, không có đuôi, hay bị quay lại phá. <b>Đuôi từ chối</b> (vạch tím bên trái): ≥ 2 dòng chữ đơn lẻ ở mép, phe dài hạn đã vào.</li><li><b>Đường IB</b> nét đứt xanh; phiên đang chạy có thêm mốc gấp đôi IB.</li><li><b>Vùng tím kéo sang phải</b>: chữ đơn lẻ chưa bị lấp.</li><li><b>Đường vàng nhỏ ở mép phải cột</b>: POC di chuyển theo từng chữ.</li></ul><p>Khung <b>Đọc phiên</b> tóm tắt phiên hiện tại và thống kê trên 30 ngày gần nhất: sau kiểu ngày giống hôm qua, phiên sau đóng cao hơn bao nhiêu phần trăm, quay về POC hôm trước bao nhiêu phần trăm, đỉnh/đáy yếu bị phá bao nhiêu phần trăm. Mặc định phiên theo giờ Việt Nam; có thể chọn ngày UTC hoặc phiên Mỹ.</p>",
+  },
+  {
+    id: "fp-modes", group: "Footprint", term: "Chế độ ô footprint",
+    short: "Cùng một nến, đọc theo nhiều cách: mua × bán, delta, tổng khối lượng, thanh mua/bán, hồ sơ trong nến, tỷ lệ chéo. Tô màu theo khối lượng, delta hoặc chỉ ô mất cân bằng.",
+    body: "<p><b>Mua × Bán</b>: bên trái là bán chủ động (khớp vào giá chờ mua), bên phải là mua chủ động. <b>Mua × Bán + tổng</b>: thêm tổng khối lượng ở giữa. <b>Delta</b>: mua trừ bán ở từng mức, thấy ngay mức nào một phe áp đảo. <b>Khối lượng</b>: chỉ tổng, dễ thấy nơi giao dịch dày. <b>Thanh mua/bán</b>: thanh ngang từ giữa ô, trái là bán, phải là mua, hợp khi phóng nhỏ. <b>Hồ sơ trong nến</b>: hồ sơ khối lượng riêng từng nến, thấy nến có hình P, b hay cân bằng. <b>Tỷ lệ chéo</b>: mua ở dòng này chia bán ở dòng ngay dưới (cách ATAS tính mất cân bằng), từ 3× trở lên là in đậm.</p><p><b>Tô màu</b>: theo khối lượng (đậm là dày), theo delta (đậm là một phe áp đảo mạnh), chỉ mất cân bằng (chỉ tô ô từ 3× trở lên), theo nến.</p>",
+  },
+  {
+    id: "fp-stats", group: "Footprint", term: "Bảng thống kê cụm (Cluster Statistic)",
+    short: "Các dòng dưới biểu đồ footprint: khối lượng, delta, delta %, delta cao nhất và thấp nhất trong nến, số lệnh, khối lượng mỗi lệnh. Ô càng đậm là càng lớn so với các nến đang xem.",
+    body: "<p>Giống Cluster Statistic của ATAS. Cách đọc hay dùng:</p><ul><li><b>Delta %</b> trên ±20% là một phe áp đảo rõ trong nến.</li><li><b>Δ cao nhất</b> lớn nhưng delta đóng nến nhỏ hoặc âm: phe mua đã đẩy mạnh rồi bị đẩy lùi (thường ở đỉnh). Ngược lại với <b>Δ thấp nhất</b> ở đáy.</li><li><b>KL/lệnh</b> tăng vọt: lệnh lớn đang vào. Nhiều lệnh mà mỗi lệnh nhỏ: nhỏ lẻ.</li></ul><p>Δ cao nhất/thấp nhất chỉ có ở nến dựng từ từng lệnh khớp thật (Binance tải được khoảng 400 nến gần nhất, cộng các nến từ lúc mở trang).</p>",
+  },
+  {
+    id: "fp-auction", group: "Footprint", term: "Đấu giá chưa xong và kiệt sức",
+    short: "Đường chấm cam: đỉnh hoặc đáy nến mà ở mức cực trị vẫn còn cả hai phe khớp, cuộc đấu giá chưa xong, giá hay quay lại. Chữ E tím: kiệt sức, lực chủ động cạn dần về phía cực trị.",
+    body: "<p><b>Đấu giá chưa xong (unfinished auction)</b>: ở giá cao nhất của nến vẫn có cả mua chủ động và bán chủ động. Một đỉnh \"xong\" là chỗ không còn ai mua chủ động nữa. Đỉnh chưa xong giống câu nói bị bỏ dở: giá thường quay lại để hoàn tất. Đường chấm kéo sang phải tới khi giá quay lại vượt qua, lúc đó mờ đi.</p><p><b>Kiệt sức (exhaustion)</b>: mua chủ động giảm dần 3 dòng liền về phía đỉnh và dòng ở đỉnh chỉ còn dưới 30% dòng thứ ba (ngược lại với đáy). Người mua đã cạn sức, đỉnh dễ giữ.</p>",
+  },
+  {
+    id: "fp-diverg", group: "Footprint", term: "Phân kỳ delta",
+    short: "Tam giác đỏ trên đỉnh: nến lập đỉnh mới so với 3 nến trước mà delta âm. Tam giác xanh dưới đáy: lập đáy mới mà delta dương. Giá đi một đằng, phe chủ động đi một nẻo.",
+    body: "<p>Giá lên đỉnh mới mà bên bán chủ động áp đảo nghĩa là giá được đẩy lên không phải nhờ người mua chủ động, mà có lệnh chờ bán lớn đang hấp thụ. Thường báo trước đảo chiều ngắn hạn, mạnh nhất khi trùng với kiệt sức hoặc đấu giá đã xong ở đỉnh. Chỉ tính khi |delta| từ 5% khối lượng nến trở lên.</p>",
+  },
+  {
     id: "stacked-imbalance", group: "Order flow nâng cao", term: "Mất cân bằng xếp chồng (stacked imbalance)",
     short: "Từ 3 ô footprint liền nhau trở lên mà mua chủ động gấp 3 lần bán (theo đường chéo) hoặc ngược lại. Vùng này hay thành hỗ trợ/kháng cự.",
     body: "<p>Cách so giống ATAS và Sierra Chart: mua chủ động ở giá P so với bán chủ động ở giá ngay dưới (P − 1 dòng), vì người mua chủ động khớp vào giá bán (ask) còn người bán chủ động khớp vào giá mua (bid). Ô nào gấp 3 lần trở lên được tô viền: xanh là mua lấn át, đỏ là bán lấn át.</p><p>Khi có từ 3 ô cùng phía liền nhau, hệ thống vẽ một <b>dải</b> kéo sang phải: dải xanh là vùng phe mua đã đẩy mạnh (thường đỡ giá khi quay lại), dải đỏ là vùng phe bán đẩy mạnh. Dải dừng lại khi có nến đóng cửa xuyên qua.</p><p>Chỉ có cho nến có footprint thật (từ lúc mở trang, hoặc tải lại lệnh khớp với Binance).</p>"
@@ -933,7 +958,7 @@ export const GLOSSARY = [
   },
   {
     id: "tpo", group: "Hồ sơ khối lượng", term: "TPO (Market Profile)",
-    short: "Mỗi phiên (một ngày UTC) là một cột; mỗi 30 phút là một chữ cái A, B, C… đặt vào mọi mức giá đã chạm trong 30 phút đó. Mức nhiều chữ nhất là nơi thị trường chấp nhận lâu nhất.",
+    short: "Mỗi phiên (mặc định một ngày theo giờ Việt Nam, đổi được sang ngày UTC hoặc phiên Mỹ) là một cột; mỗi 30 phút là một chữ cái A, B, C… đặt vào mọi mức giá đã chạm trong 30 phút đó. Mức nhiều chữ nhất là nơi thị trường chấp nhận lâu nhất.",
     body: "<p><b>Cách đọc</b>: chữ càng về sau càng chuyển màu từ xanh sang đỏ. Mức giá có nhiều chữ là nơi giá dừng lâu, tức là thị trường chấp nhận mức đó.</p><ul><li><b>POC</b> (tô cam): mức có nhiều chữ nhất trong phiên.</li><li><b>Vùng giá trị</b> (nền cam nhạt): 70% số chữ quanh POC. Giá mở cửa ngoài vùng giá trị phiên trước rồi quay vào lại thường chạy sang phía bên kia của vùng.</li><li><b>IB</b> (vạch xanh dương bên trái): biên độ của 2 chữ đầu tiên (1 giờ đầu phiên). Phá IB mạnh thường là ngày có xu hướng.</li><li><b>Chữ đơn lẻ</b> (vạch tím): giá đi qua rất nhanh, chỉ có 1 chữ. Đây là vùng mất cân bằng mà giá hay quay lại lấp.</li><li><b>Naked POC</b> (đường cam nét đứt kéo dài): POC phiên cũ mà giá chưa quay lại chạm. Chúng thường hút giá như nam châm.</li><li>▸ là giá mở phiên, ◂ là giá hiện tại hoặc giá đóng phiên.</li></ul><p>Thanh mờ phía sau các chữ là khối lượng tại mỗi mức giá. Lăn chuột để đổi độ cao tầng giá, Ctrl + lăn để giãn dòng, kéo để xem các phiên cũ. Dữ liệu dựng từ nến 5 phút của 7 ngày gần nhất.</p>"
   },
   {

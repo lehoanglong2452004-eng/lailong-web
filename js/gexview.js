@@ -1,8 +1,9 @@
 // Lai Long Web: tab Quyền chọn. GEX theo strike, đường GEX theo giá (điểm lật gamma), OI, nụ cười IV và bề mặt IV 3D.
 // BTC/ETH lấy trực tiếp từ Deribit trong trình duyệt; chỉ số và ETF Mỹ đọc data/gex_<mã>.json (CBOE, chậm 15 phút)
 // do GitHub Actions cập nhật mỗi 30 phút, hoặc máy chủ laptop lấy trực tiếp (lailong/terminal/gex.py).
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610160700";
-import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610160700";
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610180745";
+import { setFresh } from "./fresh.js?v=202610180745";
+import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610180745";
 
 export const ASSETS = [
   { id: "BTC", src: "deribit", name: "Bitcoin (Deribit)" }, { id: "ETH", src: "deribit", name: "Ethereum (Deribit)" },
@@ -72,7 +73,10 @@ export function initGex({ $, esc }) {
       `<select id="gexExp"><option value="">Một hạn cụ thể…</option>${exps.map(t => `<option value="${t}" ${t === exp ? "selected" : ""}>${dstr(t)} (${Math.max(0, Math.round((t - Date.now()) / DAY))} ngày)</option>`).join("")}</select>`;
     $("gexExp").onchange = e => { exp = +e.target.value || null; compute(); };
     const a = ASSETS.find(x => x.id === asset);
-    $("gexSrc").textContent = loading ? "đang tải…" : chain ? (a.src ? `Deribit trực tiếp · ${fmtTime(chain.updated)}` : `CBOE chậm 15 phút · ${chain.quoteTime ? esc(chain.quoteTime.slice(5, 16).replace("T", " ")) + " giờ New York" : ""}`) : "";
+    if (loading && !chain) $("gexSrc").textContent = "đang tải…";
+    else if (chain) setFresh($("gexSrc"), a.src ? "live" : "delay", chain.updated || (chain.quoteTime ? Date.parse(chain.quoteTime) : null),
+      a.src ? { label: "Trực tiếp (Deribit, làm mới mỗi 2 phút)", expect: 6 * 60e3, note: "Lấy thẳng từ Deribit trong trình duyệt: giá, IV, OI của mọi quyền chọn, làm mới mỗi 2 phút" }
+        : { label: "Trễ 15 phút (CBOE)", expect: 3 * 3600e3, note: `Chuỗi quyền chọn CBOE chậm 15 phút${chain.quoteTime ? `, giá chốt lúc ${chain.quoteTime.slice(5, 16).replace("T", " ")} giờ New York` : ""}. Bản web cập nhật mỗi 30 phút, bản laptop mỗi 15 phút; ngoài giờ giao dịch Mỹ số liệu đứng yên` });
   }
 
   function renderKpis() {
