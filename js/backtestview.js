@@ -1,13 +1,13 @@
 // Lai Long Web: trang Backtest (giao diện). Chiến lược nằm trong strategies.js, bộ máy chạy lệnh trong backtest.js.
-import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610180357";
-import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610180357";
-import { EquityChart } from "./fractalview.js?v=202610180357";
-import { sampleLevel } from "./fractal.js?v=202610180357";
-import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610180357";
-import { isDeltaApprox } from "./analytics.js?v=202610180357";
-import { robustness } from "./robust.js?v=202610180357";
-import { forwardVerdict, barsNeeded } from "./forward.js?v=202610180357";
-import { EXCHANGES } from "./exchanges.js?v=202610180357";
+import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610180437";
+import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610180437";
+import { EquityChart } from "./fractalview.js?v=202610180437";
+import { sampleLevel } from "./fractal.js?v=202610180437";
+import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610180437";
+import { isDeltaApprox } from "./analytics.js?v=202610180437";
+import { robustness } from "./robust.js?v=202610180437";
+import { forwardVerdict, barsNeeded } from "./forward.js?v=202610180437";
+import { EXCHANGES } from "./exchanges.js?v=202610180437";
 
 const FWD_KEY = "lailong.forward.v1", PIN_KEY = "lailong.btPins", SEL_KEY = "lailong.btStrat", LEG_KEY = "lailong.btLeg";
 const sgn = (x, d = 2) => (x >= 0 ? "+" : "") + x.toFixed(d);
@@ -316,6 +316,6 @@ export function initBacktest({ $, S, ex, esc, table, market, chart }) {
   new MutationObserver(fwdAuto).observe($("view-backtest"), { attributes: true, attributeFilter: ["hidden"] }); setTimeout(fwdAuto, 3000);
 
   // MIDOTI nằm ở file riêng, chỉ có trong bản trên máy của Lai Long; không có thì bỏ qua
-  import("./midoti.js?v=202610180357").catch(() => null).finally(() => { if (!STRATEGIES[cur]) cur = STRATEGY_ORDER[0]; renderList(); renderForm(); });
+  import("./midoti.js?v=202610180437").catch(() => null).finally(() => { if (!STRATEGIES[cur]) cur = STRATEGY_ORDER[0]; renderList(); renderForm(); });
   return { tips: eq, redraw() { for (const c of Object.values(eq)) c.draw(); } };
 }

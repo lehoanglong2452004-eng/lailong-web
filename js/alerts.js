@@ -4,7 +4,7 @@
 // Telegram: mã bot và chat id lưu trong localStorage của máy này, gửi thẳng từ trình duyệt tới api.telegram.org.
 
 const KEY = "lailong.alerts";
-const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: false, sound: true, notify: false, levels: [] };
+const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: false, verifiedOnly: false, sound: true, notify: false, levels: [] };
 const TG_KEY = "lailong.telegram";
 const TONES = { up: [880, 1175], down: [523, 392], ice: [988, 988], price: [1319, 1047, 1319] };
 

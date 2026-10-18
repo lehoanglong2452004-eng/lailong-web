@@ -667,3 +667,14 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 .healthwrap { overflow-x: auto; }
 /* sao lưu toàn bộ (tab Dữ liệu) */
 .bkrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+/* tab Tín hiệu */
+.sgwrap { max-height: 560px; overflow: auto; }
+.sgtab td { font-size: 12px; }
+.sgtab td small { opacity: .75; }
+.sgtab tr.grp td { background: var(--panel-2); color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .03em; text-align: left; }
+.sgctxs { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin: 6px 0 10px; }
+.sgctx .mktab td { font-size: 12px; }
+.plan { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+.plansec { background: var(--panel-2); border-radius: 6px; padding: 6px 10px; }
+.plansec .readout li { margin: 2px 0; }
+#view-signals .gexbar label input, #view-signals .gexbar label select { margin-left: 4px; }

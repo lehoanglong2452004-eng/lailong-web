@@ -1,17 +1,20 @@
 // Lai Long Web: sao lưu và khôi phục toàn bộ dữ liệu lâu dài của app trong một file JSON, để chuyển máy hoặc cất lên Drive.
-// Gồm: nhật ký (kèm khoá rủi ro), tài khoản giả lập, bố cục đã lưu, báo cáo hiệu suất, các chiến lược đang forward test.
+// Gồm: nhật ký (kèm khoá rủi ro), tài khoản giả lập, bố cục đã lưu, báo cáo hiệu suất, các chiến lược đang forward test,
+// sổ tín hiệu ghi trực tiếp và kết quả chấm điểm tín hiệu.
 // Không gồm mã Telegram và khoá API: file sao lưu có thể nằm trên Drive, nên bí mật phải nhập lại trên máy mới.
 
 // các khoá giữ lâu dài trong localStorage (app.js không xoá các khoá này khi mở trang)
 export const KEEP_KEYS = [
   "lailong.journal.v1", "lailong.paper.v1", "lailong.layout.presets", "lailong.multi.presets",
   "lailong.perf.v1", "lailong.forward.v1", "lailong.forward.v1.at", "lailong.telegram",
+  "lailong.events.v1", "lailong.verified",
 ];
 export const SECRET_KEYS = new Set(["lailong.telegram"]);
 export const BACKUP_KEYS = KEEP_KEYS.filter(k => !SECRET_KEYS.has(k));
 const NAMES = {
   "lailong.journal.v1": "nhật ký giao dịch", "lailong.paper.v1": "tài khoản giả lập", "lailong.layout.presets": "bố cục đã lưu",
   "lailong.multi.presets": "bố cục đa biểu đồ", "lailong.perf.v1": "báo cáo hiệu suất", "lailong.forward.v1": "chiến lược forward test",
+  "lailong.events.v1": "sổ tín hiệu ghi trực tiếp", "lailong.verified": "kết quả chấm điểm tín hiệu",
 };
 
 export function packBackup(storage, now = Date.now()) {
