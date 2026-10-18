@@ -14,8 +14,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202610180357">
-<link rel="stylesheet" href="css/app.css?v=202610180357">
+<link rel="stylesheet" href="fonts/fonts.css?v=202610180437">
+<link rel="stylesheet" href="css/app.css?v=202610180437">
 </head>
 <body>
 <header class="menubar">
@@ -24,6 +24,7 @@
     <button data-view="terminal" class="on" data-tip="Bookmap, footprint, nến và sổ lệnh trực tiếp">Terminal</button>
     <button data-view="radar" data-tip="Radar: khối lượng bất thường theo bối cảnh, thị trường phản ứng chính thức hay tạm thời, lịch sử lặp lại; crypto và hợp đồng tương lai">Radar</button>
     <button data-view="multi" data-tip="Nhiều biểu đồ nến cùng lúc, mỗi ô một mã và khung thời gian riêng; kéo thả, đổi cỡ, thu nhỏ từng ô">Đa biểu đồ</button>
+    <button data-view="signals" data-g="signals-book">Tín hiệu</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
     <button data-view="markets" data-tip="Hàng hoá phái sinh, forex và lãi suất, crypto, quỹ ETF, cá voi và thanh lý">Thị trường</button>
     <button data-view="options" data-tip="GEX, tường call/put, điểm lật gamma, max pain, bề mặt IV 3D: BTC, ETH, S&amp;P 500, Nasdaq, vàng, dầu…">Quyền chọn</button>
@@ -47,6 +48,7 @@
       <label data-g="big-trades"><input type="checkbox" data-al="big"> Big Trade (top 0,5% lệnh gốc)</label>
       <label data-g="econ-calendar"><input type="checkbox" data-al="newsEv"> Tin kinh tế mạnh (báo trước 15 phút)</label>
       <label data-g="crypto-news"><input type="checkbox" data-al="newsHot"> Tin nóng mới (mọi mục)</label>
+      <label data-g="signals-book" data-tip="Iceberg, tường bị rút và Big Trade chỉ kêu khi sổ tín hiệu đã chấm loại đó là Có lợi thế cho mã này (chung, hoặc trong phiên đang chạy). Cần chấm điểm ở tab Tín hiệu trước"><input type="checkbox" data-al="verifiedOnly"> Chỉ báo tín hiệu đã kiểm chứng</label>
       <div class="mh">Giá chạm mức</div>
       <div class="row aladd"><input type="number" id="alPrice" step="any" placeholder="Mức giá"><button id="alAdd">Thêm</button></div>
       <div id="alList"></div>
@@ -89,6 +91,7 @@
         <div class="menu" id="layerMenu">
           <label data-g="sr-level"><input type="checkbox" data-layer="levels" checked> Hỗ trợ / kháng cự đã test</label>
           <label data-g="abnormal-volume"><input type="checkbox" data-layer="zones" checked> Vùng khối lượng bất thường</label>
+          <label data-g="confluence"><input type="checkbox" data-layer="confl" checked> Vùng hợp lưu (từ 3 điểm)</label>
           <label data-g="liquidation"><input type="checkbox" data-layer="liq" checked> Lệnh thanh lý thật</label>
           <label data-g="dom-liqmap"><input type="checkbox" id="lmapShow" checked> Khung bản đồ thanh khoản (cạnh sổ lệnh)</label>
           <label data-g="liq-map"><input type="checkbox" data-layer="liqMap" checked> Bản đồ thanh lý ước tính</label>
@@ -355,6 +358,10 @@
 <main class="view analysis" id="view-analysis" hidden>
   <div class="cards">
     <section class="card wide">
+      <h3>Bản đồ mức giá hợp lưu <button class="q" data-g="confluence">?</button> <small id="conflInfo"></small></h3>
+      <div id="conflBody" class="tablewrap"></div>
+    </section>
+    <section class="card wide">
       <h3>Chỉ số tổ chức theo dõi: crypto <button class="q" data-g="inst-crypto">?</button> <span id="instCryptoFresh"></span></h3>
       <div id="instCrypto" class="tablewrap"></div>
     </section>
@@ -422,6 +429,38 @@
       <h3>Biến động quyền chọn (Deribit DVOL) <button class="q" data-g="dvol">?</button></h3>
       <div id="dvolStats"></div>
       <div class="mini"><canvas id="dvolCanvas"></canvas></div>
+    </section>
+  </div>
+</main>
+
+<main class="view analysis" id="view-signals" hidden>
+  <div class="gexbar">
+    <label class="small" data-tip="Để trống: dùng mã đang xem ở Terminal">Mã <input id="sgSym" type="text" spellcheck="false" style="width:110px"></label>
+    <label class="small">Khung <select id="sgTf"></select></label>
+    <label class="small" data-tip="Số ngày lịch sử dùng để chấm (khung 5m tối đa 60 ngày)">Ngày <input id="sgDays" type="number" min="7" max="1100" style="width:64px"></label>
+    <label class="small" data-tip="Phí taker mỗi chiều, %">Phí % <input id="sgFee" type="number" min="0" step="0.01" style="width:58px"></label>
+    <label class="small" data-tip="Trượt giá mỗi chiều, phần vạn">Trượt bps <input id="sgSlip" type="number" min="0" step="0.5" style="width:52px"></label>
+    <label class="small" data-tip="Mốc chính dùng để kết luận và soạn kế hoạch">Mốc chính <select id="sgH"></select></label>
+    <button class="tool" id="sgRun">Chấm điểm</button>
+    <small class="muted" id="sgStatus"></small>
+  </div>
+  <div class="cards">
+    <section class="card wide">
+      <h3>Sổ tín hiệu tự chấm điểm <button class="q" data-g="signals-book">?</button> <small>kỳ vọng mỗi lần sau phí, đơn vị ATR · % giá đi đúng hướng · ★ mốc chính</small></h3>
+      <div id="sgCard"></div>
+    </section>
+    <section class="card wide">
+      <h3>Tín hiệu chạy tốt trong bối cảnh nào <button class="q" data-g="context-tags">?</button></h3>
+      <div id="sgDetail"></div>
+    </section>
+    <section class="card wide">
+      <h3>Kế hoạch trước phiên <button class="q" data-g="session-plan">?</button>
+        <span class="inl rsopts"><button class="tool" id="sgPlanRe">Soạn lại</button> <button class="tool" id="sgPlanTg">Gửi Telegram</button> <label data-tip="Mỗi khi sang phiên Á, Âu, Mỹ, tự chấm lại và gửi kế hoạch qua Telegram (cần bật Telegram ở nút 🔔 và để trang mở)"><input type="checkbox" id="sgAutoTg"> Tự gửi đầu mỗi phiên</label></span></h3>
+      <div id="sgPlan"></div>
+    </section>
+    <section class="card wide">
+      <h3>Kho lịch sử miễn phí (data.binance.vision) <button class="q" data-g="hist-store">?</button></h3>
+      <div id="sgStore"></div>
     </section>
   </div>
 </main>
@@ -659,7 +698,7 @@
     </section>
     <section class="card wide">
       <h3>Sao lưu toàn bộ để chuyển máy <button class="q" data-g="backup">?</button></h3>
-      <p class="small">Một file gồm nhật ký giao dịch (kèm khoá rủi ro), tài khoản giả lập, bố cục đã lưu, báo cáo hiệu suất và các chiến lược đang forward test. Cất file lên Google Drive; sang máy mới mở app, vào đây bấm Khôi phục. Mã Telegram và khoá API không nằm trong file, phải nhập lại.</p>
+      <p class="small">Một file gồm nhật ký giao dịch (kèm khoá rủi ro), tài khoản giả lập, bố cục đã lưu, báo cáo hiệu suất, các chiến lược đang forward test và sổ tín hiệu (sự kiện ghi trực tiếp, kết quả chấm điểm). Cất file lên Google Drive; sang máy mới mở app, vào đây bấm Khôi phục. Mã Telegram và khoá API không nằm trong file, phải nhập lại.</p>
       <div class="bkrow"><button class="tool" id="bkSave">⬇ Sao lưu toàn bộ</button> <button class="tool" id="bkLoad">⬆ Khôi phục từ file</button><input type="file" id="bkFile" accept=".json,application/json" hidden> <span class="muted small" id="bkMsg"></span></div>
     </section>
   </div>
@@ -732,6 +771,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610180357"></script>
+<script type="module" src="js/app.js?v=202610180437"></script>
 </body>
 </html>

@@ -1007,6 +1007,31 @@ export const GLOSSARY = [
     body: "<p><b>Có trong file</b>: nhật ký giao dịch kèm trạng thái khoá rủi ro, tài khoản giả lập, bố cục đã lưu, báo cáo hiệu suất (cả CSV đã nạp), các chiến lược đang forward test.</p><p><b>Không có</b>: mã Telegram và khoá API sàn. File có thể nằm trên Drive nên các bí mật này phải nhập lại trên máy mới.</p><p>Khôi phục sẽ thay dữ liệu cùng loại trên máy đang dùng. Nên sao lưu mỗi tuần.</p>",
   },
   {
+    id: "signals-book", group: "Fractal & kiểm chứng", term: "Sổ tín hiệu tự chấm điểm",
+    short: "Mọi tín hiệu phân tích của app được ghi lại rồi tự chấm: sau 15 phút, 1 giờ, 4 giờ, 24 giờ giá đi đúng hướng bao nhiêu, đã trừ phí và trượt giá. Chỉ tín hiệu qua kiểm chứng mới được gọi là có lợi thế.",
+    body: "<p><b>Ghi những gì</b>: sự kiện Radar, hấp thụ, delta phân kỳ, cá voi mua/bán dồn (cần kho lịch sử), OI tăng/giảm bất thường, tay to đổi phe so với đám đông, lần đầu giá chạm vùng hợp lưu. Các tín hiệu chỉ thấy khi xem trực tiếp (tường bị rút, tường bị ăn, iceberg giữ hoặc bị xuyên, Big Trade) được ghi lúc bro mở Terminal, rồi chấm dần.</p><p><b>Luật chấm</b>: vào ở giá mở của nến ngay sau tín hiệu, ra ở giá đóng sau N nến. Lãi/lỗ đo bằng ATR lúc có tín hiệu để so được giữa các giai đoạn, đã trừ phí taker và trượt giá hai chiều. <b>Hơn nền</b> là phần hơn so với vào lệnh ngẫu nhiên cùng hướng ở mọi nến.</p><p><b>Có lợi thế</b> chỉ khi đủ 3 điều: ít nhất 30 lần; 70% sự kiện đầu có khoảng tin cậy 95% của kỳ vọng sau phí nằm trên 0; và 30% sự kiện cuối (phần chưa dùng để đánh giá) vẫn dương. Thiếu một điều là Chưa rõ. Cách này chống tự lừa mình khi chỉ nhìn vài lần thắng đẹp.</p><p>Kết quả được lưu trên máy (có trong file sao lưu) để lọc cảnh báo và soạn kế hoạch phiên.</p>",
+  },
+  {
+    id: "context-tags", group: "Fractal & kiểm chứng", term: "Nhãn bối cảnh",
+    short: "Mỗi nến được gắn nhãn điều kiện thị trường lúc đó: phiên, biến động, xu hướng 24 giờ, vị trí so với vùng giá trị hôm trước, OI 4 góc, tay to so với đám đông, gamma, tin mạnh. Thống kê tín hiệu được tách theo từng nhãn.",
+    body: "<p>Cùng một tín hiệu nhưng xảy ra giờ Á hay giờ Mỹ, lúc biến động thấp hay cao, thì kết quả rất khác. Lợi thế thật thường nằm ở chỗ biết tín hiệu chạy tốt trong điều kiện nào và đứng ngoài trong điều kiện còn lại.</p><p><b>Phiên</b> (giờ Việt Nam): Á 7h–14h, Âu 14h–20h30, Mỹ 20h30–3h, ngoài giờ 3h–7h. <b>Biến động</b>: ATR so với 30 ngày trước, chia 3 phần. <b>Xu hướng</b>: giá 24 giờ đi xa hơn 1 lần độ lệch kỳ vọng. <b>OI 4 góc</b>: long mới mở, short đóng, short mới mở, long xả. <b>Tay to</b>: tỷ lệ long/short top trader so với mọi tài khoản, lệch hơn 1 độ lệch chuẩn của 7 ngày. <b>Gamma</b>: chỉ có khi xem trực tiếp BTC/ETH.</p><p>Mọi nhãn chỉ dùng dữ liệu tới nến đó, không nhìn trước. Nhóm dưới 15 lần thì chưa kết luận. Trong từng bối cảnh, \"Có lợi thế\" dùng khoảng tin cậy 99% thay vì 95%, vì soi hàng chục nhóm cùng lúc thì kiểu gì cũng có vài nhóm đẹp do may.</p>",
+  },
+  {
+    id: "confluence", group: "Hỗ trợ / kháng cự", term: "Vùng hợp lưu",
+    short: "Nơi nhiều mức giá quan trọng từ các nguồn khác nhau trùng nhau: POC, VAH/VAL, đỉnh/đáy hôm qua, POC tuần, POC chưa chạm, hỗ trợ/kháng cự đã test, VWAP, tường call/put, điểm lật gamma, cụm thanh lý, tường lệnh, iceberg. Càng nhiều nguồn, điểm càng cao.",
+    body: "<p><b>Điểm</b>: tổng trọng số các loại nguồn trong vùng, mỗi loại chỉ tính một lần (hai mức hỗ trợ sát nhau không nhân đôi). POC, POC chưa chạm, tường quyền chọn, điểm lật gamma 2 điểm; VAH/VAL, đỉnh/đáy hôm qua, POC tuần, cụm thanh lý, tường lệnh, iceberg 1,5; còn lại 1.</p><p>Các mức cách nhau dưới 0,25 ATR được gộp. Vùng từ 3 điểm tô vàng trên Bookmap và footprint (tắt ở Lớp hiển thị).</p><p><b>Đã kiểm chứng chưa</b>: sổ tín hiệu chấm lần đầu mỗi ngày giá chạm vùng theo 3 hạng điểm, xem vùng điểm cao có bật lại nhiều hơn vùng 1 nguồn không. Phần lịch sử chỉ dựng được từ nến (không có quyền chọn, tường, iceberg quá khứ).</p>",
+  },
+  {
+    id: "hist-store", group: "Công cụ", term: "Kho lịch sử data.binance.vision",
+    short: "Binance công bố miễn phí toàn bộ lệnh khớp, OI, tỷ lệ long/short và độ sâu sổ lệnh từng ngày ở data.binance.vision. Bản laptop tải về, gom gọn và lưu trên ổ để sổ tín hiệu chấm được nhiều năm.",
+    body: "<p><b>Có gì</b>: nến 1 phút có tách mua/bán chủ động và khối lượng lệnh cá voi (từ 250 nghìn USD với BTC, 100 nghìn với ETH, 50 nghìn với mã khác), footprint 5 phút, danh sách lệnh lớn (từ 1 triệu USD với BTC, 500 nghìn với ETH), OI và tỷ lệ long/short theo 5 phút, độ sâu sổ lệnh ±1%, ±2%, ±5%.</p><p><b>Cách tải</b>: tab Tín hiệu, nhập mã và số ngày, bấm Tải về; hoặc dòng lệnh <code>python -m lailong.cli vision BTCUSDT ETHUSDT --days 365</code>. Ngày đã có sẽ bỏ qua; ngày Binance chưa công bố sẽ thử lại sau 24 giờ.</p><p>Số của mỗi ngày có từ hôm sau. Bản web không có kho này, chỉ dùng nến và 30 ngày OI.</p>",
+  },
+  {
+    id: "session-plan", group: "Công cụ", term: "Kế hoạch trước phiên",
+    short: "Trước mỗi phiên Á, Âu, Mỹ, app soạn sẵn một trang: bối cảnh lúc này, vùng hợp lưu gần giá, những tín hiệu đã kiểm chứng có lợi thế trong đúng bối cảnh đó, tin mạnh 12 giờ tới, tín hiệu 24 giờ qua. Có thể tự gửi qua Telegram.",
+    body: "<p>Mục tiêu là vào phiên với kế hoạch đã viết sẵn, không mở app ra mới nghĩ. Khi không có tín hiệu nào qua kiểm chứng trong bối cảnh hiện tại, kế hoạch ghi rõ để bro đứng ngoài hoặc giảm khối lượng.</p><p><b>Chỉ báo tín hiệu đã kiểm chứng</b> (trong nút 🔔): iceberg, tường bị rút và Big Trade chỉ kêu khi sổ tín hiệu đã chấm loại đó là có lợi thế cho mã này, chung hoặc trong phiên đang chạy.</p>",
+  },
+  {
     id: "flows", group: "Thị trường", term: "Dòng tiền ETF và stablecoin",
     short: "Tiền vào/ra ròng mỗi ngày của các quỹ ETF Bitcoin/Ethereum giao ngay ở Mỹ (Farside), và tổng stablecoin đang lưu hành (DefiLlama). Số cuối ngày.",
     body: "<p><b>ETF</b>: tiền vào ròng là tổ chức Mỹ đang mua coin thật qua quỹ (IBIT, FBTC…). Nhiều phiên liên tiếp cùng chiều quan trọng hơn một phiên lớn.</p><p><b>Stablecoin</b>: tổng USDT, USDC… tăng là tiền mới vào hệ crypto, là nhiên liệu cho giá; giảm là tiền rút ra.</p><p>Nguồn miễn phí, có thể đổi định dạng hoặc chặn; nếu lỗi, app giữ số cũ và ghi rõ là số cũ.</p>",

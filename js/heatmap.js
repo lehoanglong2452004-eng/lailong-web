@@ -4,11 +4,12 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202610180357";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610180357";
-import { T, alpha } from "./theme.js?v=202610180357";
-import { drawShapes } from "./drawings.js?v=202610180357";
-import { bookImb } from "./walls.js?v=202610180357";
+import { COL_MS } from "./market.js?v=202610180437";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610180437";
+import { T, alpha } from "./theme.js?v=202610180437";
+import { drawConfl, conflTip } from "./levels.js?v=202610180437";
+import { drawShapes } from "./drawings.js?v=202610180437";
+import { bookImb } from "./walls.js?v=202610180437";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
 
@@ -106,8 +107,8 @@ export class Heatmap {
     this.off = document.createElement("canvas"); this.offCtx = this.off.getContext("2d");
     this.msPerPx = 120; this.follow = true; this.tEnd = Date.now(); this.rightPad = 70;
     this.pCenter = null; this.pxPerPrice = null; this.contrast = 1; this.cfg = { ...HM_DEFAULTS };
-    this.show = { bubbles: true, liq: true, levels: true, zones: true, liqMap: true, bigOnly: false, ice: true };
-    this.levels = []; this.zones = []; this.liqMap = null; this.orders = []; this.position = null;
+    this.show = { bubbles: true, liq: true, levels: true, zones: true, liqMap: true, bigOnly: false, ice: true, confl: true };
+    this.levels = []; this.zones = []; this.confl = []; this.liqMap = null; this.orders = []; this.position = null;
     this.mouse = null; this.drag = null; this.dirty = true; this._lastDraw = 0;
     this._bind();
     const loop = ts => {
@@ -172,6 +173,7 @@ export class Heatmap {
     this._slices(L);
     if (this.cfg.candles) this._candles(L);
     if (this.show.zones) this._zones(L);
+    if (this.show.confl) drawConfl(ctx, this.confl, p => this.yOf(p), L.pw, L.ph, `10px ${MONO}`);
     if (this.cfg.vwap) this._vwap(cols, i0, i1);
     this._bbo(cols, i0, i1, L);
     this._axisTags = [];
@@ -780,6 +782,7 @@ export class Heatmap {
     }
     if (this.show.levels) for (const lv of this.levels) if (Math.abs(y - this.yOf(lv.price)) < 4) return `${lv.kind === "support" ? "Hỗ trợ" : "Kháng cự"} ${lv.price.toFixed(dec)} (khung nến đang chọn): chạm ${lv.touches} lần, bị test ${lv.tests} lần, độ mạnh ${Math.round(lv.strength)}/100.`;
     if (this.show.levels) for (const mk of this.marks || []) if (Math.abs(y - this.yOf(mk.price)) < 4) return `${mk.label}: ${mk.price.toFixed(dec)} (theo giờ UTC, tính từ nến đang có). Giá hay phản ứng ở các mốc này.`;
+    if (this.show.confl) { const c = conflTip(this.confl, y, p => this.yOf(p), dec); if (c) return c; }
     if (this.show.zones) for (const z of this.zones) if (y >= this.yOf(z.high) && y <= this.yOf(z.low)) return `Vùng khối lượng bất thường ${z.low.toFixed(dec)} – ${z.high.toFixed(dec)} (${z.z.toFixed(1)}σ), phe ${z.side === "buy" ? "mua" : "bán"} chủ động chiếm ưu thế, chưa bị xuyên qua.`;
     return "Màu nền là lượng lệnh chờ tại mức giá đó theo thời gian: xanh đậm là mỏng, xanh nhạt rồi vàng, cam, đỏ là càng dày (đỏ là tường dày nhất). Bong bóng là khối lượng đã khớp.";
   }

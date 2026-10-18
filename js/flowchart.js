@@ -4,15 +4,16 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610180357";
-import { cvd as cvdOf } from "./analytics.js?v=202610180357";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610180357";
-import { GROUPS } from "./flowtools.js?v=202610180357";
-import { WALL_KIND } from "./walls.js?v=202610180357";
-import { T, alpha } from "./theme.js?v=202610180357";
-import { drawShapes } from "./drawings.js?v=202610180357";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610180357";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610180357";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610180437";
+import { cvd as cvdOf } from "./analytics.js?v=202610180437";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610180437";
+import { GROUPS } from "./flowtools.js?v=202610180437";
+import { WALL_KIND } from "./walls.js?v=202610180437";
+import { T, alpha } from "./theme.js?v=202610180437";
+import { drawConfl, conflTip } from "./levels.js?v=202610180437";
+import { drawShapes } from "./drawings.js?v=202610180437";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610180437";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610180437";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -73,9 +74,9 @@ export class FlowChart {
     this.S = fitCanvas(canvas, () => { this.dirty = true; }); this.ctx = this.S.ctx;
     this.bars = []; this.info = {}; this.step = 1; this.type = "candle"; this.rowMult = "auto";
     this.spacing = { candle: 8, box: 72 }; this.offset = 6; this.yZoom = 1;
-    this.show = { radar: false, profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true, stats: true, auction: true, diverg: true };
+    this.show = { radar: false, profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true, stats: true, auction: true, diverg: true, confl: true };
     this.fpMode = "bidask"; this.fpColor = "volume";
-    this.radar = []; this.levels = []; this.zones = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
+    this.radar = []; this.levels = []; this.zones = []; this.confl = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
     this.absorb = []; this.prints = null; this.bigQ = Infinity; this.clusters = []; this.ranges = []; this.pane = "deltaCvd";
     this.vpinVals = null; this.vpinHi = null; this.groupVals = null; this.algoRuns = []; this.spoofs = []; this.scores = []; this.scoreMin = 60;
     this.selecting = false; this.sel = null;
@@ -140,6 +141,7 @@ export class FlowChart {
     if (this.show.dayProfile) this._dayProfiles(first, last, L);
     this._ranges(first, last, L);
     if (this.show.zones) this._zones(first, L);
+    if (this.show.confl) drawConfl(ctx, this.confl, p => this.yOf(p), L.pw, L.priceH, `10px ${MONO}`);
     if (this.show.levels) this._levels(L);
     if (this.type === "box" && this.show.imb) this._stacked(first, last, rowStep, L);
     if (this.type === "box") this._boxes(first, last, rowStep); else this._candles(first, last);
@@ -836,6 +838,7 @@ export class FlowChart {
     const st = this.show.imb && this.type === "box" && this._stkVis && this._stkVis.find(v => x >= v.xa && x <= v.xb && y >= v.ya - 2 && y <= v.yb + 2 && !(b.fp && b.fp.size && x >= this.xOf(i) - this.sp * 0.44 && x <= this.xOf(i) + this.sp * 0.44 && y >= this.yOf(b.h) && y <= this.yOf(b.l)));
     if (st) { const z = st.z; return `Mất cân bằng xếp chồng ${z.n} dòng liền nhau, phe ${z.side === "buy" ? "MUA" : "BÁN"} chủ động gấp ít nhất 3 lần phe kia (so theo đường chéo), vùng ${z.lo.toFixed(dec)} – ${z.hi.toFixed(dec)}, nến ${fmtTime(z.t)}. ${z.end != null ? "Đã có nến đóng cửa xuyên qua (nét đứt)." : `Chưa bị xuyên qua: vùng ${z.side === "buy" ? "hỗ trợ" : "kháng cự"} tiềm năng.`}`; }
     if (this.show.levels) for (const lv of this.levels) if (Math.abs(y - this.yOf(lv.price)) < 4) return `${lv.kind === "support" ? "Hỗ trợ" : "Kháng cự"} ${lv.price.toFixed(dec)}: chạm ${lv.touches} lần, bị test ${lv.tests} lần, độ mạnh ${Math.round(lv.strength)}/100${lv.flipped ? ", đã đảo vai" : lv.broken ? ", đã bị phá (nét đứt)" : ", còn giữ"}.`;
+    if (this.show.confl) { const c = conflTip(this.confl, y, p => this.yOf(p), dec); if (c) return c; }
     if (this.show.zones) for (const z of this.zones) if (y >= this.yOf(z.high) && y <= this.yOf(z.low) && b.t >= z.t) return `Vùng khối lượng bất thường ${z.low.toFixed(dec)} – ${z.high.toFixed(dec)}: khối lượng cao hơn bình thường ${z.z.toFixed(1)} độ lệch chuẩn, phe ${z.side === "buy" ? "mua" : "bán"} chủ động chiếm ưu thế.`;
     const d = b.d != null ? b.d : (typeof b.bv === "number" ? 2 * b.bv - b.v : null), chg = b.o ? (b.c / b.o - 1) * 100 : 0;
     const candle = `Nến ${fmtTime(b.t)} (${this.info.interval || ""}): mở ${b.o.toFixed(dec)} · cao ${b.h.toFixed(dec)} · thấp ${b.l.toFixed(dec)} · đóng ${b.c.toFixed(dec)} (${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%). ` +
