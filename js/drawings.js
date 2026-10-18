@@ -32,7 +32,7 @@ export function drawShapes(ctx, shapes, preview, { yOf, pw, ph, dec }) {
       ctx.fillStyle = s.color + "22"; ctx.fillRect(0, ya, pw, Math.max(1, yb - ya));
       ctx.strokeStyle = s.color; ctx.lineWidth = 1; ctx.setLineDash(s === preview ? [4, 3] : []);
       ctx.strokeRect(0.5, Math.round(ya) + 0.5, pw - 1, Math.max(1, Math.round(yb - ya))); ctx.setLineDash([]);
-      ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.fillStyle = s.color;
+      ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "left"; ctx.fillStyle = s.color;
       ctx.fillText(`${Math.min(s.p, s.p2).toFixed(dec)} – ${Math.max(s.p, s.p2).toFixed(dec)}`, 6, ya + 12);
       tags.push({ y: ya, col: s.color, txt: Math.max(s.p, s.p2).toFixed(dec) }, { y: yb, col: s.color, txt: Math.min(s.p, s.p2).toFixed(dec) });
     } else {

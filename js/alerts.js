@@ -1,9 +1,11 @@
 // Lai Long Web: cảnh báo bằng tiếng và thông báo trình duyệt.
-// Loại cảnh báo: nghi iceberg, tường bị rút khi giá tới gần, Big Trade, giá chạm mức đã đặt.
+// Loại cảnh báo: nghi iceberg, tường lớn xuất hiện gần giá, tường bị rút khi giá tới gần, Big Trade, giá chạm mức đã đặt.
 // Cài đặt và các mức giá được lưu trên máy này (sessionStorage). Mỗi loại kêu tối đa một lần mỗi 5 giây.
+// Telegram: mã bot và chat id lưu trong localStorage của máy này, gửi thẳng từ trình duyệt tới api.telegram.org.
 
 const KEY = "lailong.alerts";
-const DEF = { ice: true, spoof: true, big: false, newsEv: true, newsHot: false, sound: true, notify: false, levels: [] };
+const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: false, sound: true, notify: false, levels: [] };
+const TG_KEY = "lailong.telegram";
 const TONES = { up: [880, 1175], down: [523, 392], ice: [988, 988], price: [1319, 1047, 1319] };
 
 export class Alerts {
@@ -11,6 +13,15 @@ export class Alerts {
     this.show = show; this.last = {}; this.hist = [];
     try { this.cfg = { ...DEF, ...JSON.parse(sessionStorage.getItem(KEY) || "{}") }; } catch { this.cfg = { ...DEF }; }
     if (!Array.isArray(this.cfg.levels)) this.cfg.levels = [];
+    try { this.tg = { on: false, token: "", chat: "", ...JSON.parse(localStorage.getItem(TG_KEY) || "{}") }; } catch { this.tg = { on: false, token: "", chat: "" }; }
+  }
+  saveTg() { try { localStorage.setItem(TG_KEY, JSON.stringify(this.tg)); } catch { /* chế độ riêng tư */ } }
+  // gửi kiểu "no-cors": trình duyệt không đọc được kết quả, nên nút Gửi thử là cách kiểm tra
+  telegram(text, force = false) {
+    const { on, token, chat } = this.tg;
+    if ((!on && !force) || !token || !chat) return false;
+    try { fetch(`https://api.telegram.org/bot${encodeURIComponent(token)}/sendMessage`, { method: "POST", mode: "no-cors", body: new URLSearchParams({ chat_id: chat, text: `Lai Long: ${text}` }) }).catch(() => {}); } catch { /* không có mạng */ }
+    return true;
   }
   save() { try { sessionStorage.setItem(KEY, JSON.stringify(this.cfg)); } catch { /* chế độ riêng tư */ } }
 
@@ -21,6 +32,7 @@ export class Alerts {
     this.hist.unshift({ t: now, text }); if (this.hist.length > 20) this.hist.pop();
     this.show(text);
     if (this.cfg.sound) this.beep(tone);
+    this.telegram(text);
     if (this.cfg.notify && typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
       try { new Notification("Lai Long Quant", { body: text, tag: kind, icon: "icons/icon-192.png" }); } catch { /* trình duyệt không hỗ trợ */ }
     }

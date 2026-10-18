@@ -2,8 +2,8 @@
 //   - Lệnh chờ, giá vào, cắt lỗ (SL), chốt lời (TP) và giá thanh lý được vẽ thành đường ngang có nhãn.
 //   - Kéo đường lệnh chờ, SL hoặc TP để sửa giá. Bấm đúp lên nhãn để huỷ lệnh hoặc bỏ SL/TP.
 //   - Alt + bấm chuột lên biểu đồ để đặt nhanh lệnh limit tại giá đó (dưới giá hiện tại là MUA, trên là BÁN).
-import { T } from "./theme.js?v=202610181200";
-import { decimalsFor, fmtVol } from "./util.js?v=202610181200";
+import { T } from "./theme.js?v=202610181310";
+import { decimalsFor, fmtVol } from "./util.js?v=202610181310";
 
 const GRAB = 6;
 
@@ -54,7 +54,7 @@ export class OrderLines {
       if (y < 0 || y > ph) return;
       ctx.save(); ctx.strokeStyle = color; ctx.setLineDash(dash); ctx.lineWidth = t.drag ? 1.5 : 1;
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]);
-      ctx.font = "11px Segoe UI, sans-serif"; const label = (t.drag ? "⇕ " : "") + text, tw = ctx.measureText(label).width + 10;
+      ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; const label = (t.drag ? "⇕ " : "") + text, tw = ctx.measureText(label).width + 10;
       ctx.fillStyle = color; ctx.fillRect(L.pw - tw - 4, y - 8, tw, 16);
       ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(label, L.pw - tw + 1, y);
       ctx.restore();

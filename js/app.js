@@ -1,39 +1,39 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610181200";
-import { MarketState, Book } from "./market.js?v=202610181200";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610181200";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610181200";
-import { FlowChart } from "./flowchart.js?v=202610181200";
-import { TpoChart } from "./tpo.js?v=202610181200";
-import { Dom } from "./dom.js?v=202610181200";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610181200";
-import { initBacktest } from "./backtestview.js?v=202610181200";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610181200";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610181200";
-import { Tape } from "./tape.js?v=202610181200";
-import { LiqMap } from "./liqmap.js?v=202610181200";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610181200";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610181200";
-import { Alerts } from "./alerts.js?v=202610181200";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610181200";
-import { initNews } from "./newsview.js?v=202610181200";
-import { initMarkets } from "./marketsview.js?v=202610181200";
-import { initGex } from "./gexview.js?v=202610181200";
-import { initInst } from "./instview.js?v=202610181200";
-import { setFresh, tickFresh } from "./fresh.js?v=202610181200";
-import { initRadar } from "./radarview.js?v=202610181200";
-import { Drawings } from "./drawings.js?v=202610181200";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610181200";
-import { PaperBroker } from "./paper.js?v=202610181200";
-import { OrderLines } from "./orderlines.js?v=202610181200";
-import { MultiChart } from "./multichart.js?v=202610181200";
-import { DOM_COLS } from "./dom.js?v=202610181200";
-import { initFractal } from "./fractalview.js?v=202610181200";
-import { initJournal } from "./journalview.js?v=202610181200";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610181200";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610181200";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610181200";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610181310";
+import { MarketState, Book } from "./market.js?v=202610181310";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610181310";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610181310";
+import { FlowChart } from "./flowchart.js?v=202610181310";
+import { TpoChart } from "./tpo.js?v=202610181310";
+import { Dom } from "./dom.js?v=202610181310";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610181310";
+import { initBacktest } from "./backtestview.js?v=202610181310";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610181310";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610181310";
+import { Tape } from "./tape.js?v=202610181310";
+import { LiqMap } from "./liqmap.js?v=202610181310";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610181310";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202610181310";
+import { Alerts } from "./alerts.js?v=202610181310";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610181310";
+import { initNews } from "./newsview.js?v=202610181310";
+import { initMarkets } from "./marketsview.js?v=202610181310";
+import { initGex } from "./gexview.js?v=202610181310";
+import { initInst } from "./instview.js?v=202610181310";
+import { setFresh, tickFresh } from "./fresh.js?v=202610181310";
+import { initRadar } from "./radarview.js?v=202610181310";
+import { Drawings } from "./drawings.js?v=202610181310";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610181310";
+import { PaperBroker } from "./paper.js?v=202610181310";
+import { OrderLines } from "./orderlines.js?v=202610181310";
+import { MultiChart } from "./multichart.js?v=202610181310";
+import { DOM_COLS } from "./dom.js?v=202610181310";
+import { initFractal } from "./fractalview.js?v=202610181310";
+import { initJournal } from "./journalview.js?v=202610181310";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610181310";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610181310";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610181310";
 
 const $ = id => document.getElementById(id);
 // Tuỳ chỉnh (bố cục, cột, khung, màu, cài đặt biểu đồ…) chỉ giữ trong lúc tab còn mở (sessionStorage).
@@ -282,8 +282,51 @@ setInterval(() => {
   const cols = market.cols; let col = null; for (let i = cols.length - 1; i >= Math.max(0, cols.length - 4); i--) if (cols[i].keys) { col = cols[i]; break; }
   const done = walls.step(Date.now(), col, market.book.mid(), market.grid, market.tradedGrid);
   for (const e of done) if (e.kind === "spoof" && alerts.cfg.spoof) alerts.fire("spoof", `${S.symbol}: tường ${e.side === "bid" ? "chờ mua" : "chờ bán"} ${fmtVol(e.q)} tại ${e.price.toFixed(decimalsFor(market.tick))} bị rút khi giá tới gần (nghi tường giả)`, e.side === "bid" ? "down" : "up");
-  if (done.length) { flow.dirty = true; if (S.tab === "spoof") renderTab(); }
+  // tường lớn mới xuất hiện gần giá: lớn hơn 1,5 lần trung vị cỡ tường trong phiên, cách giá ≤ 0,3%
+  const born = walls.born.splice(0), mid = market.book.mid();
+  if (born.length && alerts.cfg.wallNew && mid && walls.log.length >= 8) {
+    const qs = walls.log.map(x => x.q).sort((a, b) => a - b), med = qs[qs.length >> 1];
+    const big = born.filter(w => w.q >= 1.5 * med && Math.abs(w.p - mid) / mid <= 0.003).sort((a, b) => b.q - a.q)[0];
+    if (big) alerts.fire("wallNew", `${S.symbol}: tường ${big.side === "bid" ? "chờ mua" : "chờ bán"} ${fmtVol(big.q)} xuất hiện tại ${big.p.toFixed(decimalsFor(market.tick))} (cách giá ${(Math.abs(big.p - mid) / mid * 100).toFixed(2)}%, gấp ${(big.q / med).toFixed(1)} lần tường thường gặp)`, big.side === "bid" ? "up" : "down");
+  }
+  if (done.length) flow.dirty = true;
 }, 1000);
+// ---------- nhật ký tường ----------
+let wallSeg = "log", wallSig = "";
+function renderWalls(force) {
+  const body = $("wallBody"); if (!body || (!force && tiles && tiles.isMin("wallPanel"))) return;
+  const dec = decimalsFor(market.tick), mid = market.book.mid(), now = Date.now();
+  const ev = walls.events, act = walls.active();
+  const sig = `${wallSeg}|${ev.length}|${ev.filter(e => e.r60).length}|${ev.filter(e => e.r300).length}|${act.length}|${wallSeg === "live" ? Math.floor(now / 2000) : ""}`;
+  if (!force && sig === wallSig) return; wallSig = sig;
+  const sideTd = s => `<td class="${s === "bid" ? "pos" : "neg"}">${s === "bid" ? "Mua" : "Bán"}</td>`;
+  const mv = r => r ? `<span class="${r.end >= 0 ? "pos" : "neg"}">${r.end >= 0 ? "+" : ""}${r.end.toFixed(2)}%</span>` : `<span class="muted">chờ</span>`;
+  const pct = x => x == null ? "–" : `${Math.round(x * 100)}%`, sgn = x => `${x >= 0 ? "+" : ""}${x.toFixed(2)}%`;
+  const st = wallStats(ev);
+  const strip = `<div class="wallstrip"><span data-tip="Tường chờ mua: số lần bị rút khi giá tới gần / bị ăn / rút khi còn xa">Mua: <b class="neg">${st.bid.spoof}</b> rút gần · <b class="pos">${st.bid.filled}</b> bị ăn · ${st.bid.pulled} rút xa</span><span data-tip="Tường chờ bán: số lần bị rút khi giá tới gần / bị ăn / rút khi còn xa">Bán: <b class="neg">${st.ask.spoof}</b> rút gần · <b class="pos">${st.ask.filled}</b> bị ăn · ${st.ask.pulled} rút xa</span><span>Đang đứng <b>${act.length}</b></span></div>`;
+  let html = strip;
+  if (wallSeg === "log") {
+    const rows = ev.slice().reverse().slice(0, 300).map(e => { const k = WALL_KIND[e.kind]; return `<tr><td>${fmtTime(e.t)}</td>${sideTd(e.side)}<td>${e.price.toFixed(dec)}</td><td>${fmtVol(e.q)}</td><td>${(e.life / 1000).toFixed(0)}s</td><td class="t ${k.cls}" data-tip="${esc(k.note)}. Cách giá lúc dựng ${e.dist0.toFixed(dec)}, lúc mất ${e.dist.toFixed(dec)}; đã khớp tại đó ${fmtVol(e.traded)} (${e.q ? Math.round(e.traded / e.q * 100) : 0}% tường)">${k.label}</td><td>${mv(e.r60)}</td><td>${mv(e.r300)}</td></tr>`; });
+    html += table(["Lúc", "Phía", "Giá", "KL", "Đứng", ["Kết cục", "spoofing"], "Sau 1′", "Sau 5′"], rows, "Chưa có tường nào biến mất. Bộ theo dõi chạy từ lúc mở trang; bro để trang mở một lúc là có dữ liệu.");
+  } else if (wallSeg === "live") {
+    const rows = act.slice().sort((a, b) => b.p - a.p).map(w => `<tr>${sideTd(w.side)}<td>${w.p.toFixed(dec)}</td><td>${fmtVol(w.q)}</td><td>${fmtVol(w.maxQ)}</td><td>${mid ? (Math.abs(w.p - mid) / mid * 100).toFixed(2) + "%" : "–"}</td><td>${((now - w.t0) / 1000).toFixed(0)}s</td></tr>`);
+    html += table(["Phía", "Giá", "Đang có", "Lớn nhất", "Cách giá", "Đã đứng"], rows, "Không có tường nào trong ±1% quanh giá.");
+  } else {
+    const R = st.react, line = (name, r, tip) => r ? `<tr><td class="t" data-tip="${esc(tip)}">${name}</td><td>${r.n}</td><td class="${r.move >= 0 ? "pos" : "neg"}">${sgn(r.move)}</td><td>${sgn(r.fav)}</td><td>${sgn(-r.adv)}</td><td>${pct(r.hold)}</td></tr>` : `<tr><td class="t">${name}</td><td colspan="5" class="muted">chưa đủ 1 phút sau kết cục</td></tr>`;
+    html += `<div class="mh">Ai hay dựng tường giả</div><table><thead><tr><th>Phía</th><th>Tường đã mất</th><th data-tip="Trong các tường bị giá chạm tới: phần trăm bị rút ngay trước khi bị ăn">Tỷ lệ rút khi giá tới gần</th><th>Đứng trung bình</th></tr></thead><tbody>` +
+      [["bid", "Chờ mua"], ["ask", "Chờ bán"]].map(([k, n]) => { const x = st[k]; return `<tr><td class="${k === "bid" ? "pos" : "neg"}">${n}</td><td>${x.n}</td><td><b>${pct(x.spoofRate)}</b></td><td>${x.life ? (x.life / 1000).toFixed(0) + "s" : "–"}</td></tr>`; }).join("") + `</tbody></table>` +
+      `<div class="mh">Giá đi thế nào 1 phút sau kết cục (theo phía tường bảo vệ)</div><table><thead><tr><th>Kết cục</th><th>Lần</th><th data-tip="Trung bình giá sau 1 phút, dương là giá đi theo hướng tường bảo vệ: tường mua thì giá lên, tường bán thì giá xuống">Sau 1′</th><th data-tip="Trung bình mức xa nhất giá đi theo hướng tường bảo vệ trong 1 phút">Bật xa nhất</th><th data-tip="Trung bình mức xa nhất giá đi ngược hướng tường trong 1 phút">Ngược xa nhất</th><th data-tip="Phần trăm số lần giá sau 1 phút nằm phía tường bảo vệ">Giữ được</th></tr></thead><tbody>` +
+      line("Bị ăn (tường thật)", R.filled, "Tường bị khớp vào hoặc giá đi xuyên qua. Dương: tường hấp thụ xong giá bật lại; âm: giá phá tường và chạy tiếp") +
+      line("Rút khi giá tới gần", R.spoof, "Nghi tường giả. Âm nghĩa là sau khi tường rút giá đi ngược hướng tường: tường được dựng để doạ, rút ra thì giá đi đúng ý người dựng") +
+      line("Rút khi giá còn xa", R.pulled, "Đổi ý bình thường, ít ý nghĩa") + `</tbody></table>` +
+      (st.hot.length ? `<div class="mh">Mức giá bị rút tường nhiều lần</div><table><thead><tr><th>Giá</th><th>Phía</th><th>Số lần</th><th>Tổng KL</th></tr></thead><tbody>${st.hot.map(x => `<tr><td>${x.price.toFixed(dec)}</td>${sideTd(x.side)}<td><b>${x.n}</b></td><td>${fmtVol(x.q)}</td></tr>`).join("")}</tbody></table>` : "") +
+      `<p class="note">Tính từ lúc mở trang cho ${esc(S.symbol)}. Cần vài chục lần mỗi loại thì con số mới đáng tin.</p>`;
+  }
+  body.innerHTML = html;
+}
+$("wallSeg").onclick = e => { const b = e.target.closest("[data-ws]"); if (!b) return; wallSeg = b.dataset.ws; for (const x of $("wallSeg").children) x.classList.toggle("on", x === b); renderWalls(true); };
+setInterval(() => renderWalls(), 1000);
+
 // ---------- cảnh báo ----------
 const alerts = new Alerts(text => toast("🔔 " + text));
 let alPrevP = null, alPrintT = 0;
@@ -312,6 +355,13 @@ for (const cb of document.querySelectorAll("[data-al]")) cb.onchange = async () 
   }
   if (cb.dataset.al === "sound" && cb.checked) alerts.beep("price");
 };
+// Telegram
+const tgSync = () => { $("tgOn").checked = alerts.tg.on; $("tgToken").value = alerts.tg.token; $("tgChat").value = alerts.tg.chat; $("tgBox").hidden = !alerts.tg.on; };
+tgSync();
+$("tgOn").onchange = () => { alerts.tg.on = $("tgOn").checked; alerts.saveTg(); tgSync(); };
+$("tgToken").onchange = () => { alerts.tg.token = $("tgToken").value.trim(); alerts.saveTg(); };
+$("tgChat").onchange = () => { alerts.tg.chat = $("tgChat").value.trim(); alerts.saveTg(); };
+$("tgTest").onclick = () => { alerts.tg.token = $("tgToken").value.trim(); alerts.tg.chat = $("tgChat").value.trim(); alerts.saveTg(); toast(alerts.telegram(`thử cảnh báo (${S.symbol})`, true) ? "Đã gửi thử. Nếu Telegram không nhận được tin, kiểm tra lại mã bot và chat id (bro phải nhắn cho bot trước một lần)" : "Nhập mã bot và chat id trước", !alerts.tg.token || !alerts.tg.chat); };
 $("alAdd").onclick = () => { const p = parseFloat($("alPrice").value); if (!(p > 0)) return toast("Nhập mức giá cần cảnh báo", true); alerts.addLevel(S.symbol, p); $("alPrice").value = ""; renderAlertMenu(); };
 $("alPrice").onkeydown = e => { if (e.key === "Enter") $("alAdd").click(); };
 $("alList").onclick = e => { const b = e.target.closest("[data-alrm]"); if (b) { alerts.removeLevel(+b.dataset.alrm); renderAlertMenu(); } };
@@ -365,10 +415,6 @@ function renderTab() {
   } else if (S.tab === "algo") {
     body.innerHTML = `<div class="signalbar"><span data-g="algo-twap">Chuỗi lệnh gốc cùng phía, cùng kích thước, cách nhau đều đặn (ít nhất 6 lệnh, độ lệch nhịp ≤ 30%) · tìm thấy <b>${algo.length}</b> chuỗi trong ${fmtVol(market.histPrints.length + market.prints.length)} lệnh gốc</span></div>` +
       table(["Bắt đầu", "Kết thúc", "Phía", "KL mỗi lệnh", "Số lệnh", "Nhịp", "Độ đều", "Tổng KL", "Giá trị", "Giá TB", "Giá đi"], algo.slice(0, 300).map(r => `<tr class="click" data-goto="${r.t0}"><td>${fmtTime(r.t0, true)}</td><td>${fmtTime(r.t1, true)}</td><td class="${r.side === "buy" ? "pos" : "neg"}">${r.side === "buy" ? "MUA" : "BÁN"}</td><td>${fmtVol(r.size)}</td><td>${r.n}</td><td>${(r.gapMs / 1000).toFixed(1)} giây</td><td>${((1 - r.cv) * 100).toFixed(0)}%</td><td>${fmtVol(r.total)}</td><td>${fmtUsd(r.total * r.vwap)}</td><td>${r.vwap.toFixed(dec)}</td><td class="${r.last >= r.first ? "pos" : "neg"}">${r.first.toFixed(dec)} → ${r.last.toFixed(dec)}</td></tr>`), market.histPrints.length + market.prints.length < 200 ? "Đang chờ đủ lệnh khớp..." : "Chưa thấy chuỗi lệnh chia đều nào.");
-  } else if (S.tab === "spoof") {
-    const ev = walls.events.slice().reverse(), cnt = k => walls.events.filter(e => e.kind === k).length;
-    body.innerHTML = `<div class="signalbar"><span data-g="spoofing">Từ lúc mở trang: <b class="neg">${cnt("spoof")}</b> lần rút khi giá tới gần (nghi tường giả) · <b>${cnt("pulled")}</b> lần rút khi giá còn xa · <b class="pos">${cnt("filled")}</b> lần bị ăn (tường thật) · đang đứng <b>${walls.active().length}</b> tường</span></div>` +
-      table(["Thời gian", "Phía", "Giá", "KL tường", "Đứng", "Cách giá lúc dựng", "Cách giá lúc mất", "Đã khớp tại đó", "Kết luận"], ev.slice(0, 300).map(e => { const k = WALL_KIND[e.kind]; return `<tr class="click" data-goto="${e.t}"><td>${fmtTime(e.t, true)}</td><td class="${e.side === "bid" ? "pos" : "neg"}">${e.side === "bid" ? "Chờ mua" : "Chờ bán"}</td><td>${e.price.toFixed(dec)}</td><td>${fmtVol(e.q)}</td><td>${(e.life / 1000).toFixed(0)} giây</td><td>${e.dist0.toFixed(dec)}</td><td>${e.dist.toFixed(dec)}</td><td>${fmtVol(e.traded)} (${e.q ? (e.traded / e.q * 100).toFixed(0) : 0}%)</td><td class="t ${k.cls}">${k.label} (${k.note})</td></tr>`; }), "Chưa có tường nào biến mất. Bộ theo dõi chạy từ lúc mở trang.");
   } else if (S.tab === "symbols") {
     const f = symbolFilter.toUpperCase(), rows = symbolRows.filter(r => !f || r.symbol.includes(f)).slice(0, 300);
     body.innerHTML = `<div class="signalbar"><input id="symFilter" placeholder="Tìm mã..." value="${esc(symbolFilter)}" style="width:160px"></div>` +
@@ -913,10 +959,10 @@ renderPaper();
 
 // bố cục lưới ghép: kéo tiêu đề khung để đổi chỗ, nút — để thu nhỏ, menu ▦ Bố cục để lưu / về mặc định
 let tiles = null;
-tiles = new Layout(ws, ["mainPanel", "lmapPanel", "domPanel", "tapePanel", "orderPanel"], {
+tiles = new Layout(ws, ["mainPanel", "lmapPanel", "domPanel", "tapePanel", "wallPanel", "orderPanel"], {
   legacy: { lmapW: layout.lmapW, rightW: layout.rightW, tapeW: layout.tapeW },
-  // mặc định như bản cũ; khung Lệnh giả lập nằm dưới Smart Tape và thu nhỏ sẵn
-  tree: legacy => { const t = defaultTree(legacy); t.kids[3] = { dir: "col", flex: 0, kids: ["tapePanel", "orderPanel"], size: [0, 380] }; return t; },
+  // mặc định như bản cũ; nhật ký tường và khung Lệnh giả lập (thu nhỏ sẵn) nằm dưới Smart Tape
+  tree: legacy => { const t = defaultTree(legacy); t.kids[3] = { dir: "col", flex: 0, kids: ["tapePanel", "wallPanel", "orderPanel"], size: [0, 300, 380] }; return t; },
   hiddenDefault: ["orderPanel"],
   onChange: () => {
     if (!tiles) return;

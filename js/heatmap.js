@@ -4,10 +4,11 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202610181200";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610181200";
-import { T, alpha } from "./theme.js?v=202610181200";
-import { drawShapes } from "./drawings.js?v=202610181200";
+import { COL_MS } from "./market.js?v=202610181310";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610181310";
+import { T, alpha } from "./theme.js?v=202610181310";
+import { drawShapes } from "./drawings.js?v=202610181310";
+import { bookImb } from "./walls.js?v=202610181310";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
 
@@ -31,6 +32,7 @@ export const HM_DEFAULTS = {
   slices: 0,            // vạch chia thời gian (giây), 0 = tự động
   recenter: "bbo",      // tự căn giữa theo bbo, last (giá khớp) hoặc none
   candles: false,       // vẽ nến chồng lên bản đồ
+  imb: true,            // đường mất cân bằng sổ lệnh ±0,5% quanh giá ở ô dưới
   speed: true,          // đường tốc độ băng (số lệnh khớp mỗi giây) ở ô dưới
 };
 
@@ -160,7 +162,7 @@ export class Heatmap {
     if (L.ph < 20 || L.pw < 20) return;
     ctx.fillStyle = T.bg; ctx.fillRect(0, 0, L.w, L.h);
     if (!this._initScale()) {
-      ctx.fillStyle = T.muted; ctx.font = "14px Segoe UI, sans-serif"; ctx.textAlign = "center";
+      ctx.fillStyle = T.muted; ctx.font = "14px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "center";
       ctx.fillText("Đang chờ dữ liệu sổ lệnh...", L.pw / 2, L.ph / 2); return;
     }
     const cols = this.m.cols, t0 = this.tAt(0), t1 = this.tAt(L.pw);
@@ -296,7 +298,7 @@ export class Heatmap {
       const y = Math.round(this.yOf(pc.p)) + 0.5; if (y < 0 || y > L.ph) continue;
       ctx.strokeStyle = pc.kind === "cvp" ? "rgba(245,197,66,0.9)" : "rgba(255,150,40,0.8)"; ctx.setLineDash(pc.kind === "cvp" ? [] : [5, 4]); ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]);
-      ctx.font = "10px Segoe UI, sans-serif"; ctx.fillStyle = ctx.strokeStyle; ctx.textAlign = "left"; ctx.fillText(pc.kind === "cvp" ? "POC vùng" : "POC phiên", 6, y - 3);
+      ctx.font = "10px 'IBM Plex Mono', Consolas, monospace"; ctx.fillStyle = ctx.strokeStyle; ctx.textAlign = "left"; ctx.fillText(pc.kind === "cvp" ? "POC vùng" : "POC phiên", 6, y - 3);
     }
     ctx.restore(); ctx.lineWidth = 1;
   }
@@ -435,7 +437,7 @@ export class Heatmap {
       const col = mk.kind === "open" ? "#c9d1d9" : mk.kind === "hi" ? "#ff7b72" : "#56d364";
       ctx.strokeStyle = alpha(col, mk.prev ? 0.45 : 0.75); ctx.setLineDash(mk.prev ? [2, 4] : [6, 3]); ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]);
-      const t = `${mk.label} ${mk.price.toFixed(dec)}`; ctx.font = "10px Segoe UI, sans-serif"; const tw = ctx.measureText(t).width + 8;
+      const t = `${mk.label} ${mk.price.toFixed(dec)}`; ctx.font = "10px 'IBM Plex Mono', Consolas, monospace"; const tw = ctx.measureText(t).width + 8;
       ctx.fillStyle = alpha("#000000", 0.6); ctx.fillRect(L.pw - tw - 2, y - 13, tw, 12); ctx.fillStyle = col; ctx.textAlign = "left"; ctx.fillText(t, L.pw - tw + 2, y - 4);
     }
   }
@@ -447,7 +449,7 @@ export class Heatmap {
       const y = Math.round(this.yOf(a.price)) + 0.5; if (y < 0 || y > L.ph) continue;
       ctx.strokeStyle = "#ffa940"; ctx.lineWidth = 1; ctx.setLineDash([1, 3]);
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]);
-      ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.fillStyle = "#ffa940"; ctx.fillText(`🔔 ${a.price.toFixed(dec)}`, 4, y - 3);
+      ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "left"; ctx.fillStyle = "#ffa940"; ctx.fillText(`🔔 ${a.price.toFixed(dec)}`, 4, y - 3);
       (this._axisTags || (this._axisTags = [])).push({ y, col: "#ffa940", txt: a.price.toFixed(dec) });
     }
   }
@@ -472,7 +474,7 @@ export class Heatmap {
     const line = (p, color, text, dash) => {
       const y = Math.round(this.yOf(p)) + 0.5; if (y < 0 || y > L.ph) return;
       ctx.strokeStyle = color; ctx.setLineDash(dash); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]);
-      ctx.font = "11px Segoe UI, sans-serif"; const tw = ctx.measureText(text).width + 10;
+      ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; const tw = ctx.measureText(text).width + 10;
       ctx.fillStyle = color; ctx.fillRect(L.pw - tw - 4, y - 8, tw, 16); ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.fillText(text, L.pw - tw + 1, y + 4);
     };
     for (const o of this.orders) line(o.price, o.side === "buy" ? T.up : T.down, `${o.side === "buy" ? "MUA" : "BÁN"} ${+o.remaining.toFixed(6)} @ ${o.price.toFixed(dec)} · trước: ${fmtVol(o.queueAhead || 0)}`, [5, 4]);
@@ -507,8 +509,27 @@ export class Heatmap {
       pts.forEach(([x, v], k) => { const y = top + 4 + (hi - v) / (hi - lo) * (H - 6); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
       ctx.stroke();
     }
-    ctx.fillStyle = T.muted; ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left";
-    ctx.fillText("Mua / bán chủ động", 6, top + 13); ctx.fillStyle = "#f5c542"; ctx.fillText(`CVD ${cum >= 0 ? "+" : ""}${fmtVol(cum)}`, 130, top + 13);
+    ctx.fillStyle = T.muted; ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "left";
+    // nhãn dòng 1 nối tiếp nhau theo độ rộng chữ thật; hết chỗ thì xuống dòng 2
+    const cvdTxt = `CVD ${cum >= 0 ? "+" : ""}${fmtVol(cum)}`, cvdX = 6 + ctx.measureText("Mua / bán chủ động").width + 12;
+    ctx.fillText("Mua / bán chủ động", 6, top + 13); ctx.fillStyle = "#f5c542"; ctx.fillText(cvdTxt, cvdX, top + 13);
+    const nextX = cvdX + ctx.measureText(cvdTxt).width + 16;
+    // mất cân bằng sổ lệnh ±0,5%: đường tím, giữa ô là cân bằng, trên là chờ mua dày hơn
+    this._imbNow = null;
+    if (this.cfg.imb) {
+      const ipts = []; let last = null;
+      for (let i = Math.max(0, i0); i <= i1; i++) {
+        const c = cols[i]; if (!c.keys) continue;
+        if (c._imbTs !== c.bookTs) { c._imb = bookImb(c.keys, c.sizes, c.knb); c._imbTs = c.bookTs; }
+        if (c._imb != null) { ipts.push([this.xOf(c.t + COL_MS), c._imb]); last = c._imb; }
+      }
+      if (ipts.length > 1) {
+        const yI = v => top + 4 + (1 - v) / 2 * (H - 6);
+        ctx.strokeStyle = alpha("#b07cff", 0.35); ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(0, yI(0)); ctx.lineTo(L.pw, yI(0)); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = "#b07cff"; ctx.lineWidth = 1.2; ctx.beginPath(); ipts.forEach(([x, v], k) => k ? ctx.lineTo(x, yI(v)) : ctx.moveTo(x, yI(v))); ctx.stroke(); ctx.lineWidth = 1;
+      }
+      if (last != null) { this._imbNow = last; ctx.fillStyle = "#b07cff"; ctx.textAlign = "right"; ctx.fillText(L.pw >= 700 ? `Sổ ±0,5%: ${last >= 0 ? "mua" : "bán"} dày hơn ${Math.abs(last * 100).toFixed(0)}%` : `Sổ ${last >= 0 ? "mua" : "bán"} +${Math.abs(last * 100).toFixed(0)}%`, L.pw - 6, L.pw >= 1000 ? top + 13 : top + 26); ctx.textAlign = "left"; }
+    }
     // tốc độ băng: số lệnh khớp mỗi giây; chấm sáng là lúc tốc độ vượt 3 lần mức thường (thường đi trước cú chạy)
     this._speedNow = null;
     if (this.cfg.speed && groups.size > 3) {
@@ -519,7 +540,9 @@ export class Heatmap {
         ctx.strokeStyle = alpha("#39d5ff", 0.85); ctx.lineWidth = 1; ctx.beginPath(); arr.forEach(([x, v], k) => k ? ctx.lineTo(x, y(v)) : ctx.moveTo(x, y(v))); ctx.stroke();
         ctx.fillStyle = "#39d5ff"; for (const [x, v] of arr) if (med > 0 && v >= 3 * med && v >= 2) { ctx.beginPath(); ctx.arc(x, y(v), 2.5, 0, 7); ctx.fill(); }
         let n5 = 0; const tNow = Date.now(); for (let i = cols.length - 1; i >= 0 && cols[i].t > tNow - 5000; i--) n5 += cols[i].tn || 0;
-        this._speedNow = { now: n5 / 5, med }; ctx.textAlign = "left"; ctx.fillText(`Tốc độ ${(n5 / 5).toFixed(1)} lệnh/giây${med ? ` (thường ${med.toFixed(1)})` : ""}`, L.pw >= 420 ? 250 : 6, L.pw >= 420 ? top + 13 : top + 26);
+        this._speedNow = { now: n5 / 5, med }; ctx.textAlign = "left";
+        const sp = `Tốc độ ${(n5 / 5).toFixed(1)} lệnh/giây${med && L.pw >= 600 ? ` (thường ${med.toFixed(1)})` : ""}`, fits = nextX + ctx.measureText(sp).width < L.pw - (L.pw >= 1000 && this.cfg.imb ? 260 : 10);
+        ctx.fillText(sp, fits ? nextX : 6, fits ? top + 13 : top + 26);
       }
     }
   }
@@ -537,7 +560,7 @@ export class Heatmap {
     ctx.strokeStyle = T.line; ctx.beginPath(); ctx.moveTo(c.x + 0.5, 0); ctx.lineTo(c.x + 0.5, L.ph); ctx.stroke();
     return () => {
       ctx.fillStyle = T.panel; ctx.fillRect(c.x + 1, 0, c.w - 1, 14);
-      ctx.fillStyle = T.muted; ctx.font = "bold 10px Segoe UI, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = T.muted; ctx.font = "bold 10px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
       if (Array.isArray(title)) { ctx.fillText(title[0], c.x + c.w / 4 + 1, 11); ctx.fillText(title[1], c.x + c.w * 3 / 4, 11); } else ctx.fillText(title, c.x + c.w / 2, 11);
     };
   }
@@ -660,7 +683,7 @@ export class Heatmap {
       ctx.fillStyle = e.l >= e.s ? `rgba(255,61,242,${a.toFixed(2)})` : `rgba(255,212,0,${a.toFixed(2)})`;
       ctx.fillRect(x0 + LW - 2 - wpx, k * rowPx, wpx, rowPx - 0.5);
     }
-    ctx.fillStyle = T.muted; ctx.font = "10px Segoe UI, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = T.muted; ctx.font = "10px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
     if (LW > 50) ctx.fillText("Thanh lý ƯT", x0 + LW / 2, L.ph - 4);
   }
 
@@ -710,12 +733,12 @@ export class Heatmap {
   _legend() {
     const ctx = this.ctx, m = this.m, dec = decimalsFor(m.tick || m.grid);
     const txt = `${m.symbol} · ${this.opts.exchangeName ? this.opts.exchangeName() : m.exchange} · tầng giá ${m.grid ? m.grid.toFixed(decimalsFor(m.grid)) : "-"}${m.last ? " · giá " + m.last.p.toFixed(dec) : ""}${this.follow ? "" : " · đang xem lại (bấm đúp để theo dõi)"}`;
-    ctx.font = "12px Segoe UI, sans-serif"; ctx.fillStyle = alpha(T.bg, 0.8); ctx.fillRect(4, 4, ctx.measureText(txt).width + 12, 20);
+    ctx.font = "12px 'IBM Plex Mono', Consolas, monospace"; ctx.fillStyle = alpha(T.bg, 0.8); ctx.fillRect(4, 4, ctx.measureText(txt).width + 12, 20);
     ctx.fillStyle = T.text; ctx.textAlign = "left"; ctx.fillText(txt, 10, 18);
     // lệch sổ lệnh (mua so với bán trong vùng đang xem) và lệch khối lượng khớp (mua so với bán trên màn hình)
     const L = this._L; if (!L || L.pw < 300) return; const im = this._imb(L); if (!im) return;
     const box = (x, label, v) => {
-      ctx.font = "11px Segoe UI, sans-serif"; ctx.fillStyle = alpha(T.bg, 0.8); ctx.fillRect(x, 28, 132, 18);
+      ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.fillStyle = alpha(T.bg, 0.8); ctx.fillRect(x, 28, 132, 18);
       ctx.fillStyle = T.muted; ctx.textAlign = "left"; ctx.fillText(label, x + 6, 41);
       const bx = x + 62, bw = 64; ctx.fillStyle = "#d9342b"; ctx.fillRect(bx, 33, bw, 8); ctx.fillStyle = "#1fae5b"; ctx.fillRect(bx, 33, bw * (0.5 + v / 2), 8);
       ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = `bold 9px ${MONO}`; ctx.fillText(`${v >= 0 ? "+" : ""}${(v * 100).toFixed(0)}%`, bx + bw / 2, 41);
@@ -748,7 +771,7 @@ export class Heatmap {
     if (this._bub) for (const b of this._bub) if (Math.hypot(x - b.x, y - b.y) <= b.r + 2) { const v = b.bv + b.sv; return `Đã khớp ${fmtVol(v)} quanh giá ${b.p.toFixed(dec)}: mua chủ động ${fmtVol(b.bv)} (${(b.bv / v * 100).toFixed(0)}%, phần xanh), bán chủ động ${fmtVol(b.sv)} (${(b.sv / v * 100).toFixed(0)}%, phần đỏ). Thể tích bong bóng tỷ lệ với khối lượng.`; }
     if (inCol("liq")) return `Bản đồ thanh lý ước tính quanh ${this.pAt(y).toFixed(dec)}: hồng là vùng long có thể bị thanh lý, vàng là vùng short. Ước tính từ open interest, không phải dữ liệu thật.`;
     if (y >= 28 && y <= 46 && x < 272) return "Lệch sổ lệnh: lệnh chờ mua trừ lệnh chờ bán, chia tổng, trong vùng giá đang xem. Lệch khớp: mua chủ động trừ bán chủ động trong khoảng thời gian đang xem. Dương (xanh nhiều) là phe mua lấn át.";
-    if (y > L.paneTop && y < L.timeTop && x < L.pw) return `Cột xanh: khối lượng mua chủ động, cột đỏ: bán chủ động theo thời gian. Đường vàng là CVD (mua trừ bán cộng dồn) trong vùng đang xem.${this.cfg.speed ? " Đường xanh lơ là tốc độ băng (số lệnh khớp mỗi giây); chấm sáng là lúc tốc độ vượt 3 lần mức thường, hay báo trước một cú chạy hoặc lúc ra tin." : ""}`;
+    if (y > L.paneTop && y < L.timeTop && x < L.pw) return `Cột xanh: khối lượng mua chủ động, cột đỏ: bán chủ động theo thời gian. Đường vàng là CVD (mua trừ bán cộng dồn) trong vùng đang xem.${this.cfg.imb ? " Đường tím là mất cân bằng sổ lệnh trong ±0,5% quanh giá: trên vạch giữa là lệnh chờ mua dày hơn chờ bán, dưới là ngược lại. CVD lên mà sổ nghiêng về bán là người mua đang ăn vào tường bán; CVD xuống mà sổ nghiêng về mua là có bên đang đỡ giá." : ""}${this.cfg.speed ? " Đường xanh lơ là tốc độ băng (số lệnh khớp mỗi giây); chấm sáng là lúc tốc độ vượt 3 lần mức thường, hay báo trước một cú chạy hoặc lúc ra tin." : ""}`;
     if (x > L.pw || y > L.ph) return null;
     const cols = this.m.cols, t = this.tAt(x), i0 = lowerBound(cols, t - 4 * this.msPerPx - COL_MS), i1 = lowerBound(cols, t + 4 * this.msPerPx);
     for (let i = Math.max(0, i0); i < Math.min(cols.length, i1 + 1); i++) {

@@ -6,7 +6,7 @@
 const KEY = "lailong.layout.v2", PRESETS = "lailong.layout.presets";
 const GAP = 5, MIN = 110;
 
-export const NAMES = { mainPanel: "Biểu đồ", lmapPanel: "Thanh khoản", domPanel: "Sổ lệnh", tapePanel: "Smart Tape", orderPanel: "Lệnh giả lập" };
+export const NAMES = { mainPanel: "Biểu đồ", lmapPanel: "Thanh khoản", domPanel: "Sổ lệnh", tapePanel: "Smart Tape", wallPanel: "Nhật ký tường", orderPanel: "Lệnh giả lập" };
 
 // bố cục mặc định giống bản cũ: biểu đồ co giãn, ba khung bên phải giữ độ rộng cố định
 export function defaultTree(w = {}) {
@@ -95,6 +95,7 @@ export class Layout {
     this.mq = matchMedia("(min-width: 901px)");
     let saved = null;
     try { saved = JSON.parse(sessionStorage.getItem(key) || "null"); } catch { /* bỏ qua */ }
+    if (saved) saved = this.repair(saved);
     const ok = saved && this.valid(saved.tree);
     this.tree = ok ? saved.tree : this.makeTree();
     this.hidden = new Set(ok && Array.isArray(saved.hidden) ? saved.hidden.filter(id => ids.includes(id)) : hiddenDefault);
@@ -106,6 +107,15 @@ export class Layout {
     this.mq.addEventListener("change", () => this.apply());
     this.bindDrag();
     this.apply();
+  }
+  // bố cục lưu từ bản cũ thiếu khung mới: thêm khung đó vào cuối, thu nhỏ sẵn
+  repair(x) {
+    try {
+      const have = panelsOf(x.tree), miss = this.ids.filter(id => !have.includes(id));
+      if (!miss.length || have.some(id => !this.ids.includes(id))) return x;
+      const t = clone(x.tree); for (const id of miss) { t.kids.push(id); t.size.push(300); }
+      return { tree: t, hidden: [...(x.hidden || []), ...miss] };
+    } catch { return x; }
   }
   valid(t) { try { const p = panelsOf(t); return p.length === this.ids.length && this.ids.every(id => p.includes(id)); } catch { return false; } }
   save() { try { sessionStorage.setItem(this.key, JSON.stringify({ tree: this.tree, hidden: [...this.hidden] })); } catch { /* bỏ qua */ } }
@@ -178,7 +188,7 @@ export class Layout {
 
   presets() { try { return JSON.parse(localStorage.getItem(this.presetsKey) || "{}"); } catch { return {}; } }
   savePreset(name) { const p = this.presets(); p[name] = { tree: clone(this.tree), hidden: [...this.hidden] }; try { localStorage.setItem(this.presetsKey, JSON.stringify(p)); } catch { /* bỏ qua */ } }
-  loadPreset(name) { const x = this.presets()[name]; if (!x || !this.valid(x.tree)) return; this.tree = clone(x.tree); this.hidden = new Set(x.hidden || []); this.apply(); this.save(); }
+  loadPreset(name) { const x = this.repair(this.presets()[name] || {}); if (!x || !this.valid(x.tree)) return; this.tree = clone(x.tree); this.hidden = new Set(x.hidden || []); this.apply(); this.save(); }
   deletePreset(name) { const p = this.presets(); delete p[name]; try { localStorage.setItem(this.presetsKey, JSON.stringify(p)); } catch { /* bỏ qua */ } }
 
   // kéo tiêu đề khung: hiện vùng thả trên khung đang rê tới

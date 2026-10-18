@@ -2,10 +2,10 @@
 //
 // Cột (bật/tắt được): khối lượng hôm nay tại giá | giá | thay đổi lệnh chờ mua | chờ mua |
 // bán chủ động đã khớp | footprint nến hiện tại | mua chủ động đã khớp | chờ bán |
-// thay đổi lệnh chờ bán | tường lệnh chờ. Bản đồ thanh khoản nằm ở khung riêng (liqmap.js), cùng dòng giá.
+// thay đổi lệnh chờ bán | kéo/xếp lệnh (thay đổi lệnh chờ đã trừ phần bị khớp) | tường lệnh chờ. Bản đồ thanh khoản nằm ở khung riêng (liqmap.js), cùng dòng giá.
 
-import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610181200";
-import { T, alpha } from "./theme.js?v=202610181200";
+import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610181310";
+import { T, alpha } from "./theme.js?v=202610181310";
 
 export const ROW_H = 18, HDR_H = 22;
 const CHG_MS = 5000;
@@ -13,13 +13,14 @@ const CHG_MS = 5000;
 export const DOM_COLS = [
   { id: "today", label: "Hôm nay", w: 1.1, tip: "Khối lượng đã khớp tại mỗi giá trong ngày (giờ UTC). Thanh dài là vùng giá được giao dịch nhiều nhất hôm nay." },
   { id: "price", label: "Giá", w: 1.05, tip: "Mức giá. Ô có viền là giá khớp gần nhất; chữ đậm là giá mua/bán tốt nhất." },
-  { id: "bidChg", label: "Δ Mua", w: 0.75, tip: "Lệnh chờ mua tại giá đó tăng (+) hay giảm (−) bao nhiêu trong 5 giây qua. Giảm mạnh mà không có lệnh khớp là lệnh bị rút." },
+  { id: "bidChg", label: "Δ Mua", w: 0.75, off: true, tip: "Lệnh chờ mua tại giá đó tăng (+) hay giảm (−) bao nhiêu trong 5 giây qua. Giảm mạnh mà không có lệnh khớp là lệnh bị rút." },
   { id: "bid", label: "Chờ mua", w: 1.25, tip: "Lệnh chờ mua (bid) đang nằm tại mỗi giá." },
   { id: "sells", label: "Bán", w: 0.85, tip: "Tổng khối lượng BÁN chủ động đã khớp tại mỗi giá kể từ lúc mở trang (hoặc lúc bấm xoá)." },
   { id: "fp", label: "FP nến", w: 1.15, tip: "Footprint của nến đang chạy: bán chủ động × mua chủ động tại mỗi giá." },
   { id: "buys", label: "Mua", w: 0.85, tip: "Tổng khối lượng MUA chủ động đã khớp tại mỗi giá kể từ lúc mở trang (hoặc lúc bấm xoá)." },
   { id: "ask", label: "Chờ bán", w: 1.25, tip: "Lệnh chờ bán (ask) đang nằm tại mỗi giá." },
-  { id: "askChg", label: "Δ Bán", w: 0.75, tip: "Lệnh chờ bán tại giá đó tăng (+) hay giảm (−) bao nhiêu trong 5 giây qua." },
+  { id: "askChg", label: "Δ Bán", w: 0.75, off: true, tip: "Lệnh chờ bán tại giá đó tăng (+) hay giảm (−) bao nhiêu trong 5 giây qua." },
+  { id: "pull", label: "Kéo/Xếp", w: 0.85, tip: "Lệnh chờ được XẾP thêm (+, xanh lơ) hay bị KÉO đi (−, cam) tại mỗi giá trong 5 giây qua, đã trừ phần bị khớp. Khác cột Δ: lệnh chờ giảm vì bị ăn không tính là kéo. Phía dưới giá là lệnh chờ mua, phía trên là lệnh chờ bán. Kéo mạnh ngay trước giá là bên đó đang rút lui; xếp dày là bên đó đang chặn." },
   { id: "imb", label: "Cân bằng", w: 0.8, tip: "Tỷ lệ MUA chủ động trên tổng khối lượng đã khớp tại mỗi giá (từ lúc mở trang). Thanh xanh lệch phải: bên mua áp đảo; đỏ lệch trái: bên bán áp đảo. Ô đậm khi một bên gấp 3 lần bên kia." },
   { id: "cum", label: "Tổng chờ", w: 0.9, off: true, tip: "Tổng lệnh chờ cộng dồn từ giá tốt nhất tới mức này: phía dưới cộng các lệnh chờ mua, phía trên cộng các lệnh chờ bán. Cho biết giá phải ăn qua bao nhiêu lệnh để tới đây." },
   { id: "walls", label: "Tường", w: 0.9, tip: "Tường lệnh chờ lớn (≥ 6 lần trung vị, top 3% quanh giá). Ô vàng = tường đang đứng và đã đứng bao lâu. \"G×n\" màu cam = số lần tường tại giá này bị rút khi giá tới gần trong 10 phút qua (nghi tường giả, spoofing)." },
@@ -81,18 +82,33 @@ export class Dom {
   }
   _snap() {
     if (!this.tick) return;
-    this.snaps.push({ t: Date.now(), tick: this.tick, rows: this._bookRows() });
+    this.snaps.push({ t: Date.now(), tick: this.tick, rows: this._bookRows(), traded: this._tradedRows() });
     while (this.snaps.length > 12) this.snaps.shift();
+  }
+
+  // đã khớp cộng dồn theo dòng DOM: khoá -> [bán chủ động, mua chủ động]
+  _tradedRows() {
+    const tk = this.m.tick, t = this.tick, out = new Map();
+    if (!tk || !t) return out;
+    for (const [key, v] of this.m.tradedAt) { const k = Math.round(key * tk / t), e = out.get(k); if (e) { e[0] += v[0]; e[1] += v[1]; } else out.set(k, [v[0], v[1]]); }
+    return out;
   }
 
   _levels() {
     const rows = this._rows(), t = this.tick, bookRows = this._bookRows(), lv = new Map();
     for (const [k, e] of bookRows) { const r = this._rowOf(k * t); if (r >= 0 && r < rows) lv.set(r, e); }
     // thay đổi so với CHG_MS trước
-    const now = Date.now(), old = this.snaps.find(s => s.tick === t && now - s.t >= CHG_MS - 500) || null, chg = new Map();
+    const now = Date.now(), old = this.snaps.find(s => s.tick === t && now - s.t >= CHG_MS - 500) || null, chg = new Map(), pull = new Map();
+    const trNow = old && old.traded ? this._tradedRows() : null;
     if (old) for (let r = 0; r < rows; r++) {
       const k = Math.round(this._priceOfRow(r) / t), a = bookRows.get(k) || { bid: 0, ask: 0 }, b = old.rows.get(k) || { bid: 0, ask: 0 };
       if (a.bid !== b.bid || a.ask !== b.ask) chg.set(r, { bid: a.bid - b.bid, ask: a.ask - b.ask });
+      // kéo/xếp: lệnh chờ mua giảm vì bị bán chủ động khớp vào thì không tính là kéo (tương tự phía bán)
+      if (trNow) {
+        const x = trNow.get(k) || [0, 0], y = old.traded.get(k) || [0, 0], sold = x[0] - y[0], bought = x[1] - y[1];
+        const bid = a.bid - b.bid + sold, ask = a.ask - b.ask + bought;
+        if (Math.abs(bid) > 1e-12 || Math.abs(ask) > 1e-12) pull.set(r, { bid, ask });
+      }
     }
     // đã khớp tại giá, khối lượng hôm nay (theo bước giá của sàn) -> dòng DOM
     const tk = this.m.tick, traded = new Map(), today = new Map();
@@ -117,7 +133,10 @@ export class Dom {
     if (bestAsk !== null) { let a = 0; for (let r = Math.min(rows - 1, bestAsk); r >= 0; r--) { a += (lv.get(r) || { ask: 0 }).ask; if (a) cum.set(r, { side: "ask", q: a }); } }
     // áp lực sổ lệnh: 10 mức gần nhất mỗi bên
     const top = (list) => list.slice(0, 10).reduce((x, l) => x + l[1], 0), tb = top(bids), ta = top(asks);
-    return { lv, chg, traded, today, fp, wallNow, spoof, cum, bookImb: tb + ta ? (tb - ta) / (tb + ta) : null, bestBid, bestAsk };
+    // tổng kéo/xếp trong khung nhìn mỗi phía
+    let pullBid = 0, pullAsk = 0;
+    for (const [r, v] of pull) { if (bestAsk !== null && r <= bestAsk) pullAsk += v.ask; else pullBid += v.bid; }
+    return { lv, chg, pull, pullBid, pullAsk, traded, today, fp, wallNow, spoof, cum, bookImb: tb + ta ? (tb - ta) / (tb + ta) : null, bestBid, bestAsk };
   }
 
   _draw() {
@@ -125,10 +144,11 @@ export class Dom {
     ctx.fillStyle = T.bg; ctx.fillRect(0, 0, w, h);
     const C = this.cols; this._C = C;
     this._header(C);
-    if (this.center === null || !this.tick) { ctx.fillStyle = T.muted; ctx.font = "13px Segoe UI, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("Đang chờ sổ lệnh...", w / 2, h / 2); return; }
+    if (this.center === null || !this.tick) { ctx.fillStyle = T.muted; ctx.font = "13px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("Đang chờ sổ lệnh...", w / 2, h / 2); return; }
     const rows = this._rows(), dec = decimalsFor(this.tick), D = this._levels();
     this._D = D;
-    let maxQ = 0, maxT = 0, maxDay = 0, maxFp = 0, maxChg = 0, maxCum = 0;
+    let maxQ = 0, maxT = 0, maxDay = 0, maxFp = 0, maxChg = 0, maxCum = 0, maxPull = 0;
+    for (const [r, v] of D.pull) maxPull = Math.max(maxPull, Math.abs(D.bestAsk !== null && r <= D.bestAsk ? v.ask : v.bid));
     for (const v of D.cum.values()) maxCum = Math.max(maxCum, v.q);
     for (const v of D.lv.values()) maxQ = Math.max(maxQ, v.bid, v.ask);
     for (const v of D.traded.values()) maxT = Math.max(maxT, v[0], v[1]);
@@ -161,6 +181,12 @@ export class Dom {
       if (ch && maxChg) {
         if (C.bidChg && ch.bid) { fill(C.bidChg, Math.abs(ch.bid) / maxChg, alpha(ch.bid > 0 ? T.up : T.down, 0.3), true); text(C.bidChg, (ch.bid > 0 ? "+" : "−") + fmtVol(Math.abs(ch.bid)), ch.bid > 0 ? T.up : T.down); }
         if (C.askChg && ch.ask) { fill(C.askChg, Math.abs(ch.ask) / maxChg, alpha(ch.ask > 0 ? T.up : T.down, 0.3), false); text(C.askChg, (ch.ask > 0 ? "+" : "−") + fmtVol(Math.abs(ch.ask)), ch.ask > 0 ? T.up : T.down, "left"); }
+      }
+      // kéo/xếp lệnh: phía bán ở trên giá mua/bán tốt nhất, phía mua ở dưới
+      const pl = D.pull.get(k);
+      if (C.pull && pl && maxPull) {
+        const v = isAsk ? pl.ask : pl.bid;
+        if (Math.abs(v) > 1e-12) { const c = v > 0 ? "#39d5ff" : "#ff9f1a"; fill(C.pull, Math.abs(v) / maxPull, alpha(c, 0.3), !isAsk); text(C.pull, (v > 0 ? "+" : "−") + fmtVol(Math.abs(v)), c, isAsk ? "left" : "right"); }
       }
       // lệnh chờ
       if (e && maxQ) {
@@ -211,7 +237,7 @@ export class Dom {
   _header(C) {
     const ctx = this.ctx;
     ctx.fillStyle = T.panel2; ctx.fillRect(0, 0, this.S.w, HDR_H);
-    ctx.font = `bold ${this.S.w < 520 ? 9.5 : 10.5}px Segoe UI, sans-serif`; ctx.textBaseline = "middle"; ctx.textAlign = "center";
+    ctx.font = `bold ${this.S.w < 520 ? 9.5 : 10.5}px 'IBM Plex Mono', Consolas, monospace`; ctx.textBaseline = "middle"; ctx.textAlign = "center";
     for (const c of Object.values(C)) {
       ctx.fillStyle = T.accent; ctx.save(); ctx.beginPath(); ctx.rect(c.x, 0, c.w, HDR_H); ctx.clip();
       ctx.fillText(c.def.label.toUpperCase(), c.x + c.w / 2, HDR_H / 2); ctx.restore();
@@ -232,10 +258,12 @@ export class Dom {
     const sg = v => (v > 0 ? "+" : v < 0 ? "−" : "") + fmtVol(Math.abs(v));
     const wl = D.wallNow && D.wallNow.get(k), sc = D.spoof && D.spoof.get(k);
     const wallTxt = (wl ? ` · TƯỜNG ${wl.side === "bid" ? "MUA" : "BÁN"} ${fmtVol(wl.q)} đang đứng ${((Date.now() - wl.t0) / 1000).toFixed(0)} giây` : "") + (sc ? ` · ${sc} lần tường bị rút khi giá tới gần trong 10 phút (nghi tường giả)` : "");
-    const cu = D.cum && D.cum.get(k), bi = D.bookImb;
+    const cu = D.cum && D.cum.get(k), bi = D.bookImb, pl = D.pull && D.pull.get(k);
+    const pullTxt = (pl ? ` · 5 giây qua đã trừ phần bị khớp: chờ mua ${pl.bid >= 0 ? "xếp thêm" : "bị kéo"} ${fmtVol(Math.abs(pl.bid))}, chờ bán ${pl.ask >= 0 ? "xếp thêm" : "bị kéo"} ${fmtVol(Math.abs(pl.ask))}` : "") +
+      (D.pull ? ` · cả khung nhìn: phía mua ${sg(D.pullBid)}, phía bán ${sg(D.pullAsk)}` : "");
     const extra = (cu ? ` · tổng chờ ${cu.side === "bid" ? "mua" : "bán"} cộng dồn tới đây ${fmtVol(cu.q)}` : "") + (tr[0] + tr[1] ? ` · mua chủ động chiếm ${Math.round(tr[1] / (tr[0] + tr[1]) * 100)}% khối lượng đã khớp ở giá này` : "") +
       (bi != null ? ` · 10 mức gần nhất: chờ mua ${bi >= 0 ? "dày hơn" : "mỏng hơn"} chờ bán ${Math.abs(bi * 100).toFixed(0)}%` : "");
-    return `Giá ${price.toFixed(dec)}${extra} · chờ mua ${fmtVol(e.bid)} (5 giây: ${sg(ch.bid)}) · chờ bán ${fmtVol(e.ask)} (5 giây: ${sg(ch.ask)}) · đã khớp từ lúc mở trang: bán ${fmtVol(tr[0])}, mua ${fmtVol(tr[1])} · nến hiện tại: bán ${fmtVol(f[0])} × mua ${fmtVol(f[1])} · hôm nay ${fmtVol(tv)}${wallTxt}. [${col.def.label}] ${col.def.tip}`;
+    return `Giá ${price.toFixed(dec)}${extra}${pullTxt} · chờ mua ${fmtVol(e.bid)} (5 giây: ${sg(ch.bid)}) · chờ bán ${fmtVol(e.ask)} (5 giây: ${sg(ch.ask)}) · đã khớp từ lúc mở trang: bán ${fmtVol(tr[0])}, mua ${fmtVol(tr[1])} · nến hiện tại: bán ${fmtVol(f[0])} × mua ${fmtVol(f[1])} · hôm nay ${fmtVol(tv)}${wallTxt}. [${col.def.label}] ${col.def.tip}`;
   }
 
   _bind() {
