@@ -1002,6 +1002,11 @@ export const GLOSSARY = [
     body: "<p><b>Độ trễ WebSocket</b>: giờ máy lúc nhận trừ giờ sàn ghi trên tin, đã trừ lệch đồng hồ máy so với Binance. Trên 1 giây là mạng hoặc máy đang chậm.</p><p><b>REST</b>: thời gian khứ hồi một lần gọi. <b>File dữ liệu</b>: tuổi của file (web cập nhật 30 phút một lần).</p><p><b>Lỗi</b> thường do sàn chặn IP (một số sàn chặn Việt Nam hoặc Mỹ) hoặc mất mạng. <b>Phiên này chưa dùng</b> là chưa mở trang dùng nguồn đó.</p>",
   },
   {
+    id: "backup", group: "Công cụ", term: "Sao lưu toàn bộ",
+    short: "Xuất một file JSON gồm mọi dữ liệu lâu dài của app trên máy này, để chuyển sang máy mới hoặc cất lên Google Drive.",
+    body: "<p><b>Có trong file</b>: nhật ký giao dịch kèm trạng thái khoá rủi ro, tài khoản giả lập, bố cục đã lưu, báo cáo hiệu suất (cả CSV đã nạp), các chiến lược đang forward test.</p><p><b>Không có</b>: mã Telegram và khoá API sàn. File có thể nằm trên Drive nên các bí mật này phải nhập lại trên máy mới.</p><p>Khôi phục sẽ thay dữ liệu cùng loại trên máy đang dùng. Nên sao lưu mỗi tuần.</p>",
+  },
+  {
     id: "flows", group: "Thị trường", term: "Dòng tiền ETF và stablecoin",
     short: "Tiền vào/ra ròng mỗi ngày của các quỹ ETF Bitcoin/Ethereum giao ngay ở Mỹ (Farside), và tổng stablecoin đang lưu hành (DefiLlama). Số cuối ngày.",
     body: "<p><b>ETF</b>: tiền vào ròng là tổ chức Mỹ đang mua coin thật qua quỹ (IBIT, FBTC…). Nhiều phiên liên tiếp cùng chiều quan trọng hơn một phiên lớn.</p><p><b>Stablecoin</b>: tổng USDT, USDC… tăng là tiền mới vào hệ crypto, là nhiên liệu cho giá; giảm là tiền rút ra.</p><p>Nguồn miễn phí, có thể đổi định dạng hoặc chặn; nếu lỗi, app giữ số cũ và ghi rõ là số cũ.</p>",

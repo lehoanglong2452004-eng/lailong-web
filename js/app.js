@@ -1,49 +1,51 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610180133";
-import { MarketState, Book } from "./market.js?v=202610180133";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610180133";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610180133";
-import { FlowChart } from "./flowchart.js?v=202610180133";
-import { TpoChart } from "./tpo.js?v=202610180133";
-import { Dom } from "./dom.js?v=202610180133";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610180133";
-import { initBacktest } from "./backtestview.js?v=202610180133";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610180133";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610180133";
-import { Tape } from "./tape.js?v=202610180133";
-import { LiqMap } from "./liqmap.js?v=202610180133";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610180133";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202610180133";
-import { Alerts } from "./alerts.js?v=202610180133";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610180133";
-import { initNews } from "./newsview.js?v=202610180133";
-import { initMarkets } from "./marketsview.js?v=202610180133";
-import { initGex } from "./gexview.js?v=202610180133";
-import { initInst } from "./instview.js?v=202610180133";
-import { setFresh, tickFresh } from "./fresh.js?v=202610180133";
-import { initRadar } from "./radarview.js?v=202610180133";
-import { Drawings } from "./drawings.js?v=202610180133";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610180133";
-import { PaperBroker } from "./paper.js?v=202610180133";
-import { OrderLines } from "./orderlines.js?v=202610180133";
-import { MultiChart } from "./multichart.js?v=202610180133";
-import { DOM_COLS } from "./dom.js?v=202610180133";
-import { initFractal } from "./fractalview.js?v=202610180133";
-import { initJournal } from "./journalview.js?v=202610180133";
-import { installHealth } from "./health.js?v=202610180133";
-import { initHealth } from "./healthview.js?v=202610180133";
-import { initFlows } from "./flowsview.js?v=202610180135";
-import { initPerf } from "./perfview.js?v=202610180133";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610180133";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610180133";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610180133";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610180357";
+import { MarketState, Book } from "./market.js?v=202610180357";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610180357";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610180357";
+import { FlowChart } from "./flowchart.js?v=202610180357";
+import { TpoChart } from "./tpo.js?v=202610180357";
+import { Dom } from "./dom.js?v=202610180357";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610180357";
+import { initBacktest } from "./backtestview.js?v=202610180357";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610180357";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610180357";
+import { Tape } from "./tape.js?v=202610180357";
+import { LiqMap } from "./liqmap.js?v=202610180357";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610180357";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202610180357";
+import { Alerts } from "./alerts.js?v=202610180357";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610180357";
+import { initNews } from "./newsview.js?v=202610180357";
+import { initMarkets } from "./marketsview.js?v=202610180357";
+import { initGex } from "./gexview.js?v=202610180357";
+import { initInst } from "./instview.js?v=202610180357";
+import { setFresh, tickFresh } from "./fresh.js?v=202610180357";
+import { initRadar } from "./radarview.js?v=202610180357";
+import { Drawings } from "./drawings.js?v=202610180357";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610180357";
+import { PaperBroker } from "./paper.js?v=202610180357";
+import { OrderLines } from "./orderlines.js?v=202610180357";
+import { MultiChart } from "./multichart.js?v=202610180357";
+import { DOM_COLS } from "./dom.js?v=202610180357";
+import { initFractal } from "./fractalview.js?v=202610180357";
+import { initJournal } from "./journalview.js?v=202610180357";
+import { installHealth } from "./health.js?v=202610180357";
+import { initHealth } from "./healthview.js?v=202610180357";
+import { initFlows } from "./flowsview.js?v=202610180357";
+import { initPerf } from "./perfview.js?v=202610180357";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202610180357";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610180357";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610180357";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610180357";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
 // Tuỳ chỉnh (bố cục, cột, khung, màu, cài đặt biểu đồ…) chỉ giữ trong lúc tab còn mở (sessionStorage).
-// Đóng tab rồi mở lại là về mặc định. Chỉ giữ lâu dài: nhật ký giao dịch, tài khoản giả lập và bố cục bro tự bấm "Lưu".
-const KEEP = new Set(["lailong.journal.v1", "lailong.paper.v1", "lailong.layout.presets"]);
+// Đóng tab rồi mở lại là về mặc định. Chỉ giữ lâu dài: nhật ký, tài khoản giả lập, bố cục bro tự bấm "Lưu",
+// báo cáo hiệu suất, chiến lược đang forward test và mã Telegram (danh sách trong backup.js).
+const KEEP = new Set(KEEP_KEYS);
 try { for (const k of Object.keys(localStorage)) if (k.startsWith("lailong.") && !KEEP.has(k)) localStorage.removeItem(k); } catch { /* bỏ qua */ }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 loadTheme();
@@ -590,6 +592,7 @@ btChart.show = { ...btChart.show, liq: false, liqMap: false, cvd: false, oi: fal
 const tipEl = $("tip");
 const fractal = initFractal({ $, S, ex, esc, table, log });
 const backtest = initBacktest({ $, S, ex, esc, table, market, chart: btChart });
+initBackup({ $, toast });
 const journal = initJournal({ $, S, esc, table, market, toast, onLock: lk => {
   const bar = $("riskLockBar"); bar.hidden = !lk;
   if (lk) bar.textContent = `ĐANG KHOÁ GIAO DỊCH tới ${fmtDate(lk.until)}: ${lk.why}. Lệnh giả lập mới bị chặn, chỉ được đóng bớt vị thế.`;
