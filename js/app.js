@@ -1,41 +1,46 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610180112";
-import { MarketState, Book } from "./market.js?v=202610180112";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610180112";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610180112";
-import { FlowChart } from "./flowchart.js?v=202610180112";
-import { TpoChart } from "./tpo.js?v=202610180112";
-import { Dom } from "./dom.js?v=202610180112";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610180112";
-import { initBacktest } from "./backtestview.js?v=202610180112";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610180112";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610180112";
-import { Tape } from "./tape.js?v=202610180112";
-import { LiqMap } from "./liqmap.js?v=202610180112";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610180112";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202610180112";
-import { Alerts } from "./alerts.js?v=202610180112";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610180112";
-import { initNews } from "./newsview.js?v=202610180112";
-import { initMarkets } from "./marketsview.js?v=202610180112";
-import { initGex } from "./gexview.js?v=202610180112";
-import { initInst } from "./instview.js?v=202610180112";
-import { setFresh, tickFresh } from "./fresh.js?v=202610180112";
-import { initRadar } from "./radarview.js?v=202610180112";
-import { Drawings } from "./drawings.js?v=202610180112";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610180112";
-import { PaperBroker } from "./paper.js?v=202610180112";
-import { OrderLines } from "./orderlines.js?v=202610180112";
-import { MultiChart } from "./multichart.js?v=202610180112";
-import { DOM_COLS } from "./dom.js?v=202610180112";
-import { initFractal } from "./fractalview.js?v=202610180112";
-import { initJournal } from "./journalview.js?v=202610180112";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610180112";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610180112";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610180112";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610180133";
+import { MarketState, Book } from "./market.js?v=202610180133";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610180133";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610180133";
+import { FlowChart } from "./flowchart.js?v=202610180133";
+import { TpoChart } from "./tpo.js?v=202610180133";
+import { Dom } from "./dom.js?v=202610180133";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610180133";
+import { initBacktest } from "./backtestview.js?v=202610180133";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610180133";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610180133";
+import { Tape } from "./tape.js?v=202610180133";
+import { LiqMap } from "./liqmap.js?v=202610180133";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610180133";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202610180133";
+import { Alerts } from "./alerts.js?v=202610180133";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610180133";
+import { initNews } from "./newsview.js?v=202610180133";
+import { initMarkets } from "./marketsview.js?v=202610180133";
+import { initGex } from "./gexview.js?v=202610180133";
+import { initInst } from "./instview.js?v=202610180133";
+import { setFresh, tickFresh } from "./fresh.js?v=202610180133";
+import { initRadar } from "./radarview.js?v=202610180133";
+import { Drawings } from "./drawings.js?v=202610180133";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610180133";
+import { PaperBroker } from "./paper.js?v=202610180133";
+import { OrderLines } from "./orderlines.js?v=202610180133";
+import { MultiChart } from "./multichart.js?v=202610180133";
+import { DOM_COLS } from "./dom.js?v=202610180133";
+import { initFractal } from "./fractalview.js?v=202610180133";
+import { initJournal } from "./journalview.js?v=202610180133";
+import { installHealth } from "./health.js?v=202610180133";
+import { initHealth } from "./healthview.js?v=202610180133";
+import { initFlows } from "./flowsview.js?v=202610180133";
+import { initPerf } from "./perfview.js?v=202610180133";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610180133";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610180133";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610180133";
 
 const $ = id => document.getElementById(id);
+installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
 // Tuỳ chỉnh (bố cục, cột, khung, màu, cài đặt biểu đồ…) chỉ giữ trong lúc tab còn mở (sessionStorage).
 // Đóng tab rồi mở lại là về mặc định. Chỉ giữ lâu dài: nhật ký giao dịch, tài khoản giả lập và bố cục bro tự bấm "Lưu".
 const KEEP = new Set(["lailong.journal.v1", "lailong.paper.v1", "lailong.layout.presets"]);
@@ -585,7 +590,20 @@ btChart.show = { ...btChart.show, liq: false, liqMap: false, cvd: false, oi: fal
 const tipEl = $("tip");
 const fractal = initFractal({ $, S, ex, esc, table, log });
 const backtest = initBacktest({ $, S, ex, esc, table, market, chart: btChart });
-const journal = initJournal({ $, S, esc, table, market, toast });
+const journal = initJournal({ $, S, esc, table, market, toast, onLock: lk => {
+  const bar = $("riskLockBar"); bar.hidden = !lk;
+  if (lk) bar.textContent = `ĐANG KHOÁ GIAO DỊCH tới ${fmtDate(lk.until)}: ${lk.why}. Lệnh giả lập mới bị chặn, chỉ được đóng bớt vị thế.`;
+} });
+const perfView = initPerf({ $, esc, toast, journal });
+const healthView = initHealth({ $, esc });
+const flowsView = initFlows({ $, esc });
+// khoá rủi ro: chặn lệnh giả lập làm tăng vị thế, vẫn cho đóng bớt
+const lockBlocks = (side, qty) => {
+  const lk = journal.lock(); if (!lk) return false;
+  const pv = paper.positionView(pkey()), reduce = pv.qty && (side === "sell") === (pv.qty > 0) && qty <= Math.abs(pv.qty) + 1e-12;
+  if (reduce) return false;
+  toast(`Đang khoá giao dịch tới ${fmtDate(lk.until)}: ${lk.why}`, true); return true;
+};
 // nhấp đúp vào ô thông số (Backtest, FRACTAL) để trả về giá trị mặc định
 document.addEventListener("dblclick", e => {
   const el = e.target.closest(".btform input[type=number], .btform input[type=text], .btform select, .hmcfg input:not(#multiBook), .hmcfg select"); if (!el) return;
@@ -737,11 +755,12 @@ function setConn(text, ok) { const p = $("connPill"); p.className = "pill" + (ok
 function setView(v) {
   S.view = v; persist();
   for (const b of $("views").children) b.classList.toggle("on", b.dataset.view === v);
-  for (const id of ["terminal", "radar", "multi", "analysis", "markets", "options", "backtest", "fractal", "journal"]) $("view-" + id).hidden = id !== v;
+  for (const id of ["terminal", "radar", "multi", "analysis", "markets", "options", "backtest", "fractal", "journal", "health"]) $("view-" + id).hidden = id !== v;
   document.body.classList.toggle("not-terminal", v !== "terminal");
   heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
-  if (v === "analysis") { renderAnalysis(); instView.show(); } else instView.hide();
-  if (v === "journal") journal.show();
+  if (v === "analysis") { renderAnalysis(); instView.show(); flowsView.show(); } else { instView.hide(); flowsView.hide(); }
+  if (v === "journal") { journal.show(); perfView.show(); }
+  if (v === "health") healthView.show(); else healthView.hide();
   if (v === "markets") marketsView.show(); else marketsView.hide();
   if (v === "options") gexView.show(); else gexView.hide();
   if (v === "radar") radarView.show(); else radarView.hide();
@@ -922,7 +941,9 @@ const olOpts = plotH => ({
   onPlace: price => {
     const qty = +$("ptQty").value, mid = market.book.mid();
     if (!(qty > 0)) { toast("Nhập khối lượng trong khung Lệnh giả lập trước", true); if (tiles.isMin("orderPanel")) tiles.restore("orderPanel"); return; }
-    const r = paper.place({ key: pkey(), side: mid != null && price > mid ? "sell" : "buy", type: "limit", qty, price, lev: +$("ptLev").value }, market.book);
+    const side = mid != null && price > mid ? "sell" : "buy";
+    if (lockBlocks(side, qty)) return;
+    const r = paper.place({ key: pkey(), side, type: "limit", qty, price, lev: +$("ptLev").value }, market.book);
     if (r.error) toast(r.error, true);
   },
 });
@@ -943,6 +964,7 @@ function renderPaper() {
 }
 $("ptType").onclick = e => { const b = e.target.closest("[data-pt]"); if (!b) return; ptType = b.dataset.pt; for (const x of $("ptType").children) x.classList.toggle("on", x === b); $("ptPriceBox").hidden = ptType !== "limit"; if (ptType === "limit" && !$("ptPrice").value) { const m = market.book.mid(); if (m != null) $("ptPrice").value = (Math.round(m / (market.tick || 1)) * (market.tick || 1)).toFixed(decimalsFor(market.tick || 0.01)); } };
 const ptPlace = side => {
+  if (lockBlocks(side, +$("ptQty").value)) return;
   const r = paper.place({ key: pkey(), side, type: ptType, qty: +$("ptQty").value, price: +$("ptPrice").value, lev: +$("ptLev").value, sl: $("ptSl").value || null, tp: $("ptTp").value || null }, market.book);
   if (r.error) toast(r.error, true);
 };

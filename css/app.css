@@ -645,3 +645,23 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 .srctab th { color: var(--muted); text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); }
 .srctab td { padding: 4px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); vertical-align: middle; }
 .srctab td.t { white-space: normal; }
+
+/* Đợt 4: khoá rủi ro, ATR, báo cáo hiệu suất, sức khoẻ dữ liệu, dòng tiền ETF */
+.risklock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: var(--sell); color: #fff; font-weight: 700; padding: 6px 12px; text-align: center; letter-spacing: .03em; }
+.jlock { margin: 0 0 8px; padding: 8px; border: 2px solid var(--sell); background: color-mix(in srgb, var(--sell) 18%, transparent); font-size: 12px; }
+.jlock b { color: var(--sell); }
+.atrbox { border: 1px dashed var(--line); padding: 6px; margin: 4px 0; }
+.atrbox .inl select { width: auto; }
+.perfbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+.perfbar input { width: 150px; }
+.perfbar .spacer { flex: 1; }
+.perftab td, .perftab th { white-space: nowrap; }
+.healthtab td { vertical-align: top; }
+.healthtab td b { font-weight: 700; }
+.flowscv { height: 260px; }
+.readout { margin: 6px 0; padding-left: 18px; font-size: 12px; }
+.readout li { margin: 2px 0; }
+.rsopts { margin-left: 10px; font-size: 11px; text-transform: none; }
+.rsopts label { margin-right: 8px; color: var(--muted); }
+.rsopts input { width: 58px; }
+.healthwrap { overflow-x: auto; }

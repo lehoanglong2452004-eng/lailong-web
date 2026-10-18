@@ -1,10 +1,11 @@
 // Lai Long Web: tab Radar. Khối lượng bất thường theo bối cảnh, phản ứng của thị trường (chính thức / tạm thời),
 // lịch sử lặp lại của từng loại sự kiện, nhiên liệu đòn bẩy (crypto) và máy quét cho cả rổ tài sản.
 // Crypto lấy thẳng từ Binance (và Coinbase); hợp đồng tương lai lấy qua máy chủ trên laptop (/api/bars, chậm ~15 phút).
-import { setFresh } from "./fresh.js?v=202610180112";
-import { getJson, fmtPct, fmtTime, fitCanvas, MONO } from "./util.js?v=202610180112";
-import { analyze, narrate, typeStats, together, snapshot, TYPES, REGIMES, STATUS, TF, fmtLevel, fmtDur } from "./radar.js?v=202610180112";
-import { alignHourly, rawSeries, readAt, COMPONENTS, HOUR } from "./lens.js?v=202610180112";
+import { setFresh } from "./fresh.js?v=202610180133";
+import { getJson, fmtPct, fmtTime, fitCanvas, MONO } from "./util.js?v=202610180133";
+import { analyze, narrate, typeStats, together, snapshot, TYPES, REGIMES, STATUS, TF, fmtLevel, fmtDur } from "./radar.js?v=202610180133";
+import { SETUPS, RULE_DEF, trades as setupTrades, setupStats } from "./setups.js?v=202610180133";
+import { alignHourly, rawSeries, readAt, COMPONENTS, HOUR } from "./lens.js?v=202610180133";
 
 const FAPI = "https://fapi.binance.com", SAPI = "https://api.binance.com", CB = "https://api.exchange.coinbase.com";
 export const CRYPTO = ["BTC", "ETH", "SOL", "XRP", "BNB", "DOGE", "ADA", "AVAX", "LINK", "SUI", "LTC", "TRX"];
@@ -126,7 +127,26 @@ export function initRadar({ $, esc, onPick }) {
         <td data-tip="${fmtPct((last / e.level - 1) * 100, 2)} so với giá hiện tại">${fmtLevel(e.level)}</td><td>${e.vRel.toFixed(1)}</td><td class="t ${st.cls}" data-tip="${esc(st.tip)}">${st.name}${e.r.at ? ` <small class="muted">sau ${fmtDur(e.r.at * P.ms)}</small>` : ""}</td>
         <td class="${e.r.fwd[Hm] > 0 ? "up" : e.r.fwd[Hm] < 0 ? "dn" : ""}">${atrTxt(e.r.fwd[Hm])}</td><td>${s && s.done >= 5 ? `${pct(s.acceptRate)} <small class="muted">/${s.done}</small>` : "–"}</td></tr>`;
     }).join("")}</tbody></table>` : `<p class="muted">Không có sự kiện nào trong ${cur.bars.length} nến ${tf}.</p>`;
-    renderStats(); renderFuel(); draw();
+    renderStats(); renderSetups(); renderFuel(); draw();
+  }
+
+  // luật vào/ra cho 2 setup và thống kê sau phí: tài sản đang xem (khung đang chọn) và cả rổ (1h)
+  function rules() { const n = id => { const v = parseFloat($(id).value); return isFinite(v) && v >= 0 ? v : null; }; return { ...RULE_DEF, fee: n("rsFee") ?? RULE_DEF.fee, slip: n("rsSlip") ?? RULE_DEF.slip, tp: n("rsTp") || RULE_DEF.tp }; }
+  function renderSetups() {
+    const box = $("radarSetups"); if (!box) return;
+    if (!cur || !cur.an) { box.innerHTML = ""; return; }
+    const P = rules(), rows = [], f2 = x => (x == null || !isFinite(x) ? "–" : (x >= 0 ? "+" : "") + x.toFixed(2));
+    const line = (label, list, few) => { const st = setupStats(list); return `<tr class="${few || st.n < 30 ? "few" : ""}"><td class="t">${label}</td><td>${st.n}</td><td>${st.n ? Math.round(st.wr * 100) + "%" : "–"}</td><td>${f2(st.grossAvgR)}</td><td class="dn">${st.n ? "−" + st.costR.toFixed(2) : "–"}</td><td class="${st.avgR > 0 ? "up" : st.avgR < 0 ? "dn" : ""}"><b>${f2(st.avgR)}</b></td><td>${st.n >= 5 ? `${f2(st.ci.lo)} … ${f2(st.ci.hi)}` : "–"}</td><td>${isFinite(st.pf) ? st.pf.toFixed(2) : "–"}</td><td class="${st.totalR > 0 ? "up" : "dn"}">${f2(st.totalR)}</td><td class="dn">${st.n ? "−" + st.maxDDR.toFixed(1) : "–"}</td><td>${st.byWhy.target}/${st.byWhy.stop}/${st.byWhy.time}</td></tr>`; };
+    const mine = {};
+    for (const k of Object.keys(SETUPS)) {
+      mine[k] = setupTrades(cur.bars, cur.an.items, k, { ...P, maxBars: cur.an.tf.maxBars });
+      rows.push(line(`<b>${SETUPS[k].name}</b> · ${esc(name(cur.id))} ${tf}`, mine[k]));
+      if (scan.length) rows.push(line(`${SETUPS[k].name} · cả rổ ${scan.length} tài sản 1h`, scan.flatMap(x => setupTrades(x.bars, x.an.items, k, P))));
+    }
+    const recent = Object.values(mine).flat().sort((a, b) => b.t - a.t).slice(0, 8);
+    box.innerHTML = `<table class="mktab lenstab"><thead><tr><th>Setup</th><th>Số lệnh</th><th>Thắng</th><th data-tip="Kỳ vọng mỗi lệnh trước phí, đơn vị R (bội số khoảng cắt lỗ)">Trước phí</th><th data-tip="Phí taker 2 chiều + trượt giá 2 chiều, đổi ra R">Chi phí</th><th data-tip="Kỳ vọng mỗi lệnh sau phí">Sau phí</th><th data-tip="Khoảng tin cậy 95% của kỳ vọng sau phí: cận dưới trên 0 thì lợi thế có thật">KTC 95%</th><th>PF</th><th>Tổng R</th><th>Sụt giảm</th><th data-tip="Chốt lời / cắt lỗ / hết giờ">CL/CL/H</th></tr></thead><tbody>${rows.join("")}</tbody></table>` +
+      (recent.length ? `<p class="small"><b>Lệnh gần nhất theo luật (${esc(name(cur.id))} ${tf}):</b> ${recent.map(x => `<span class="${x.R > 0 ? "up" : "dn"}" data-tip="${esc(SETUPS[x.setup].name)} ${x.dir > 0 ? "LONG" : "SHORT"} vào ${fmtLevel(x.entry)}, cắt lỗ ${fmtLevel(x.stop)}, ra ${fmtLevel(x.exit)} (${x.why === "target" ? "chốt lời" : x.why === "stop" ? "cắt lỗ" : "hết giờ"})">${new Date(x.t).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })} ${x.dir > 0 ? "▲" : "▼"} ${f2(x.R)}R</span>`).join(" · ")}</p>` : "") +
+      `<p class="muted small"><b>Đánh thức</b> (theo hướng): chờ 1 nến trong 3 nến sau đóng cửa vượt nến sự kiện, vào ở giá mở nến kế. Cắt lỗ ở đáy/đỉnh nến sự kiện thêm 0,25 ATR. <b>Cạn khối lượng</b> (đánh ngược): chờ 1 nến trong 6 nến sau đóng cửa thủng nến trước nó, vào ở giá mở nến kế. Cắt lỗ ở đỉnh/đáy từ lúc sự kiện thêm 0,25 ATR. Cả hai chốt lời ở ${P.tp}R, hết ${cur.an.tf.maxBars} nến thì đóng; nến chạm cả hai mức tính là cắt lỗ. Dòng mờ là dưới 30 lệnh, chưa đủ để tin.</p>`;
   }
 
   function renderStats() {
@@ -237,6 +257,7 @@ export function initRadar({ $, esc, onPick }) {
   $("radarAssets").onclick = e => { const b = e.target.closest("[data-ra]"); if (b && b.dataset.ra !== asset) { asset = b.dataset.ra; save(); load(); renderScan(); } };
   $("radarScan").onclick = e => { const tr = e.target.closest("[data-rs]"); if (tr) { asset = tr.dataset.rs; save(); load(); renderScan(); } };
   $("radarPool").onclick = e => { const b = e.target.closest("[data-rp]"); if (b && !b.disabled) { pool = b.dataset.rp; save(); renderStats(); } };
+  for (const id of ["rsFee", "rsSlip", "rsTp"]) $(id).onchange = renderSetups;
   $("radarReload").onclick = () => { load(true); runScan(true); };
   $("radarOpen").onclick = () => onPick && onPick(asset + "USDT");
 

@@ -3,14 +3,14 @@
 // - Tính khối lượng lệnh theo % rủi ro: lỗ khi chạm cắt lỗ (cộng phí hai chiều) đúng bằng số tiền chấp nhận mất.
 // - Rào chắn trong ngày: lỗ đã chốt hôm nay, số lệnh hôm nay, tổng rủi ro các lệnh đang mở.
 // - Thống kê nhật ký theo chiến lược, phía, giờ vào lệnh, thứ trong tuần và theo từng lỗi hay mắc.
-import { equityStats } from "./fractal.js?v=202610180112";
+import { equityStats } from "./fractal.js?v=202610180133";
 
 export const MISTAKES = [
   ["early", "Vào sớm, chưa đủ tín hiệu"], ["fomo", "FOMO, đuổi giá"], ["noplan", "Ngoài kế hoạch"],
   ["movestop", "Dời cắt lỗ ra xa"], ["cutwin", "Chốt lời quá sớm"], ["size", "Khối lượng quá lớn"],
   ["revenge", "Gỡ lỗ, trả thù thị trường"], ["news", "Vào lệnh sát giờ ra tin"], ["late", "Vào trễ, giá đã chạy"],
 ];
-export const SETTINGS_DEF = { capital: 10000, riskPct: 1, dayLossPct: 3, maxTrades: 6, fee: 0.05, mmr: 0.5 };
+export const SETTINGS_DEF = { capital: 10000, riskPct: 1, dayLossPct: 3, weekLossPct: 6, lossStreak: 3, maxTrades: 6, fee: 0.05, mmr: 0.5, atrMult: 1.5 };
 
 // equity: vốn hiện tại; riskPct: % chấp nhận mất; fee: phí taker % mỗi chiều; lev: đòn bẩy; mmr: ký quỹ duy trì %
 export function sizeFor({ equity, riskPct, entry, stop, target, fee = 0.05, lev = 10, mmr = 0.5 }) {
@@ -25,6 +25,16 @@ export function sizeFor({ equity, riskPct, entry, stop, target, fee = 0.05, lev 
   return { side, qty, notional, margin, riskUsd, distPct: dist / entry * 100, liq, stopBeyondLiq, rr, minLev: notional / equity, feeUsd: (entry + stop) * f * qty };
 }
 
+// cắt lỗ theo ATR: cắt lỗ cách giá vào mult × ATR, rồi tính khối lượng như trên.
+// Thị trường càng biến động thì cắt lỗ càng xa và khối lượng càng nhỏ, nên số tiền rủi ro luôn bằng nhau.
+export function sizeAtr({ atr, mult = 1.5, side = "long", entry, ...rest }) {
+  if (!(atr > 0) || !(entry > 0)) return null;
+  const stop = side === "long" ? entry - mult * atr : entry + mult * atr;
+  if (!(stop > 0)) return null;
+  const r = sizeFor({ entry, stop, ...rest });
+  return r && { ...r, stop, atr, mult };
+}
+
 // kết quả một lệnh đã đóng, tính theo R (bội số của rủi ro ban đầu) và theo USDT
 export function result(t) {
   if (!(t.exit > 0) || !(t.entry > 0) || !(t.stop > 0) || t.entry === t.stop) return null;
@@ -33,6 +43,31 @@ export function result(t) {
   const pnl = (t.exit - t.entry) * dir * qty - fee;
   const R = qty > 0 ? pnl / (risk * qty) : (t.exit - t.entry) * dir / risk;
   return { R, pnl };
+}
+
+// mốc thời gian theo giờ máy: đầu ngày hôm sau, đầu tuần (thứ Hai 00:00) và đầu tuần sau
+export const nextDay = t => { const d = new Date(t); d.setHours(24, 0, 0, 0); return d.getTime(); };
+export const weekStart = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); };
+export const nextWeek = t => { const d = new Date(weekStart(t)); d.setDate(d.getDate() + 7); return d.getTime(); };
+
+// khoá giao dịch: lỗ ngày chạm giới hạn hoặc thua liên tiếp lossStreak lệnh trong ngày thì khoá tới 00:00 hôm sau;
+// lỗ tuần chạm giới hạn thì khoá tới thứ Hai tuần sau. prev là khoá đã lưu: khoá chỉ hết khi tới giờ,
+// sửa hay xoá lệnh lỗ không mở được khoá.
+export function riskLock(trades, cfg, now = Date.now(), prev = null) {
+  const closed = trades.filter(t => result(t)).sort((a, b) => (a.tExit || a.t) - (b.tExit || b.t));
+  const equity0 = cfg.capital + closed.filter(t => (t.tExit || t.t) < weekStart(now)).reduce((a, t) => a + result(t).pnl, 0);
+  const d0 = new Date(now); d0.setHours(0, 0, 0, 0);
+  const today = closed.filter(t => (t.tExit || t.t) >= d0.getTime()), week = closed.filter(t => (t.tExit || t.t) >= weekStart(now));
+  const dayPnl = today.reduce((a, t) => a + result(t).pnl, 0), weekPnl = week.reduce((a, t) => a + result(t).pnl, 0);
+  let streak = 0; for (let i = today.length - 1; i >= 0 && result(today[i]).pnl < 0; i--) streak++;
+  const dayLim = (equity0 + weekPnl - dayPnl) * cfg.dayLossPct / 100, weekLim = equity0 * cfg.weekLossPct / 100;
+  let lock = null;
+  if (cfg.weekLossPct > 0 && weekPnl <= -weekLim) lock = { until: nextWeek(now), why: `Tuần này đã lỗ ${fmt(-weekPnl)} USDT, chạm giới hạn ${cfg.weekLossPct}% vốn đầu tuần` };
+  else if (cfg.dayLossPct > 0 && dayPnl <= -dayLim) lock = { until: nextDay(now), why: `Hôm nay đã lỗ ${fmt(-dayPnl)} USDT, chạm giới hạn ${cfg.dayLossPct}% vốn` };
+  else if (cfg.lossStreak > 0 && streak >= cfg.lossStreak) lock = { until: nextDay(now), why: `Thua ${streak} lệnh liên tiếp hôm nay (giới hạn ${cfg.lossStreak})` };
+  if (lock) lock.since = now;
+  if (prev && prev.until > now && (!lock || prev.until >= lock.until)) lock = prev;
+  return { lock, dayPnl, weekPnl, dayLim, weekLim, streak };
 }
 
 const dayKey = t => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
