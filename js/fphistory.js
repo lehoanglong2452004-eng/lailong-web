@@ -6,8 +6,9 @@
 // 2. Chính xác (Binance): tải ngược từng lệnh khớp (aggTrades) cho các nến gần nhất và thay
 //    phần ước tính bằng số liệu thật. Có giới hạn số lần gọi để không vượt hạn mức của sàn.
 
-import { INTERVALS, getJson, sleep } from "./util.js?v=202610160700";
-import { smartTape } from "./orderflow.js?v=202610160700";
+import { INTERVALS, getJson, sleep } from "./util.js?v=202610180745";
+import { smartTape } from "./orderflow.js?v=202610180745";
+import { intrabar } from "./footprint.js?v=202610180745";
 
 const SUB = { "1m": null, "5m": "1m", "15m": "1m", "1h": "5m", "4h": "15m", "1d": "1h" };
 const SUB_CAP = { BINANCE: 12000, BYBIT: 12000, OKX: 3000, HYPERLIQUID: 5000, SIM: 12000 };
@@ -59,6 +60,7 @@ export async function exactFootprintBinance(symbol, market, isCurrent, { maxRequ
   const oldest = bars[Math.max(0, bars.length - maxBars)].t;
   const idx = new Map(bars.map((b, i) => [b.t, i]));
   const acc = new Map(); // thời gian nến -> footprint đang dựng
+  const seq = new Map(); // thời gian nến -> [[mã lệnh, KL có dấu]] để tính delta cao/thấp nhất trong nến
   let minId = null, done = 0, finishedBefore = Infinity;
   const finalize = (beforeT) => {
     // các nến nằm hẳn sau mốc beforeT đã đủ lệnh khớp
@@ -66,8 +68,11 @@ export async function exactFootprintBinance(symbol, market, isCurrent, { maxRequ
       if (t < beforeT) continue;
       const b = bars[idx.get(t)]; if (!b) { acc.delete(t); continue; }
       if (b.live) { for (const [k, c] of fp) { const e = b.fp.get(k) || [0, 0]; e[0] += c[0]; e[1] += c[1]; b.fp.set(k, e); } }
-      else { b.fp = fp; b.fpApprox = false; }
-      acc.delete(t);
+      else {
+        b.fp = fp; b.fpApprox = false;
+        const tr = seq.get(t); if (tr) { tr.sort((x, y) => x[0] - y[0]); Object.assign(b, intrabar(tr)); }
+      }
+      acc.delete(t); seq.delete(t);
     }
     market.emit("footprint");
   };
@@ -83,6 +88,7 @@ export async function exactFootprintBinance(symbol, market, isCurrent, { maxRequ
       const p = +x.p, q = +x.q, k = Math.floor(p / step + 1e-9);
       let fp = acc.get(bt); if (!fp) { fp = new Map(); acc.set(bt, fp); }
       const c = fp.get(k) || [0, 0]; c[x.m ? 0 : 1] += q; fp.set(k, c);
+      let sq = seq.get(bt); if (!sq) seq.set(bt, sq = []); sq.push([x.a, x.m ? -q : q]);
     }
     // ghép lệnh nhỏ thành lệnh gốc để vẽ Big Trades cho cả các nến cũ
     const page = rows.filter(x => (minId === null || x.a < minId) && x.T < liveStart).sort((a, b) => a.a - b.a)

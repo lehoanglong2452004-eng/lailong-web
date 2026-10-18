@@ -10,7 +10,7 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610160700";
+import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610180745";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
 function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
@@ -84,7 +84,7 @@ const binance = {
     const ms = INTERVALS[interval];
     return pageBackward(async end => {
       const rows = await getJson(`${BN_REST}/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${Math.min(1500, n + 1)}&endTime=${end}`);
-      return rows.map(r => ({ t: r[0], o: num(r[1]), h: num(r[2]), l: num(r[3]), c: num(r[4]), v: num(r[5]), bv: num(r[9]) }));
+      return rows.map(r => ({ t: r[0], o: num(r[1]), h: num(r[2]), l: num(r[3]), c: num(r[4]), v: num(r[5]), bv: num(r[9]), n: num(r[8]) }));
     }, n, ms);
   },
   // nến trực tiếp qua một WebSocket chung cho nhiều cặp (mã, khung): onBar(symbol, interval, bar) mỗi lần có cập nhật

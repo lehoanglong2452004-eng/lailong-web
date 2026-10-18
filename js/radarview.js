@@ -1,9 +1,10 @@
 // Lai Long Web: tab Radar. Khối lượng bất thường theo bối cảnh, phản ứng của thị trường (chính thức / tạm thời),
 // lịch sử lặp lại của từng loại sự kiện, nhiên liệu đòn bẩy (crypto) và máy quét cho cả rổ tài sản.
 // Crypto lấy thẳng từ Binance (và Coinbase); hợp đồng tương lai lấy qua máy chủ trên laptop (/api/bars, chậm ~15 phút).
-import { getJson, fmtPct, fmtTime, fitCanvas, MONO } from "./util.js?v=202610160700";
-import { analyze, narrate, typeStats, together, snapshot, TYPES, REGIMES, STATUS, TF, fmtLevel, fmtDur } from "./radar.js?v=202610160700";
-import { alignHourly, rawSeries, readAt, COMPONENTS, HOUR } from "./lens.js?v=202610160700";
+import { setFresh } from "./fresh.js?v=202610180745";
+import { getJson, fmtPct, fmtTime, fitCanvas, MONO } from "./util.js?v=202610180745";
+import { analyze, narrate, typeStats, together, snapshot, TYPES, REGIMES, STATUS, TF, fmtLevel, fmtDur } from "./radar.js?v=202610180745";
+import { alignHourly, rawSeries, readAt, COMPONENTS, HOUR } from "./lens.js?v=202610180745";
 
 const FAPI = "https://fapi.binance.com", SAPI = "https://api.binance.com", CB = "https://api.exchange.coinbase.com";
 export const CRYPTO = ["BTC", "ETH", "SOL", "XRP", "BNB", "DOGE", "ADA", "AVAX", "LINK", "SUI", "LTC", "TRX"];
@@ -102,7 +103,10 @@ export function initRadar({ $, esc, onPick }) {
     $("radarAssets").innerHTML = CRYPTO.map(b => `<button class="${b === asset ? "on" : ""}" data-ra="${b}">${b}</button>`).join("") + `<span class="sep"></span>` +
       FUTURES.map(([id, nm]) => `<button class="${id === asset ? "on" : ""}" data-ra="${id}" data-tip="Hợp đồng tương lai ${esc(nm)} (${id}), nến 1 giờ, chậm ~15 phút">${esc(nm)}</button>`).join("");
     $("radarTfs").innerHTML = TFS.map(k => `<button class="${k === tf ? "on" : ""}" data-rt="${k}">${k}</button>`).join("");
-    $("radarSrc").textContent = loading ? "đang tải…" : cur && cur.bars.length ? `${FUT.has(cur.id) ? "Yahoo, chậm ~15 phút" : "Binance Futures"} · ${cur.bars.length} nến ${tf} (${fmtDur(cur.bars[cur.bars.length - 1].t - cur.bars[0].t)}) · cập nhật ${fmtTime(cur.at)}` : "";
+    const rs = $("radarSrc");
+    if (loading) rs.textContent = "đang tải…";
+    else if (cur && cur.bars.length) setFresh(rs, FUT.has(cur.id) ? "delay" : "live", cur.at, FUT.has(cur.id) ? { label: `Trễ 10–15 phút (Yahoo) · ${cur.bars.length} nến ${tf}`, expect: 30 * 60e3, note: "Nến hợp đồng tương lai từ Yahoo Finance, chậm 10 đến 15 phút; chỉ có khi mở bản trên laptop" } : { label: `Trực tiếp (Binance) · ${cur.bars.length} nến ${tf} (${fmtDur(cur.bars[cur.bars.length - 1].t - cur.bars[0].t)})`, expect: 6 * 60e3, note: "Nến Binance Futures, làm mới mỗi 2 phút khi đang mở Radar" });
+    else rs.textContent = "";
     $("radarOpen").hidden = FUT.has(asset);
   }
 

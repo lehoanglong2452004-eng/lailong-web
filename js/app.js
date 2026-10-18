@@ -1,37 +1,38 @@
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610160700";
-import { MarketState, Book } from "./market.js?v=202610160700";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610160700";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610160700";
-import { FlowChart } from "./flowchart.js?v=202610160700";
-import { TpoChart } from "./tpo.js?v=202610160700";
-import { Dom } from "./dom.js?v=202610160700";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610160700";
-import { initBacktest } from "./backtestview.js?v=202610160700";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610160700";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610160700";
-import { Tape } from "./tape.js?v=202610160700";
-import { LiqMap } from "./liqmap.js?v=202610160700";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610160700";
-import { WallTracker, WALL_KIND } from "./walls.js?v=202610160700";
-import { Alerts } from "./alerts.js?v=202610160700";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610160700";
-import { initNews } from "./newsview.js?v=202610160700";
-import { initMarkets } from "./marketsview.js?v=202610160700";
-import { initGex } from "./gexview.js?v=202610160700";
-import { initRadar } from "./radarview.js?v=202610160700";
-import { Drawings } from "./drawings.js?v=202610160700";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610160700";
-import { PaperBroker } from "./paper.js?v=202610160700";
-import { OrderLines } from "./orderlines.js?v=202610160700";
-import { MultiChart } from "./multichart.js?v=202610160700";
-import { DOM_COLS } from "./dom.js?v=202610160700";
-import { initFractal } from "./fractalview.js?v=202610160700";
-import { initJournal } from "./journalview.js?v=202610160700";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610160700";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610160700";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610160700";
+import { EXCHANGES, attachOi, attachFunding, inferTick } from "./exchanges.js?v=202610180745";
+import { MarketState, Book } from "./market.js?v=202610180745";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610180745";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610180745";
+import { FlowChart } from "./flowchart.js?v=202610180745";
+import { TpoChart } from "./tpo.js?v=202610180745";
+import { Dom } from "./dom.js?v=202610180745";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610180745";
+import { initBacktest } from "./backtestview.js?v=202610180745";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610180745";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610180745";
+import { Tape } from "./tape.js?v=202610180745";
+import { LiqMap } from "./liqmap.js?v=202610180745";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS } from "./flowtools.js?v=202610180745";
+import { WallTracker, WALL_KIND } from "./walls.js?v=202610180745";
+import { Alerts } from "./alerts.js?v=202610180745";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610180745";
+import { initNews } from "./newsview.js?v=202610180745";
+import { initMarkets } from "./marketsview.js?v=202610180745";
+import { initGex } from "./gexview.js?v=202610180745";
+import { setFresh, tickFresh } from "./fresh.js?v=202610180745";
+import { initRadar } from "./radarview.js?v=202610180745";
+import { Drawings } from "./drawings.js?v=202610180745";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610180745";
+import { PaperBroker } from "./paper.js?v=202610180745";
+import { OrderLines } from "./orderlines.js?v=202610180745";
+import { MultiChart } from "./multichart.js?v=202610180745";
+import { DOM_COLS } from "./dom.js?v=202610180745";
+import { initFractal } from "./fractalview.js?v=202610180745";
+import { initJournal } from "./journalview.js?v=202610180745";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610180745";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610180745";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610180745";
 
 const $ = id => document.getElementById(id);
 // Tuỳ chỉnh (bố cục, cột, khung, màu, cài đặt biểu đồ…) chỉ giữ trong lúc tab còn mở (sessionStorage).
@@ -81,12 +82,21 @@ const heat = new Heatmap($("heat"), market, { exchangeName: () => peers && peers
 const flow = new FlowChart($("flow"));
 const tpo = new TpoChart($("tpo"));
 let tpoTimer = null;
-// TPO dựng từ nến 5 phút của 7 ngày gần nhất, cập nhật nến mới mỗi 20 giây
+{ // phiên TPO và khung "Đọc phiên"
+  let ts = {}; try { ts = JSON.parse(sessionStorage.getItem("lailong.tpo") || "{}"); } catch { /* bỏ qua */ }
+  if (ts.sess) { $("tpoSess").value = ts.sess; tpo.sessKind = ts.sess; }
+  const saveTs = () => { try { sessionStorage.setItem("lailong.tpo", JSON.stringify({ sess: $("tpoSess").value, open: !$("tpoReadList").hidden })); } catch { /* bỏ qua */ } };
+  if (ts.open === false) $("tpoReadList").hidden = true;
+  $("tpoSess").onchange = () => { tpo.setSession($("tpoSess").value); saveTs(); };
+  $("tpoReadBtn").onclick = () => { $("tpoReadList").hidden = !$("tpoReadList").hidden; saveTs(); };
+  tpo.onRead = lines => { $("tpoReadList").innerHTML = lines.length ? lines.map(l => `<li>${esc(l)}</li>`).join("") : "<li>Chưa đủ dữ liệu để đọc phiên.</li>"; };
+}
+// TPO dựng từ nến 5 phút của 30 ngày gần nhất (đủ để thống kê kiểu ngày), cập nhật nến mới mỗi 20 giây
 async function loadTpo() {
   const token = loadToken, sym = S.symbol;
   tpo.setBars([], market.tick);
   try {
-    const bars = await ex().klines(sym, "5m", 288 * 7);
+    const bars = await ex().klines(sym, "5m", 288 * 30);
     if (token !== loadToken || S.mode !== "tpo") return;
     tpo.setBars(bars, market.tick);
   } catch (e) { log(`Không tải được nến 5 phút cho TPO: ${e.message}`); }
@@ -404,6 +414,7 @@ async function renderAnalysisNow() {
   if (!analysis) { $("mtfTable").innerHTML = `<div class="empty">Đang tải dữ liệu...</div>`; return; }
   const dec = decimalsFor(market.tick || market.fpStep), last = market.bars[market.bars.length - 1].c;
   $("srInfo").textContent = `khung ${S.interval}, giá ${last.toFixed(dec)}`;
+  setFresh($("fsMtf"), S.ex === "SIM" ? "delay" : "live", Date.now(), { label: S.ex === "SIM" ? "Dữ liệu giả lập" : `Trực tiếp (${ex().name})`, expect: 5 * 60e3, note: "Nến lấy thẳng từ sàn; các khung được tải lại tối đa mỗi 60 giây khi đang mở Phân tích" });
   $("srTable").innerHTML = table(["Mức giá", "Loại", "Khoảng cách", ["Số lần chạm", "sr-touches"], ["Số lần test", "sr-tests"], "Test gần nhất", ["Trạng thái", "sr-status"], ["Độ mạnh", "sr-strength"]],
     analysis.levels.slice().sort((a, b) => b.price - a.price).map(l => `<tr><td>${l.price.toFixed(dec)}</td><td class="t ${l.kind === "support" ? "pos" : "neg"}">${l.kind === "support" ? "Hỗ trợ" : "Kháng cự"}</td><td>${fmtPct(l.distancePct)}</td><td>${l.touches}</td><td>${l.tests}</td><td>${l.lastTestT ? fmtDate(l.lastTestT) : "-"}</td><td class="t">${l.flipped ? "Đã đảo vai" : l.broken ? "Đã bị phá" : "Còn giữ"}</td><td><span class="bar"><i style="left:0;width:${l.strength}%;background:var(--accent)"></i></span>${l.strength.toFixed(0)}</td></tr>`),
     "Chưa đủ dữ liệu.");
@@ -693,7 +704,8 @@ function setMode(m) {
   S.mode = m; persist();
   for (const b of $("chartMode").children) b.classList.toggle("on", b.dataset.mode === m);
   $("heat").hidden = m !== "heat"; $("flow").hidden = m !== "box"; $("tpo").hidden = m !== "tpo";
-  $("contrastBox").hidden = m !== "heat"; $("rowBox").hidden = m !== "box";
+  $("tpoSessBox").hidden = $("tpoRead").hidden = m !== "tpo";
+  $("contrastBox").hidden = m !== "heat"; $("rowBox").hidden = $("fpModeBox").hidden = $("fpColorBox").hidden = m !== "box";
   $("chartHint").textContent = noHover ? (m === "heat" ? "Kéo: di chuyển · Chụm/mở hai ngón: phóng thời gian (ngang) và giá (dọc) · Chạm đúp: theo dõi · Giữ ngón tay: xem ý nghĩa" : "Kéo: di chuyển · Chụm/mở hai ngón: phóng nến · Chạm đúp: về hiện tại · Giữ ngón tay lên nến: xem ý nghĩa") : m === "heat" ? "Lăn chuột: phóng thời gian · Ctrl + lăn: phóng giá · Kéo: di chuyển · Bấm đúp: theo dõi · Rê chuột để xem ý nghĩa" : "Lăn chuột: phóng to · Kéo: di chuyển · Kéo trục giá: giãn giá · Bấm đúp: về hiện tại · Rê chuột lên nến để xem ý nghĩa";
   if (m === "box") { flow.setType("box"); startFootprint(); }
   if (m === "tpo") { loadTpo(); $("chartHint").textContent = noHover ? "Kéo: di chuyển · Chạm đúp: về hiện tại · Giữ ngón tay: xem ý nghĩa" : "Lăn chuột: đổi độ cao tầng giá · Ctrl + lăn: giãn dòng · Kéo: di chuyển · Bấm đúp: về hiện tại · Rê chuột để xem ý nghĩa"; }
@@ -812,6 +824,12 @@ for (const cb of document.querySelectorAll("[data-layer]")) {
 }
 $("contrast").oninput = () => { heat.contrast = lmap.contrast = +$("contrast").value; heat.dirty = lmap.dirty = true; };
 $("rowSize").onchange = () => { flow.rowMult = $("rowSize").value; flow.dirty = true; };
+{ // chế độ ô và cách tô màu của footprint, nhớ trong phiên
+  let fp = {}; try { fp = JSON.parse(sessionStorage.getItem("lailong.fp") || "{}"); } catch { /* bỏ qua */ }
+  if (fp.mode) $("fpMode").value = fp.mode; if (fp.color) $("fpColor").value = fp.color;
+  const apply = () => { flow.fpMode = $("fpMode").value; flow.fpColor = $("fpColor").value; flow.dirty = true; try { sessionStorage.setItem("lailong.fp", JSON.stringify({ mode: flow.fpMode, color: flow.fpColor })); } catch { /* bỏ qua */ } };
+  $("fpMode").onchange = $("fpColor").onchange = apply; apply();
+}
 $("domMult").onchange = () => dom.setMult(+$("domMult").value);
 $("domCenter").onclick = () => dom.recenter();
 $("fullscreenBtn").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => toast("Trình duyệt không cho phép toàn màn hình, bấm F11", true)); };
@@ -959,3 +977,4 @@ $("tapeGroup").onchange = () => { tape.group = $("tapeGroup").value; tape.dirty 
 setMode(S.mode); setView(S.view);
 loadSymbols(); load();
 window.lailong = { market, heat, flow, dom, tape, walls, lmap, S, alpha }; // tiện kiểm tra trong DevTools
+setInterval(() => tickFresh(), 1000); // chữ "N trước" và trạng thái đỏ của các nhãn dữ liệu

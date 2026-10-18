@@ -2,7 +2,8 @@
 // crypto top 10, công ty và quỹ ETF nắm giữ BTC/ETH, cá voi dùng đòn bẩy trên Hyperliquid, thanh lý lớn trực tiếp.
 // Bản web đọc data/markets.json và data/whales.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/markets.py).
-import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202610160700";
+import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202610180745";
+import { setFresh } from "./fresh.js?v=202610180745";
 
 const HL = "https://api.hyperliquid.xyz/info";
 const LIQ_WS = "wss://fstream.binance.com/market/ws/!forceOrder@arr";
@@ -157,6 +158,7 @@ export function initMarkets({ $, esc }) {
     const el = $("etfBody"); if (!el) return;
     for (const b of $("etfTabs").children) b.classList.toggle("on", b.dataset.etf === etfCoin);
     const etf = mk && mk.crypto && mk.crypto["etf_" + etfCoin], s = etfSummary(etf);
+    setFresh($("fsEtf"), "eod", s ? Date.parse(s.last.date + "T21:00:00Z") : null, { note: "Farside Investors: dòng tiền ròng từng quỹ, chốt sau phiên Mỹ, thường có số vào sáng hôm sau giờ Việt Nam" });
     if (!s) { el.innerHTML = `<div class="empty">Chưa tải được dòng tiền ETF.</div>`; return; }
     const days = s.days.slice(-22), mx = Math.max(1, ...days.map(d => Math.abs(d.flows[s.ti])));
     const fund = s.last.flows.slice(0, -1).map((v, i) => [etf.funds[i], v]).filter(([, v]) => v).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
@@ -174,7 +176,7 @@ export function initMarkets({ $, esc }) {
   function renderWhales() {
     const el = $("whBody"); if (!el) return;
     if (!wh || !wh.whales) { el.innerHTML = `<div class="empty">Chưa tải được dữ liệu cá voi.</div>`; return; }
-    $("whUpd").textContent = `${live ? "trực tiếp" : "cập nhật"} ${fmtTime(wh.updated, true).slice(0, 11)}`;
+    setFresh($("whUpd"), live ? "live" : "delay", wh.updated, { label: live ? "Trực tiếp lúc bấm" : "Bản chụp", expect: live ? 15 * 60e3 : 2 * 3600e3, note: live ? "Vị thế lấy thẳng từ Hyperliquid lúc bấm nút, không tự làm mới" : "Bản chụp do máy chủ lấy định kỳ; bấm Lấy lại trực tiếp để lấy mới từ Hyperliquid" });
     const bias = whaleBias(wh.whales);
     const lq = wh.whales.flatMap(w => (w.liquidations || []).map(l => ({ ...l, addr: w.addr }))).sort((a, b) => b.t - a.t);
     el.innerHTML = `<div class="kpis">${bias.map(b => `<div data-tip="${b.nLong} ví long, ${b.nShort} ví short trong nhóm này"><small>Cá voi ${b.coin}: long ${fmtUsd(b.long)} / short ${fmtUsd(b.short)}</small><b class="${cls(b.net)}">${b.net >= 0 ? "Nghiêng LONG" : "Nghiêng SHORT"} ${fmtUsd(Math.abs(b.net))}</b></div>`).join("")}</div>
@@ -215,6 +217,7 @@ export function initMarkets({ $, esc }) {
   function startLiq() {
     if (sock) return;
     try { sock = new WebSocket(LIQ_WS); } catch { return; }
+    sock.onopen = () => renderLiq();
     sock.onmessage = ev => {
       let m; try { m = JSON.parse(ev.data); } catch { return; }
       for (const e of [].concat(m)) {
@@ -229,13 +232,19 @@ export function initMarkets({ $, esc }) {
   }
   function renderLiq() {
     const el = $("liqBody"); if (!el) return;
+    const on = sock && sock.readyState === 1;
+    setFresh($("fsLiq"), on ? "live" : "delay", null, { label: on ? "Trực tiếp" : "Đang kết nối…", note: "Luồng WebSocket thanh lý của Binance Futures, từng lệnh ngay khi xảy ra" });
     el.innerHTML = !liqs.length ? `<div class="empty">Đang chờ lệnh thanh lý từ ${fmtUsd(liqMin)} trở lên…</div>` :
       `<table class="mktab"><tbody>${liqs.map(l => `<tr><td>${fmtTime(l.t)}</td><td class="t"><b>${esc(l.sym)}</b></td><td class="${l.side === "long" ? "dn" : "up"}">${l.side === "long" ? "LONG bị thanh lý" : "SHORT bị thanh lý"}</td><td>${px(l.px)}</td><td><b>${fmtUsd(l.usd)}</b></td></tr>`).join("")}</tbody></table>`;
   }
 
   function render() {
     renderCommodities(); renderFx(); renderCrypto(); renderTreasury(); renderEtf(); renderWhales(); renderLiq();
-    $("mkUpd").textContent = mk ? `cập nhật ${fmtTime(mk.updated, true).slice(0, 11)}` : "";
+    const t = mk && mk.updated, snap = "Bản trên web được máy chủ GitHub cập nhật mỗi 30 phút; bản trên laptop lấy mới tối đa mỗi 15 phút";
+    setFresh($("mkUpd"), "delay", t, { label: "Trễ 10–15 phút", note: `Yahoo Finance: giá hợp đồng tương lai CME, NYMEX, COMEX, ICE chậm 10 đến 15 phút. ${snap}` });
+    setFresh($("fsFx"), "delay", t, { label: "Tỷ giá trễ vài phút · lãi suất cuối ngày", note: `Tỷ giá từ Yahoo Finance; lãi suất điều hành từ BIS (cập nhật theo ngày). ${snap}` });
+    setFresh($("fsCry"), "delay", t, { label: "Bản chụp", note: `CoinGecko, giá trung bình nhiều sàn. ${snap}. Giá trực tiếp xem ở Terminal` });
+    setFresh($("fsTr"), "eod", t, { note: "CoinGecko: lượng coin các công ty niêm yết công bố nắm giữ, cập nhật khi công ty báo cáo" });
   }
 
   $("cmdAll").onclick = () => { showAll = !showAll; renderCommodities(); };

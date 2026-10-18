@@ -4,14 +4,15 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610160700";
-import { cvd as cvdOf } from "./analytics.js?v=202610160700";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610160700";
-import { GROUPS } from "./flowtools.js?v=202610160700";
-import { WALL_KIND } from "./walls.js?v=202610160700";
-import { T, alpha } from "./theme.js?v=202610160700";
-import { drawShapes } from "./drawings.js?v=202610160700";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610160700";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610180745";
+import { cvd as cvdOf } from "./analytics.js?v=202610180745";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610180745";
+import { GROUPS } from "./flowtools.js?v=202610180745";
+import { WALL_KIND } from "./walls.js?v=202610180745";
+import { T, alpha } from "./theme.js?v=202610180745";
+import { drawShapes } from "./drawings.js?v=202610180745";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610180745";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610180745";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -19,15 +20,19 @@ function radarText(e, dec, ms) {
   return `Radar: ${RADAR_TYPES[e.type].name} ${e.dir > 0 ? "▲" : "▼"} ở ${e.level.toFixed(dec)}. ${RADAR_TYPES[e.type].tip}. Bối cảnh ${RADAR_REGIMES[e.regime].name.toLowerCase()}, khối lượng ×${e.vRel.toFixed(1)} so với cùng thời điểm các ngày trước${e.share != null ? `, mua chủ động ${Math.round(e.share * 100)}%` : ""}. Phản ứng: ${st.name.toLowerCase()}${e.r.at && ms ? ` sau ${fmtDur(e.r.at * ms)}` : ""}.`;
 }
 
+const STAT_H = 14, sgn = v => (v > 0 ? "+" : "") + fmtVol(v);
+const STAT_ROWS = [
+  { name: "Khối lượng", get: s => s.v, fmt: fmtVol, tip: "Tổng khối lượng khớp trong nến" },
+  { name: "Delta", get: s => s.d, fmt: sgn, signed: true, tip: "Mua chủ động trừ bán chủ động" },
+  { name: "Delta %", get: s => s.v ? s.dPct * 100 : null, fmt: v => (v > 0 ? "+" : "") + v.toFixed(0) + "%", signed: true, tip: "Delta chia khối lượng: trên ±20% là một phe áp đảo rõ" },
+  { name: "Δ cao nhất", get: s => s.dMax, fmt: sgn, signed: true, tip: "Delta cao nhất lúc nến đang chạy. Delta đóng nến thấp hơn nhiều là phe mua đã bị đẩy lùi" },
+  { name: "Δ thấp nhất", get: s => s.dMin, fmt: sgn, signed: true, tip: "Delta thấp nhất lúc nến đang chạy. Delta đóng nến cao hơn nhiều là phe bán đã bị đẩy lùi" },
+  { name: "Số lệnh", get: s => s.n, fmt: v => fmtVol(v), col: "#c678dd", tip: "Số lệnh khớp (Binance gộp các lệnh khớp cùng giá cùng lúc). Nhiều lệnh nhỏ là nhỏ lẻ; ít lệnh mà khối lượng lớn là lệnh to" },
+  { name: "KL/lệnh", get: s => s.n ? s.v / s.n : null, fmt: v => fmtVol(v), col: "#f5c542", tip: "Khối lượng trung bình mỗi lệnh khớp: tăng đột biến là có lệnh lớn tham gia" },
+];
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
 
-// gộp footprint của một nến theo dòng giá (mult bước giá gốc mỗi dòng): Map(k -> [bán, mua])
-function fpRows(b, mult) {
-  const rows = new Map();
-  for (const [k0, cell] of b.fp) { const k = Math.floor(k0 / mult); const r = rows.get(k) || [0, 0]; r[0] += cell[0]; r[1] += cell[1]; rows.set(k, r); }
-  return rows;
-}
 // mất cân bằng theo đường chéo (như ATAS): mua ở dòng k so với bán ở dòng k − 1, bán ở dòng k so với mua ở dòng k + 1
 // (dòng ở mép nến không có dòng kề để so thì bỏ qua)
 export function imbalances(rows, ratio = 3) {
@@ -68,7 +73,8 @@ export class FlowChart {
     this.S = fitCanvas(canvas, () => { this.dirty = true; }); this.ctx = this.S.ctx;
     this.bars = []; this.info = {}; this.step = 1; this.type = "candle"; this.rowMult = "auto";
     this.spacing = { candle: 8, box: 72 }; this.offset = 6; this.yZoom = 1;
-    this.show = { radar: false, profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true };
+    this.show = { radar: false, profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true, stats: true, auction: true, diverg: true };
+    this.fpMode = "bidask"; this.fpColor = "volume";
     this.radar = []; this.levels = []; this.zones = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
     this.absorb = []; this.prints = null; this.bigQ = Infinity; this.clusters = []; this.ranges = []; this.pane = "deltaCvd";
     this.vpinVals = null; this.vpinHi = null; this.groupVals = null; this.algoRuns = []; this.spoofs = []; this.scores = []; this.scoreMin = 60;
@@ -92,8 +98,9 @@ export class FlowChart {
     const pane = this.pane, wantDelta = this.show.delta && (pane === "deltaCvd" || pane === "delta"), wantCvd = (this.show.cvd || hasOi) && pane !== "delta";
     const deltaH = wantDelta ? Math.round(ph * (pane === "delta" ? 0.18 : 0.1)) : 0;
     const cvdH = wantCvd ? Math.round(ph * (pane === "deltaCvd" ? 0.14 : 0.22)) : 0;
-    const priceH = ph - deltaH - cvdH;
-    return { w, h, pw, ph, priceH, deltaTop: priceH, deltaH, cvdTop: priceH + deltaH, cvdH, hasOi };
+    const statsH = this.type === "box" && this.show.stats ? STAT_ROWS.length * STAT_H + 3 : 0;
+    const priceH = ph - deltaH - cvdH - statsH;
+    return { w, h, pw, ph, priceH, deltaTop: priceH, deltaH, cvdTop: priceH + deltaH, cvdH, statsTop: priceH + deltaH + cvdH, statsH, hasOi };
   }
   xOf(i) { return this._L.pw - (this.bars.length - 1 - i + this.offset) * this.sp - this.sp / 2; }
   fAt(x) { return this.bars.length - 1 + this.offset - (this._L.pw - x - this.sp / 2) / this.sp; }
@@ -136,6 +143,8 @@ export class FlowChart {
     if (this.show.levels) this._levels(L);
     if (this.type === "box" && this.show.imb) this._stacked(first, last, rowStep, L);
     if (this.type === "box") this._boxes(first, last, rowStep); else this._candles(first, last);
+    if (this.type === "box" && this.show.auction) this._auctions(first, last, rowStep, L);
+    if (this.show.diverg) this._diverg(first, last);
     this._lines(first, last);
     if (this.show.radar) this._radar(first, last, L);
     if (this.show.cluster) this._clusters(first, last, rowStep);
@@ -154,6 +163,7 @@ export class FlowChart {
     if (L.deltaH) this._delta(first, last, L);
     if (L.cvdH) this._cvdPane(first, last, L);
     this._axes(first, last, L);
+    if (L.statsH) this._statsPane(first, last, L);
     this._cross(L);
     this._legend(L);
   }
@@ -187,9 +197,12 @@ export class FlowChart {
   }
 
   _boxes(first, last, rowStep) {
-    const ctx = this.ctx, w = this.sp * 0.88, rowPx = rowStep / (this._pmax - this._pmin) * this._ph, showText = rowPx >= 11 && w >= 58;
-    const mult = Math.max(1, Math.round(rowStep / this.step));
-    ctx.font = `${Math.min(11, Math.max(9, rowPx - 2)).toFixed(0)}px ${MONO}`; ctx.textBaseline = "middle";
+    const ctx = this.ctx, w = this.sp * 0.88, rowPx = rowStep / (this._pmax - this._pmin) * this._ph;
+    const mode = FP_MODES[this.fpMode] ? this.fpMode : "bidask", colorBy = this.fpColor;
+    const minW = { bidask: 58, delta: 40, volume: 40, bavol: 96, ratio: 40, histo: 70, profile: 70 }[mode];
+    const showText = rowPx >= 11 && w >= minW, fs = Math.min(11, Math.max(9, rowPx - 2)).toFixed(0);
+    const mult = Math.max(1, Math.round(rowStep / this.step)), needImb = this.show.imb || colorBy === "imbalance";
+    ctx.font = `${fs}px ${MONO}`; ctx.textBaseline = "middle";
     for (let i = first; i <= last; i++) {
       const b = this.bars[i], x = this.xOf(i), x0 = x - w / 2, up = b.c >= b.o;
       if (!b.fp || !b.fp.size) { // nến lịch sử: sàn không cung cấp footprint quá khứ
@@ -198,22 +211,49 @@ export class FlowChart {
         const y1 = this.yOf(Math.max(b.o, b.c)), y2 = this.yOf(Math.min(b.o, b.c)); ctx.fillRect(x - w * 0.12, y1, w * 0.24, Math.max(1, y2 - y1));
         continue;
       }
-      const rows = fpRows(b, mult), im = this.show.imb ? imbalances(rows) : null; let maxTot = 0, pocK = null;
-      for (const [k, r] of rows) { const t = r[0] + r[1]; if (t > maxTot) { maxTot = t; pocK = k; } }
+      const rows = fpRows(b, mult), im = needImb ? imbalances(rows) : null, ex = rowExtremes(rows), pocK = ex.pocK;
       const kLo = Math.floor(b.l / rowStep + 1e-9), kHi = Math.floor(b.h / rowStep + 1e-9), strip = Math.min(6, w * 0.08);
+      const cx0 = x0 + strip + 1, cw = w - strip - 1, mid = cx0 + cw / 2, dim = b.fpApprox ? 0.75 : 1;
       for (let k = kLo; k <= kHi; k++) {
-        const r = rows.get(k) || [0, 0], tot = r[0] + r[1], yTop = this.yOf((k + 1) * rowStep), hgt = this.yOf(k * rowStep) - yTop;
-        const a = (maxTot ? 0.08 + 0.55 * tot / maxTot : 0.05) * (b.fpApprox ? 0.75 : 1);
-        ctx.fillStyle = alpha(r[1] >= r[0] ? T.up : T.down, a.toFixed(3));
-        ctx.fillRect(x0 + strip + 1, yTop + 0.5, w - strip - 1, Math.max(1, hgt - 1));
+        const r = rows.get(k) || [0, 0], tot = r[0] + r[1], dd = r[1] - r[0], yTop = this.yOf((k + 1) * rowStep), hgt = Math.max(1, this.yOf(k * rowStep) - yTop - 1);
         const bI = im && im.buy.has(k), sI = im && im.sell.has(k);
-        if (bI || sI) { ctx.fillStyle = alpha(bI ? T.up : T.down, 0.85); if (bI) ctx.fillRect(x0 + w - 3, yTop + 0.5, 3, Math.max(1, hgt - 1)); if (sI) ctx.fillRect(x0 + strip + 1, yTop + 0.5, 3, Math.max(1, hgt - 1)); }
-        if (k === pocK) { ctx.strokeStyle = C.poc; ctx.lineWidth = 1; ctx.strokeRect(x0 + strip + 1.5, yTop + 1, w - strip - 2, Math.max(1, hgt - 2)); }
-        if (showText && tot > 0) {
-          const cx = x0 + strip + (w - strip) / 2, buyImb = im ? im.buy.has(k) : false, sellImb = im ? im.sell.has(k) : false;
-          ctx.font = `${sellImb ? "bold " : ""}${Math.min(11, Math.max(9, rowPx - 2)).toFixed(0)}px ${MONO}`; ctx.textAlign = "right"; ctx.fillStyle = sellImb ? T.down : C.text; ctx.fillText(fmtVol(r[0]), cx - 5, yTop + hgt / 2);
-          ctx.textAlign = "center"; ctx.fillStyle = C.axis; ctx.fillText("x", cx, yTop + hgt / 2);
-          ctx.font = `${buyImb ? "bold " : ""}${Math.min(11, Math.max(9, rowPx - 2)).toFixed(0)}px ${MONO}`; ctx.textAlign = "left"; ctx.fillStyle = buyImb ? T.up : C.text; ctx.fillText(fmtVol(r[1]), cx + 5, yTop + hgt / 2);
+        // nền ô
+        let col = null, a = 0;
+        if (mode === "histo" || mode === "profile") { col = T.muted; a = 0.06; }
+        else if (colorBy === "delta") { col = dd >= 0 ? T.up : T.down; a = ex.maxAbsD ? 0.06 + 0.6 * Math.abs(dd) / ex.maxAbsD : 0.05; }
+        else if (colorBy === "imbalance") { col = bI ? T.up : sI ? T.down : T.muted; a = bI || sI ? 0.5 : 0.05; }
+        else if (colorBy === "candle") { col = up ? T.up : T.down; a = ex.maxTot ? 0.06 + 0.5 * tot / ex.maxTot : 0.05; }
+        else { col = r[1] >= r[0] ? T.up : T.down; a = ex.maxTot ? 0.08 + 0.55 * tot / ex.maxTot : 0.05; }
+        ctx.fillStyle = alpha(col, (a * dim).toFixed(3)); ctx.fillRect(cx0, yTop + 0.5, cw, hgt);
+        if (mode === "histo") { // thanh bán bên trái, mua bên phải, từ giữa ô ra
+          const half = cw / 2 - 2, sw = ex.maxSide ? r[0] / ex.maxSide * half : 0, bw = ex.maxSide ? r[1] / ex.maxSide * half : 0;
+          ctx.fillStyle = alpha(T.down, sI ? 0.95 : 0.6); ctx.fillRect(mid - sw, yTop + 1, sw, Math.max(1, hgt - 1));
+          ctx.fillStyle = alpha(T.up, bI ? 0.95 : 0.6); ctx.fillRect(mid, yTop + 1, bw, Math.max(1, hgt - 1));
+        } else if (mode === "profile") { // hồ sơ khối lượng của riêng nến, màu theo delta dòng
+          const pw2 = ex.maxTot ? tot / ex.maxTot * (cw - 2) : 0;
+          ctx.fillStyle = alpha(dd >= 0 ? T.up : T.down, (0.35 + 0.5 * (ex.maxAbsD ? Math.abs(dd) / ex.maxAbsD : 0)).toFixed(3)); ctx.fillRect(cx0 + 1, yTop + 1, pw2, Math.max(1, hgt - 1));
+        }
+        if ((bI || sI) && mode !== "histo") { ctx.fillStyle = alpha(bI ? T.up : T.down, 0.85); if (bI) ctx.fillRect(x0 + w - 3, yTop + 0.5, 3, hgt); if (sI) ctx.fillRect(cx0, yTop + 0.5, 3, hgt); }
+        if (k === pocK) { ctx.strokeStyle = C.poc; ctx.lineWidth = 1; ctx.strokeRect(cx0 + 0.5, yTop + 1, cw - 1, Math.max(1, hgt - 1)); }
+        if (!showText || tot <= 0) continue;
+        const ty = yTop + hgt / 2 + 0.5, bold = f => `${f ? "bold " : ""}${fs}px ${MONO}`;
+        if (mode === "bidask" || mode === "histo") {
+          ctx.font = bold(sI); ctx.textAlign = "right"; ctx.fillStyle = sI ? T.down : C.text; ctx.fillText(fmtVol(r[0]), mid - 5, ty);
+          ctx.textAlign = "center"; ctx.fillStyle = C.axis; ctx.fillText("x", mid, ty);
+          ctx.font = bold(bI); ctx.textAlign = "left"; ctx.fillStyle = bI ? T.up : C.text; ctx.fillText(fmtVol(r[1]), mid + 5, ty);
+        } else if (mode === "bavol") {
+          const c1 = cx0 + cw / 6, c3 = cx0 + cw * 5 / 6; ctx.textAlign = "center";
+          ctx.font = bold(sI); ctx.fillStyle = sI ? T.down : C.text; ctx.fillText(fmtVol(r[0]), c1, ty);
+          ctx.font = bold(k === pocK); ctx.fillStyle = k === pocK ? C.poc : C.axis; ctx.fillText(fmtVol(tot), mid, ty);
+          ctx.font = bold(bI); ctx.fillStyle = bI ? T.up : C.text; ctx.fillText(fmtVol(r[1]), c3, ty);
+        } else if (mode === "delta") {
+          ctx.font = bold(bI || sI); ctx.textAlign = "center"; ctx.fillStyle = dd >= 0 ? T.up : T.down; ctx.fillText((dd > 0 ? "+" : "") + fmtVol(dd), mid, ty);
+        } else if (mode === "volume" || mode === "profile") {
+          ctx.font = bold(k === pocK); ctx.textAlign = mode === "profile" ? "left" : "center"; ctx.fillStyle = k === pocK ? C.poc : C.text; ctx.fillText(fmtVol(tot), mode === "profile" ? cx0 + 3 : mid, ty);
+        } else if (mode === "ratio") {
+          const dr = diagRatio(rows, k); ctx.textAlign = "center";
+          if (!dr || dr.x == null) { ctx.fillStyle = C.axis; ctx.fillText("·", mid, ty); }
+          else { const strong = dr.x >= 3, txt = dr.x === Infinity ? "∞" : dr.x >= 10 ? dr.x.toFixed(0) + "×" : dr.x.toFixed(1) + "×"; ctx.font = bold(strong); ctx.fillStyle = dr.x < 1.5 ? C.axis : dr.side === "buy" ? T.up : T.down; ctx.fillText(txt, mid, ty); }
         }
       }
       const col = up ? C.up : C.down, yo = this.yOf(Math.max(b.o, b.c)), yc = this.yOf(Math.min(b.o, b.c));
@@ -221,6 +261,65 @@ export class FlowChart {
       ctx.strokeStyle = col; ctx.lineWidth = 1; if (b.fpApprox) ctx.setLineDash([3, 3]); // nét đứt: footprint ước tính
       ctx.strokeRect(x0 + 0.5, this.yOf((kHi + 1) * rowStep) + 0.5, w - 1, this.yOf(kLo * rowStep) - this.yOf((kHi + 1) * rowStep) - 1); ctx.setLineDash([]);
     }
+  }
+
+  // đấu giá chưa xong ở đỉnh/đáy nến (đường chấm kéo sang phải tới khi giá quay lại) và kiệt sức
+  _auctions(first, last, rowStep, L) {
+    const lb = this.bars[this.bars.length - 1], key = `${this.bars.length}:${rowStep}:${lb ? lb.h + ":" + lb.l : 0}:${this.bars[0] ? this.bars[0].t : 0}`;
+    if (!this._unf || this._unf.key !== key) this._unf = { key, lv: unfinishedLevels(this.bars, rowStep, this.step) };
+    const ctx = this.ctx, mult = Math.max(1, Math.round(rowStep / this.step)); this._unfVis = []; this._exVis = [];
+    for (const u of this._unf.lv) {
+      if (u.i > last || (u.end != null && u.end < first)) continue;
+      const xa = this.xOf(u.i) + this.sp * 0.44, xb = u.end != null ? this.xOf(u.end) : L.pw, y = Math.round(this.yOf(u.price)) + 0.5;
+      if (y < 0 || y > L.priceH) continue;
+      ctx.strokeStyle = alpha("#ff9f43", u.end != null ? 0.35 : 0.85); ctx.lineWidth = 1; ctx.setLineDash([1, 3]);
+      ctx.beginPath(); ctx.moveTo(xa, y); ctx.lineTo(xb, y); ctx.stroke(); ctx.setLineDash([]);
+      this._unfVis.push({ xa, xb, y, u });
+    }
+    if (this.sp < 40) return;
+    ctx.font = `bold 10px ${MONO}`; ctx.textBaseline = "middle"; ctx.textAlign = "center";
+    for (let i = first; i <= last; i++) {
+      const b = this.bars[i]; if (!b.fp || !b.fp.size || b.fpApprox) continue;
+      const a = auction(fpRows(b, mult)); if (!a) continue;
+      const x = this.xOf(i) + this.sp * 0.44 + 6;
+      if (a.exTop) { const y = this.yOf((a.kHi + 0.5) * rowStep); ctx.fillStyle = "#c678dd"; ctx.fillText("E", x, y); this._exVis.push({ x, y, i, side: "top" }); }
+      if (a.exBot) { const y = this.yOf((a.kLo + 0.5) * rowStep); ctx.fillStyle = "#c678dd"; ctx.fillText("E", x, y); this._exVis.push({ x, y, i, side: "bot" }); }
+    }
+  }
+
+  // phân kỳ delta: tam giác trên đỉnh (giá lên mà bán áp đảo) hoặc dưới đáy (giá xuống mà mua áp đảo)
+  _diverg(first, last) {
+    const lb = this.bars[this.bars.length - 1], key = `${this.bars.length}:${lb ? lb.d : 0}:${lb ? lb.h + ":" + lb.l : 0}`;
+    if (!this._dv || this._dv.key !== key) this._dv = { key, list: deltaDivergence(this.bars) };
+    const ctx = this.ctx; this._dvVis = [];
+    for (const e of this._dv.list) {
+      if (e.i < first || e.i > last) continue;
+      const b = this.bars[e.i], x = this.xOf(e.i), bear = e.side === "bear", y = bear ? this.yOf(b.h) - 9 : this.yOf(b.l) + 9;
+      ctx.fillStyle = bear ? alpha(T.down, 0.9) : alpha(T.up, 0.9); ctx.beginPath();
+      if (bear) { ctx.moveTo(x - 4, y - 3); ctx.lineTo(x + 4, y - 3); ctx.lineTo(x, y + 3); } else { ctx.moveTo(x - 4, y + 3); ctx.lineTo(x + 4, y + 3); ctx.lineTo(x, y - 3); }
+      ctx.closePath(); ctx.fill(); this._dvVis.push({ x, y, e });
+    }
+  }
+
+  // bảng thống kê cụm dưới biểu đồ (kiểu Cluster Statistic của ATAS); nhãn nằm ở cột trục giá
+  _statsPane(first, last, L) {
+    const ctx = this.ctx, top = L.statsTop, cw = Math.max(1, this.sp - 2), stats = [];
+    for (let i = first; i <= last; i++) stats.push(barStats(this.bars[i]));
+    ctx.fillStyle = T.panel; ctx.fillRect(0, top, L.w, L.statsH);
+    ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.stroke();
+    const showText = this.sp >= 34; ctx.font = `10px ${MONO}`; ctx.textBaseline = "middle"; ctx.textAlign = "center";
+    STAT_ROWS.forEach((row, ri) => {
+      const y = top + 2 + ri * STAT_H; let mx = 0;
+      for (const st of stats) { const v = row.get(st); if (v != null && isFinite(v)) mx = Math.max(mx, Math.abs(v)); }
+      stats.forEach((st, j) => {
+        const v = row.get(st), x = this.xOf(first + j); if (v == null || !isFinite(v)) return;
+        const signed = row.signed, a = mx ? 0.08 + 0.55 * Math.abs(v) / mx : 0.05;
+        ctx.fillStyle = alpha(signed ? (v >= 0 ? T.up : T.down) : row.col || "#2f8cff", a.toFixed(3));
+        ctx.fillRect(Math.round(x - cw / 2), y, Math.round(cw), STAT_H - 1);
+        if (showText) { ctx.fillStyle = C.text; ctx.fillText(row.fmt(v), x, y + STAT_H / 2); }
+      });
+      ctx.fillStyle = C.axis; ctx.textAlign = "left"; ctx.fillText(row.name, L.pw + 4, y + STAT_H / 2); ctx.textAlign = "center";
+    });
   }
 
   _stacked(first, last, rowStep, L) {
@@ -700,7 +799,18 @@ export class FlowChart {
   hitTest(x, y) {
     const L = this._L; if (!L || !this.bars.length || x > L.pw) return null;
     const dec = decimalsFor(this.info.tick || this.step), i = Math.min(this.bars.length - 1, Math.max(0, this.iAt(x))), b = this.bars[i];
+    if (L.statsH && y >= L.statsTop) {
+      const row = STAT_ROWS[Math.floor((y - L.statsTop - 2) / STAT_H)]; if (!row) return null;
+      const st = barStats(b), v = row.get(st);
+      return `${row.name} nến ${fmtTime(b.t)}: ${v == null || !isFinite(v) ? "chưa có (chỉ đo được với nến dựng từ từng lệnh khớp thật)" : row.fmt(v)}. ${row.tip}.${st.approx ? " Nến này là footprint ước tính." : ""}`;
+    }
     if (y > L.priceH) return this._paneText(y, i, b, L);
+    const ex = this.show.auction && this._exVis && this._exVis.find(v => Math.hypot(x - v.x, y - v.y) <= 7);
+    if (ex) return ex.side === "top" ? "Kiệt sức bên mua (exhaustion) ở đỉnh nến: lực mua chủ động giảm dần 3 dòng liền về phía đỉnh và dòng cuối chỉ còn rất ít. Người mua đã cạn, đỉnh này dễ giữ." : "Kiệt sức bên bán (exhaustion) ở đáy nến: lực bán chủ động giảm dần 3 dòng liền về phía đáy và dòng cuối chỉ còn rất ít. Người bán đã cạn, đáy này dễ giữ.";
+    const dv = this.show.diverg && this._dvVis && this._dvVis.find(v => Math.hypot(x - v.x, y - v.y) <= 7);
+    if (dv) return dv.e.side === "bear" ? `Phân kỳ delta: nến ${fmtTime(this.bars[dv.e.i].t)} lập đỉnh cao hơn 3 nến trước nhưng delta âm (${fmtVol(this.bars[dv.e.i].d)}). Giá lên mà phe bán chủ động áp đảo: lực đẩy lên không thật, thường do lệnh chờ bán hấp thụ.` : `Phân kỳ delta: nến ${fmtTime(this.bars[dv.e.i].t)} lập đáy thấp hơn 3 nến trước nhưng delta dương (+${fmtVol(this.bars[dv.e.i].d)}). Giá xuống mà phe mua chủ động áp đảo: lực bán không thật, thường do lệnh chờ mua hấp thụ.`;
+    const uf = this.show.auction && this._unfVis && this._unfVis.find(v => x >= v.xa - 2 && x <= v.xb && Math.abs(y - v.y) <= 3);
+    if (uf) { const u = uf.u; return `Đấu giá chưa xong ở ${u.side === "high" ? "đỉnh" : "đáy"} nến ${fmtTime(u.t)} (${u.price.toFixed(dec)}): ở mức giá cực trị vẫn còn cả bên mua và bên bán khớp lệnh, tức là cuộc đấu giá chưa kết thúc. ${u.end != null ? "Giá đã quay lại vượt qua mức này." : "Giá chưa quay lại: mức này thường hút giá về để hoàn tất."}`; }
     const sc = this.show.score && this._scoreVis && this._scoreVis.find(v => Math.abs(x - v.x) <= v.w / 2 + 2 && Math.abs(y - v.y) <= v.h / 2 + 2);
     if (sc) return scoreText(sc.e, dec);
     const rd = this.show.radar && this._radarVis && this._radarVis.find(v => Math.hypot(x - v.x, y - v.y) <= 7);
@@ -731,7 +841,11 @@ export class FlowChart {
     const candle = `Nến ${fmtTime(b.t)} (${this.info.interval || ""}): mở ${b.o.toFixed(dec)} · cao ${b.h.toFixed(dec)} · thấp ${b.l.toFixed(dec)} · đóng ${b.c.toFixed(dec)} (${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%). ` +
       `${b.c >= b.o ? "Nến xanh: giá đóng cửa cao hơn giá mở cửa." : "Nến đỏ: giá đóng cửa thấp hơn giá mở cửa."} Thân nến là đoạn mở → đóng, râu là giá cao nhất/thấp nhất. ` +
       `Khối lượng ${fmtVol(b.v)}${d != null ? `, delta (mua − bán chủ động) ${d >= 0 ? "+" : ""}${fmtVol(d)}${this.info.deltaApprox ? " (ước tính)" : ""}` : ""}.`;
-    if (this.type === "box" && b.fp) return (b.fpApprox ? "Footprint ước tính: chia khối lượng mua/bán của các nến nhỏ hơn lên khoảng giá (viền nét đứt). " : "Footprint thật từ từng lệnh khớp: số bên trái là bán chủ động, bên phải là mua chủ động tại mỗi mức giá; khung vàng là mức giá khớp nhiều nhất. ") + candle;
+    if (this.type === "box" && b.fp) {
+      const m = FP_MODES[this.fpMode] || FP_MODES.bidask, rs = this._rowStepUsed, k = Math.floor(this.pAt(y) / rs + 1e-9), r = fpRows(b, Math.max(1, Math.round(rs / this.step))).get(k);
+      const cell = r ? `Ô ${(k * rs).toFixed(dec)}: bán chủ động ${fmtVol(r[0])} · mua chủ động ${fmtVol(r[1])} · tổng ${fmtVol(r[0] + r[1])} · delta ${sgn(r[1] - r[0])}. ` : "";
+      return cell + (b.fpApprox ? "Footprint ước tính: chia khối lượng mua/bán của các nến nhỏ hơn lên khoảng giá (viền nét đứt). " : `Footprint thật từ từng lệnh khớp, chế độ ${m.name}: ${m.tip}; khung vàng là mức giá khớp nhiều nhất. `) + candle;
+    }
     return candle;
   }
 
