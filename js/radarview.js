@@ -1,10 +1,10 @@
 // Lai Long Web: tab Radar. Khối lượng bất thường theo bối cảnh, phản ứng của thị trường (chính thức / tạm thời),
 // lịch sử lặp lại của từng loại sự kiện, nhiên liệu đòn bẩy (crypto) và máy quét cho cả rổ tài sản.
 // Crypto lấy thẳng từ Binance (và Coinbase); hợp đồng tương lai lấy qua máy chủ trên laptop (/api/bars, chậm ~15 phút).
-import { setFresh } from "./fresh.js?v=202610181200";
-import { getJson, fmtPct, fmtTime, fitCanvas, MONO } from "./util.js?v=202610181200";
-import { analyze, narrate, typeStats, together, snapshot, TYPES, REGIMES, STATUS, TF, fmtLevel, fmtDur } from "./radar.js?v=202610181200";
-import { alignHourly, rawSeries, readAt, COMPONENTS, HOUR } from "./lens.js?v=202610181200";
+import { setFresh } from "./fresh.js?v=202610181310";
+import { getJson, fmtPct, fmtTime, fitCanvas, MONO } from "./util.js?v=202610181310";
+import { analyze, narrate, typeStats, together, snapshot, TYPES, REGIMES, STATUS, TF, fmtLevel, fmtDur } from "./radar.js?v=202610181310";
+import { alignHourly, rawSeries, readAt, COMPONENTS, HOUR } from "./lens.js?v=202610181310";
 
 const FAPI = "https://fapi.binance.com", SAPI = "https://api.binance.com", CB = "https://api.exchange.coinbase.com";
 export const CRYPTO = ["BTC", "ETH", "SOL", "XRP", "BNB", "DOGE", "ADA", "AVAX", "LINK", "SUI", "LTC", "TRX"];

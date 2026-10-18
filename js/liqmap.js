@@ -5,11 +5,11 @@
 // màu sáng là lệnh chờ dày, đường trắng là dấu vết giá giữa, đường xanh/đỏ mảnh là giá mua/bán tốt nhất,
 // bong bóng là lệnh gốc đã khớp, khung vàng là tường lệnh chờ đang đứng, dấu × cam là tường bị rút.
 
-import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610181200";
-import { T, alpha } from "./theme.js?v=202610181200";
-import { COL_MS } from "./market.js?v=202610181200";
-import { heatIndex, HEAT_LUT, HEAT_BG, drawBubble } from "./heatmap.js?v=202610181200";
-import { ROW_H, HDR_H } from "./dom.js?v=202610181200";
+import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610181310";
+import { T, alpha } from "./theme.js?v=202610181310";
+import { COL_MS } from "./market.js?v=202610181310";
+import { heatIndex, HEAT_LUT, HEAT_BG, drawBubble } from "./heatmap.js?v=202610181310";
+import { ROW_H, HDR_H } from "./dom.js?v=202610181310";
 
 export const LMAP_WINDOWS = [30e3, 60e3, 120e3, 300e3, 900e3];
 
@@ -35,7 +35,7 @@ export class LiqMap {
     const ctx = this.ctx, w = this.S.w, h = this.S.h, d = this.dom, now = Date.now();
     ctx.fillStyle = HEAT_BG; ctx.fillRect(0, 0, w, h);
     this._header(now);
-    if (d.center === null || !d.tick) { ctx.fillStyle = T.muted; ctx.font = "13px Segoe UI, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("Đang chờ sổ lệnh...", w / 2, h / 2); return; }
+    if (d.center === null || !d.tick) { ctx.fillStyle = T.muted; ctx.font = "13px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("Đang chờ sổ lệnh...", w / 2, h / 2); return; }
     const rows = d._rows(), cols = this.m.cols, g = this.m.grid, top = HDR_H, bottom = top + rows * ROW_H;
     ctx.save(); ctx.beginPath(); ctx.rect(0, top, w, rows * ROW_H); ctx.clip();
     const cw = Math.max(1, w * COL_MS / this.windowMs) + 0.6;
@@ -123,7 +123,7 @@ export class LiqMap {
   _header(now) {
     const ctx = this.ctx, w = this.S.w;
     ctx.fillStyle = T.panel2; ctx.fillRect(0, 0, w, HDR_H);
-    ctx.font = `bold 10px Segoe UI, sans-serif`; ctx.textBaseline = "middle"; ctx.fillStyle = T.muted;
+    ctx.font = `bold 10px 'IBM Plex Mono', Consolas, monospace`; ctx.textBaseline = "middle"; ctx.fillStyle = T.muted;
     const steps = [5e3, 10e3, 15e3, 30e3, 60e3, 120e3, 300e3], st = steps.find(s => w / (this.windowMs / s) >= 60) || 300e3;
     ctx.strokeStyle = T.line; ctx.beginPath();
     for (let t = st; t < this.windowMs; t += st) {

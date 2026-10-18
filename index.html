@@ -13,7 +13,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610181200">
+<link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css?v=202610181310">
+<link rel="stylesheet" href="css/app.css?v=202610181310">
 </head>
 <body>
 <header class="menubar">
@@ -39,6 +41,7 @@
     <div class="menu right alertmenu" id="alertMenu">
       <div class="mh">Báo khi có</div>
       <label data-g="iceberg"><input type="checkbox" data-al="ice"> Nghi lệnh băng chìm (iceberg)</label>
+      <label data-g="wall-journal" data-tip="Tường lớn hơn 1,5 lần cỡ tường thường gặp trong phiên, cách giá không quá 0,3%"><input type="checkbox" data-al="wallNew"> Tường lớn xuất hiện gần giá</label>
       <label data-g="spoofing"><input type="checkbox" data-al="spoof"> Tường bị rút khi giá tới gần</label>
       <label data-g="big-trades"><input type="checkbox" data-al="big"> Big Trade (top 0,5% lệnh gốc)</label>
       <label data-g="econ-calendar"><input type="checkbox" data-al="newsEv"> Tin kinh tế mạnh (báo trước 15 phút)</label>
@@ -49,6 +52,12 @@
       <div class="mh">Cách báo</div>
       <label><input type="checkbox" data-al="sound"> Phát tiếng</label>
       <label data-tip="Hiện thông báo của máy khi bro đang ở tab hoặc ứng dụng khác"><input type="checkbox" data-al="notify"> Thông báo của trình duyệt</label>
+      <label data-g="telegram"><input type="checkbox" id="tgOn"> Gửi qua Telegram</label>
+      <div class="tgbox" id="tgBox" hidden>
+        <input type="password" id="tgToken" placeholder="Mã bot (từ @BotFather)" autocomplete="off">
+        <input type="text" id="tgChat" placeholder="Chat id (vd 123456789)" autocomplete="off">
+        <button id="tgTest" class="tool">Gửi thử</button>
+      </div>
       <div id="alHist" class="alhist"></div>
     </div>
   </div>
@@ -138,6 +147,7 @@
           <label data-g="bm-vwap"><input type="checkbox" data-hm="vwap" checked> VWAP phiên</label>
           <label data-g="bm-poc"><input type="checkbox" data-hm="poc" checked> Đường POC (từ cột Volume Profile)</label>
           <label data-g="bm-candles"><input type="checkbox" data-hm="candles"> Nến của khung đang chọn</label>
+          <label data-g="book-imb"><input type="checkbox" data-hm="imb" checked> Mất cân bằng sổ lệnh ±0,5% ở ô dưới (cạnh CVD)</label>
           <label data-g="tape-speed"><input type="checkbox" data-hm="speed" checked> Tốc độ băng (lệnh mỗi giây) ở ô dưới</label>
           <label class="row" data-g="bm-slices">Vạch chia thời gian <select data-hm="slices"><option value="0" selected>Tắt</option><option value="10">10 giây</option><option value="15">15 giây</option><option value="30">30 giây</option><option value="60">1 phút</option><option value="120">2 phút</option><option value="300">5 phút</option><option value="600">10 phút</option><option value="900">15 phút</option><option value="1800">30 phút</option><option value="3600">60 phút</option></select></label>
           <label class="row" data-g="bm-recenter">Tự căn giữa theo <select data-hm="recenter"><option value="bbo" selected>Giá mua/bán</option><option value="last">Giá khớp cuối</option><option value="none">Tắt</option></select></label>
@@ -243,6 +253,17 @@
     <div class="dom-hint">Lăn chuột: xem lại · Bấm đúp: về mới nhất · Dòng đậm: lệnh lớn</div>
   </section>
 
+  <section class="panel wall-panel" id="wallPanel">
+    <div class="panel-head">
+      <span class="title" data-g="wall-journal">Nhật ký tường</span>
+      <div class="seg" id="wallSeg"><button data-ws="log" class="on">Nhật ký</button><button data-ws="stats">Thống kê</button><button data-ws="live">Đang đứng</button></div>
+      <div class="spacer"></div>
+      <button class="icon minb" data-min="wallPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng (bấm vào tên khung ở đó để mở lại)">—</button>
+      <button class="icon max" data-max="wallPanel" data-tip="Phóng to nhật ký tường">⤢</button>
+    </div>
+    <div class="wallbody" id="wallBody"></div>
+  </section>
+
   <section class="panel order-panel" id="orderPanel">
     <div class="panel-head">
       <span class="title" data-g="paper-trading">Lệnh giả lập</span>
@@ -276,6 +297,7 @@
   <button data-panel="mainPanel" class="on"><i>▦</i>Biểu đồ</button>
   <button data-panel="domPanel"><i>☰</i>Sổ lệnh</button>
   <button data-panel="tapePanel"><i>≋</i>Tape</button>
+  <button data-panel="wallPanel"><i>▤</i>Tường</button>
   <button data-panel="orderPanel"><i>⇅</i>Lệnh</button>
 </nav>
 
@@ -651,6 +673,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610181200"></script>
+<script type="module" src="js/app.js?v=202610181310"></script>
 </body>
 </html>

@@ -4,15 +4,15 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610181200";
-import { cvd as cvdOf } from "./analytics.js?v=202610181200";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610181200";
-import { GROUPS } from "./flowtools.js?v=202610181200";
-import { WALL_KIND } from "./walls.js?v=202610181200";
-import { T, alpha } from "./theme.js?v=202610181200";
-import { drawShapes } from "./drawings.js?v=202610181200";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610181200";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610181200";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610181310";
+import { cvd as cvdOf } from "./analytics.js?v=202610181310";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610181310";
+import { GROUPS } from "./flowtools.js?v=202610181310";
+import { WALL_KIND } from "./walls.js?v=202610181310";
+import { T, alpha } from "./theme.js?v=202610181310";
+import { drawShapes } from "./drawings.js?v=202610181310";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610181310";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610181310";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -126,7 +126,7 @@ export class FlowChart {
     if (!this.cv.offsetParent) { this._L = this._layout(); return; }
     const ctx = this.ctx, L = this._L = this._layout();
     ctx.fillStyle = C.bg; ctx.fillRect(0, 0, L.w, L.h);
-    if (!this.bars.length) { ctx.fillStyle = C.axis; ctx.font = "14px Segoe UI, sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.opts.emptyText || "Đang tải dữ liệu...", L.pw / 2, L.ph / 2); return; }
+    if (!this.bars.length) { ctx.fillStyle = C.axis; ctx.font = "14px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "center"; ctx.fillText(this.opts.emptyText || "Đang tải dữ liệu...", L.pw / 2, L.ph / 2); return; }
     const [first, last] = this._visible();
     if (last < first) return; // khung quá hẹp hoặc đã kéo hết nến ra ngoài
     let lo = Infinity, hi = -Infinity;
@@ -442,7 +442,7 @@ export class FlowChart {
         const x = this.xOf(i), y = this.yOf(v); (on && !jump) ? ctx.lineTo(x, y) : ctx.moveTo(x, y); on = true;
       }
       ctx.stroke();
-      ctx.fillStyle = ln.color; ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(ln.name, 8, ly); ly += 14;
+      ctx.fillStyle = ln.color; ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(ln.name, 8, ly); ly += 14;
     }
   }
 
@@ -472,7 +472,7 @@ export class FlowChart {
     const line = (p, color, text, dash) => {
       const y = Math.round(this.yOf(p)) + 0.5; if (y < 0 || y > L.priceH) return;
       ctx.strokeStyle = color; ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(L.pw, y); ctx.stroke(); ctx.setLineDash([]);
-      ctx.font = "11px Segoe UI, sans-serif"; const tw = ctx.measureText(text).width + 10;
+      ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; const tw = ctx.measureText(text).width + 10;
       ctx.fillStyle = color; ctx.fillRect(L.pw - tw - 4, y - 8, tw, 16); ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(text, L.pw - tw + 1, y);
     };
     for (const o of this.orders) line(o.price, o.side === "buy" ? C.up : C.down, `${o.side === "buy" ? "MUA" : "BÁN"} ${+o.remaining.toFixed(6)} @ ${o.price.toFixed(dec)}`, [5, 4]);
@@ -495,7 +495,7 @@ export class FlowChart {
       ctx.fillRect(Math.round(x - bw / 2), d >= 0 ? mid - hh : mid, Math.round(bw), Math.max(1, hh));
       if (this.type === "box" && this.sp >= 50) { ctx.fillStyle = d >= 0 ? C.up : C.down; ctx.font = `10px ${MONO}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText((d >= 0 ? "+" : "") + fmtVol(d), x, d >= 0 ? mid + 7 : mid - 7); }
     }
-    ctx.fillStyle = C.axis; ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillStyle = C.axis; ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "top";
     ctx.fillText(`Delta${this.info.deltaApprox ? " (ước tính từ nến)" : ""}`, 6, top + 3);
   }
 
@@ -520,7 +520,7 @@ export class FlowChart {
       for (let i = first; i <= last; i++) { const v = vals[i]; if (v == null) { on = false; continue; } const x = this.xOf(i), y = top + 6 + (hi - v) / (hi - lo) * (H - 12); on ? ctx.lineTo(x, y) : ctx.moveTo(x, y); on = true; }
       ctx.stroke();
       const lastV = vals[Math.min(last, vals.length - 1)];
-      ctx.fillStyle = col; ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+      ctx.fillStyle = col; ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "top";
       const label = `${name} ${lastV == null ? "" : fmtVol(lastV)}`; ctx.fillText(label, lx, top + 3); lx += ctx.measureText(label).width + 16;
     }
   }
@@ -540,12 +540,12 @@ export class FlowChart {
       ctx.strokeStyle = col; ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(Math.round(x) + 0.5, Y(c.h)); ctx.lineTo(Math.round(x) + 0.5, Y(c.l)); ctx.stroke();
       const y1 = Y(Math.max(c.o, c.c)), y2 = Y(Math.min(c.o, c.c)); ctx.fillRect(Math.round(x - bw / 2), y1, Math.round(bw), Math.max(1, y2 - y1));
     }
-    ctx.fillStyle = "#f5c542"; ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillStyle = "#f5c542"; ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "top";
     ctx.fillText(`CVD Pro (nến CVD, bắt đầu lại mỗi ngày) ${fmtVol(cc[Math.min(last, cc.length - 1)].c)}`, 6, top + 3);
   }
 
   _paneLabel(text, col, L, x = 6) {
-    const ctx = this.ctx; ctx.fillStyle = col; ctx.font = "11px Segoe UI, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    const ctx = this.ctx; ctx.fillStyle = col; ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "top";
     ctx.fillText(text, x, L.cvdTop + 3); return x + ctx.measureText(text).width + 14;
   }
   _line(vals, first, last, lo, hi, col, L, width = 1.4) {
@@ -913,7 +913,7 @@ export function drawEquity(canvas, equity, capital) {
   canvas._eq = equity; canvas._cap = capital;
   const ctx = S.ctx, w = S.w, h = S.h, padL = 8, padR = 70, eqH = h * 0.7 - 10, ddTop = h * 0.7 + 6, ddH = h * 0.3 - 26;
   ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
-  if (!equity || equity.length < 2) { ctx.fillStyle = C.axis; ctx.font = "13px Segoe UI, sans-serif"; ctx.textAlign = "center"; ctx.fillText("Chưa có kết quả backtest", w / 2, h / 2); return; }
+  if (!equity || equity.length < 2) { ctx.fillStyle = C.axis; ctx.font = "13px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "center"; ctx.fillText("Chưa có kết quả backtest", w / 2, h / 2); return; }
   let lo = Infinity, hi = -Infinity, peak = -Infinity; const dd = [];
   for (const p of equity) { lo = Math.min(lo, p.eq); hi = Math.max(hi, p.eq); peak = Math.max(peak, p.eq); dd.push((p.eq / peak - 1) * 100); }
   lo = Math.min(lo, capital); hi = Math.max(hi, capital);

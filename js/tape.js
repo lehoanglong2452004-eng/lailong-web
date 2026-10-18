@@ -3,9 +3,9 @@
 // Một lệnh market lớn ăn qua nhiều lệnh chờ bị sàn báo thành hàng trăm lệnh khớp nhỏ cùng thời điểm.
 // Băng này ghép lại (market.prints) để thấy đúng kích thước lệnh gốc. Tắt "Ghép lệnh" để xem băng thô.
 
-import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202610181200";
-import { T, alpha } from "./theme.js?v=202610181200";
-import { GROUPS, playerGroup } from "./flowtools.js?v=202610181200";
+import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202610181310";
+import { T, alpha } from "./theme.js?v=202610181310";
+import { GROUPS, playerGroup } from "./flowtools.js?v=202610181310";
 
 const GROUP = Object.fromEntries(GROUPS.map(g => [g.id, g]));
 
@@ -74,7 +74,7 @@ export class Tape {
     ctx.fillStyle = T.panel2; ctx.fillRect(0, 0, w, HDR_H);
     const small = w < 420, font = small ? 10.5 : 11.5;
     this._statsBar(w, small);
-    ctx.font = `bold ${small ? 9.5 : 10.5}px Segoe UI, sans-serif`; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillStyle = T.accent;
+    ctx.font = `bold ${small ? 9.5 : 10.5}px 'IBM Plex Mono', Consolas, monospace`; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillStyle = T.accent;
     for (const c of C) ctx.fillText(c.label.toUpperCase(), c.x + c.w / 2, BAR_H + (HDR_H - BAR_H) / 2);
     const data = this._rowsData(), rows = Math.floor((h - HDR_H) / ROW_H), dec = decimalsFor(this.m.tick || 0.01);
     this.scroll = Math.max(0, Math.min(this.scroll, Math.max(0, data.length - rows)));
@@ -98,7 +98,7 @@ export class Tape {
         ctx.textAlign = c.id === "sweep" ? "left" : "right"; ctx.fillText(cells[c.id], c.id === "sweep" ? c.x + 3 : c.x + c.w - 3, cy); ctx.restore();
       }
     }
-    if (!data.length) { ctx.fillStyle = T.muted; ctx.textAlign = "center"; ctx.font = "13px Segoe UI, sans-serif"; ctx.fillText("Đang chờ lệnh khớp...", w / 2, h / 2); }
+    if (!data.length) { ctx.fillStyle = T.muted; ctx.textAlign = "center"; ctx.font = "13px 'IBM Plex Mono', Consolas, monospace"; ctx.fillText("Đang chờ lệnh khớp...", w / 2, h / 2); }
     ctx.strokeStyle = T.line; ctx.beginPath(); for (const c of C) { ctx.moveTo(Math.round(c.x) + 0.5, BAR_H); ctx.lineTo(Math.round(c.x) + 0.5, h); } ctx.moveTo(0, HDR_H - 0.5); ctx.lineTo(w, HDR_H - 0.5); ctx.stroke();
     if (this.scroll > 0) { ctx.fillStyle = alpha(T.accent, 0.9); ctx.fillRect(0, HDR_H, w, 3); }
   }

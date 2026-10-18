@@ -58,7 +58,7 @@ export const INTERVALS = {
   "1m": 60e3, "5m": 300e3, "15m": 900e3, "1h": 3600e3, "4h": 14400e3, "1d": 86400e3,
 };
 
-export const MONO = "Consolas, 'Cascadia Mono', 'SF Mono', Menlo, monospace";
+export const MONO = "'IBM Plex Mono', Consolas, 'Cascadia Mono', Menlo, monospace";
 
 export function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 

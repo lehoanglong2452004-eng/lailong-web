@@ -757,6 +757,21 @@ export const GLOSSARY = [
     body: "<p>Ngưỡng tính theo chính mã đang xem (lệnh 1 BTC là nhỏ với BTC nhưng rất lớn với một đồng nhỏ). Ô dưới \"Delta theo nhóm người chơi\" vẽ CVD của từng nhóm trên cùng một thang.</p><p><b>Cách đọc:</b> cá voi mua ròng trong khi nhỏ lẻ bán ròng là dấu hiệu tích luỹ; ngược lại là phân phối. Cột \"Nhóm\" trên Smart Tape ghi \"Máy\" cho lệnh thuộc một chuỗi chia đều.</p><p>Binance tải lại được lệnh khớp cũ nên có số liệu cho nhiều nến; sàn khác chỉ có từ lúc mở trang.</p>"
   },
   {
+    id: "wall-journal", group: "Order flow nâng cao", term: "Nhật ký tường",
+    short: "Khung ghi lại mọi tường lệnh chờ lớn quanh giá: xuất hiện ở đâu, cỡ bao nhiêu, đứng bao lâu, kết cục ra sao và giá đi thế nào 1 phút, 5 phút sau đó. Thống kê cho biết phe nào hay dựng tường giả.",
+    body: "<p><b>Nhật ký</b>: mỗi dòng là một tường đã mất. Cột Sau 1′ và Sau 5′ là giá thay đổi bao nhiêu % kể từ lúc tường mất.</p><p><b>Thống kê</b>: <i>tỷ lệ rút khi giá tới gần</i> là trong các tường bị giá chạm tới, bao nhiêu phần trăm bị rút ngay trước khi bị ăn. Tỷ lệ cao ở phía mua nghĩa là tường đỡ giá phần lớn là giả. Bảng phản ứng giá tính theo hướng tường bảo vệ: tường mua thì giá lên là dương, tường bán thì giá xuống là dương. Tường bị ăn mà con số dương là tường hấp thụ xong giá bật lại; âm là giá phá tường và chạy tiếp.</p><p><b>Đang đứng</b>: các tường trong ±1% quanh giá ngay lúc này.</p><p>Số liệu tính từ lúc mở trang cho mã đang xem; cần vài chục lần mỗi loại thì mới đáng tin.</p>",
+  },
+  {
+    id: "book-imb", group: "Bookmap", term: "Mất cân bằng sổ lệnh gần giá",
+    short: "Đường tím ở ô dưới Bookmap: (lệnh chờ mua − lệnh chờ bán) / tổng, chỉ tính trong ±0,5% quanh giá, mỗi cột một điểm. Trên vạch giữa là chờ mua dày hơn.",
+    body: "<p>Đọc cùng CVD (đường vàng): CVD tăng mà sổ nghiêng về bán là người mua đang chủ động ăn vào tường bán, nếu tường không rút mà giá vẫn đứng là bên bán đang hấp thụ. CVD giảm mà sổ nghiêng về mua là có bên đang đỡ giá. Sổ lệnh đổi chiều đột ngột ngay trước một cú chạy thường là tường bị rút.</p><p>Lưu ý: lệnh chờ có thể bị rút bất cứ lúc nào, nên đây là thứ để đọc cùng dòng lệnh đã khớp, không phải tín hiệu riêng.</p>",
+  },
+  {
+    id: "telegram", group: "Công cụ", term: "Cảnh báo qua Telegram",
+    short: "Gửi mọi cảnh báo đang bật sang Telegram của bro. Cần mã bot và chat id; cả hai chỉ lưu trên máy này.",
+    body: "<p><b>Cách lấy</b>: trong Telegram nhắn cho @BotFather lệnh /newbot để tạo bot và nhận mã bot. Nhắn cho bot vừa tạo một tin bất kỳ, rồi nhắn cho @userinfobot để biết chat id của mình. Dán hai thứ đó vào menu Cảnh báo và bấm Gửi thử.</p><p>Trang phải đang mở thì mới gửi được cảnh báo.</p>",
+  },
+  {
     id: "spoofing", group: "Order flow nâng cao", term: "Tường giả (spoofing)",
     short: "Lệnh chờ rất lớn dựng lên để doạ phe kia rồi rút đi khi giá tới gần. Bộ theo dõi đếm số lần tường bị rút mà gần như không được khớp.",
     body: "<p>Mỗi giây hệ thống tìm \"tường\": mức giá có lệnh chờ ≥ 6 lần trung vị và thuộc top 3% trong ±1% quanh giá. Khi tường mất ≥ 75% khối lượng:</p><ul><li><b>Bị ăn</b> (tường thật): khối lượng khớp tại đó ≥ một nửa phần mất.</li><li><b>Rút khi giá tới gần</b> (nghi tường giả): khớp rất ít và giá đã tới sát.</li><li><b>Rút khi giá còn xa</b>: đổi ý bình thường.</li></ul><p>Trên Smart DOM, cột <b>Tường</b> tô vàng tường đang đứng và ghi \"G×n\" (giả) màu cam. Trên biểu đồ, dấu × cam là chỗ tường bị rút. Một mức giá có nhiều lần \"giả\" thì đừng coi tường ở đó là hỗ trợ/kháng cự thật.</p>"
