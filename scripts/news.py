@@ -404,7 +404,45 @@ _SYN = [
     (r"purchasing managers'? index", " pmi "),
     (r"unemployment rate", " unemployment "),
     (r"retail sales", " retail "),
+    (r"continuing (jobless )?claims", " continuing claims "),
+    (r"(initial )?jobless claims|unemployment claims", " initial claims "),
 ]
+# các chữ phân biệt hai tin khác nhau cùng giờ: lệch nhau là không phải cùng một tin
+_STRICT = {"core", "continuing", "initial"}
+_PERIOD = {"mom", "yoy", "qoq"}
+_SCALE = {"K": 1e3, "M": 1e6, "B": 1e9, "T": 1e12}
+
+
+def _val(x: str) -> tuple[float, str] | None:
+    m = re.match(r"\s*(-?[\d,]*\.?\d+)\s*([KMBT%]?)", x or "")
+    return (float(m.group(1).replace(",", "")), m.group(2)) if m else None
+
+
+def _plausible(act: str, ev: dict) -> str | None:
+    """Số thực tế phải cùng cỡ với dự báo hoặc kỳ trước: tránh gắn nhầm số của tin khác.
+    Nguồn không ghi đơn vị (200 thay vì 200K) thì mượn đơn vị của dự báo."""
+    a = _val(act)
+    refs = [r for r in (_val(ev.get("forecast", "")), _val(ev.get("previous", ""))) if r]
+    if not a or not refs:
+        return act
+    ref = refs[0]
+    if not a[1] and ref[1] in _SCALE:
+        cands = [(a[0], ref[1]), (a[0] / _SCALE[ref[1]], ref[1])]
+    else:
+        cands = [a]
+    for v, unit in cands:
+        av = v * _SCALE.get(unit, 1)
+        ok = any(
+            abs(r[0] * _SCALE.get(r[1], 1)) < 10
+            or abs(av) < 10
+            or 0.2 <= abs(av) / abs(r[0] * _SCALE.get(r[1], 1)) <= 5
+            for r in refs
+        )
+        if ok:
+            if (v, unit) == a:
+                return act
+            return (f"{v:,.2f}".rstrip("0").rstrip(".") if v % 1 else f"{v:,.0f}") + unit
+    return None
 
 
 def _tokens(title: str) -> set[str]:
@@ -471,13 +509,23 @@ def match_actuals(events: list[dict], found: list[dict]) -> int:
         if not cand:
             continue
         te = _tokens(e["title"])
+
+        def same(f, te=te):
+            tf = _tokens(f["title"])
+            pe, pf = te & _PERIOD, tf & _PERIOD
+            return (te & _STRICT) == (tf & _STRICT) and not (pe and pf and pe != pf)
+
+        cand = [f for f in cand if same(f)]
+        if not cand:
+            continue
         best = max(
             cand,
             key=lambda f: len(te & _tokens(f["title"])) / max(1, len(te | _tokens(f["title"]))),
         )
         score = len(te & _tokens(best["title"]))
-        if score >= 1 or len(cand) == 1:
-            e["actual"] = best["actual"]
+        act = _plausible(best["actual"], e) if score >= 1 or len(cand) == 1 else None
+        if act:
+            e["actual"] = act
             n += 1
     return n
 
