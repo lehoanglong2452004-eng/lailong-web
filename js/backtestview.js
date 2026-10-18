@@ -1,19 +1,21 @@
 // Lai Long Web: trang Backtest (giao diện). Chiến lược nằm trong strategies.js, bộ máy chạy lệnh trong backtest.js.
-import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610180133";
-import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610180133";
-import { EquityChart } from "./fractalview.js?v=202610180133";
-import { sampleLevel } from "./fractal.js?v=202610180133";
-import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610180133";
-import { isDeltaApprox } from "./analytics.js?v=202610180133";
-import { robustness } from "./robust.js?v=202610180133";
-import { forwardVerdict, barsNeeded } from "./forward.js?v=202610180133";
-import { EXCHANGES } from "./exchanges.js?v=202610180133";
+import { STRATEGIES, STRATEGY_ORDER, defaultParams } from "./strategies.js?v=202610180357";
+import { simulate, tradeStats, splitTrades } from "./backtest.js?v=202610180357";
+import { EquityChart } from "./fractalview.js?v=202610180357";
+import { sampleLevel } from "./fractal.js?v=202610180357";
+import { INTERVALS, fmtDate, decimalsFor } from "./util.js?v=202610180357";
+import { isDeltaApprox } from "./analytics.js?v=202610180357";
+import { robustness } from "./robust.js?v=202610180357";
+import { forwardVerdict, barsNeeded } from "./forward.js?v=202610180357";
+import { EXCHANGES } from "./exchanges.js?v=202610180357";
 
 const FWD_KEY = "lailong.forward.v1", PIN_KEY = "lailong.btPins", SEL_KEY = "lailong.btStrat", LEG_KEY = "lailong.btLeg";
 const sgn = (x, d = 2) => (x >= 0 ? "+" : "") + x.toFixed(d);
 const fmtPF = x => isFinite(x) ? x.toFixed(2) : x === Infinity ? "∞" : "-";
 const cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
-const store = { get(k, d) { try { const v = sessionStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch { /* bỏ qua */ } } };
+// chiến lược đang forward test phải giữ qua nhiều tuần nên lưu lâu dài (localStorage); các lựa chọn khác chỉ giữ trong phiên
+const LONG = new Set([FWD_KEY, FWD_KEY + ".at"]), box = k => LONG.has(k) ? localStorage : sessionStorage;
+const store = { get(k, d) { try { const v = box(k).getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { box(k).setItem(k, JSON.stringify(v)); } catch { /* bỏ qua */ } } };
 // Kết luận: cần ít nhất 30 lệnh và cận dưới khoảng tin cậy 95% của kỳ vọng R phải trên 0
 export function verdict(st) {
   if (!st.n) return { txt: "Không có lệnh", cls: "" };
@@ -314,6 +316,6 @@ export function initBacktest({ $, S, ex, esc, table, market, chart }) {
   new MutationObserver(fwdAuto).observe($("view-backtest"), { attributes: true, attributeFilter: ["hidden"] }); setTimeout(fwdAuto, 3000);
 
   // MIDOTI nằm ở file riêng, chỉ có trong bản trên máy của Lai Long; không có thì bỏ qua
-  import("./midoti.js").catch(() => null).finally(() => { if (!STRATEGIES[cur]) cur = STRATEGY_ORDER[0]; renderList(); renderForm(); });
+  import("./midoti.js?v=202610180357").catch(() => null).finally(() => { if (!STRATEGIES[cur]) cur = STRATEGY_ORDER[0]; renderList(); renderForm(); });
   return { tips: eq, redraw() { for (const c of Object.values(eq)) c.draw(); } };
 }

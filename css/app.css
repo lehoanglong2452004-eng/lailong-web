@@ -665,3 +665,5 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 .rsopts label { margin-right: 8px; color: var(--muted); }
 .rsopts input { width: 58px; }
 .healthwrap { overflow-x: auto; }
+/* sao lưu toàn bộ (tab Dữ liệu) */
+.bkrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}

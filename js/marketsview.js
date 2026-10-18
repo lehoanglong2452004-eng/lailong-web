@@ -2,8 +2,8 @@
 // crypto top 10, công ty và quỹ ETF nắm giữ BTC/ETH, cá voi dùng đòn bẩy trên Hyperliquid, thanh lý lớn trực tiếp.
 // Bản web đọc data/markets.json và data/whales.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/markets.py).
-import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202610180133";
-import { setFresh } from "./fresh.js?v=202610180133";
+import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202610180357";
+import { setFresh } from "./fresh.js?v=202610180357";
 
 const HL = "https://api.hyperliquid.xyz/info";
 const LIQ_WS = "wss://fstream.binance.com/market/ws/!forceOrder@arr";
