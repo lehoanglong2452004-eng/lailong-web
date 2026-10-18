@@ -426,6 +426,8 @@ def _plausible(act: str, ev: dict) -> str | None:
     if not a or not refs:
         return act
     ref = refs[0]
+    if (ref[1] == "%") != (a[1] == "%"):  # tỷ lệ % không ghép với chỉ số mức (338.9)
+        return None
     if not a[1] and ref[1] in _SCALE:
         cands = [(a[0], ref[1]), (a[0] / _SCALE[ref[1]], ref[1])]
     else:
