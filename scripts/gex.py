@@ -14,6 +14,7 @@ import json
 import re
 import sys
 import time
+import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
@@ -32,6 +33,19 @@ SYMBOLS = [
     ("USO", "USO", "Quỹ ETF dầu"),
     ("TLT", "TLT", "Quỹ ETF trái phiếu Mỹ 20 năm"),
 ]
+# giá đóng cửa ngày của tài sản cơ sở và chỉ số biến động tương ứng (Yahoo Finance, trễ)
+YAHOO_SPOT = {"SPX": "^GSPC", "NDX": "^NDX"}
+VOL_INDEX = {
+    "SPX": ("^VIX", "VIX"),
+    "SPY": ("^VIX", "VIX"),
+    "NDX": ("^VXN", "VXN"),
+    "QQQ": ("^VXN", "VXN"),
+    "IWM": ("^RVX", "RVX"),
+    "GLD": ("^GVZ", "GVZ (vàng)"),
+    "USO": ("^OVX", "OVX (dầu)"),
+    "TLT": ("^MOVE", "MOVE (trái phiếu)"),
+}
+YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/{}?range=1y&interval=1d"
 OPT = re.compile(r"^([A-Z]+)(\d{2})(\d{2})(\d{2})([CP])(\d{8})$")
 MAX_DAYS = 400
 BAND = 0.25
@@ -47,7 +61,7 @@ def _get(url: str, timeout: float = 40) -> bytes:
 
 
 def compact(raw: dict, now_ms: int | None = None) -> dict:
-    """Rút gọn tệp CBOE về {spot, exps, rows: [[strike, i_hạn, ±1, OI, iv]]}."""
+    """Rút gọn tệp CBOE về {spot, exps, rows: [[strike, i_hạn, ±1, OI, iv, KL trong ngày]]}."""
     now_ms = now_ms or int(time.time() * 1000)
     d = raw.get("data") or {}
     spot = float(d.get("current_price") or d.get("close") or 0)
@@ -69,7 +83,16 @@ def compact(raw: dict, now_ms: int | None = None) -> dict:
         if t not in idx:
             idx[t] = len(exps)
             exps.append(t)
-        rows.append([k, idx[t], 1 if m[5] == "C" else -1, oi, round(iv, 4)])
+        rows.append(
+            [
+                k,
+                idx[t],
+                1 if m[5] == "C" else -1,
+                oi,
+                round(iv, 4),
+                int(float(o.get("volume") or 0)),
+            ]
+        )
     order = sorted(range(len(exps)), key=lambda i: exps[i])
     remap = {old: new for new, old in enumerate(order)}
     return {
@@ -78,8 +101,24 @@ def compact(raw: dict, now_ms: int | None = None) -> dict:
         "iv30": d.get("iv30"),
         "mult": 100,
         "exps": [exps[i] for i in order],
-        "rows": [[r[0], remap[r[1]], r[2], r[3], r[4]] for r in rows],
+        "rows": [[r[0], remap[r[1]], *r[2:]] for r in rows],
     }
+
+
+def yahoo_daily(ysym: str) -> list[list[float]]:
+    """[[thời gian ms, giá đóng cửa]] 1 năm theo ngày từ Yahoo; bỏ ngày thiếu giá."""
+    raw = json.loads(_get(YAHOO.format(urllib.parse.quote(ysym)), timeout=20))
+    return parse_daily(raw)
+
+
+def parse_daily(raw: dict) -> list[list[float]]:
+    r = raw["chart"]["result"][0]
+    closes = r["indicators"]["quote"][0].get("close") or []
+    return [
+        [int(t) * 1000, round(c, 4)]
+        for t, c in zip(r.get("timestamp") or [], closes, strict=False)
+        if c is not None
+    ]
 
 
 def fetch(sym: str) -> dict:
@@ -87,6 +126,20 @@ def fetch(sym: str) -> dict:
     raw = json.loads(_get(URL.format(cboe)))
     out = compact(raw)
     out.update({"sym": code, "name": name, "quoteTime": raw.get("timestamp")})
+    try:
+        out["closes"] = [c for _, c in yahoo_daily(YAHOO_SPOT.get(code, code))][-60:]
+    except Exception:
+        pass
+    if code in VOL_INDEX:
+        ysym, vname = VOL_INDEX[code]
+        try:
+            out["volIdx"] = {
+                "name": vname,
+                "series": yahoo_daily(ysym),
+                "t": int(time.time() * 1000),
+            }
+        except Exception:
+            pass
     out["updated"] = int(time.time() * 1000)
     return out
 

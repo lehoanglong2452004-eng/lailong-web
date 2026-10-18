@@ -23,6 +23,10 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 UA = {"User-Agent": "Mozilla/5.0 (LaiLongQuant news fetcher)"}
+# vài API lịch kinh tế chỉ trả lời trình duyệt thật
+BROWSER = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
+}
 CALENDAR_URLS = [
     "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
     "https://nfs.faireconomy.media/ff_calendar_nextweek.json",
@@ -359,11 +363,169 @@ def fetch_calendar() -> dict:
         except Exception as exc:  # tuần sau đôi khi chưa có
             errors.append(f"{url.rsplit('/', 1)[-1]}: {exc}")
     uniq = {(e["t"], e["title"], e["country"]): e for e in events}
+    evs = sorted(uniq.values(), key=lambda e: e["t"])
+    try:  # lịch ForexFactory không có số thực tế: bù từ FXStreet, rồi Nasdaq
+        errors += fill_actuals(evs)
+    except Exception as exc:
+        errors.append(f"số thực tế: {exc}")
+    return {"updated": int(time.time() * 1000), "events": evs, "errors": errors}
+
+
+# ---------- số thực tế của tin đã ra ----------
+FXS_URL = "https://calendar-api.fxstreet.com/en/api/v1/eventDates/{}/{}"
+NASDAQ_URL = "https://api.nasdaq.com/api/calendar/economicevents?date={}"
+# tên nước trong lịch Nasdaq -> mã tiền tệ như ForexFactory
+NASDAQ_COUNTRY = {
+    "United States": "USD",
+    "Euro Zone": "EUR",
+    "Euro Area": "EUR",
+    "Germany": "EUR",
+    "France": "EUR",
+    "Italy": "EUR",
+    "Spain": "EUR",
+    "Japan": "JPY",
+    "United Kingdom": "GBP",
+    "China": "CNY",
+    "Canada": "CAD",
+    "Australia": "AUD",
+    "New Zealand": "NZD",
+    "Switzerland": "CHF",
+}
+_SYN = [
+    (r"\bm/m\b", " mom "),
+    (r"\by/y\b", " yoy "),
+    (r"\bq/q\b", " qoq "),
+    (r"month[- ]over[- ]month|\(mom\)", " mom "),
+    (r"year[- ]over[- ]year|\(yoy\)", " yoy "),
+    (r"consumer price index", " cpi "),
+    (r"producer price index", " ppi "),
+    (r"non[- ]?farm (employment change|payrolls)", " nfp "),
+    (r"gross domestic product", " gdp "),
+    (r"purchasing managers'? index", " pmi "),
+    (r"unemployment rate", " unemployment "),
+    (r"retail sales", " retail "),
+]
+
+
+def _tokens(title: str) -> set[str]:
+    t = " " + title.lower() + " "
+    for pat, rep in _SYN:
+        t = re.sub(pat, rep, t)
     return {
-        "updated": int(time.time() * 1000),
-        "events": sorted(uniq.values(), key=lambda e: e["t"]),
-        "errors": errors,
+        w
+        for w in re.findall(r"[a-z0-9]+", t)
+        if w not in {"the", "of", "s", "and", "sa", "nsa", "prel", "final"}
     }
+
+
+def _fmt_val(v, unit: str = "") -> str:
+    if v is None or v == "":
+        return ""
+    if isinstance(v, (int, float)):
+        s = f"{v:.2f}".rstrip("0").rstrip(".") if abs(v) < 1000 else f"{v:,.0f}"
+        return s + (unit or "")
+    return str(v).strip()
+
+
+def parse_fxstreet(rows: list[dict]) -> list[dict]:
+    out = []
+    for r in rows or []:
+        try:
+            t = int(
+                datetime.fromisoformat(str(r["dateUtc"]).replace("Z", "+00:00")).timestamp() * 1000
+            )
+        except Exception:
+            continue
+        act = _fmt_val(r.get("actual"), r.get("unit") or "")
+        if act:
+            out.append(
+                {
+                    "t": t,
+                    "cur": r.get("currencyCode") or "",
+                    "title": r.get("name") or "",
+                    "actual": act,
+                }
+            )
+    return out
+
+
+def parse_nasdaq(raw: dict, day: str) -> list[dict]:
+    out = []
+    for r in ((raw or {}).get("data") or {}).get("rows") or []:
+        act, gmt = (r.get("actual") or "").strip(), (r.get("gmt") or "").strip()
+        cur = NASDAQ_COUNTRY.get((r.get("country") or "").strip())
+        if not act or act in ("-", "&nbsp;") or not cur or not re.match(r"^\d{1,2}:\d{2}$", gmt):
+            continue
+        t = int(datetime.fromisoformat(f"{day}T{gmt.zfill(5)}:00+00:00").timestamp() * 1000)
+        out.append({"t": t, "cur": cur, "title": r.get("eventName") or "", "actual": act})
+    return out
+
+
+def match_actuals(events: list[dict], found: list[dict]) -> int:
+    """Gắn số thực tế cho tin cùng tiền tệ, cùng giờ (lệch ≤ 2 phút), tên giống nhau nhất."""
+    n = 0
+    for e in events:
+        if e.get("actual"):
+            continue
+        cand = [f for f in found if f["cur"] == e["country"] and abs(f["t"] - e["t"]) <= 120_000]
+        if not cand:
+            continue
+        te = _tokens(e["title"])
+        best = max(
+            cand,
+            key=lambda f: len(te & _tokens(f["title"])) / max(1, len(te | _tokens(f["title"]))),
+        )
+        score = len(te & _tokens(best["title"]))
+        if score >= 1 or len(cand) == 1:
+            e["actual"] = best["actual"]
+            n += 1
+    return n
+
+
+def fill_actuals(events: list[dict], now_ms: int | None = None) -> list[str]:
+    now_ms = now_ms or int(time.time() * 1000)
+    need = [
+        e
+        for e in events
+        if not e.get("actual") and e["t"] < now_ms - 60_000 and e["impact"] in ("High", "Medium")
+    ]
+    if not need:
+        return []
+    errors = []
+    d0 = datetime.fromtimestamp(min(e["t"] for e in need) / 1000, UTC).strftime(
+        "%Y-%m-%dT00:00:00Z"
+    )
+    d1 = datetime.fromtimestamp(now_ms / 1000, UTC).strftime("%Y-%m-%dT23:59:59Z")
+    try:
+        req = urllib.request.Request(
+            FXS_URL.format(d0, d1),
+            headers={
+                **BROWSER,
+                "Referer": "https://www.fxstreet.com/",
+                "Origin": "https://www.fxstreet.com",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=15) as r:
+            match_actuals(need, parse_fxstreet(json.loads(r.read())))
+    except Exception as exc:
+        errors.append(f"FXStreet: {exc}")
+    days = sorted(
+        {
+            datetime.fromtimestamp(e["t"] / 1000, UTC).strftime("%Y-%m-%d")
+            for e in need
+            if not e.get("actual")
+        }
+    )
+    for day in days[-7:]:
+        try:
+            req = urllib.request.Request(
+                NASDAQ_URL.format(day), headers={**BROWSER, "Accept": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=15) as r:
+                match_actuals(need, parse_nasdaq(json.loads(r.read()), day))
+        except Exception as exc:
+            errors.append(f"Nasdaq {day}: {exc}")
+    return errors
 
 
 def _local(tag: str) -> str:
@@ -424,7 +586,9 @@ def _one_feed(feed) -> tuple[list[dict], str | None]:
             title, src = title.rsplit(" - ", 1)
         cat, topics = classify(title, default)
         hot = bool(HOT.search(title)) or source in CB_SOURCES
-        coins = [c for c in COINS if re.search(COIN_WORDS[c], title, re.I)] if cat == "crypto" else []
+        coins = (
+            [c for c in COINS if re.search(COIN_WORDS[c], title, re.I)] if cat == "crypto" else []
+        )
         items.append(
             {
                 "t": _when(pub),

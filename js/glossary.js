@@ -819,7 +819,7 @@ export const GLOSSARY = [
   {
     id: "derivs", group: "Phái sinh", term: "Dữ liệu phái sinh",
     short: "Đám đông đang long hay short, tiền lớn nghiêng về đâu, futures đắt hay rẻ hơn spot, và thị trường quyền chọn đang đặt cược gì.",
-    body: "<p>Lấy thẳng từ API công khai: Binance Futures (tỷ lệ long/short, mua/bán chủ động, basis, funding, open interest; khung 1 giờ, 48 giờ gần nhất) và Deribit (quyền chọn BTC, ETH).</p><p><b>Cách dùng:</b> đây là bối cảnh, không phải tín hiệu vào lệnh. Đám đông nghiêng quá một phía cộng funding cao thường là nhiên liệu cho một cú quét ngược. Kết hợp với Bookmap để tìm điểm vào cụ thể.</p><p>Dòng tiền ETF và dòng coin nạp/rút sàn (on-chain) cần nguồn trả phí (Glassnode, CryptoQuant), chưa có trong app.</p>"
+    body: "<p>Lấy thẳng từ API công khai: Binance Futures (tỷ lệ long/short, mua/bán chủ động, funding, open interest; khung 1 giờ, 48 giờ gần nhất) và Deribit (quyền chọn BTC, ETH).</p><p><b>Cách dùng:</b> đây là bối cảnh, không phải tín hiệu vào lệnh. Đám đông nghiêng quá một phía cộng funding cao thường là nhiên liệu cho một cú quét ngược. Kết hợp với Bookmap để tìm điểm vào cụ thể.</p><p>Dòng tiền ETF và dòng coin nạp/rút sàn (on-chain) cần nguồn trả phí (Glassnode, CryptoQuant), chưa có trong app.</p>"
   },
   {
     id: "ls-ratio", group: "Phái sinh", term: "Tỷ lệ long/short",
@@ -935,6 +935,41 @@ export const GLOSSARY = [
     id: "whales", group: "Thị trường", term: "Cá voi dùng đòn bẩy (Hyperliquid)",
     short: "Các ví lớn nhất trên sàn Hyperliquid đang mở vị thế gì, đòn bẩy bao nhiêu, còn cách giá thanh lý bao xa.",
     body: "<p>Hyperliquid là sàn phi tập trung nên mọi vị thế đều công khai theo địa chỉ ví. Danh sách lấy từ bảng xếp hạng tài khoản lớn nhất, chỉ giữ ví đang có vị thế.</p><p><b>Đòn bẩy thực</b> = tổng vị thế mở / tiền trong tài khoản. <b>Cách thanh lý</b>: giá còn phải chạy bao nhiêu % ngược chiều thì ví bị thanh lý; ô tô đỏ là dưới 10%.</p><p>Ô trên cùng cho biết nhóm cá voi đang nghiêng LONG hay SHORT với BTC và ETH. Bấm một ví để xem toàn bộ vị thế, bấm tên ví để mở trên Hypurrscan. Nút \"Lấy lại trực tiếp\" hỏi thẳng Hyperliquid để có số mới nhất.</p><p><b>Lưu ý</b>: cá voi cũng có thể sai, và một vị thế có thể đang được phòng hộ ở sàn khác.</p>"
+  },
+  {
+    id: "opt-read", group: "Phái sinh", term: "Đọc tâm lý quyền chọn",
+    short: "Máy ghép các chỉ số tổ chức hay theo dõi (skew 25 delta, cấu trúc kỳ hạn IV, chỉ số biến động, IV so với biến động thực tế, put/call, dòng lệnh lớn, GEX) thành vài câu: thị trường đang sợ hay tham, nghiêng về đâu.",
+    body: "<p>Thị trường quyền chọn là nơi người ta trả tiền thật để mua bảo hiểm hoặc đặt cược, nên nó lộ tâm lý rõ hơn hợp đồng tương lai. Dòng xanh là nghiêng tăng, đỏ là nghiêng giảm hoặc sợ hãi, trắng là trung tính.</p><ul><li><b>IV ATM 7 và 30 ngày</b>: nội suy về đúng 7 và 30 ngày để so sánh được qua thời gian.</li><li><b>Skew 25Δ</b> (risk reversal): IV call 25 delta trừ IV put 25 delta. Âm sâu là sợ giảm, dương là tham.</li><li><b>Butterfly 25Δ</b>: giá của cú biến động lớn ở cả hai phía.</li><li><b>IV − thực tế</b>: dương nhiều là quyền chọn đắt, có lợi cho người bán quyền chọn.</li></ul><p>BTC/ETH là dữ liệu Deribit trực tiếp. Tài sản Mỹ là CBOE trễ 15 phút.</p>",
+  },
+  {
+    id: "opt-term", group: "Phái sinh", term: "Cấu trúc kỳ hạn IV và skew",
+    short: "Đường cam là IV ATM theo số ngày tới hạn; đường đỏ/xanh nét đứt là IV của put/call 25 delta. Bình thường hạn dài IV cao hơn (contango); hạn ngắn vọt lên trên hạn dài (đảo ngược) là thị trường đang sợ một chuyện sắp tới.",
+    body: "<p>Trục ngang theo căn bậc hai số ngày để các hạn gần không bị dồn lại. Khoảng cách giữa đường đỏ và xanh chính là skew: đỏ cao hơn xanh là put đắt hơn call. Bảng bên dưới ghi từng hạn: IV ATM, IV put/call 25 delta, skew (call − put) và butterfly.</p><p>Delta tính theo Black-Scholes với lãi suất 0 và giá kỳ hạn bằng giá hiện tại, đủ chính xác để so sánh tương đối.</p>",
+  },
+  {
+    id: "opt-volidx", group: "Phái sinh", term: "Chỉ số biến động (DVOL, VIX, VXN, GVZ, OVX, MOVE)",
+    short: "Chỉ số biến động 30 ngày tính từ giá quyền chọn: DVOL cho BTC/ETH (Deribit, trực tiếp), VIX cho S&P 500, VXN cho Nasdaq, RVX cho Russell, GVZ cho vàng, OVX cho dầu, MOVE cho trái phiếu (Yahoo, trễ). Kèm IV rank 1 năm.",
+    body: "<p><b>IV rank</b> = (hiện tại − thấp nhất năm) / (cao nhất năm − thấp nhất năm). <b>IV percentile</b> = phần trăm số ngày trong năm thấp hơn hiện tại. Trên 80% là quyền chọn đắt, thị trường đã sợ sẵn; dưới 20% là rẻ, thị trường chủ quan và biến động hay bùng ra từ đây. Đường xanh nhạt nét đứt là biến động thực tế 30 ngày để so.</p>",
+  },
+  {
+    id: "opt-flow", group: "Phái sinh", term: "Dòng lệnh quyền chọn lớn",
+    short: "BTC/ETH: các lệnh quyền chọn khớp trên Deribit có phí từ $100K (ETH $50K), ai mua hay bán chủ động, call hay put, có phải lệnh khối của tổ chức không. Tài sản Mỹ: hợp đồng có khối lượng hôm nay lớn nhất, đánh dấu ⚑ khi khối lượng vượt hợp đồng mở.",
+    body: "<p>Thanh màu trên cùng so phí bảo hiểm của lệnh nghiêng tăng (mua call, bán put) với lệnh nghiêng giảm hoặc phòng hộ (mua put, bán call). Phía của lệnh là phía chủ động: người chấp nhận giá ngay. <b>Lệnh khối</b> là giao dịch thoả thuận riêng giữa các tổ chức rồi báo lên sàn, thường là quỹ.</p><p>Với tài sản Mỹ không có dữ liệu từng lệnh miễn phí, nên dùng khối lượng trong ngày: khối lượng lớn hơn OI nghĩa là có người mở vị thế mới lớn ở hợp đồng đó.</p>",
+  },
+  {
+    id: "inst-crypto", group: "Phái sinh", term: "Chỉ số tổ chức theo dõi: crypto",
+    short: "Bảng gom OI, funding 3 sàn, tỷ lệ long của top trader và của đám đông, mua/bán chủ động, chênh giá Coinbase, put/call và DVOL cho BTC, ETH, SOL. Dữ liệu trực tiếp, làm mới mỗi 2 phút.",
+    body: "<p><b>Cách đọc nhanh</b>: funding cao (đỏ) cùng đám đông long trên 60% là thị trường chật long, dễ bị quét xuống. Funding âm (xanh) cùng đám đông short là dễ bị ép mua lại. Top trader là tiền lớn: khi top trader và đám đông ngược chiều nhau, thường nên theo top trader.</p><p><b>Chênh giá Coinbase</b> dương nghĩa là tổ chức Mỹ đang mua mạnh hơn phần còn lại. <b>OI</b> tăng cùng giá là tiền mới vào theo xu hướng; OI giảm khi giá tăng là short đóng lệnh, đà kém bền.</p><p>Nguồn: API công khai của Binance Futures, Bybit, OKX, Coinbase, Deribit.</p>",
+  },
+  {
+    id: "inst-vol", group: "Biến động", term: "VIX, cấu trúc kỳ hạn và các chỉ số biến động",
+    short: "VIX đo nỗi sợ trên S&P 500. So VIX 9 ngày, 30 ngày, 3 tháng, 6 tháng cho biết thị trường lo ngắn hạn hay dài hạn. VVIX, SKEW, MOVE, VXN, GVZ, OVX là biến động của VIX, rủi ro đuôi, trái phiếu, Nasdaq, vàng, dầu. Trễ khoảng 15 phút.",
+    body: "<p><b>Cấu trúc kỳ hạn</b>: bình thường VIX ngắn hạn thấp hơn dài hạn (contango, đường xanh). Khi ngắn hạn vượt dài hạn (đảo ngược, đường đỏ), thị trường đang hoảng loạn; những lúc tỷ lệ VIX/VIX3M rất cao thường gần đáy ngắn hạn của chứng khoán.</p><p><b>Rank 1 năm</b> là vị trí của giá trị hiện tại trong khoảng thấp nhất - cao nhất 1 năm. VIX trên 30 là vùng sợ hãi, dưới 14 là vùng chủ quan.</p><p><b>Put/call CBOE</b> của SPX, SPY, QQQ: trên 1 là đang mua bảo hiểm nhiều.</p><p>Nguồn: Yahoo Finance (chỉ số CBOE), trễ khoảng 15 phút trong giờ Mỹ; ngoài giờ là giá đóng cửa.</p>",
+  },
+  {
+    id: "cot", group: "Thị trường", term: "COT của CFTC",
+    short: "Báo cáo hằng tuần của Ủy ban giao dịch hàng hoá tương lai Mỹ: đầu cơ lớn (quỹ, CTA) và bên phòng hộ (nhà sản xuất, ngân hàng) đang long hay short bao nhiêu hợp đồng trên vàng, dầu, chỉ số, trái phiếu, tiền tệ, Bitcoin CME, nông sản.",
+    body: "<p><b>Đầu cơ ròng</b> = long trừ short của nhóm non-commercial. <b>Chỉ số COT</b> đặt giá trị hiện tại trong khoảng 3 năm: 100 là long nhiều nhất 3 năm, 0 là short nhiều nhất. Vùng trên 90 hoặc dưới 10 là cực đoan, thường báo trước đảo chiều trung hạn chứ không phải điểm vào lệnh ngay.</p><p><b>Bên phòng hộ</b> thường đi ngược giá: họ mua khi giá thấp, bán khi giá cao, nên COT phòng hộ cao là vùng giá tốt.</p><p><b>Độ trễ</b>: CFTC chốt vị thế thứ Ba, công bố chiều thứ Sáu giờ Mỹ (sáng thứ Bảy giờ Việt Nam). Đường nhỏ là vị thế ròng đầu cơ 3 năm.</p>",
   },
   {
     id: "gex", group: "Phái sinh", term: "GEX (gamma exposure) theo strike",

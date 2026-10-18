@@ -1,9 +1,9 @@
 // Lai Long Web: dữ liệu phái sinh sâu hơn, lấy thẳng từ API công khai của sàn.
 //   Binance Futures: tỷ lệ long/short (mọi tài khoản và top trader), tỷ lệ mua/bán chủ động, chênh lệch
-//                    futures so với giá spot (basis), funding hiện tại, open interest.
+//                    funding hiện tại, open interest.
 //   Deribit:         quyền chọn BTC/ETH: tỷ lệ put/call theo OI và khối lượng, điểm "max pain", các giá
 //                    thực hiện có OI lớn nhất (thường thành nam châm hút giá gần ngày đáo hạn).
-import { getJson } from "./util.js?v=202610180745";
+import { getJson } from "./util.js?v=202610181200";
 
 const FAPI = "https://fapi.binance.com";
 const DERIBIT = "https://www.deribit.com/api/v2/public";
@@ -14,12 +14,11 @@ const num = x => +x;
 export async function binanceDerivs(symbol, period = "1h", limit = 48) {
   const q = `symbol=${symbol}&period=${period}&limit=${limit}`;
   const safe = p => p.catch(e => ({ err: e.message }));
-  const [acc, top, taker, oi, basis, prem] = await Promise.all([
+  const [acc, top, taker, oi, prem] = await Promise.all([
     safe(getJson(`${FAPI}/futures/data/globalLongShortAccountRatio?${q}`)),
     safe(getJson(`${FAPI}/futures/data/topLongShortPositionRatio?${q}`)),
     safe(getJson(`${FAPI}/futures/data/takerlongshortRatio?${q}`)),
     safe(getJson(`${FAPI}/futures/data/openInterestHist?${q}`)),
-    safe(getJson(`${FAPI}/futures/data/basis?pair=${symbol}&contractType=PERPETUAL&period=${period}&limit=${limit}`)),
     safe(getJson(`${FAPI}/fapi/v1/premiumIndex?symbol=${symbol}`)),
   ]);
   const ser = (r, k) => Array.isArray(r) ? r.map(x => ({ t: num(x.timestamp), v: num(x[k]) })).filter(x => isFinite(x.v)).sort((a, b) => a.t - b.t) : null;
@@ -28,10 +27,9 @@ export async function binanceDerivs(symbol, period = "1h", limit = 48) {
     top: ser(top, "longShortRatio"), topLong: Array.isArray(top) && top.length ? num(last(top).longAccount) : null,
     taker: ser(taker, "buySellRatio"),
     oi: ser(oi, "sumOpenInterestValue"),
-    basis: ser(basis, "basisRate"),
     funding: prem && !prem.err ? num(prem.lastFundingRate) : null, mark: prem && !prem.err ? num(prem.markPrice) : null, index: prem && !prem.err ? num(prem.indexPrice) : null,
     nextFunding: prem && !prem.err ? num(prem.nextFundingTime) : null,
-    errors: [acc, top, taker, oi, basis, prem].filter(r => r && r.err).map(r => r.err),
+    errors: [acc, top, taker, oi, prem].filter(r => r && r.err).map(r => r.err),
   };
 }
 

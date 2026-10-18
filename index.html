@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css?v=202610180745">
+<link rel="stylesheet" href="css/app.css?v=202610181200">
 </head>
 <body>
 <header class="menubar">
@@ -326,6 +326,20 @@
 <main class="view analysis" id="view-analysis" hidden>
   <div class="cards">
     <section class="card wide">
+      <h3>Chỉ số tổ chức theo dõi: crypto <button class="q" data-g="inst-crypto">?</button> <span id="instCryptoFresh"></span></h3>
+      <div id="instCrypto" class="tablewrap"></div>
+    </section>
+    <section class="card wide">
+      <h3>Biến động Mỹ: VIX, cấu trúc kỳ hạn, VVIX, SKEW, MOVE <button class="q" data-g="inst-vol">?</button> <span id="instVolFresh"></span></h3>
+      <div class="gexcv"><canvas id="instVix"></canvas></div>
+      <div id="instVol"></div>
+    </section>
+    <section class="card wide">
+      <h3>COT của CFTC: tổ chức đang long hay short <button class="q" data-g="cot">?</button> <span id="instCotFresh"></span></h3>
+      <div id="instCotTabs" class="newstabs"></div>
+      <div id="instCot"></div>
+    </section>
+    <section class="card wide">
       <h3>Bản đồ tác động tin tức <button class="q" data-g="impact-map">?</button> <small id="impactUpd"></small></h3>
       <div id="impactMap" class="impactmap"></div>
       <div id="impactDetail" class="impactdetail"></div>
@@ -365,7 +379,7 @@
       <div id="vpStats"></div>
     </section>
     <section class="card wide">
-      <h3>Dữ liệu phái sinh: long/short, basis, quyền chọn <button class="q" data-g="derivs">?</button> <small id="drvInfo"></small></h3>
+      <h3>Dữ liệu phái sinh: long/short, funding, quyền chọn <button class="q" data-g="derivs">?</button> <span id="drvInfo"></span></h3>
       <div class="drvgrid"><div id="drvStats"></div><div id="optStats"></div></div>
       <div class="mini"><canvas id="drvCanvas"></canvas></div>
     </section>
@@ -419,6 +433,28 @@
     <span class="newstabs" id="gexHoriz"></span>
     <small class="muted" id="gexSrc"></small>
   </div>
+  <div class="cards">
+    <section class="card wide">
+      <h3>Đọc tâm lý quyền chọn <button class="q" data-g="opt-read">?</button> <span id="optFresh"></span></h3>
+      <div class="kpis" id="optKpis"></div>
+      <ul class="gexread optread" id="optRead"></ul>
+    </section>
+    <section class="card">
+      <h3>Cấu trúc kỳ hạn IV và skew 25 delta <button class="q" data-g="opt-term">?</button></h3>
+      <div class="gexcv"><canvas id="optTerm"></canvas></div>
+      <div id="optTermTab" class="tablewrap"></div>
+    </section>
+    <section class="card">
+      <h3><span id="optVolName">Chỉ số biến động</span> 1 năm <button class="q" data-g="opt-volidx">?</button> <span id="optVolFresh"></span></h3>
+      <div class="gexcv"><canvas id="optVol"></canvas></div>
+      <p class="note" id="optVolNote"></p>
+    </section>
+    <section class="card wide">
+      <h3 id="optFlowH">Dòng lệnh quyền chọn lớn <button class="q" data-g="opt-flow">?</button> <span id="optFlowFresh"></span></h3>
+      <div id="optFlow"></div>
+    </section>
+  </div>
+  <h3 class="sechead">GEX, tường call/put, nụ cười và bề mặt IV</h3>
   <div class="kpis gexkpis" id="gexKpis"></div>
   <div class="cards">
     <section class="card gexmain">
@@ -615,6 +651,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610180745"></script>
+<script type="module" src="js/app.js?v=202610181200"></script>
 </body>
 </html>

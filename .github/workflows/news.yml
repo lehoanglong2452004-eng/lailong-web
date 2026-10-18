@@ -27,6 +27,8 @@ jobs:
         run: python scripts/markets.py data || echo "markets lỗi, giữ dữ liệu cũ"
       - name: Lấy chuỗi quyền chọn Mỹ cho GEX
         run: python scripts/gex.py data || echo "gex lỗi, giữ dữ liệu cũ"
+      - name: Lấy VIX và COT của CFTC
+        run: python scripts/macro.py data || echo "macro lỗi, giữ dữ liệu cũ"
       - name: Lưu nếu có thay đổi
         run: |
           git config user.name "lailong-bot"

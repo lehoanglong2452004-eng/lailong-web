@@ -1,9 +1,10 @@
 // Lai Long Web: tab Quyền chọn. GEX theo strike, đường GEX theo giá (điểm lật gamma), OI, nụ cười IV và bề mặt IV 3D.
 // BTC/ETH lấy trực tiếp từ Deribit trong trình duyệt; chỉ số và ETF Mỹ đọc data/gex_<mã>.json (CBOE, chậm 15 phút)
 // do GitHub Actions cập nhật mỗi 30 phút, hoặc máy chủ laptop lấy trực tiếp (lailong/terminal/gex.py).
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610180745";
-import { setFresh } from "./fresh.js?v=202610180745";
-import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610180745";
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610181200";
+import { setFresh } from "./fresh.js?v=202610181200";
+import { initOptPro } from "./optview.js?v=202610181200";
+import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610181200";
 
 export const ASSETS = [
   { id: "BTC", src: "deribit", name: "Bitcoin (Deribit)" }, { id: "ETH", src: "deribit", name: "Ethereum (Deribit)" },
@@ -37,7 +38,7 @@ export function initGex({ $, esc }) {
   let asset = "BTC", horiz = "30", exp = null, zoom = 0.1, mode = "gex", chain = null, L = null, err = "", loading = false, rot = { a: -0.6, b: 0.85 };
   try { const s = JSON.parse(sessionStorage.getItem("lailong.gex") || "{}"); asset = s.asset || asset; horiz = s.horiz || horiz; } catch { /* bỏ qua */ }
   const save = () => { try { sessionStorage.setItem("lailong.gex", JSON.stringify({ asset, horiz })); } catch { /* bỏ qua */ } };
-  const cache = new Map();
+  const cache = new Map(), pro = initOptPro({ $, esc });
   const cvs = { bars: fitCanvas($("gexBars"), () => drawBars()), prof: fitCanvas($("gexProf"), () => drawProf()), smile: fitCanvas($("gexSmile"), () => drawSmile()), surf: fitCanvas($("gexSurf"), () => drawSurf()) };
   let hoverK = null;
 
@@ -64,6 +65,8 @@ export function initGex({ $, esc }) {
   function compute() {
     const s = sub(); L = s && s.rows.length ? levels(s) : null;
     render();
+    const a = ASSETS.find(x => x.id === asset);
+    pro.update(asset, chain, !!(a && a.src), chain && chain.rows.length ? levels(pick(chain, { maxDays: 30 })) : null).catch(() => { /* bỏ qua */ });
   }
 
   function renderHead() {
