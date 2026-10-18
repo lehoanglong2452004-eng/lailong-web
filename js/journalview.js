@@ -1,15 +1,16 @@
 // Lai Long Web: trang Nhật ký: quản lý rủi ro, tính khối lượng lệnh, ghi lệnh và thống kê bản thân.
 // Dữ liệu chỉ lưu trên trình duyệt của máy này (localStorage); nút Xuất file để sao lưu hoặc chuyển máy.
-import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, journalStats, toCsv } from "./journal.js?v=202610180112";
-import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202610180112";
-import { EquityChart } from "./fractalview.js?v=202610180112";
-import { fmtVol, fmtDate, decimalsFor } from "./util.js?v=202610180112";
+import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202610180133";
+import { atrSeries } from "./radar.js?v=202610180133";
+import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202610180133";
+import { EquityChart } from "./fractalview.js?v=202610180133";
+import { fmtVol, fmtDate, decimalsFor, getJson } from "./util.js?v=202610180133";
 
 const STORE = "lailong.journal.v1";
 const WD = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 const EMO = [[1, "1 · Rất bình tĩnh"], [2, "2 · Bình tĩnh"], [3, "3 · Bình thường"], [4, "4 · Hồi hộp"], [5, "5 · Rất căng thẳng"]];
 
-export function initJournal({ $, S, esc, table, market, toast }) {
+export function initJournal({ $, S, esc, table, market, toast, onLock }) {
   let db;
   try { db = JSON.parse(localStorage.getItem(STORE) || "null"); } catch { db = null; }
   db = db || { cfg: { ...SETTINGS_DEF }, trades: [], seq: 1 };
@@ -61,6 +62,22 @@ export function initJournal({ $, S, esc, table, market, toast }) {
   const coinOf = s => String(s || "").toUpperCase().replace(/USDT$|USD$|USDC$/, "") || "coin";
   for (const id of ["szEntry", "szStop", "szTarget", "szLev", "szSym"]) $(id).oninput = calc;
   $("szNow").onclick = () => { if (market.last) { $("szEntry").value = market.last.p; $("szSym").value = S.symbol; calc(); } else toast("Chưa có giá trực tiếp, mở Terminal trước", true); };
+  // cắt lỗ theo ATR: lấy 100 nến Binance của mã đang tính, ATR 14 của nến đã đóng gần nhất
+  $("szAtrBtn").onclick = async () => {
+    const sym = ($("szSym").value || S.symbol).toUpperCase().trim(), tf = $("szAtrTf").value, entry = num("szEntry");
+    if (!(entry > 0)) return toast("Nhập giá vào trước (hoặc bấm Giá hiện tại)", true);
+    $("szAtrOut").textContent = "đang tải nến…";
+    try {
+      const k = await getJson(`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(sym)}&interval=${tf}&limit=100`);
+      const bars = k.map(x => ({ h: +x[2], l: +x[3], c: +x[4] })), atr = atrSeries(bars)[bars.length - 2];
+      if (!(atr > 0)) throw new Error("không đủ nến");
+      const dir = $("szSide").value === "short" ? 1 : -1, stop = entry + dir * db.cfg.atrMult * atr, dec = decimalsFor(market.tick || 0.01);
+      $("szStop").value = +stop.toFixed(Math.max(dec, 2));
+      $("szAtrOut").textContent = `ATR 14 nến ${tf} = ${atr.toPrecision(5)} (${(atr / entry * 100).toFixed(2)}%) · cắt lỗ cách ${db.cfg.atrMult} ATR`;
+      calc();
+    } catch (e) { $("szAtrOut").textContent = `Không lấy được ATR ${sym}: ${e.message}. Mã phải là hợp đồng Binance Futures, ví dụ BTCUSDT.`; }
+  };
+
   $("szToJournal").onclick = () => {
     const r = calc(); if (!r) return toast("Nhập giá vào và cắt lỗ trước", true);
     resetForm();
@@ -93,6 +110,8 @@ export function initJournal({ $, S, esc, table, market, toast }) {
       emo: +$("jEmo").value || null, mistakes: [...$("jMistakes").querySelectorAll("input:checked")].map(c => c.value), reason: $("jReason").value.trim(), note: $("jNote").value.trim(),
     };
     if (!(t.entry > 0) || !(t.stop > 0) || t.entry === t.stop) return toast("Cần giá vào và giá cắt lỗ (khác nhau) để tính R", true);
+    const L = lockNow();
+    if (L && !db.trades.some(x => x.id === t.id) && t.t >= L.since) return toast(`Đang khoá giao dịch tới ${fmtDate(L.until)}: ${L.why}. Chỉ được đóng lệnh đang mở.`, true);
     if ((t.side === "long") !== (t.stop < t.entry)) return toast(t.side === "long" ? "Lệnh LONG thì cắt lỗ phải dưới giá vào" : "Lệnh SHORT thì cắt lỗ phải trên giá vào", true);
     if (t.exit > 0 && !t.tExit) t.tExit = Date.now();
     if (t.fee == null && t.qty > 0 && t.exit > 0) t.fee = +((t.entry + t.exit) * t.qty * db.cfg.fee / 100).toFixed(4); // ước tính phí taker hai chiều
@@ -133,10 +152,19 @@ export function initJournal({ $, S, esc, table, market, toast }) {
     if (!gs.length) return "";
     return `<h4>${title}</h4>` + table(["Nhóm", "Số lệnh", "Tỷ lệ thắng", "Kỳ vọng (R)", "Tổng R", "PF", "Lãi/lỗ USDT"], gs.map(g => `<tr><td class="t">${esc(label(g.key))}</td><td>${g.n}</td><td>${(g.st.wr * 100).toFixed(0)}%</td><td class="${cls(g.st.avgR)}">${sgn(g.st.avgR)}</td><td class="${cls(g.st.totalR)}">${sgn(g.st.totalR)}</td><td>${pf(g.st.pf)}</td><td class="${cls(g.pnl)}">${fmtVol(g.pnl)}</td></tr>`), "Chưa có lệnh đã đóng.");
   }
+  // khoá giao dịch: tính lại mỗi lần vẽ, lưu lại để sửa/xoá lệnh lỗ không mở được khoá
+  function lockNow() {
+    const L = riskLock(db.trades, db.cfg, Date.now(), db.lock);
+    if (L.lock && (!db.lock || db.lock.until !== L.lock.until)) { db.lock = L.lock; save(); toast(`Khoá giao dịch tới ${fmtDate(L.lock.until)}: ${L.lock.why}`, true); }
+    if (db.lock && db.lock.until <= Date.now()) { db.lock = null; save(); }
+    onLock && onLock(db.lock);
+    return db.lock;
+  }
   function render() {
-    const g = guard(db.trades, db.cfg), js = journalStats(db.trades, db.cfg), st = js.st;
-    $("jGuard").innerHTML = `<div class="kv"><span>Vốn hiện tại</span><b>${fmtVol(g.equity)} USDT</b><span>Lãi/lỗ hôm nay</span><b class="${cls(g.dayPnl)}">${fmtVol(g.dayPnl)} / −${fmtVol(g.limitUsd)}</b><span>Lệnh hôm nay</span><b>${g.todayN} / ${db.cfg.maxTrades}</b><span>Rủi ro đang mở</span><b>${fmtVol(g.openRisk)} USDT (${g.openRiskPct.toFixed(1)}%)</b></div>` +
-      (g.warn.length ? g.warn.map(w => `<div class="jwarn ${w.lvl}">${esc(w.txt)}</div>`).join("") : `<div class="jok">Trong giới hạn an toàn.</div>`);
+    const g = guard(db.trades, db.cfg), js = journalStats(db.trades, db.cfg), st = js.st, L = riskLock(db.trades, db.cfg, Date.now(), db.lock), lk = lockNow();
+    $("jGuard").innerHTML = (lk ? `<div class="jlock"><b>ĐANG KHOÁ GIAO DỊCH</b> tới ${fmtDate(lk.until)}<br>${esc(lk.why)}. Không ghi được lệnh mới, lệnh giả lập cũng bị chặn. Khoá tự mở khi tới giờ; sửa hay xoá lệnh lỗ không mở được khoá.</div>` : "") +
+      `<div class="kv"><span>Vốn hiện tại</span><b>${fmtVol(g.equity)} USDT</b><span>Lãi/lỗ hôm nay</span><b class="${cls(L.dayPnl)}">${fmtVol(L.dayPnl)} / −${fmtVol(L.dayLim)}</b><span>Lãi/lỗ tuần này</span><b class="${cls(L.weekPnl)}">${fmtVol(L.weekPnl)} / −${fmtVol(L.weekLim)}</b><span>Thua liên tiếp hôm nay</span><b>${L.streak} / ${db.cfg.lossStreak}</b><span>Lệnh hôm nay</span><b>${g.todayN} / ${db.cfg.maxTrades}</b><span>Rủi ro đang mở</span><b>${fmtVol(g.openRisk)} USDT (${g.openRiskPct.toFixed(1)}%)</b></div>` +
+      (g.warn.length ? g.warn.filter(w => !(lk && w.lvl === "stop")).map(w => `<div class="jwarn ${w.lvl}">${esc(w.txt)}</div>`).join("") : lk ? "" : `<div class="jok">Trong giới hạn an toàn.</div>`);
     const box = (k, v, c = "", tip = "") => `<div class="stat"${tip ? ` data-tip="${esc(tip)}"` : ""}><span>${k}</span><b class="${c}">${v}</b></div>`;
     $("jStats").innerHTML = st.n ? [
       box("Lệnh đã đóng", `${st.n}`), box("Tỷ lệ thắng", `${(st.wr * 100).toFixed(0)}%`),
@@ -166,5 +194,5 @@ export function initJournal({ $, S, esc, table, market, toast }) {
   }
   resetForm(); $("szSym").value = S.symbol; $("szLev").value = 10;
   render();
-  return { render, show() { fillStrats(); if (!$("szEntry").value && market.last) { $("szEntry").value = market.last.p; $("szSym").value = S.symbol; } render(); } };
+  return { render, trades: () => db.trades, capital: () => db.cfg.capital, lock: () => lockNow(), show() { fillStrats(); if (!$("szEntry").value && market.last) { $("szEntry").value = market.last.p; $("szSym").value = S.symbol; } render(); } };
 }

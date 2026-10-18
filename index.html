@@ -14,8 +14,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202610180112">
-<link rel="stylesheet" href="css/app.css?v=202610180112">
+<link rel="stylesheet" href="fonts/fonts.css?v=202610180133">
+<link rel="stylesheet" href="css/app.css?v=202610180133">
 </head>
 <body>
 <header class="menubar">
@@ -30,6 +30,7 @@
     <button data-view="backtest" data-tip="Kiểm tra chiến lược trên dữ liệu lịch sử">Backtest</button>
     <button data-view="fractal" data-g="fractal">FRACTAL</button>
     <button data-view="journal" data-g="journal">Nhật ký</button>
+    <button data-view="health" data-g="data-health">Dữ liệu</button>
   </nav>
   <label class="field" data-tip="Sàn lấy dữ liệu. Giả lập: dữ liệu ngẫu nhiên để thử giao diện">Sàn <select id="exchange"></select></label>
   <label class="field" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
@@ -293,6 +294,7 @@
 
 </main>
 
+<div id="riskLockBar" class="risklock" hidden></div>
 <nav class="mnav" id="mnav" aria-label="Chọn khung">
   <button data-panel="mainPanel" class="on"><i>▦</i>Biểu đồ</button>
   <button data-panel="domPanel"><i>☰</i>Sổ lệnh</button>
@@ -332,6 +334,11 @@
       <h3>Lặp lại trong lịch sử <button class="q" data-g="radar-history">?</button> <span class="newstabs inl" id="radarPool"></span></h3>
       <div class="tablewrap" id="radarStats"></div>
     </section>
+    <section class="card radarwide">
+      <h3>Luật vào/ra 2 setup và thống kê sau phí <button class="q" data-g="radar-setups">?</button>
+        <span class="inl rsopts"><label data-tip="Phí taker mỗi chiều">Phí % <input type="number" id="rsFee" value="0.05" min="0" step="0.01"></label><label data-tip="Trượt giá mỗi chiều, phần vạn">Trượt bps <input type="number" id="rsSlip" value="2" min="0" step="0.5"></label><label data-tip="Chốt lời ở bao nhiêu R">Chốt lời R <input type="number" id="rsTp" value="2" min="0.5" step="0.5"></label></span></h3>
+      <div class="tablewrap" id="radarSetups"></div>
+    </section>
     <section class="card">
       <h3>Nhiên liệu đòn bẩy <button class="q" data-g="radar-fuel">?</button></h3>
       <div id="radarFuel"></div>
@@ -355,6 +362,12 @@
       <h3>Biến động Mỹ: VIX, cấu trúc kỳ hạn, VVIX, SKEW, MOVE <button class="q" data-g="inst-vol">?</button> <span id="instVolFresh"></span></h3>
       <div class="gexcv"><canvas id="instVix"></canvas></div>
       <div id="instVol"></div>
+    </section>
+    <section class="card wide">
+      <h3>Dòng tiền ETF Bitcoin/Ethereum và stablecoin <button class="q" data-g="flows">?</button> <span id="flowsFresh"></span></h3>
+      <div class="kpis" id="flowsKpis"></div>
+      <div class="gexcv flowscv"><canvas id="flowsChart"></canvas></div>
+      <div id="flowsBody"></div>
     </section>
     <section class="card wide">
       <h3>COT của CFTC: tổ chức đang long hay short <button class="q" data-g="cot">?</button> <span id="instCotFresh"></span></h3>
@@ -571,6 +584,8 @@
       <label class="row" data-tip="Số vốn lúc bắt đầu ghi nhật ký. Vốn hiện tại = số này cộng lãi/lỗ các lệnh đã đóng">Vốn ban đầu (USDT) <input type="number" data-jc="capital" min="1" step="any"></label>
       <label class="row" data-g="bt-risk">Rủi ro mỗi lệnh (%) <input type="number" data-jc="riskPct" min="0.05" max="10" step="0.05"></label>
       <label class="row" data-g="risk-guard">Lỗ tối đa mỗi ngày (%) <input type="number" data-jc="dayLossPct" min="0.5" max="50" step="0.5"></label>
+      <label class="row" data-g="risk-lock">Lỗ tối đa mỗi tuần (%) <input type="number" data-jc="weekLossPct" min="0" max="50" step="0.5"></label>
+      <label class="row" data-g="risk-lock">Thua liên tiếp thì khoá (lệnh) <input type="number" data-jc="lossStreak" min="0" max="20" step="1"></label>
       <label class="row" data-g="risk-guard">Số lệnh tối đa mỗi ngày <input type="number" data-jc="maxTrades" min="1" max="100" step="1"></label>
       <label class="row" data-g="bt-fee">Phí taker (%) <input type="number" data-jc="fee" min="0" step="0.01"></label>
       <div id="jGuard" class="jguard"></div>
@@ -578,6 +593,11 @@
       <h4 data-g="position-size">Tính khối lượng lệnh</h4>
       <label class="row">Mã <input type="text" id="szSym" spellcheck="false"></label>
       <label class="row">Giá vào <span class="inl"><button class="tool" id="szNow" data-tip="Lấy giá hiện tại của mã đang xem">Giá hiện tại</button><input type="number" id="szEntry" step="any"></span></label>
+      <div class="atrbox" data-g="risk-atr">
+        <label class="row">Cắt lỗ theo ATR <span class="inl"><select id="szSide"><option value="long">LONG</option><option value="short">SHORT</option></select><select id="szAtrTf"><option>5m</option><option>15m</option><option selected>1h</option><option>4h</option><option>1d</option></select><button class="tool" id="szAtrBtn">Tính</button></span></label>
+        <label class="row" data-tip="Cắt lỗ cách giá vào bao nhiêu lần ATR 14 nến">Hệ số ATR <input type="number" data-jc="atrMult" min="0.2" max="10" step="0.1"></label>
+        <p class="note" id="szAtrOut"></p>
+      </div>
       <label class="row">Cắt lỗ <input type="number" id="szStop" step="any"></label>
       <label class="row">Mục tiêu (không bắt buộc) <input type="number" id="szTarget" step="any"></label>
       <label class="row" data-tip="Đòn bẩy định dùng, để tính ký quỹ và giá thanh lý (ký quỹ cô lập)">Đòn bẩy <input type="number" id="szLev" min="1" max="125" step="1"></label>
@@ -609,11 +629,35 @@
     </div>
   </aside>
   <section class="frresult">
+    <section class="card" id="perfCard">
+      <h3>Báo cáo hiệu suất theo tháng <button class="q" data-g="perf-report">?</button> <span class="newstabs inl" id="perfSrc"><button data-ps="journal">Nhật ký</button><button data-ps="binance">Binance (laptop)</button><button data-ps="csv">File CSV từ sàn</button></span></h3>
+      <div class="perfbar"><label data-tip="Vốn lúc bắt đầu kỳ báo cáo, để tính % lợi nhuận và sụt giảm">Vốn ban đầu <input type="number" id="perfCap" min="1" step="any"></label><span class="muted small" id="perfNote"></span><div class="spacer"></div><button class="tool" id="perfPrint">In / lưu PDF</button></div>
+      <div id="perfKeys" class="perfbar" hidden>
+        <input type="text" id="perfKey" placeholder="API key (chỉ quyền đọc)" spellcheck="false" autocomplete="off">
+        <input type="password" id="perfSecret" placeholder="Secret key" autocomplete="off">
+        <button class="tool" id="perfKeySave" data-tip="Khoá lưu trên laptop (file keys.json), chỉ gửi tới Binance. Để trống rồi bấm để xoá khoá">Lưu khoá</button>
+        <select id="perfDays"><option value="30">30 ngày</option><option value="90" selected>90 ngày</option><option value="180">180 ngày</option><option value="365">365 ngày</option></select>
+        <button class="primary" id="perfLoad">Tải lịch sử</button><span class="muted small" id="perfKeyState"></span>
+      </div>
+      <div id="perfCsvBox" class="perfbar" hidden><button class="tool" id="perfPick">Chọn file CSV</button><span class="muted small">Binance: Lệnh &gt; Lịch sử giao dịch &gt; Xuất. Bybit: Closed P&amp;L. Cần cột thời gian và lãi/lỗ đã chốt.</span><input type="file" id="perfFile" accept=".csv,text/csv" hidden></div>
+      <div id="perfOut"></div>
+    </section>
     <div class="statgrid" id="jStats"></div>
     <div class="card" id="jEqCard" hidden><div class="scen-chart jeq"><canvas id="jEq"></canvas></div></div>
     <div class="card" id="jGroups"></div>
     <section class="card"><h3>Các lệnh</h3><div class="tablewrap" id="jTrades"></div></section>
   </section>
+</main>
+
+<main class="view analysis" id="view-health" hidden>
+  <div class="cards">
+    <section class="card wide">
+      <h3>Sức khoẻ dữ liệu: nguồn nào đang chạy, trễ bao nhiêu <button class="q" data-g="data-health">?</button> <button class="tool" id="healthProbe">Kiểm tra lại</button></h3>
+      <div class="kpis" id="healthSum"></div>
+      <div id="healthBody" class="healthwrap"></div>
+      <p class="note">Độ trễ WebSocket là thời gian từ lúc sàn ghi tin tới lúc máy này nhận, đã trừ lệch đồng hồ máy so với Binance. Độ trễ REST là thời gian khứ hồi một lần gọi. Với file dữ liệu, độ trễ là tuổi của file. "Phiên này chưa dùng" nghĩa là chưa mở trang dùng nguồn đó; bấm Kiểm tra lại để gọi thử.</p>
+    </section>
+  </div>
 </main>
 
 <main class="view backtest fractal" id="view-fractal" hidden>
@@ -683,6 +727,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610180112"></script>
+<script type="module" src="js/app.js?v=202610180133"></script>
 </body>
 </html>

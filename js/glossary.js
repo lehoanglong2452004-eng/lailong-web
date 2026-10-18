@@ -977,6 +977,36 @@ export const GLOSSARY = [
     body: "<p><b>Cách đọc</b>: dòng cam đậm là strike sát giá (ATM), dải ngang ghi giá hiện tại. Ô tô đậm là quyền chọn đang có lãi nội tại (ITM). Thanh xanh/đỏ dài là strike có nhiều hợp đồng mở: nơi nhà tạo lập phải phòng hộ nhiều nhất. CW, PW, MP là tường call, tường put và max pain của riêng hạn này. ⚑ là strike có khối lượng hôm nay vượt OI: có người mở vị thế mới lớn.</p><p><b>Biên độ dự kiến</b> lấy từ giá straddle ATM (mua cả call và put tại strike sát giá): thị trường đang trả tiền cho mức dao động chừng đó tới ngày đáo hạn.</p><p><b>Delta</b> gần như xác suất quyền chọn kết thúc có lãi: call delta 0,25 là khoảng 25%.</p>",
   },
   {
+    id: "risk-lock", group: "Công cụ", term: "Khoá giao dịch tự động",
+    short: "Lỗ ngày, lỗ tuần chạm giới hạn hoặc thua liên tiếp đủ số lệnh thì app tự khoá: không ghi được lệnh mới, lệnh giả lập mới bị chặn.",
+    body: "<p><b>Ba điều kiện khoá</b>: lỗ hôm nay chạm % vốn tối đa mỗi ngày (khoá tới 00:00 hôm sau), thua liên tiếp đủ số lệnh trong ngày (khoá tới 00:00 hôm sau), lỗ tuần này chạm % vốn đầu tuần (khoá tới thứ Hai tuần sau, 00:00).</p><p><b>Không mở khoá sớm được</b>: sửa hay xoá lệnh lỗ trong nhật ký không làm mất khoá. Vẫn được đóng lệnh đang mở và đóng bớt vị thế giả lập.</p><p><b>Giới hạn</b>: app chỉ khoá được nhật ký và lệnh giả lập. Tài khoản thật trên sàn thì bro phải tự dừng, hoặc dùng tính năng tự khoá của sàn nếu có.</p>",
+  },
+  {
+    id: "risk-atr", group: "Công cụ", term: "Cắt lỗ và khối lượng theo ATR",
+    short: "Cắt lỗ đặt cách giá vào một bội số ATR (biên độ trung bình 14 nến). Khối lượng tự giảm khi thị trường biến động mạnh, nên số tiền rủi ro mỗi lệnh luôn bằng nhau.",
+    body: "<p>Chọn phía và khung, bấm Tính: app lấy 100 nến Binance Futures của mã, tính ATR 14 của nến đã đóng gần nhất, đặt cắt lỗ cách giá vào hệ số × ATR rồi tính khối lượng theo % rủi ro.</p><p>Hệ số 1–1,5 hợp lướt sóng, 2–3 hợp giữ lệnh dài. Cắt lỗ theo ATR tránh bị nhiễu quét khi thị trường đang dao động rộng.</p>",
+  },
+  {
+    id: "radar-setups", group: "Radar", term: "Luật vào/ra 2 setup và thống kê sau phí",
+    short: "Biến hai sự kiện Đánh thức và Cạn khối lượng thành lệnh có luật rõ ràng (xác nhận, giá vào, cắt lỗ, chốt lời, hết giờ), rồi đo kết quả sau phí và trượt giá.",
+    body: "<p><b>Đánh thức</b> đánh theo hướng sự kiện, <b>Cạn khối lượng</b> đánh ngược xu hướng đã hết lửa. Cả hai đều chờ một nến xác nhận, vào ở giá mở nến kế tiếp, nên không nhìn trước tương lai.</p><p><b>Sau phí</b>: phí taker hai chiều cộng trượt giá hai chiều, đổi ra R theo khoảng cắt lỗ. Cắt lỗ càng gần thì phí ăn càng nhiều R.</p><p><b>Tin được khi</b>: từ 30 lệnh trở lên và cận dưới khoảng tin cậy 95% trên 0. Dòng mờ là chưa đủ lệnh.</p>",
+  },
+  {
+    id: "perf-report", group: "Công cụ", term: "Báo cáo hiệu suất theo tháng",
+    short: "Lợi nhuận, % lợi nhuận, sụt giảm tối đa, tỷ lệ thắng, kỳ vọng mỗi lệnh, profit factor, Sharpe theo từng tháng. Nguồn: nhật ký, lịch sử Binance thật hoặc file CSV từ sàn.",
+    body: "<p><b>Binance (laptop)</b>: tạo khoá API chỉ có quyền đọc (Enable Reading), nên giới hạn IP. Khoá lưu trên laptop, chỉ gửi tới Binance. Binance chỉ trả khoảng 3 tháng gần nhất qua API; cũ hơn thì xuất file CSV trên web Binance.</p><p><b>File CSV</b>: chạy được cả trên bản web. App tự tìm cột thời gian, mã, lãi/lỗ đã chốt và phí.</p><p><b>In / lưu PDF</b> tạo bản báo cáo sạch để gửi nhà đầu tư. Nhà đầu tư thường xem sụt giảm tối đa và độ đều của các tháng trước, lợi nhuận sau.</p>",
+  },
+  {
+    id: "data-health", group: "Công cụ", term: "Sức khoẻ dữ liệu",
+    short: "Mỗi nguồn dữ liệu: đang chạy hay lỗi, độ trễ đo thật trên máy này, lần nhận cuối và số lần gọi được/lỗi.",
+    body: "<p><b>Độ trễ WebSocket</b>: giờ máy lúc nhận trừ giờ sàn ghi trên tin, đã trừ lệch đồng hồ máy so với Binance. Trên 1 giây là mạng hoặc máy đang chậm.</p><p><b>REST</b>: thời gian khứ hồi một lần gọi. <b>File dữ liệu</b>: tuổi của file (web cập nhật 30 phút một lần).</p><p><b>Lỗi</b> thường do sàn chặn IP (một số sàn chặn Việt Nam hoặc Mỹ) hoặc mất mạng. <b>Phiên này chưa dùng</b> là chưa mở trang dùng nguồn đó.</p>",
+  },
+  {
+    id: "flows", group: "Thị trường", term: "Dòng tiền ETF và stablecoin",
+    short: "Tiền vào/ra ròng mỗi ngày của các quỹ ETF Bitcoin/Ethereum giao ngay ở Mỹ (Farside), và tổng stablecoin đang lưu hành (DefiLlama). Số cuối ngày.",
+    body: "<p><b>ETF</b>: tiền vào ròng là tổ chức Mỹ đang mua coin thật qua quỹ (IBIT, FBTC…). Nhiều phiên liên tiếp cùng chiều quan trọng hơn một phiên lớn.</p><p><b>Stablecoin</b>: tổng USDT, USDC… tăng là tiền mới vào hệ crypto, là nhiên liệu cho giá; giảm là tiền rút ra.</p><p>Nguồn miễn phí, có thể đổi định dạng hoặc chặn; nếu lỗi, app giữ số cũ và ghi rõ là số cũ.</p>",
+  },
+  {
     id: "opt-flow", group: "Phái sinh", term: "Dòng lệnh quyền chọn lớn",
     short: "BTC/ETH: các lệnh quyền chọn khớp trên Deribit có phí từ $100K (ETH $50K), ai mua hay bán chủ động, call hay put, có phải lệnh khối của tổ chức không. Tài sản Mỹ: hợp đồng có khối lượng hôm nay lớn nhất, đánh dấu ⚑ khi khối lượng vượt hợp đồng mở.",
     body: "<p>Thanh màu trên cùng so phí bảo hiểm của lệnh nghiêng tăng (mua call, bán put) với lệnh nghiêng giảm hoặc phòng hộ (mua put, bán call). Phía của lệnh là phía chủ động: người chấp nhận giá ngay. <b>Lệnh khối</b> là giao dịch thoả thuận riêng giữa các tổ chức rồi báo lên sàn, thường là quỹ.</p><p>Với tài sản Mỹ không có dữ liệu từng lệnh miễn phí, nên dùng khối lượng trong ngày: khối lượng lớn hơn OI nghĩa là có người mở vị thế mới lớn ở hợp đồng đó.</p>",
