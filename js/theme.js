@@ -31,3 +31,15 @@ export function loadTheme() {
   try { t = JSON.parse(sessionStorage.getItem(STORE) || "null"); } catch { t = null; }
   applyTheme({ ...THEMES.bloomberg, ...(t || {}) });
 }
+
+// Chữ "Lai Long" trắng mờ làm nền, vẽ ngay sau khi tô nền để nằm dưới dữ liệu
+export function watermark(ctx, w, h) {
+  if (w < 120 || h < 60) return;
+  const size = Math.round(Math.min(w / 5.5, h / 3, 140));
+  ctx.save();
+  ctx.font = `700 ${size}px 'IBM Plex Sans', 'Segoe UI', Arial, sans-serif`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = alpha(T.text, 0.06);
+  ctx.fillText("Lai Long", w / 2, h / 2);
+  ctx.restore();
+}

@@ -4,16 +4,16 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610192336";
-import { cvd as cvdOf } from "./analytics.js?v=202610192336";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610192336";
-import { GROUPS } from "./flowtools.js?v=202610192336";
-import { WALL_KIND } from "./walls.js?v=202610192336";
-import { T, alpha } from "./theme.js?v=202610192336";
-import { drawConfl, conflTip } from "./levels.js?v=202610192336";
-import { drawShapes } from "./drawings.js?v=202610192336";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610192336";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610192336";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610192356";
+import { cvd as cvdOf } from "./analytics.js?v=202610192356";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610192356";
+import { GROUPS } from "./flowtools.js?v=202610192356";
+import { WALL_KIND } from "./walls.js?v=202610192356";
+import { T, alpha, watermark } from "./theme.js?v=202610192356";
+import { drawConfl, conflTip } from "./levels.js?v=202610192356";
+import { drawShapes } from "./drawings.js?v=202610192356";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610192356";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610192356";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -126,7 +126,7 @@ export class FlowChart {
   _draw() {
     if (!this.cv.offsetParent) { this._L = this._layout(); return; }
     const ctx = this.ctx, L = this._L = this._layout();
-    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, L.w, L.h);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, L.w, L.h); watermark(ctx, L.pw, L.ph);
     if (!this.bars.length) { ctx.fillStyle = C.axis; ctx.font = "14px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "center"; ctx.fillText(this.opts.emptyText || "Đang tải dữ liệu...", L.pw / 2, L.ph / 2); return; }
     const [first, last] = this._visible();
     if (last < first) return; // khung quá hẹp hoặc đã kéo hết nến ra ngoài

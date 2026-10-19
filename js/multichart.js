@@ -1,11 +1,13 @@
 // Lai Long Web: tab Đa biểu đồ. Tối đa 6 biểu đồ nến, mỗi ô chọn mã và khung thời gian riêng.
 //   Bố cục dùng chung lưới ghép với Terminal: kéo tiêu đề để đổi chỗ, kéo đường chia để đổi cỡ, nút — để thu nhỏ.
 //   Nút 1 / 2 / 3 / 4 / 6 dựng lại lưới đều theo số ô. Mọi tuỳ chỉnh chỉ giữ trong lúc tab còn mở.
-import { FlowChart } from "./flowchart.js?v=202610192336";
-import { Layout } from "./layout.js?v=202610192336";
-import { deltaOf, footprintStep } from "./market.js?v=202610192336";
-import { INTERVALS, niceStep } from "./util.js?v=202610192336";
-import { analyze } from "./radar.js?v=202610192336";
+import { FlowChart } from "./flowchart.js?v=202610192356";
+import { Layout } from "./layout.js?v=202610192356";
+import { deltaOf, footprintStep } from "./market.js?v=202610192356";
+import { INTERVALS, niceStep } from "./util.js?v=202610192356";
+import { analyze } from "./radar.js?v=202610192356";
+import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202610192356";
+import { clockSkew } from "./health.js?v=202610192356";
 
 const MAX = 6, KEY = "lailong.multi.v1", POLL = 3000;
 const IDS = Array.from({ length: MAX }, (_, i) => "mc" + i);
@@ -55,7 +57,7 @@ export class MultiChart {
         <div class="panel-head"><b class="mcnum">${i + 1}</b>
           <input class="mcsym" list="symbolList" spellcheck="false" aria-label="Mã ô ${i + 1}">
           <select class="mciv" aria-label="Khung thời gian ô ${i + 1}">${ivs.map(v => `<option>${v}</option>`).join("")}</select>
-          <span class="mcpx"></span><span class="hint"></span>
+          <span class="mcpx"></span><span class="mccd" data-tip="Thời gian còn lại tới lúc đóng nến của ô này (giờ sàn)"></span><span class="hint"></span>
           <button class="icon max" data-mcmax="${id}" data-tip="Phóng to / thu lại ô này">⤢</button>
           <button class="icon" data-mcmin="${id}" data-tip="Thu nhỏ ô này xuống thanh dưới">—</button>
         </div>
@@ -162,6 +164,21 @@ export class MultiChart {
     el.innerHTML = `${+last.toPrecision(7)} <span class="${ch >= 0 ? "pos" : "neg"}">${ch >= 0 ? "+" : ""}${ch.toFixed(2)}%</span>`;
     el.dataset.tip = "Giá cuối và thay đổi so với khoảng 24 giờ trước (theo nến đang xem)";
   }
+  // ghi rõ trên ô khi giá đang lấy tạm từ sàn khác (sàn chính nghẽn); giá các sàn lệch nhau vài chục USD là bình thường
+  source(i, exId) {
+    const h = document.getElementById(IDS[i]).querySelector(".hint"), tag = this.loaded[i];
+    if (!tag || exId === tag.ex) { if (h.dataset.alt) { h.textContent = ""; h.className = "hint"; delete h.dataset.alt; } return; }
+    h.dataset.alt = exId; h.className = "hint warn";
+    h.textContent = `giá tạm từ ${EXCHANGES[exId].name}`; h.dataset.tip = `${EXCHANGES[tag.ex].name} đang nghẽn, nên ô này lấy giá từ ${EXCHANGES[exId].name} mỗi 3 giây. Giá giữa các sàn có thể lệch nhẹ. Tự quay lại sàn chính khi sàn chính trả lời lại`;
+  }
+  countdown() {
+    const now = Date.now() + clockSkew();
+    for (let i = 0; i < MAX; i++) {
+      if (!this.shown(i)) continue;
+      const el = document.getElementById(IDS[i]).querySelector(".mccd"), cd = candleCountdown(INTERVALS[this.st.cells[i][1]], now);
+      el.textContent = `⏱ ${cd.text}`; el.classList.toggle("warn", cd.soon);
+    }
+  }
   // nhận một nến mới hoặc nến đang chạy cho ô i
   push(i, fresh) {
     const c = this.charts[i], n0 = c.bars.length;
@@ -183,7 +200,7 @@ export class MultiChart {
       this.lastMsg = Date.now();
       for (let i = 0; i < MAX; i++) {
         const tag = this.loaded[i];
-        if (tag && !tag.err && tag.sym === sym && tag.iv === iv && this.charts[i].bars.length) this.push(i, [bar]);
+        if (tag && !tag.err && tag.sym === sym && tag.iv === iv && this.charts[i].bars.length) { this.push(i, [bar]); this.source(i, tag.ex); }
       }
     }, (_, ok) => { this.sockOk = ok; });
   }
@@ -194,8 +211,9 @@ export class MultiChart {
       if (!this.visible || !this.shown(i)) return;
       const tag = this.loaded[i]; if (!tag || tag.err || !this.charts[i].bars.length) return;
       try {
-        const fresh = await this.ex().klines(tag.sym, tag.iv, 2);
-        if (this.loaded[i] === tag) this.push(i, fresh);
+        const r = await lastBarsFailover(tag.ex, tag.sym, tag.iv);
+        if (this.loaded[i] !== tag) return;
+        this.push(i, r.bars); this.source(i, r.ex);
       } catch { /* lần sau thử lại */ }
     }));
   }
@@ -203,7 +221,9 @@ export class MultiChart {
   show() {
     this.visible = true; this.layout.apply(); this.changed(); // màn hình nhỏ: lưới ghép tắt nên tự gọi
     if (!this.timer) this.timer = setInterval(() => { this.stream(); this.poll(); }, POLL);
+    if (!this.cdTimer) this.cdTimer = setInterval(() => this.countdown(), 1000);
+    this.countdown();
     this.stream();
   }
-  hide() { this.visible = false; clearInterval(this.timer); this.timer = null; if (this.sock) { this.sock.close(); this.sock = null; this.sockKey = null; } }
+  hide() { this.visible = false; clearInterval(this.timer); this.timer = null; clearInterval(this.cdTimer); this.cdTimer = null; if (this.sock) { this.sock.close(); this.sock = null; this.sockKey = null; } }
 }
