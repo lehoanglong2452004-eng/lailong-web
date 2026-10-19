@@ -14,8 +14,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202610192336">
-<link rel="stylesheet" href="css/app.css?v=202610192336">
+<link rel="stylesheet" href="fonts/fonts.css?v=202610192356">
+<link rel="stylesheet" href="css/app.css?v=202610192356">
 </head>
 <body>
 <header class="menubar">
@@ -37,6 +37,7 @@
   <label class="field" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
   <datalist id="symbolList"></datalist>
   <div class="seg" id="intervals" data-tip="Khung thời gian của mỗi nến"></div>
+  <span id="cdTerm" class="cdterm" data-tip="Thời gian còn lại tới lúc đóng nến của khung đang xem (giờ sàn). Chuyển màu khi sắp đóng"></span>
   <button id="toolsBtn" class="tool on" data-tip="Ẩn/hiện thanh công cụ của biểu đồ (Bookmap, Footprint, Nến, lớp hiển thị...) để biểu đồ cao hơn">☰<span class="lbl"> Công cụ</span></button>
   <div class="dropdown alertdd">
     <button id="alertBtn" class="tool" data-g="alerts">🔔<span class="lbl"> Cảnh báo</span></button>
@@ -771,6 +772,6 @@
 
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610192336"></script>
+<script type="module" src="js/app.js?v=202610192356"></script>
 </body>
 </html>

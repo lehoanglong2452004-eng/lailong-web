@@ -2,7 +2,7 @@
 // Mỗi sàn ghi vào sổ lệnh riêng; sổ gộp được dựng lại tối đa 10 lần mỗi giây bằng cách cộng khối lượng
 // ở cùng mức giá (giá làm tròn theo bước giá của sàn chính). Khối lượng các sàn đều đã đổi ra số coin.
 // Giá các sàn lệch nhau vài bước giá là bình thường; phần chéo nhau ở giữa được bỏ khi sắp xếp sổ.
-import { Book } from "./market.js?v=202610192336";
+import { Book } from "./market.js?v=202610192356";
 
 export const MULTI_EX = ["BINANCE", "OKX", "BYBIT"];
 export const multiPeers = primary => primary === "SIM" ? ["SIM"] : MULTI_EX.includes(primary) ? MULTI_EX.filter(x => x !== primary) : [];

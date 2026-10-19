@@ -10,7 +10,7 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610192336";
+import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610192356";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
 function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
@@ -550,4 +550,36 @@ export function inferTick(prices) {
   let d = Infinity;
   for (let i = 1; i < prices.length; i++) { const x = Math.abs(prices[i] - prices[i - 1]); if (x > 1e-12) d = Math.min(d, x); }
   return isFinite(d) ? niceStep(d) : 0;
+}
+
+// ---------- giá dự phòng khi sàn chính nghẽn ----------
+// 2 nến gần nhất (gồm nến đang chạy) của một sàn, bỏ cuộc sau 2,5 giây
+async function quick(url) {
+  const ac = new AbortController(), t = setTimeout(() => ac.abort(), 2500);
+  try { return await getJson(url, { signal: ac.signal }); } finally { clearTimeout(t); }
+}
+const LAST = {
+  BINANCE: async (s, iv) => (await quick(`${BN_REST}/fapi/v1/klines?symbol=${s}&interval=${iv}&limit=2`)).map(r => ({ t: r[0], o: num(r[1]), h: num(r[2]), l: num(r[3]), c: num(r[4]), v: num(r[5]), bv: num(r[9]) })),
+  BYBIT: async (s, iv) => (await quick(`${BY_REST}/v5/market/kline?category=linear&symbol=${s}&interval=${BY_INT[iv]}&limit=2`)).result.list.map(x => ({ t: num(x[0]), o: num(x[1]), h: num(x[2]), l: num(x[3]), c: num(x[4]), v: num(x[5]), bv: null })).reverse(),
+  OKX: async (s, iv) => (await quick(`${OKX_REST}/api/v5/market/candles?instId=${okxInst(s)}&bar=${OKX_BAR[iv]}&limit=2`)).data.map(x => ({ t: num(x[0]), o: num(x[1]), h: num(x[2]), l: num(x[3]), c: num(x[4]), v: num(x[6]), bv: null })).reverse(),
+};
+export const FALLBACK_ORDER = ["BINANCE", "BYBIT", "OKX"];
+// thử sàn đang chọn trước, nghẽn hoặc lỗi thì lần lượt Binance, Bybit, OKX (chỉ mã USDT); trả về { bars, ex }
+export async function lastBarsFailover(primary, symbol, interval) {
+  const order = [primary, ...(/USDT$/.test(symbol) ? FALLBACK_ORDER.filter(x => x !== primary) : [])];
+  let err = null;
+  for (const id of order) {
+    try {
+      const bars = LAST[id] ? await LAST[id](symbol, interval) : await EXCHANGES[id].klines(symbol, interval, 2);
+      if (bars.length) return { bars, ex: id };
+    } catch (e) { err = e; }
+  }
+  throw err || new Error("không sàn nào trả lời");
+}
+
+// đếm ngược tới lúc đóng nến (nến theo giờ UTC, như sàn); now nên đã trừ lệch đồng hồ so với sàn
+export function candleCountdown(intervalMs, now = Date.now()) {
+  const left = Math.ceil(now / intervalMs) * intervalMs - now || intervalMs, s = Math.ceil(left / 1000);
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), x = s % 60, p = v => String(v).padStart(2, "0");
+  return { left, text: d ? `${d}n ${p(h)}:${p(m)}` : h ? `${h}:${p(m)}:${p(x)}` : `${p(m)}:${p(x)}`, soon: left <= Math.min(30e3, intervalMs * 0.1) };
 }

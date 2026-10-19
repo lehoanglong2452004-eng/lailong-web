@@ -678,3 +678,8 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 .plansec { background: var(--panel-2); border-radius: 6px; padding: 6px 10px; }
 .plansec .readout li { margin: 2px 0; }
 #view-signals .gexbar label input, #view-signals .gexbar label select { margin-left: 4px; }
+/* đồng hồ đếm ngược đóng nến */
+.cdterm, .mc-panel .mccd { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cdterm { align-self: center; min-width: 6.5em; }
+.cdterm.warn, .mc-panel .mccd.warn { color: var(--accent); font-weight: 600; }
+.mc-panel .hint.warn { color: var(--accent); }
