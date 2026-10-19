@@ -1,12 +1,12 @@
 // Lai Long Web: tab Tín hiệu. Kho lịch sử, sổ tín hiệu tự chấm điểm, thống kê theo bối cảnh, kế hoạch trước phiên.
 // Phần tính nằm ở signals.js, context.js, levels.js, plan.js; phần nạp dữ liệu ở histdata.js và eventlog.js.
-import { SIGNALS, VERDICT, prepBars, detectAll, placeEvents, scoreEvents, baseline, scorecard, byContext, edgesFor, horizonsFor, fmtH } from "./signals.js?v=202610180437";
-import { contextSeries, sessionOf } from "./context.js?v=202610180437";
-import { liveZones } from "./levels.js?v=202610180437";
-import { buildPlan, planText, sessionWindow } from "./plan.js?v=202610180437";
-import { storeStatus, startFetch, loadHistory } from "./histdata.js?v=202610180437";
-import { liveEvents, eventCount } from "./eventlog.js?v=202610180437";
-import { getJson, INTERVALS, decimalsFor, fmtTime } from "./util.js?v=202610180437";
+import { SIGNALS, VERDICT, prepBars, detectAll, placeEvents, scoreEvents, baseline, scorecard, byContext, edgesFor, horizonsFor, fmtH } from "./signals.js?v=202610192336";
+import { contextSeries, sessionOf } from "./context.js?v=202610192336";
+import { liveZones } from "./levels.js?v=202610192336";
+import { buildPlan, planText, sessionWindow } from "./plan.js?v=202610192336";
+import { storeStatus, startFetch, loadHistory } from "./histdata.js?v=202610192336";
+import { liveEvents, eventCount } from "./eventlog.js?v=202610192336";
+import { getJson, INTERVALS, decimalsFor, fmtTime } from "./util.js?v=202610192336";
 
 export const VERIFIED_KEY = "lailong.verified";
 const TFS = ["5m", "15m", "1h", "4h"];

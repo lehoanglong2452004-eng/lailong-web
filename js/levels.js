@@ -3,8 +3,8 @@
 // nằm sát nhau thành vùng. Nhiều nguồn trùng một vùng thì vùng đó có điểm hợp lưu cao.
 // Phần lịch sử: tại đầu mỗi ngày dựng lại các mức đã biết lúc đó (chỉ những nguồn tính được từ nến), rồi ghi
 // lại lần đầu giá chạm từng vùng trong ngày, để sổ tín hiệu chấm xem vùng điểm cao có bật lại nhiều hơn không.
-import { volumeProfile, srLevels } from "./analytics.js?v=202610180437";
-import { atrSeries } from "./flowtools.js?v=202610180437";
+import { volumeProfile, srLevels } from "./analytics.js?v=202610192336";
+import { atrSeries } from "./flowtools.js?v=202610192336";
 
 const DAY = 864e5;
 
