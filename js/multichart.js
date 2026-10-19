@@ -1,11 +1,11 @@
 // Lai Long Web: tab Đa biểu đồ. Tối đa 6 biểu đồ nến, mỗi ô chọn mã và khung thời gian riêng.
 //   Bố cục dùng chung lưới ghép với Terminal: kéo tiêu đề để đổi chỗ, kéo đường chia để đổi cỡ, nút — để thu nhỏ.
 //   Nút 1 / 2 / 3 / 4 / 6 dựng lại lưới đều theo số ô. Mọi tuỳ chỉnh chỉ giữ trong lúc tab còn mở.
-import { FlowChart } from "./flowchart.js?v=202610180437";
-import { Layout } from "./layout.js?v=202610180437";
-import { deltaOf, footprintStep } from "./market.js?v=202610180437";
-import { INTERVALS, niceStep } from "./util.js?v=202610180437";
-import { analyze } from "./radar.js?v=202610180437";
+import { FlowChart } from "./flowchart.js?v=202610192336";
+import { Layout } from "./layout.js?v=202610192336";
+import { deltaOf, footprintStep } from "./market.js?v=202610192336";
+import { INTERVALS, niceStep } from "./util.js?v=202610192336";
+import { analyze } from "./radar.js?v=202610192336";
 
 const MAX = 6, KEY = "lailong.multi.v1", POLL = 3000;
 const IDS = Array.from({ length: MAX }, (_, i) => "mc" + i);
@@ -178,7 +178,9 @@ export class MultiChart {
     if (this.sock) { this.sock.close(); this.sock = null; }
     this.sockKey = key; this.sockOk = false;
     if (!exn.klineStream || !pairs.length) return;
+    this.lastMsg = Date.now();
     this.sock = exn.klineStream(pairs, (sym, iv, bar) => {
+      this.lastMsg = Date.now();
       for (let i = 0; i < MAX; i++) {
         const tag = this.loaded[i];
         if (tag && !tag.err && tag.sym === sym && tag.iv === iv && this.charts[i].bars.length) this.push(i, [bar]);
@@ -186,7 +188,8 @@ export class MultiChart {
     }, (_, ok) => { this.sockOk = ok; });
   }
   async poll() {
-    if (this.sock && this.sockOk) return; // WebSocket đang chạy; mất kết nối thì tạm hỏi lại bằng REST
+    // WebSocket đang chạy và có tin trong 10 giây qua; mất kết nối hoặc im lặng thì hỏi lại bằng REST
+    if (this.sock && this.sockOk && Date.now() - this.lastMsg < 10e3) return;
     await Promise.all(Array.from({ length: MAX }, async (_, i) => {
       if (!this.visible || !this.shown(i)) return;
       const tag = this.loaded[i]; if (!tag || tag.err || !this.charts[i].bars.length) return;

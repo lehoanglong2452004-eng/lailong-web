@@ -10,7 +10,7 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610180437";
+import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610192336";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
 function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
@@ -91,7 +91,8 @@ const binance = {
   klineStream(pairs, onBar, onStatus) {
     const streams = [...new Set(pairs.map(([s, i]) => `${s.toLowerCase()}@kline_${i}`))];
     if (!streams.length) return { close() {} };
-    return openSocket(`${BN_WS}/stream?streams=${streams.join("/")}`, {
+    // nến là dữ liệu thị trường: Binance đã tách đường dẫn, đường /stream cũ vẫn mở được nhưng không gửi gì
+    return openSocket(`${BN_WS}/market/stream?streams=${streams.join("/")}`, {
       name: "nến Binance", onStatus,
       onMessage: m => {
         const k = m.data && m.data.k; if (!k) return;
