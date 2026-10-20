@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-UA = {"User-Agent": "Mozilla/5.0 LaiLongQuant"}
+UA = {"User-Agent": "Mozilla/5.0 LaiLongDesk"}
 YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/{}?range=1y&interval=1d"
 # (mã Yahoo, tên ngắn, mô tả)
 VOL = [
@@ -231,8 +231,33 @@ def cached(name: str) -> dict:
     ttl = 600 if name == "vol" else 6 * 3600
     if name in _cache and now - _cache[name][0] < ttl:
         return _cache[name][1]
-    data = fetch_vol() if name == "vol" else fetch_cot()
+    try:
+        data = fetch_vol() if name == "vol" else fetch_cot()
+        if not data["items"]:
+            raise ValueError("; ".join(data["errors"]) or "không có dữ liệu")
+    except Exception as exc:
+        # máy CFTC/Yahoo hay lỗi tạm thời: lấy bản GitHub Actions đã chép lên trang web,
+        # không được thì dùng bản cũ trong bộ nhớ; thử lại nguồn gốc sau 10 phút
+        data = _mirror(name, exc) or (_cache[name][1] if name in _cache else None)
+        if data is None:
+            raise
+        _cache[name] = (now - ttl + 600, data)
+        return data
     _cache[name] = (now, data)
+    return data
+
+
+MIRROR = "https://lehoanglong2452004-eng.github.io/lailong-web/data/{}.json"
+
+
+def _mirror(name: str, exc: Exception) -> dict | None:
+    try:
+        data = json.loads(_get(MIRROR.format(name)))
+    except Exception:
+        return None
+    if not data.get("items"):
+        return None
+    data["errors"] = [*data.get("errors", []), f"nguồn gốc lỗi ({exc}), đang dùng bản sao trên web"]
     return data
 
 

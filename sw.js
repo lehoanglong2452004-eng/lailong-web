@@ -1,4 +1,4 @@
-// Lai Long Quant: service worker để cài như ứng dụng.
+// Lai Long Desk: service worker để cài như ứng dụng.
 // Luôn lấy bản mới từ mạng trước; chỉ khi mất mạng mới dùng bản đã lưu (giao diện, không phải dữ liệu thị trường).
 const CACHE = "lailong-ui";
 self.addEventListener("install", () => self.skipWaiting());

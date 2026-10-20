@@ -34,7 +34,7 @@ export class Alerts {
     if (this.cfg.sound) this.beep(tone);
     this.telegram(text);
     if (this.cfg.notify && typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
-      try { new Notification("Lai Long Quant", { body: text, tag: kind, icon: "icons/icon-192.png" }); } catch { /* trình duyệt không hỗ trợ */ }
+      try { new Notification("Lai Long Desk", { body: text, tag: kind, icon: "icons/icon-192.png" }); } catch { /* trình duyệt không hỗ trợ */ }
     }
     if (this.onFire) this.onFire();
     return true;

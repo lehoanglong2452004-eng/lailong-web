@@ -1,4 +1,4 @@
-/* Lai Long Quant: phong cách terminal nền đen, chữ trắng, tiêu đề màu nhấn (mặc định cam kiểu Bloomberg).
+/* Lai Long Desk: phong cách terminal nền đen, chữ trắng, tiêu đề màu nhấn (mặc định cam kiểu Bloomberg).
    Màu thật được đặt bởi js/theme.js qua các biến CSS bên dưới. */
 :root {
   --bg: #000000;
