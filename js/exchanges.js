@@ -10,7 +10,7 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610192356";
+import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610200011";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
 function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
@@ -361,29 +361,56 @@ const bybit = {
 // ---------- Hyperliquid ----------
 const HL_REST = "https://api.hyperliquid.xyz/info";
 const HL_WS = "wss://api.hyperliquid.xyz/ws";
-const hlCoin = symbol => symbol.toUpperCase().replace(/(USDT|USDC|USD)$/, "");
+// Hàng hóa, chỉ số, cổ phiếu nằm ở các sàn con HIP-3 (vd. xyz:CL là dầu WTI, xyz:GOLD là vàng), không ở danh sách chính
+const HL_ALIAS = { XAU: "GOLD", XAUUSD: "GOLD", XAG: "SILVER", XAGUSD: "SILVER", WTI: "CL", USOIL: "CL", OIL: "CL", BRENT: "BRENTOIL", UKOIL: "BRENTOIL", NDX: "XYZ100", NAS100: "XYZ100" };
+let hlNames = null; // tên coin thật của mọi sàn con, nạp một lần
+async function hlUniverse() {
+  if (hlNames) return hlNames;
+  const dexs = await postJson(HL_REST, { type: "perpDexs" }).catch(() => [null]);
+  const lists = await Promise.all(dexs.map(d => postJson(HL_REST, d ? { type: "metaAndAssetCtxs", dex: d.name } : { type: "metaAndAssetCtxs" })
+    .then(([meta, ctxs]) => meta.universe.map((u, i) => ({ name: d && !u.name.includes(":") ? `${d.name}:${u.name}` : u.name, dead: u.isDelisted, ctx: ctxs[i] || {} })))
+    .catch(() => [])));
+  const all = lists.flat();
+  if (all.length) hlNames = all; // lỗi mạng thì lần sau hỏi lại
+  return all;
+}
+// "XYZ:CL" -> "xyz:CL"; "BTCUSDT" -> "BTC"; "CL", "XAU" -> tìm trong các sàn con
+const hlBase = symbol => {
+  const u = symbol.toUpperCase();
+  if (u.includes(":")) { const [d, c] = u.split(":"); return `${d.toLowerCase()}:${c}`; }
+  return u.replace(/(USDT|USDC|USD)$/, "") || u;
+};
+async function hlCoin(symbol) {
+  const c = hlBase(symbol);
+  if (c.includes(":")) return c;
+  const all = await hlUniverse().catch(() => []), want = [c, HL_ALIAS[symbol.toUpperCase()] || HL_ALIAS[c]].filter(Boolean);
+  for (const w of want) { if (all.some(x => x.name === w)) return w; }
+  // cùng một mã có thể ở nhiều sàn con: chọn chỗ khớp nhiều tiền nhất trong 24 giờ
+  for (const w of want) { const x = all.filter(y => !y.dead && y.name.endsWith(":" + w)).sort((p, q) => num(q.ctx.dayNtlVlm) - num(p.ctx.dayNtlVlm))[0]; if (x) return x.name; }
+  return c;
+}
 
 const hyperliquid = {
   id: "HYPERLIQUID", name: "Hyperliquid", hasLiq: false, hasOi: false, oiDays: 0,
   async listSymbols() {
-    const [meta, ctxs] = await postJson(HL_REST, { type: "metaAndAssetCtxs" });
-    return meta.universe.map((u, i) => {
-      const c = ctxs[i] || {}, last = num(c.markPx), prev = num(c.prevDayPx);
-      return { symbol: u.name + "USDT", last, change: prev ? (last / prev - 1) * 100 : 0, volUsd: num(c.dayNtlVlm) };
+    hlNames = null;
+    return (await hlUniverse()).filter(x => !x.dead).map(({ name, ctx: c }) => {
+      const last = num(c.markPx), prev = num(c.prevDayPx);
+      return { symbol: name.includes(":") ? name.toUpperCase() : name + "USDT", last, change: prev ? (last / prev - 1) * 100 : 0, volUsd: num(c.dayNtlVlm) };
     });
   },
   async info() { return { tick: 0, ctVal: 1 }; }, // bước giá suy ra từ sổ lệnh
   async klines(symbol, interval, n) {
     const ms = INTERVALS[interval], end = Date.now(), start = end - ms * Math.min(n, 5000);
-    const rows = await postJson(HL_REST, { type: "candleSnapshot", req: { coin: hlCoin(symbol), interval, startTime: start, endTime: end } });
+    const rows = await postJson(HL_REST, { type: "candleSnapshot", req: { coin: await hlCoin(symbol), interval, startTime: start, endTime: end } });
     return rows.map(x => ({ t: num(x.t), o: num(x.o), h: num(x.h), l: num(x.l), c: num(x.c), v: num(x.v), bv: null }));
   },
   async oiHistory() { return []; },
   // funding của Hyperliquid tính theo từng giờ
   async fundingHistory(symbol, from) {
-    const out = []; let start = Math.max(from, Date.now() - 60 * 864e5);
+    const out = [], coin = await hlCoin(symbol); let start = Math.max(from, Date.now() - 60 * 864e5);
     for (let guard = 0; guard < 40 && start < Date.now(); guard++) {
-      const rows = await postJson(HL_REST, { type: "fundingHistory", coin: hlCoin(symbol), startTime: start });
+      const rows = await postJson(HL_REST, { type: "fundingHistory", coin, startTime: start });
       if (!rows.length) break;
       for (const x of rows) out.push({ t: num(x.time), rate: num(x.fundingRate) });
       const last = Math.max(...rows.map(x => num(x.time)));
@@ -393,10 +420,11 @@ const hyperliquid = {
     return dedupe(out);
   },
   connect(symbol, info, book, h) {
-    const coin = hlCoin(symbol);
+    const coinP = hlCoin(symbol);
     return openSocket(HL_WS, {
       name: "Hyperliquid", onStatus: h.onStatus, ping: () => JSON.stringify({ method: "ping" }), pingMs: 30000,
-      onOpen: s => {
+      onOpen: async s => {
+        const coin = await coinP;
         s.send(JSON.stringify({ method: "subscribe", subscription: { type: "l2Book", coin } }));
         s.send(JSON.stringify({ method: "subscribe", subscription: { type: "trades", coin } }));
       },
