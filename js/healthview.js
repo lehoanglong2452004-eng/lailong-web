@@ -1,6 +1,6 @@
 // Lai Long Web: trang Sức khoẻ dữ liệu. Mỗi nguồn: đang chạy hay chết, độ trễ đo được, lần cập nhật cuối.
-import { SOURCES, healthState, status, median, probeAll, onHealth, clockSkew } from "./health.js?v=202610200011";
-import { freshTag, ageText } from "./fresh.js?v=202610200011";
+import { SOURCES, healthState, status, median, probeAll, onHealth, clockSkew } from "./health.js?v=202610200119";
+import { freshTag, ageText } from "./fresh.js?v=202610200119";
 
 const ST = {
   run: { name: "Đang chạy", cls: "up" }, slow: { name: "Cũ quá mức", cls: "warn" }, dead: { name: "Lỗi", cls: "dn" },

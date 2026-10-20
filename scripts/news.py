@@ -22,7 +22,7 @@ from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
-UA = {"User-Agent": "Mozilla/5.0 (LaiLongQuant news fetcher)"}
+UA = {"User-Agent": "Mozilla/5.0 (LaiLongDesk news fetcher)"}
 # vài API lịch kinh tế chỉ trả lời trình duyệt thật
 BROWSER = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"

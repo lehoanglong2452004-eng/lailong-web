@@ -1,11 +1,11 @@
 // Lai Long Web: tab Quyền chọn. GEX theo strike, đường GEX theo giá (điểm lật gamma), OI, nụ cười IV và bề mặt IV 3D.
 // BTC/ETH lấy trực tiếp từ Deribit trong trình duyệt; chỉ số và ETF Mỹ đọc data/gex_<mã>.json (CBOE, chậm 15 phút)
 // do GitHub Actions cập nhật mỗi 30 phút, hoặc máy chủ laptop lấy trực tiếp (lailong/terminal/gex.py).
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610200011";
-import { setFresh } from "./fresh.js?v=202610200011";
-import { initOptPro } from "./optview.js?v=202610200011";
-import { initChain } from "./chainview.js?v=202610200011";
-import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610200011";
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610200119";
+import { setFresh } from "./fresh.js?v=202610200119";
+import { initOptPro } from "./optview.js?v=202610200119";
+import { initChain } from "./chainview.js?v=202610200119";
+import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610200119";
 
 export const ASSETS = [
   { id: "BTC", src: "deribit", name: "Bitcoin (Deribit)" }, { id: "ETH", src: "deribit", name: "Ethereum (Deribit)" },

@@ -556,7 +556,13 @@ def parse_yahoo_bars(raw: dict) -> list[dict]:
 
 
 # khung của Radar -> (khoảng Yahoo, độ dài lịch sử, gộp thành mấy giờ); Yahoo không có nến 4 giờ nên gộp từ nến 1 giờ
-RADAR_IV = {"5m": ("5m", "5d", 0), "15m": ("15m", "1mo", 0), "1h": ("60m", "3mo", 0), "4h": ("60m", "6mo", 4), "1d": ("1d", "2y", 0)}
+RADAR_IV = {
+    "5m": ("5m", "5d", 0),
+    "15m": ("15m", "1mo", 0),
+    "1h": ("60m", "3mo", 0),
+    "4h": ("60m", "6mo", 4),
+    "1d": ("1d", "2y", 0),
+}
 
 
 def group_bars(bars: list[dict], hours: int) -> list[dict]:
@@ -567,7 +573,12 @@ def group_bars(bars: list[dict], hours: int) -> list[dict]:
         t = b["t"] // ms * ms
         if out and out[-1]["t"] == t:
             o = out[-1]
-            o["h"], o["l"], o["c"], o["v"] = max(o["h"], b["h"]), min(o["l"], b["l"]), b["c"], o["v"] + b["v"]
+            o["h"], o["l"], o["c"], o["v"] = (
+                max(o["h"], b["h"]),
+                min(o["l"], b["l"]),
+                b["c"],
+                o["v"] + b["v"],
+            )
         else:
             out.append({**b, "t": t})
     return out
@@ -586,6 +597,7 @@ def radar_bars(code: str, iv: str = "1h", ttl: float = 300) -> list[dict]:
         bars = group_bars(bars, group)
     _bars_cache[key] = (now, bars)
     return bars
+
 
 if __name__ == "__main__":
     out = Path(sys.argv[1] if len(sys.argv) > 1 else "data")

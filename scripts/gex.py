@@ -53,7 +53,7 @@ BAND = 0.25
 
 def _get(url: str, timeout: float = 40) -> bytes:
     req = urllib.request.Request(
-        url, headers={"User-Agent": "Mozilla/5.0 LaiLongQuant", "Accept-Encoding": "gzip"}
+        url, headers={"User-Agent": "Mozilla/5.0 LaiLongDesk", "Accept-Encoding": "gzip"}
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
         b = r.read()
