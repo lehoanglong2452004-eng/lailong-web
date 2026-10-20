@@ -4,9 +4,9 @@
 //   - Biến động Mỹ (trễ ~15 phút, Yahoo): VIX và cấu trúc kỳ hạn, VVIX, SKEW, MOVE, VXN, GVZ, OVX; put/call SPX, SPY, QQQ (CBOE)
 //   - COT của CFTC (hằng tuần): đầu cơ lớn và bên phòng hộ, chỉ số COT 3 năm
 // Bản web đọc data/vol.json, data/cot.json do GitHub Actions cập nhật; bản laptop lấy qua máy chủ (lailong/terminal/macro.py).
-import { getJson, fitCanvas, fmtUsd, MONO } from "./util.js?v=202610192356";
-import { setFresh } from "./fresh.js?v=202610192356";
-import { ivRank, putCall } from "./optpro.js?v=202610192356";
+import { getJson, fitCanvas, fmtUsd, MONO } from "./util.js?v=202610200011";
+import { setFresh } from "./fresh.js?v=202610200011";
+import { ivRank, putCall } from "./optpro.js?v=202610200011";
 
 const FAPI = "https://fapi.binance.com", DERIBIT = "https://www.deribit.com/api/v2/public";
 const COINS = ["BTC", "ETH", "SOL"];

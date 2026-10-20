@@ -1,10 +1,10 @@
 // Lai Long Web: trang Nhật ký: quản lý rủi ro, tính khối lượng lệnh, ghi lệnh và thống kê bản thân.
 // Dữ liệu chỉ lưu trên trình duyệt của máy này (localStorage); nút Xuất file để sao lưu hoặc chuyển máy.
-import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202610192356";
-import { atrSeries } from "./radar.js?v=202610192356";
-import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202610192356";
-import { EquityChart } from "./fractalview.js?v=202610192356";
-import { fmtVol, fmtDate, decimalsFor, getJson } from "./util.js?v=202610192356";
+import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202610200011";
+import { atrSeries } from "./radar.js?v=202610200011";
+import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202610200011";
+import { EquityChart } from "./fractalview.js?v=202610200011";
+import { fmtVol, fmtDate, decimalsFor, getJson } from "./util.js?v=202610200011";
 
 const STORE = "lailong.journal.v1";
 const WD = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
