@@ -7,4 +7,4 @@ xu hướng, động lượng, biến động và backtest.
 
 Trang chạy hoàn toàn trong trình duyệt và lấy dữ liệu thẳng từ Binance, OKX, Bybit và Hyperliquid.
 Giao dịch trên trang chỉ là giả lập. Repo này chỉ chứa bản phát hành của giao diện; mã nguồn và
-phần chạy trên laptop nằm ở repo riêng tư `lailong-quant` (thư mục `web/`).
+phần chạy trên laptop nằm ở repo riêng tư `lailong-desk-source` (thư mục `web/`).
