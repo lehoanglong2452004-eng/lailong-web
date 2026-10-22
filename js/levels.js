@@ -1,10 +1,11 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: bản đồ mức giá hợp lưu. Gom mọi mức giá quan trọng của một tài sản (hồ sơ khối lượng, TPO,
 // đỉnh/đáy hôm qua, hỗ trợ/kháng cự đã test, quyền chọn, cụm thanh lý, tường lệnh, iceberg) rồi nhóm các mức
 // nằm sát nhau thành vùng. Nhiều nguồn trùng một vùng thì vùng đó có điểm hợp lưu cao.
 // Phần lịch sử: tại đầu mỗi ngày dựng lại các mức đã biết lúc đó (chỉ những nguồn tính được từ nến), rồi ghi
 // lại lần đầu giá chạm từng vùng trong ngày, để sổ tín hiệu chấm xem vùng điểm cao có bật lại nhiều hơn không.
-import { volumeProfile, srLevels } from "./analytics.js?v=202610200119";
-import { atrSeries } from "./flowtools.js?v=202610200119";
+import { volumeProfile, srLevels } from "./analytics.js?v=202610220403";
+import { atrSeries } from "./flowtools.js?v=202610220403";
 
 const DAY = 864e5;
 

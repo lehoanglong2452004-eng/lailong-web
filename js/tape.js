@@ -1,11 +1,12 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: Smart Tape, băng lệnh khớp đã ghép các lệnh nhỏ thành lệnh gốc.
 //
 // Một lệnh market lớn ăn qua nhiều lệnh chờ bị sàn báo thành hàng trăm lệnh khớp nhỏ cùng thời điểm.
 // Băng này ghép lại (market.prints) để thấy đúng kích thước lệnh gốc. Tắt "Ghép lệnh" để xem băng thô.
 
-import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202610200119";
-import { T, alpha } from "./theme.js?v=202610200119";
-import { GROUPS, playerGroup } from "./flowtools.js?v=202610200119";
+import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202610220403";
+import { T, alpha } from "./theme.js?v=202610220403";
+import { GROUPS, playerGroup } from "./flowtools.js?v=202610220403";
 
 const GROUP = Object.fromEntries(GROUPS.map(g => [g.id, g]));
 

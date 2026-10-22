@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: Kính lúp. Tay to đang làm gì, nhỏ lẻ đang làm gì, nhỏ lẻ có đang bị dắt không.
 // Ghép các phép đo công khai theo từng giờ rồi quy về z-score so với chính lịch sử của tài sản đó:
 //   tay to:  top trader so với đám đông (Binance), dòng tiền spot (tiền thật), Coinbase premium (tổ chức Mỹ)

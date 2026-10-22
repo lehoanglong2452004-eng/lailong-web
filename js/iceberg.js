@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: phát hiện lệnh băng chìm (iceberg) và lệnh nạp lại liên tục, kiểu Bookmap.
 //
 // Ở một mức giá đang bị khớp chủ động (ví dụ phe bán đập liên tục vào giá chờ mua 100), so tổng khối lượng

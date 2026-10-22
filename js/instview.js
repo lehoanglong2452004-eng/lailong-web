@@ -1,12 +1,13 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: các chỉ số mà bàn giao dịch tổ chức theo dõi, trong tab Phân tích.
 //   - Crypto (trực tiếp): OI, funding 3 sàn, long/short top trader và mọi tài khoản, mua/bán chủ động, chênh giá Coinbase,
 //     put/call và DVOL của Deribit
 //   - Biến động Mỹ (trễ ~15 phút, Yahoo): VIX và cấu trúc kỳ hạn, VVIX, SKEW, MOVE, VXN, GVZ, OVX; put/call SPX, SPY, QQQ (CBOE)
 //   - COT của CFTC (hằng tuần): đầu cơ lớn và bên phòng hộ, chỉ số COT 3 năm
 // Bản web đọc data/vol.json, data/cot.json do GitHub Actions cập nhật; bản laptop lấy qua máy chủ (lailong/terminal/macro.py).
-import { getJson, fitCanvas, fmtUsd, MONO } from "./util.js?v=202610200119";
-import { setFresh } from "./fresh.js?v=202610200119";
-import { ivRank, putCall } from "./optpro.js?v=202610200119";
+import { getJson, fitCanvas, fmtUsd, MONO } from "./util.js?v=202610220403";
+import { setFresh } from "./fresh.js?v=202610220403";
+import { ivRank, putCall } from "./optpro.js?v=202610220403";
 
 const FAPI = "https://fapi.binance.com", DERIBIT = "https://www.deribit.com/api/v2/public";
 const COINS = ["BTC", "ETH", "SOL"];

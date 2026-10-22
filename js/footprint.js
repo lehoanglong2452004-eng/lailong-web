@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: phần tính toán của footprint (không vẽ, để kiểm thử được), theo các chế độ của ATAS.
 //
 // Mỗi nến có b.fp: Map(chỉ số tầng giá -> [KL bán chủ động, KL mua chủ động]).

@@ -1,9 +1,10 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: đường lệnh giả lập trên biểu đồ (Bookmap và Footprint), kiểu ATAS/Quantower.
 //   - Lệnh chờ, giá vào, cắt lỗ (SL), chốt lời (TP) và giá thanh lý được vẽ thành đường ngang có nhãn.
 //   - Kéo đường lệnh chờ, SL hoặc TP để sửa giá. Bấm đúp lên nhãn để huỷ lệnh hoặc bỏ SL/TP.
 //   - Alt + bấm chuột lên biểu đồ để đặt nhanh lệnh limit tại giá đó (dưới giá hiện tại là MUA, trên là BÁN).
-import { T } from "./theme.js?v=202610200119";
-import { decimalsFor, fmtVol } from "./util.js?v=202610200119";
+import { T } from "./theme.js?v=202610220403";
+import { decimalsFor, fmtVol } from "./util.js?v=202610220403";
 
 const GRAB = 6;
 

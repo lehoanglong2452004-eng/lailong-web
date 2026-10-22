@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: sao lưu và khôi phục toàn bộ dữ liệu lâu dài của app trong một file JSON, để chuyển máy hoặc cất lên Drive.
 // Gồm: nhật ký (kèm khoá rủi ro), tài khoản giả lập, bố cục đã lưu, báo cáo hiệu suất, các chiến lược đang forward test,
 // sổ tín hiệu ghi trực tiếp và kết quả chấm điểm tín hiệu.

@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: nhật ký tín hiệu trực tiếp. Những tín hiệu chỉ thấy được khi đang xem sổ lệnh (tường bị rút, tường
 // bị ăn, iceberg giữ hoặc bị xuyên, Big Trade) được ghi lại ở đây để sổ tín hiệu chấm điểm về sau.
 // Lưu trên máy này (localStorage, tối đa 5.000 sự kiện gần nhất); bản laptop gửi thêm về máy chủ (data/events)

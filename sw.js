@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Desk: service worker để cài như ứng dụng.
 // Luôn lấy bản mới từ mạng trước; chỉ khi mất mạng mới dùng bản đã lưu (giao diện, không phải dữ liệu thị trường).
 const CACHE = "lailong-ui";

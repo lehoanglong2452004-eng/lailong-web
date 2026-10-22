@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: bố cục Terminal tuỳ chỉnh kiểu lưới ghép (chỉ trên máy tính, màn hình rộng hơn 900px).
 //   Bố cục là một cây: mỗi nút là một hàng ("row", xếp ngang) hoặc một cột ("col", xếp dọc) chứa các khung hoặc nút con.
 //   size[i] là kích thước điểm ảnh của phần tử thứ i; phần tử "flex" nhận phần dư khi cửa sổ đổi kích thước.

@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: nhãn độ tươi của dữ liệu, để không nhầm dữ liệu trễ là trực tiếp.
 //   Trực tiếp (xanh): luồng thời gian thực từ sàn
 //   Trễ (vàng): nguồn có độ trễ (Yahoo, CBOE chậm 10 đến 15 phút) hoặc bản chụp định kỳ

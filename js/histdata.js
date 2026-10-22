@@ -1,10 +1,11 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: nạp lịch sử cho sổ tín hiệu.
 //   Bản laptop: kho lịch sử tải từ data.binance.vision (lệnh khớp có tách cá voi, OI và tỷ lệ long/short 5 phút,
 //   footprint 5 phút) qua máy chủ: /api/hist/*. Dài tới nhiều năm.
 //   Bản web (hoặc khi kho chưa có mã đó): nến Binance qua API công khai (có mua chủ động), OI và tỷ lệ long/short
 //   chỉ 30 ngày gần nhất. Sàn khác: chỉ có nến.
-import { EXCHANGES, attachOi } from "./exchanges.js?v=202610200119";
-import { getJson, INTERVALS } from "./util.js?v=202610200119";
+import { EXCHANGES, attachOi } from "./exchanges.js?v=202610220403";
+import { getJson, INTERVALS } from "./util.js?v=202610220403";
 
 const FAPI = "https://fapi.binance.com";
 const DAY = 864e5;

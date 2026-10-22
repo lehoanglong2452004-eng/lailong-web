@@ -1,9 +1,10 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: tab Thị trường. Hàng hoá phái sinh (contango/backwardation), forex và lãi suất điều hành,
 // crypto top 10, công ty và quỹ ETF nắm giữ BTC/ETH, cá voi dùng đòn bẩy trên Hyperliquid, thanh lý lớn trực tiếp.
 // Bản web đọc data/markets.json và data/whales.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/markets.py).
-import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202610200119";
-import { setFresh } from "./fresh.js?v=202610200119";
+import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202610220403";
+import { setFresh } from "./fresh.js?v=202610220403";
 
 const HL = "https://api.hyperliquid.xyz/info";
 const LIQ_WS = "wss://fstream.binance.com/market/ws/!forceOrder@arr";

@@ -1,9 +1,11 @@
 <!doctype html>
 <html lang="vi">
+<!-- © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép. -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Lai Long Desk</title>
+<meta name="copyright" content="© 2026 Lai Long Desk">
 <meta name="description" content="Phân tích định lượng thuần giá và khối lượng cho crypto futures: bookmap, footprint, sổ lệnh, thanh lý, hỗ trợ/kháng cự, xu hướng, động lượng, biến động và backtest.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%23000'/%3E%3Cpath d='M3 12V4h2v6h4v2zM10 12V4h2v6h2v2z' fill='%23ff9f1c'/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.webmanifest">
@@ -14,12 +16,12 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202610200119">
-<link rel="stylesheet" href="css/app.css?v=202610200119">
+<link rel="stylesheet" href="fonts/fonts.css?v=202610220403">
+<link rel="stylesheet" href="css/app.css?v=202610220403">
 </head>
 <body>
 <header class="menubar">
-  <div class="brand">LAI LONG <span>DESK</span></div>
+  <div class="brand" data-tip="© 2026 Lai Long Desk. Bảo lưu mọi quyền.">LAI LONG <span>DESK</span></div>
   <nav class="seg views" id="views">
     <button data-view="terminal" class="on" data-tip="Bookmap, footprint, nến và sổ lệnh trực tiếp">Terminal</button>
     <button data-view="radar" data-tip="Radar: khối lượng bất thường theo bối cảnh, thị trường phản ứng chính thức hay tạm thời, lịch sử lặp lại; crypto và hợp đồng tương lai">Radar</button>
@@ -770,8 +772,9 @@
   </div>
 </aside>
 
+<div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610200119"></script>
+<script type="module" src="js/app.js?v=202610220403"></script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: trạng thái thị trường của một mã đang xem.
 //
 // - Book: sổ lệnh đầy đủ (mỗi mức giá một khối lượng), sàn ghi trực tiếp vào đây.
@@ -5,9 +6,9 @@
 //   kèm khối lượng mua/bán chủ động khớp trong cột đó.
 // - Bars: nến của khung đang xem, nến cuối được cập nhật theo từng lệnh khớp, kèm footprint.
 
-import { niceStep, INTERVALS } from "./util.js?v=202610200119";
-import { TapeAggregator, quantile } from "./orderflow.js?v=202610200119";
-import { IcebergTracker } from "./iceberg.js?v=202610200119";
+import { niceStep, INTERVALS } from "./util.js?v=202610220403";
+import { TapeAggregator, quantile } from "./orderflow.js?v=202610220403";
+import { IcebergTracker } from "./iceberg.js?v=202610220403";
 
 export const COL_MS = 500;
 const MAX_COLS = 7200;       // 1 giờ ở 0,5 giây mỗi cột (bộ ghi trên laptop giữ lâu hơn)

@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: sổ tín hiệu tự chấm điểm. Mọi tín hiệu phân tích (Radar, hấp thụ, delta phân kỳ, cá voi, OI,
 // tay to so với đám đông, chạm vùng hợp lưu, cùng các tín hiệu chỉ có khi xem trực tiếp như tường bị rút, iceberg)
 // được ghi lại với thời điểm, giá và hướng; sau đó máy tự chấm theo nhiều mốc thời gian.
@@ -6,13 +7,13 @@
 //   đã trừ phí taker và trượt giá hai chiều. So với "nền": vào ngẫu nhiên ở mọi nến cùng hướng.
 // Chống soi dữ liệu: chỉ gọi là "Có lợi thế" khi 70% sự kiện đầu có kỳ vọng sau phí dương chắc chắn (khoảng tin cậy
 // 95% nằm trên 0) VÀ 30% sự kiện cuối (chưa dùng để đánh giá) vẫn dương.
-import { detect as radarDetect, TYPES as RADAR_TYPES, tfOf } from "./radar.js?v=202610200119";
-import { absorption } from "./orderflow.js?v=202610200119";
-import { deltaDivergence } from "./footprint.js?v=202610200119";
-import { atrSeries } from "./flowtools.js?v=202610200119";
-import { wilson, meanCI } from "./fractal.js?v=202610200119";
-import { touchEvents, BUCKETS } from "./levels.js?v=202610200119";
-import { TAGS } from "./context.js?v=202610200119";
+import { detect as radarDetect, TYPES as RADAR_TYPES, tfOf } from "./radar.js?v=202610220403";
+import { absorption } from "./orderflow.js?v=202610220403";
+import { deltaDivergence } from "./footprint.js?v=202610220403";
+import { atrSeries } from "./flowtools.js?v=202610220403";
+import { wilson, meanCI } from "./fractal.js?v=202610220403";
+import { touchEvents, BUCKETS } from "./levels.js?v=202610220403";
+import { TAGS } from "./context.js?v=202610220403";
 
 const H = 36e5;
 

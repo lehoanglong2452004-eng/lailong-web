@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: dựng footprint cho các nến lịch sử.
 //
 // Sàn không cho tải footprint quá khứ, nên làm hai lớp:
@@ -6,9 +7,9 @@
 // 2. Chính xác (Binance): tải ngược từng lệnh khớp (aggTrades) cho các nến gần nhất và thay
 //    phần ước tính bằng số liệu thật. Có giới hạn số lần gọi để không vượt hạn mức của sàn.
 
-import { INTERVALS, getJson, sleep } from "./util.js?v=202610200119";
-import { smartTape } from "./orderflow.js?v=202610200119";
-import { intrabar } from "./footprint.js?v=202610200119";
+import { INTERVALS, getJson, sleep } from "./util.js?v=202610220403";
+import { smartTape } from "./orderflow.js?v=202610220403";
+import { intrabar } from "./footprint.js?v=202610220403";
 
 const SUB = { "1m": null, "5m": "1m", "15m": "1m", "1h": "5m", "4h": "15m", "1d": "1h" };
 const SUB_CAP = { BINANCE: 12000, BYBIT: 12000, OKX: 3000, HYPERLIQUID: 5000, SIM: 12000 };

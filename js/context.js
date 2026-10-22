@@ -1,12 +1,13 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: gắn nhãn bối cảnh cho từng nến, để thống kê tín hiệu tách theo điều kiện thị trường.
 // Cùng một tín hiệu nhưng xảy ra ở giờ Á hay giờ Mỹ, biến động thấp hay cao, tay to cùng hay ngược đám đông
 // thì kết quả rất khác; lợi thế thật thường nằm ở chỗ biết tín hiệu chạy tốt trong điều kiện nào.
 // Mọi nhãn ở nến i chỉ dùng dữ liệu tới nến i (không nhìn trước).
 //   phiên (giờ Việt Nam) · biến động (ATR so với 30 ngày) · xu hướng 24 giờ · vị trí so với vùng giá trị hôm trước
 //   OI 4 góc (4 giờ) · tay to so với đám đông (top trader / mọi tài khoản) · gamma (chỉ khi đang xem trực tiếp) · tin mạnh
-import { atrSeries } from "./flowtools.js?v=202610200119";
-import { volumeProfile } from "./analytics.js?v=202610200119";
-import { oiQuadrant } from "./lens.js?v=202610200119";
+import { atrSeries } from "./flowtools.js?v=202610220403";
+import { volumeProfile } from "./analytics.js?v=202610220403";
+import { oiQuadrant } from "./lens.js?v=202610220403";
 
 const H = 36e5, DAY = 864e5;
 

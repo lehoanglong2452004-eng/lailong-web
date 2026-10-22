@@ -1,15 +1,16 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: bản đồ nhiệt thanh khoản kiểu Bookmap.
 //
 // Trục ngang là thời gian, trục dọc là giá. Màu ở mỗi điểm là khối lượng lệnh chờ tại mức giá đó
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202610200119";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610200119";
-import { T, alpha, watermark } from "./theme.js?v=202610200119";
-import { drawConfl, conflTip } from "./levels.js?v=202610200119";
-import { drawShapes } from "./drawings.js?v=202610200119";
-import { bookImb } from "./walls.js?v=202610200119";
+import { COL_MS } from "./market.js?v=202610220403";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202610220403";
+import { T, alpha, watermark } from "./theme.js?v=202610220403";
+import { drawConfl, conflTip } from "./levels.js?v=202610220403";
+import { drawShapes } from "./drawings.js?v=202610220403";
+import { bookImb } from "./walls.js?v=202610220403";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
 

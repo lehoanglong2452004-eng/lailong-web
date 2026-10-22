@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: theo dõi "tường" lệnh chờ lớn trong sổ lệnh để phát hiện tường giả (spoofing).
 //
 // Mỗi giây so sổ lệnh (đã gộp theo bước giá của bản đồ nhiệt) với lần trước:
