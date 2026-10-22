@@ -1,11 +1,12 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: Smart DOM, sổ lệnh dạng bậc thang để soi thanh khoản và dòng lệnh.
 //
 // Cột (bật/tắt được): khối lượng hôm nay tại giá | giá | thay đổi lệnh chờ mua | chờ mua |
 // bán chủ động đã khớp | footprint nến hiện tại | mua chủ động đã khớp | chờ bán |
 // thay đổi lệnh chờ bán | kéo/xếp lệnh (thay đổi lệnh chờ đã trừ phần bị khớp) | tường lệnh chờ. Bản đồ thanh khoản nằm ở khung riêng (liqmap.js), cùng dòng giá.
 
-import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610200119";
-import { T, alpha } from "./theme.js?v=202610200119";
+import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202610220403";
+import { T, alpha } from "./theme.js?v=202610220403";
 
 export const ROW_H = 18, HDR_H = 22;
 const CHG_MS = 5000;

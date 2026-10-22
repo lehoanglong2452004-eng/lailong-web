@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: các công cụ order flow tính trên lệnh khớp và footprint (không vẽ, để kiểm thử được).
 //
 // - smartTape: ghép các lệnh nhỏ mà sàn tách ra từ một lệnh lớn thành lệnh gốc

@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: công cụ dòng lệnh nâng cao (không vẽ, để kiểm thử được).
 //
 // - vpin: mức "độc" của dòng lệnh (VPIN), tính trên nến bằng khối lượng mua/bán chủ động

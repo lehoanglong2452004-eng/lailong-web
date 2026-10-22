@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: đọc TPO (Market Profile) theo cách của Dalton / CBOT: kiểu mở cửa, kiểu ngày, hình dạng hồ sơ,
 // đỉnh/đáy yếu, đuôi từ chối, POC di chuyển, vùng chữ đơn lẻ chưa lấp, và thống kê "sau kiểu ngày này, hôm sau thường làm gì".
 // Không vẽ, để kiểm thử được. Đầu vào là các phiên của buildTpo (tpo.js), mỗi phiên có thêm `first`: các nến của 2 chữ đầu.

@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: kiểm tra tiến (forward test).
 // Khoá một bộ thông số tại thời điểm T. Mọi lệnh sau T là dữ liệu chiến lược chưa từng "nhìn thấy" lúc chọn
 // thông số, nên là bài kiểm tra trung thực nhất. Nến lịch sử luôn tải lại được từ sàn, vì vậy không cần

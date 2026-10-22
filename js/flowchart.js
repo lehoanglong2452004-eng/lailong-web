@@ -1,19 +1,20 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: biểu đồ nến / footprint (box chart) kèm delta, CVD và open interest.
 //
 // Mỗi nến: {t, o, h, l, c, v, d (delta), fp?: Map(chỉ số tầng giá -> [KL bán chủ động, KL mua chủ động]),
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610200119";
-import { cvd as cvdOf } from "./analytics.js?v=202610200119";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610200119";
-import { GROUPS } from "./flowtools.js?v=202610200119";
-import { WALL_KIND } from "./walls.js?v=202610200119";
-import { T, alpha, watermark } from "./theme.js?v=202610200119";
-import { drawConfl, conflTip } from "./levels.js?v=202610200119";
-import { drawShapes } from "./drawings.js?v=202610200119";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610200119";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610200119";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610220403";
+import { cvd as cvdOf } from "./analytics.js?v=202610220403";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610220403";
+import { GROUPS } from "./flowtools.js?v=202610220403";
+import { WALL_KIND } from "./walls.js?v=202610220403";
+import { T, alpha, watermark } from "./theme.js?v=202610220403";
+import { drawConfl, conflTip } from "./levels.js?v=202610220403";
+import { drawShapes } from "./drawings.js?v=202610220403";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610220403";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610220403";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {

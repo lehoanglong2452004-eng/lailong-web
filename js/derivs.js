@@ -1,9 +1,10 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: dữ liệu phái sinh sâu hơn, lấy thẳng từ API công khai của sàn.
 //   Binance Futures: tỷ lệ long/short (mọi tài khoản và top trader), tỷ lệ mua/bán chủ động, chênh lệch
 //                    funding hiện tại, open interest.
 //   Deribit:         quyền chọn BTC/ETH: tỷ lệ put/call theo OI và khối lượng, điểm "max pain", các giá
 //                    thực hiện có OI lớn nhất (thường thành nam châm hút giá gần ngày đáo hạn).
-import { getJson } from "./util.js?v=202610200119";
+import { getJson } from "./util.js?v=202610220403";
 
 const FAPI = "https://fapi.binance.com";
 const DERIBIT = "https://www.deribit.com/api/v2/public";

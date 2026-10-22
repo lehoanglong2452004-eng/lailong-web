@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: khớp lệnh giả lập, mô phỏng sát cách sàn khớp thật.
 //
 // - Lệnh market "ăn" dần từng mức giá trong sổ lệnh thật, nên lệnh to sẽ bị trượt giá.

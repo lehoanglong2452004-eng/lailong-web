@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: tính GEX (gamma exposure), tường call/put, điểm lật gamma, max pain và bề mặt IV từ chuỗi quyền chọn.
 // Dữ liệu đầu vào thống nhất: { spot, mult, exps: [ms hết hạn], rows: [[strike, iExp, +1 call / -1 put, OI, iv (0.45 = 45%), KL 24 giờ?]] }.
 // Quy ước như SqueezeMetrics/SpotGamma: nhà tạo lập (dealer) mua call của khách, bán put cho khách,

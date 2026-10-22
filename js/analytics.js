@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Các hàm phân tích order-flow thuần JS, không phụ thuộc thư viện.
 // Quy ước nến: {t, o, h, l, c, v, bv, oi}. Mọi giá trị tại nến i chỉ dùng nến 0..i.
 

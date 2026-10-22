@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: Radar. Chỉ dùng giá và khối lượng (tinh thần Wyckoff) để trả lời:
 //   thị trường đang phản ứng thế nào, phản ứng đó là chính thức hay tạm thời, nghịch lý có tự điều chỉnh không.
 // Khối lượng "bất thường" luôn xét theo bối cảnh: so với cùng giờ các ngày trước (giờ Mỹ mở cửa ngày nào cũng

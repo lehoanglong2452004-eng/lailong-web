@@ -1,9 +1,10 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: biểu đồ TPO (Market Profile). Mỗi phiên là một ngày UTC, mỗi 30 phút là một chữ cái (A, B, C…);
 // chữ được đặt vào mọi mức giá mà giá đã chạm trong 30 phút đó. Từ đó ra POC (mức nhiều chữ nhất), vùng giá trị 70%,
 // biên độ đầu phiên IB (2 chữ đầu), các chữ đơn lẻ (single print) và POC chưa bị chạm lại (naked POC).
-import { fitCanvas, fmtVol, decimalsFor, niceStep, pad2, MONO } from "./util.js?v=202610200119";
-import { T, alpha, watermark } from "./theme.js?v=202610200119";
-import { sessionKeyer, readSession, pocPath, unfilledSingles, nextDayStats, narrateTpo, OPEN_TYPES, DAY_TYPES, SHAPES, SESSIONS } from "./tporead.js?v=202610200119";
+import { fitCanvas, fmtVol, decimalsFor, niceStep, pad2, MONO } from "./util.js?v=202610220403";
+import { T, alpha, watermark } from "./theme.js?v=202610220403";
+import { sessionKeyer, readSession, pocPath, unfilledSingles, nextDayStats, narrateTpo, OPEN_TYPES, DAY_TYPES, SHAPES, SESSIONS } from "./tporead.js?v=202610220403";
 
 export const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwx";
 const PERIOD = 30 * 60e3, DAY = 864e5;

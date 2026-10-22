@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Từ điển giải thích thuật ngữ hiển thị trong ngăn "Giải thích" và chú thích khi rê chuột.
 export const GLOSSARY = [
   // ───────────── Bookmap ─────────────

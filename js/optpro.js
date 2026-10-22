@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: các chỉ số quyền chọn mà bàn giao dịch tổ chức theo dõi (không vẽ, để kiểm thử được).
 //
 //   termStructure: IV ATM, skew 25 delta (risk reversal) và butterfly của từng hạn; nội suy về hạn cố định 7/30/90 ngày

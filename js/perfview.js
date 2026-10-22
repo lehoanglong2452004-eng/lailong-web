@@ -1,8 +1,9 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: báo cáo hiệu suất theo tháng (lợi nhuận, sụt giảm tối đa, tỷ lệ thắng, kỳ vọng mỗi lệnh).
 // Nguồn: nhật ký trên máy này, lịch sử lãi/lỗ thật của Binance (qua máy chủ laptop, khoá API chỉ đọc),
 // hoặc file CSV xuất từ sàn. Nút "In / lưu PDF" tạo bản báo cáo sạch để gửi nhà đầu tư.
-import { fromJournal, fromIncome, parseCsv, report } from "./perf.js?v=202610200119";
-import { getJson, postJson, fmtVol } from "./util.js?v=202610200119";
+import { fromJournal, fromIncome, parseCsv, report } from "./perf.js?v=202610220403";
+import { getJson, postJson, fmtVol } from "./util.js?v=202610220403";
 
 const STORE = "lailong.perf.v1";
 const pct = (x, k = 1) => x == null || !isFinite(x) ? "–" : `${x >= 0 ? "+" : ""}${(x * 100).toFixed(k)}%`;

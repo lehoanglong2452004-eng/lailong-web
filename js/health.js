@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: sức khoẻ dữ liệu. Ghi lại mọi lần trang gọi ra ngoài (fetch) và mọi kết nối WebSocket,
 // gom theo nguồn: còn sống hay chết, độ trễ đo được thật, lần cập nhật cuối.
 //   - REST: thời gian khứ hồi của từng lần gọi (trung vị 20 lần gần nhất).

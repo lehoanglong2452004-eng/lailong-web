@@ -1,8 +1,9 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: kiểm tra độ bền của một chiến lược.
 // Cùng thông số, chạy trên nhiều coin, chia thời gian thành nhiều đoạn liên tiếp và tách theo
 // trạng thái thị trường (lên, xuống, đi ngang). Lợi thế thật phải còn ở hầu hết các phần,
 // không chỉ nhờ một coin hay một giai đoạn may mắn.
-import { tradeStats, splitTrades } from "./backtest.js?v=202610200119";
+import { tradeStats, splitTrades } from "./backtest.js?v=202610220403";
 
 export const REGIMES = [["up", "Thị trường lên"], ["down", "Thị trường xuống"], ["flat", "Đi ngang"]];
 

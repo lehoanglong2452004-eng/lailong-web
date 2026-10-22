@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: bộ chiến lược backtest. Mỗi chiến lược chỉ dùng nến 0..i để ra tín hiệu ở nến i (không nhìn trước).
 // Chiến lược: { name, short, group, description, params, prepare(bars, p, cx) -> signal(i) }
 // signal(i) trả null hoặc một lệnh:
@@ -8,7 +9,7 @@
 //     tp1Px?, tp2Px?   chốt lời theo giá riêng của chiến lược (mặc định theo R chung),
 //     forceExit?(k)    true thì đóng lệnh ở giá đóng cửa nến k (ví dụ cuối ngày) }
 // Bộ máy chạy lệnh nằm trong backtest.js.
-import { atr, pivots } from './analytics.js?v=202610200119';
+import { atr, pivots } from './analytics.js?v=202610220403';
 
 // ---------- chỉ báo dùng chung, tính một lần cho mỗi bộ nến ----------
 const cxCache = new WeakMap();

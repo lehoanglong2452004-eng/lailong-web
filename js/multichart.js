@@ -1,13 +1,14 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: tab Đa biểu đồ. Tối đa 6 biểu đồ nến, mỗi ô chọn mã và khung thời gian riêng.
 //   Bố cục dùng chung lưới ghép với Terminal: kéo tiêu đề để đổi chỗ, kéo đường chia để đổi cỡ, nút — để thu nhỏ.
 //   Nút 1 / 2 / 3 / 4 / 6 dựng lại lưới đều theo số ô. Mọi tuỳ chỉnh chỉ giữ trong lúc tab còn mở.
-import { FlowChart } from "./flowchart.js?v=202610200119";
-import { Layout } from "./layout.js?v=202610200119";
-import { deltaOf, footprintStep } from "./market.js?v=202610200119";
-import { INTERVALS, niceStep } from "./util.js?v=202610200119";
-import { analyze } from "./radar.js?v=202610200119";
-import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202610200119";
-import { clockSkew } from "./health.js?v=202610200119";
+import { FlowChart } from "./flowchart.js?v=202610220403";
+import { Layout } from "./layout.js?v=202610220403";
+import { deltaOf, footprintStep } from "./market.js?v=202610220403";
+import { INTERVALS, niceStep } from "./util.js?v=202610220403";
+import { analyze } from "./radar.js?v=202610220403";
+import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202610220403";
+import { clockSkew } from "./health.js?v=202610220403";
 
 const MAX = 6, KEY = "lailong.multi.v1", POLL = 3000;
 const IDS = Array.from({ length: MAX }, (_, i) => "mc" + i);

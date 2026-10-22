@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: bảng màu giao diện. Biểu đồ canvas đọc màu trực tiếp từ T nên đổi màu là vẽ lại ngay.
 
 export const THEMES = {

@@ -1,3 +1,4 @@
+// © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: kết nối thẳng từ trình duyệt tới sàn futures (không cần máy chủ riêng).
 //
 // Mỗi sàn có cùng một bộ hàm:
@@ -10,7 +11,7 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610200119";
+import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202610220403";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
 function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
