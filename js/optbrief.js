@@ -3,10 +3,10 @@
 // Một dòng "Tóm lại", các mức cần nhớ (tường call, tường put, điểm lật gamma, max pain), biên độ dự kiến 3 hạn gần nhất,
 // tâm lý và 3 lệnh lớn gần nhất. Mỗi phần có ô giải thích thu gọn (<blockquote expandable> của Telegram), bấm ⌄ để mở.
 // Các mức tính trên những hạn trong 30 ngày, giống bảng "Đọc tâm lý quyền chọn"; max pain lấy hạn có OI lớn nhất trong 8 ngày.
-import { termStructure, ivRank, realizedVol, putCall, flowSummary, readSentiment } from "./optpro.js?v=202610240703";
-import { pick, levels, maxPain } from "./gex.js?v=202610240703";
-import { escHtml } from "./discipline.js?v=202610240703";
-import { iconOf } from "./icons.js?v=202610240703";
+import { termStructure, ivRank, realizedVol, putCall, flowSummary, readSentiment } from "./optpro.js?v=202610240716";
+import { pick, levels, maxPain } from "./gex.js?v=202610240716";
+import { escHtml } from "./discipline.js?v=202610240716";
+import { iconOf } from "./icons.js?v=202610240716";
 
 const DAY = 864e5;
 const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
