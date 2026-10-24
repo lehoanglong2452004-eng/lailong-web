@@ -8,11 +8,12 @@
 // - Lịch tin mạnh từ 0h hôm nay tới 7:30 sáng mai, tin đã ra kèm kết quả, tin sắp ra kèm khung giờ nên đứng ngoài.
 // - Ngân sách rủi ro hôm nay lấy từ nhật ký: rủi ro mỗi lệnh, còn được lỗ bao nhiêu trước khi bị khoá, số lệnh còn lại.
 // Từ bản thứ hai trở đi có thêm một dòng so gió xuôi / gió ngược với bản trước.
-import { riskLock, guard } from "./journal.js?v=202610240605";
-import { cotNote } from "./instview.js?v=202610240605";
-import { etfSummary } from "./flowsview.js?v=202610240605";
-import { TOP } from "./shock.js?v=202610240605";
-import { fmtDate, FLAG, pad2 } from "./util.js?v=202610240605";
+import { riskLock, guard } from "./journal.js?v=202610240610";
+import { cotNote } from "./instview.js?v=202610240610";
+import { etfSummary } from "./flowsview.js?v=202610240610";
+import { TOP } from "./shock.js?v=202610240610";
+import { fmtDate, FLAG, pad2 } from "./util.js?v=202610240610";
+import { iconOf, GROUP } from "./icons.js?v=202610240610";
 
 const MIN = 60e3;
 const WD = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
@@ -22,7 +23,10 @@ const hm = t => `${pad2(new Date(t).getHours())}:${pad2(new Date(t).getMinutes()
 export const dayKey = t => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 export const COT_SHOW = ["DX", "BTC", "ETH", "GC", "CL"];
 export const COT_NAME = { DX: "USD", BTC: "Bitcoin CME", ETH: "Ether CME", GC: "Vàng", CL: "Dầu WTI" };
-export const SLOTS = [{ id: "sang", at: "07:30", name: "sáng" }, { id: "trua", at: "11:30", name: "trưa" }, { id: "chieu", at: "15:30", name: "chiều" }, { id: "toi", at: "20:00", name: "tối" }];
+export const SLOTS = [
+  { id: "sang", at: "07:30", name: "sáng", icon: "🌅" }, { id: "trua", at: "11:30", name: "trưa", icon: "☀️" },
+  { id: "chieu", at: "15:30", name: "chiều", icon: "🌇" }, { id: "toi", at: "20:00", name: "tối", icon: "🌙" },
+];
 export const slotTime = (s, t) => { const d = new Date(t), [h, m] = s.at.split(":").map(Number); d.setHours(h, m, 0, 0); return d.getTime(); };
 
 // khung đang chạy: khung gần nhất đã tới giờ hôm nay; trước 7:30 vẫn là khung tối hôm qua (today = false)
@@ -83,7 +87,7 @@ export function cotLines(items, max = 7) {
   const lab = i => i >= 80 ? "đầu cơ long đông" : i <= 20 ? "đầu cơ short đông" : "trung tính";
   const rows = [...main, ...ext].slice(0, max).map(x => {
     const note = cotNote(x);
-    return { sym: x.sym, idx: x.specIdx, txt: `${COT_NAME[x.sym] || x.name}: chỉ số ${Math.round(x.specIdx)} (${lab(x.specIdx)}), tuần này đầu cơ ${x.specChg >= 0 ? "tăng" : "giảm"} ròng ${num(Math.abs(x.specChg), 0)} hợp đồng${note ? `. ${note}` : ""}.` };
+    return { sym: x.sym, idx: x.specIdx, txt: `${iconOf(x.sym) ? iconOf(x.sym) + " " : ""}${COT_NAME[x.sym] || x.name}: chỉ số ${Math.round(x.specIdx)} (${lab(x.specIdx)}), tuần này đầu cơ ${x.specChg >= 0 ? "tăng" : "giảm"} ròng ${num(Math.abs(x.specChg), 0)} hợp đồng${note ? `. ${note}` : ""}.` };
   });
   return { date: xs.length ? xs[0].date : null, rows };
 }
@@ -125,7 +129,7 @@ export function riskBudget(trades, cfg, now = Date.now(), prevLock = null) {
 export function leanChanges(prev, L, now = Date.now()) {
   if (!prev || !prev.leans || !(prev.t > now - 864e5)) return null;
   const name = prev.day === dayKey(now) ? prev.name : prev.name === "tối" ? "tối qua" : `${prev.name} hôm qua`;
-  const d = L.map(x => { const p = prev.leans.find(y => y.name === x.name); return p && p.label !== x.label ? `${x.name} ${p.label} → ${x.label}` : null; }).filter(Boolean);
+  const d = L.map(x => { const p = prev.leans.find(y => y.name === x.name); return p && p.label !== x.label ? `${GROUP[x.name]} ${x.name} ${p.label} → ${x.label}` : null; }).filter(Boolean);
   return `So với bản ${name}: ${d.length ? d.join(", ") : "gió không đổi"}.`;
 }
 
@@ -134,7 +138,7 @@ export function compass({ fx, vol, flows, cot, events, trades, cfg, lock = null,
   const usd = usdTrend(fx), mood = riskMood(vol), etf = etfFlow(flows), L = leans(usd, mood, etf);
   const macro = [usd, mood, etf].filter(Boolean).map(x => x.txt);
   if (usd || mood || etf) {
-    macro.push("→ " + L.map(x => `${x.name}: ${x.label}${x.why.length ? ` (${x.why.join(", ")})` : ""}`).join(" · "));
+    macro.push("→ " + L.map(x => `${GROUP[x.name]} ${x.name}: ${x.label}${x.why.length ? ` (${x.why.join(", ")})` : ""}`).join(" · "));
     const ch = leanChanges(prev, L, now); if (ch) macro.push(ch);
   }
   const c = cotLines(cot), ev = todayEvents(events, now), b = cfg ? riskBudget(trades || [], cfg, now, lock) : null;
@@ -152,7 +156,7 @@ export function compass({ fx, vol, flows, cot, events, trades, cfg, lock = null,
 
 const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 export function compassHtml(c) {
-  return `🧭 <b>LA BÀN ${c.slot.name.toUpperCase()}</b> · ${c.title}\n` + c.sections.map(s => `<b>${esc(s.title)}</b>\n` + s.lines.map(l => (l.startsWith("→") || l.startsWith("⛔") ? "" : "• ") + esc(l)).join("\n")).join("\n") +
+  return `🧭 <b>LA BÀN ${c.slot.name.toUpperCase()}</b> ${c.slot.icon} · ${c.title}\n` + c.sections.map(s => `<b>${esc(s.title)}</b>\n` + s.lines.map(l => (l.startsWith("→") || l.startsWith("⛔") ? "" : "• ") + esc(l)).join("\n")).join("\n") +
     "\n<i>Bối cảnh trong ngày, không phải tín hiệu vào lệnh.</i>";
 }
 export const compassText = c => `La bàn ${c.slot.name} ${c.title}: ${c.leans.map(x => `${x.name} ${x.label}`).join(", ")}`;

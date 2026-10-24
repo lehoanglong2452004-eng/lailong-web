@@ -9,10 +9,11 @@
 //    12 nến trước (ngược lại cho SHORT).
 // 4. Order flow nến 1 giờ: chênh lệch mua bán chủ động 24 nến từ 3% khối lượng và 6 nến gần nhất cùng chiều.
 // Cả bốn cùng chiều mới là đồng thuận. Kèm vùng vào, cắt lỗ theo ATR và khối lượng tính bằng sizeFor của nhật ký.
-import { sizeFor } from "./journal.js?v=202610240605";
-import { atrSeries } from "./radar.js?v=202610240605";
-import { assetClass, parts } from "./shock.js?v=202610240605";
-import { escHtml } from "./discipline.js?v=202610240605";
+import { sizeFor } from "./journal.js?v=202610240610";
+import { atrSeries } from "./radar.js?v=202610240610";
+import { assetClass, parts } from "./shock.js?v=202610240610";
+import { escHtml } from "./discipline.js?v=202610240610";
+import { iconOf, GROUP } from "./icons.js?v=202610240610";
 
 export const FLOW_MIN = 0.03; // chênh lệch mua bán chủ động tối thiểu, theo tỷ lệ khối lượng 24 nến
 export const COT_MOVE = 0.01; // thay đổi vị thế ròng tối thiểu của đầu cơ trong tuần, theo tỷ lệ open interest
@@ -34,13 +35,13 @@ export function linkOf(sym) {
 export function macroLayer(sym, leans) {
   const k = linkOf(sym).lean, L = k && (leans || []).find(x => x.name === k);
   if (!L) return { dir: 0, txt: "chưa có dữ liệu vĩ mô cho mã này" };
-  return { dir: Math.sign(L.sc), txt: `${k.toLowerCase()} ${L.label}${L.why.length ? ` (${L.why.join(", ")})` : ""}` };
+  return { dir: Math.sign(L.sc), txt: `${GROUP[k]} ${k.toLowerCase()} ${L.label}${L.why.length ? ` (${L.why.join(", ")})` : ""}` };
 }
 
 export function cotLayer(sym, items) {
   const k = linkOf(sym), x = k.cot && (items || []).find(i => i.sym === k.cot);
   if (!x || x.specIdx == null) return { dir: 0, txt: "chưa có COT cho mã này" };
-  const name = `${x.name}${k.proxy ? " (đại diện)" : ""}`, chg = x.oi ? x.specChg / x.oi : 0;
+  const name = `${iconOf(x.sym)} ${x.name}${k.proxy ? " (đại diện)" : ""}`, chg = x.oi ? x.specChg / x.oi : 0;
   if (x.specIdx >= 90) return { dir: -1, txt: `${name}: chỉ số ${Math.round(x.specIdx)}, đám đông long đã chật` };
   if (x.specIdx <= 10) return { dir: 1, txt: `${name}: chỉ số ${Math.round(x.specIdx)}, short đông, dễ bị ép mua lại` };
   const dir = Math.abs(chg) >= COT_MOVE ? Math.sign(chg) : 0;

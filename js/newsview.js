@@ -2,8 +2,8 @@
 // Lai Long Web: lịch kinh tế, tin tức 6 mục, bản đồ tác động và phản ứng giá sau tin.
 // Bản web đọc data/calendar.json, data/news.json, data/reactions.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/news.py).
-import { setFresh } from "./fresh.js?v=202610240605";
-import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202610240605";
+import { setFresh } from "./fresh.js?v=202610240610";
+import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202610240610";
 
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],
   [/FOMC|Federal Funds|Fed Chair|Powell/i, "Fed"], [/Retail Sales/i, "doanh số bán lẻ"], [/GDP/i, "GDP"], [/PCE/i, "chi tiêu PCE (Fed hay dùng)"],
@@ -99,7 +99,7 @@ export function initNews({ $, esc, alerts, coin }) {
     pill.hidden = false; pill.className = "pill evpill" + (min <= 30 ? " hot" : "");
     pill.innerHTML = `⚠ <span>${esc(next.country)} ${esc(next.title)} ${min > 0 ? `sau ${min >= 60 ? Math.floor(min / 60) + " giờ " : ""}${min % 60} phút` : "đang ra tin"}</span>`;
     pill.dataset.tip = `${FLAG[next.country] || ""} ${next.title}${viName(next.title) ? ` (${viName(next.title)})` : ""} lúc ${fmtTime(next.t)}. Dự báo ${next.forecast || "-"}, kỳ trước ${next.previous || "-"}. Quanh giờ ra tin giá thường giật mạnh hai chiều, chênh lệch giá mua bán giãn ra: nên đứng ngoài hoặc giảm khối lượng.`;
-    if (alerts.cfg.newsEv && min <= 15 && min >= 0 && !firedEv.has(next.t + next.title) && firedEv.add(next.t + next.title)) alerts.fire("ev" + next.t + next.title, `Còn ${min} phút nữa ra tin ${next.country} ${next.title}${viName(next.title) ? ` (${viName(next.title)})` : ""}. Cân nhắc đứng ngoài.`, "price");
+    if (alerts.cfg.newsEv && min <= 15 && min >= 0 && !firedEv.has(next.t + next.title) && firedEv.add(next.t + next.title)) alerts.fire("ev" + next.t + next.title, `Còn ${min} phút nữa ra tin ${FLAG[next.country] ? FLAG[next.country] + " " : ""}${next.country} ${next.title}${viName(next.title) ? ` (${viName(next.title)})` : ""}. Cân nhắc đứng ngoài.`, "price");
   }
 
   const newsRow = x => `<a class="newsit${x.hot ? " hot" : ""}" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer"><span class="nt">${fmtTime(x.t, true).slice(0, 11)} · ${esc(x.source)}${x.cat && !cat ? " · " + esc((CATS.find(c => c.id === x.cat) || {}).name || "") : ""}${x.coins && x.coins.length ? " · " + esc(x.coins.join(", ")) : ""}</span>${x.hot ? "🔥 " : ""}${esc(x.title)}</a>`;

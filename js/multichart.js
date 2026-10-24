@@ -2,13 +2,13 @@
 // Lai Long Web: tab Đa biểu đồ. Tối đa 6 biểu đồ nến, mỗi ô chọn mã và khung thời gian riêng.
 //   Bố cục dùng chung lưới ghép với Terminal: kéo tiêu đề để đổi chỗ, kéo đường chia để đổi cỡ, nút — để thu nhỏ.
 //   Nút 1 / 2 / 3 / 4 / 6 dựng lại lưới đều theo số ô. Mọi tuỳ chỉnh chỉ giữ trong lúc tab còn mở.
-import { FlowChart } from "./flowchart.js?v=202610240605";
-import { Layout } from "./layout.js?v=202610240605";
-import { deltaOf, footprintStep } from "./market.js?v=202610240605";
-import { INTERVALS, niceStep } from "./util.js?v=202610240605";
-import { analyze } from "./radar.js?v=202610240605";
-import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202610240605";
-import { clockSkew } from "./health.js?v=202610240605";
+import { FlowChart } from "./flowchart.js?v=202610240610";
+import { Layout } from "./layout.js?v=202610240610";
+import { deltaOf, footprintStep } from "./market.js?v=202610240610";
+import { INTERVALS, niceStep } from "./util.js?v=202610240610";
+import { analyze } from "./radar.js?v=202610240610";
+import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202610240610";
+import { clockSkew } from "./health.js?v=202610240610";
 
 const MAX = 6, KEY = "lailong.multi.v1", POLL = 3000;
 const IDS = Array.from({ length: MAX }, (_, i) => "mc" + i);
