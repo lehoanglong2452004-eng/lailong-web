@@ -5,13 +5,14 @@
 // Nút "Gửi Telegram" gửi tin danh sách 11 tài sản kèm hàng nút; bấm mã nào dưới tin thì Desk đang mở gửi bản tin đầy đủ
 // của mã đó (optbrief.js, tgbot.js). Mỗi sáng từ 7:31, ngay sau La bàn sáng, tự gửi bản BTC (bật ở menu Cảnh báo).
 // Ngày đã gửi lưu trên máy này.
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610240716";
-import { briefState, optBriefHtml, optBriefText, optListHtml, optKeyboard } from "./optbrief.js?v=202610240716";
-import { dayKey } from "./compass.js?v=202610240716";
-import { setFresh } from "./fresh.js?v=202610240716";
-import { initOptPro } from "./optview.js?v=202610240716";
-import { initChain } from "./chainview.js?v=202610240716";
-import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610240716";
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610240731";
+import { briefState, optBriefHtml, optBriefText, optListHtml, optKeyboard } from "./optbrief.js?v=202610240731";
+import { dayKey } from "./compass.js?v=202610240731";
+import { setFresh } from "./fresh.js?v=202610240731";
+import { initOptPro } from "./optview.js?v=202610240731";
+import { initChain } from "./chainview.js?v=202610240731";
+import { refOf } from "./chain.js?v=202610240731";
+import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610240731";
 
 export const ASSETS = [
   { id: "BTC", src: "deribit", name: "Bitcoin (Deribit)" }, { id: "ETH", src: "deribit", name: "Ethereum (Deribit)" },
@@ -27,17 +28,18 @@ const fmtK = (k, spot) => spot >= 1000 ? Math.round(k).toLocaleString("en-US") :
 const dstr = t => { const d = new Date(t); return `${d.getUTCDate()}/${d.getUTCMonth() + 1}`; };
 
 // lời giải thích tự động theo vị trí giá so với các mức
-export function readGex(L, spot) {
+// R: quy đổi ra giá tài sản thật cho GLD, SLV, USO (refOf trong chain.js), có thì ghi kèm "≈ vàng 4,047"
+export function readGex(L, spot, R = null) {
   if (!L) return [];
-  const out = [];
+  const out = [], fk = (k, sp) => fmtK(k, sp) + (R ? ` (≈ ${R.low} ${R.fmt(k)})` : "");
   out.push(L.net >= 0
     ? "GEX tổng dương: nhà tạo lập đang ở thế gamma dương, họ bán khi giá lên và mua khi giá xuống để cân vị thế. Giá thường đi trong biên độ hẹp, các cú phá vỡ dễ bị kéo ngược lại."
     : "GEX tổng âm: nhà tạo lập ở thế gamma âm, họ phải mua đuổi khi giá lên và bán đuổi khi giá xuống. Biến động dễ bị khuếch đại, xu hướng chạy xa hơn bình thường.");
   if (L.flip) out.push(spot > L.flip
-    ? `Giá đang trên điểm lật gamma ${fmtK(L.flip, spot)}: vùng ổn định hơn. Rơi xuống dưới mức này thì biến động có thể tăng nhanh.`
-    : `Giá đang dưới điểm lật gamma ${fmtK(L.flip, spot)}: vùng biến động mạnh. Lấy lại được mức này thì thị trường thường dịu lại.`);
-  out.push(`Tường call ${fmtK(L.callWall, spot)} thường là kháng cự, tường put ${fmtK(L.putWall, spot)} thường là hỗ trợ trong ngắn hạn.`);
-  if (L.maxPain) out.push(`Max pain ${fmtK(L.maxPain, spot)}: gần ngày đáo hạn giá hay bị hút về quanh mức này, nhất là khi GEX dương.`);
+    ? `Giá đang trên điểm lật gamma ${fk(L.flip, spot)}: vùng ổn định hơn. Rơi xuống dưới mức này thì biến động có thể tăng nhanh.`
+    : `Giá đang dưới điểm lật gamma ${fk(L.flip, spot)}: vùng biến động mạnh. Lấy lại được mức này thì thị trường thường dịu lại.`);
+  out.push(`Tường call ${fk(L.callWall, spot)} thường là kháng cự, tường put ${fk(L.putWall, spot)} thường là hỗ trợ trong ngắn hạn.`);
+  if (L.maxPain) out.push(`Max pain ${fk(L.maxPain, spot)}: gần ngày đáo hạn giá hay bị hút về quanh mức này, nhất là khi GEX dương.`);
   return out;
 }
 
@@ -108,19 +110,20 @@ export function initGex({ $, esc, alerts, toast }) {
     const el = $("gexKpis");
     if (err) { el.innerHTML = `<div class="empty">${esc(err)}</div>`; return; }
     if (!chain || !L) { el.innerHTML = `<div class="empty">${loading ? "Đang tải chuỗi quyền chọn…" : "Không có hợp đồng nào trong khoảng hạn này."}</div>`; return; }
-    const sp = chain.spot, atm = atmIv(chain, 0), k = v => fmtK(v, sp);
+    const sp = chain.spot, atm = atmIv(chain, 0), R = refOf(chain), k = v => fmtK(v, sp);
+    const rf = v => R ? ` <small class="refpx" data-tip="${esc(R.tip)}">≈ ${R.low} ${R.fmt(v)}</small>` : "";
     const pc = v => `<small class="${v >= sp ? "up" : "dn"}">${((v / sp - 1) * 100).toFixed(1)}%</small>`;
     el.innerHTML = [
-      ["Giá", k(sp) + (chain.chg != null ? ` <small class="${chain.chg >= 0 ? "up" : "dn"}">${chain.chg >= 0 ? "+" : ""}${(+chain.chg).toFixed(2)}%</small>` : ""), "Giá tài sản cơ sở lúc lấy dữ liệu"],
+      ["Giá", k(sp) + (chain.chg != null ? ` <small class="${chain.chg >= 0 ? "up" : "dn"}">${chain.chg >= 0 ? "+" : ""}${(+chain.chg).toFixed(2)}%</small>` : "") + rf(sp), R ? `Giá quỹ lúc lấy dữ liệu. ${R.tip}` : "Giá tài sản cơ sở lúc lấy dữ liệu"],
       ["GEX tổng", `<span class="${L.net >= 0 ? "up" : "dn"}">${fmtG(L.net)}</span> <small>${L.net >= 0 ? "gamma dương" : "gamma âm"}</small>`, "Số USD nhà tạo lập phải mua/bán thêm khi giá đi 1%. Dương: họ đi ngược giá (giảm biến động). Âm: họ đi theo giá (tăng biến động)."],
-      ["Tường call", `${k(L.callWall)} ${pc(L.callWall)}`, "Strike trên giá có gamma call lớn nhất: thường là kháng cự"],
-      ["Tường put", `${k(L.putWall)} ${pc(L.putWall)}`, "Strike dưới giá có gamma put lớn nhất: thường là hỗ trợ"],
-      ["Điểm lật gamma", L.flip ? `${k(L.flip)} ${pc(L.flip)}` : "–", "Mức giá mà GEX tổng đổi dấu. Trên mức này thị trường thường êm, dưới mức này dễ biến động mạnh."],
-      ["Max pain", L.maxPain ? `${k(L.maxPain)} ${pc(L.maxPain)}` : "–", "Giá đáo hạn làm người mua quyền chọn lỗ nhiều nhất"],
+      ["Tường call", `${k(L.callWall)} ${pc(L.callWall)}${rf(L.callWall)}`, "Strike trên giá có gamma call lớn nhất: thường là kháng cự"],
+      ["Tường put", `${k(L.putWall)} ${pc(L.putWall)}${rf(L.putWall)}`, "Strike dưới giá có gamma put lớn nhất: thường là hỗ trợ"],
+      ["Điểm lật gamma", L.flip ? `${k(L.flip)} ${pc(L.flip)}${rf(L.flip)}` : "–", "Mức giá mà GEX tổng đổi dấu. Trên mức này thị trường thường êm, dưới mức này dễ biến động mạnh."],
+      ["Max pain", L.maxPain ? `${k(L.maxPain)} ${pc(L.maxPain)}${rf(L.maxPain)}` : "–", "Giá đáo hạn làm người mua quyền chọn lỗ nhiều nhất"],
       ["Put/Call OI", L.pcr != null ? L.pcr.toFixed(2) : "–", "Tỷ lệ hợp đồng put mở so với call. Trên 1: nhiều người mua bảo hiểm giảm giá."],
       ["IV ATM gần nhất", atm ? (atm * 100).toFixed(1) + "%" : "–", "Độ biến động ngụ ý của hạn gần nhất, ở strike sát giá"],
     ].map(([t, v, tip]) => `<div data-tip="${esc(tip)}"><small>${t}</small><b>${v}</b></div>`).join("");
-    $("gexRead").innerHTML = readGex(L, sp).map(x => `<li>${esc(x)}</li>`).join("");
+    $("gexRead").innerHTML = readGex(L, sp, R).map(x => `<li>${esc(x)}</li>`).join("");
   }
 
   // ---------- biểu đồ GEX / OI theo strike (thanh ngang) ----------
@@ -261,7 +264,8 @@ export function initGex({ $, esc, alerts, toast }) {
     const r = e.target.getBoundingClientRect(), top = 8, bot = cvs.bars.h - 18, kLo = st[0].k, kHi = st[st.length - 1].k;
     const k = kLo + (bot - (e.clientY - r.top)) / (bot - top) * (kHi - kLo), x = st.reduce((a, b) => Math.abs(b.k - k) < Math.abs(a.k - k) ? b : a);
     if (x.k !== hoverK) { hoverK = x.k; drawBars(); }
-    e.target.dataset.tip = `Strike ${fmtK(x.k, chain.spot)}: GEX call ${fmtUsd(x.call)}, put -${fmtUsd(-x.put)}, ròng ${fmtG(x.net)}. OI call ${Math.round(x.callOi).toLocaleString("en-US")}, OI put ${Math.round(x.putOi).toLocaleString("en-US")}.`;
+    const R = refOf(chain);
+    e.target.dataset.tip = `Strike ${fmtK(x.k, chain.spot)}${R ? ` (≈ ${R.low} ${R.fmt(x.k)})` : ""}: GEX call ${fmtUsd(x.call)}, put -${fmtUsd(-x.put)}, ròng ${fmtG(x.net)}. OI call ${Math.round(x.callOi).toLocaleString("en-US")}, OI put ${Math.round(x.putOi).toLocaleString("en-US")}.`;
   };
   $("gexBars").onmouseleave = () => { hoverK = null; drawBars(); };
   let drag = null;

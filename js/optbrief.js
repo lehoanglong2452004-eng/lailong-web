@@ -3,10 +3,11 @@
 // Một dòng "Tóm lại", các mức cần nhớ (tường call, tường put, điểm lật gamma, max pain), biên độ dự kiến 3 hạn gần nhất,
 // tâm lý và 3 lệnh lớn gần nhất. Mỗi phần có ô giải thích thu gọn (<blockquote expandable> của Telegram), bấm ⌄ để mở.
 // Các mức tính trên những hạn trong 30 ngày, giống bảng "Đọc tâm lý quyền chọn"; max pain lấy hạn có OI lớn nhất trong 8 ngày.
-import { termStructure, ivRank, realizedVol, putCall, flowSummary, readSentiment } from "./optpro.js?v=202610240716";
-import { pick, levels, maxPain } from "./gex.js?v=202610240716";
-import { escHtml } from "./discipline.js?v=202610240716";
-import { iconOf } from "./icons.js?v=202610240716";
+import { termStructure, ivRank, realizedVol, putCall, flowSummary, readSentiment } from "./optpro.js?v=202610240731";
+import { pick, levels, maxPain } from "./gex.js?v=202610240731";
+import { refOf } from "./chain.js?v=202610240731";
+import { escHtml } from "./discipline.js?v=202610240731";
+import { iconOf } from "./icons.js?v=202610240731";
 
 const DAY = 864e5;
 const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -42,20 +43,21 @@ export function leanOf(lines) {
 
 export function optBriefHtml(st) {
   const { asset, chain, live, ts, pc, rank, rv, flow, L, mp, lines, now } = st, spot = chain.spot;
-  const k = v => px(v, spot);
+  // GLD, SLV, USO: kèm giá vàng, bạc, dầu tương ứng ("≈ vàng 4,047")
+  const R = refOf(chain), k = v => px(v, spot), g = v => R ? ` ≈ ${R.low} ${R.fmt(v)}` : "";
   const away = v => `${v >= spot ? "+" : ""}${((v / spot - 1) * 100).toFixed(1)}%`;
   const c30 = ts.cm[30] || {}, lean = leanOf(lines), ic = iconOf(asset), out = [];
   out.push(`📊 <b>QUYỀN CHỌN ${ic ? ic + " " : ""}${escHtml(asset)}</b> · ${hm(now)}`);
-  out.push(`<i>Giá ${k(spot)} · ${live ? "Deribit trực tiếp" : "CBOE trễ 15 phút"} · các hạn trong 30 ngày</i>`);
+  out.push(`<i>Giá ${k(spot)}${g(spot)} · ${live ? "Deribit trực tiếp" : "CBOE trễ 15 phút"} · các hạn trong 30 ngày</i>`);
   const regime = !L ? "" : L.net >= 0 ? `, thị trường dễ đi ngang trong khoảng ${k(L.putWall)} – ${k(L.callWall)}` : ", biến động dễ bị khuếch đại, xu hướng dễ chạy xa";
   out.push("", `🎯 <b>Tóm lại: ${lean.text}</b>${regime}.`, `<i>${lean.up} dấu hiệu tăng · ${lean.dn} giảm · ${lean.flat} trung lập</i>`);
 
   if (L) {
     out.push("", "🧱 <b>CÁC MỨC CẦN NHỚ</b>",
-      `🟥 Tường call <b>${k(L.callWall)}</b> (${away(L.callWall)}): kháng cự`,
-      `🟩 Tường put <b>${k(L.putWall)}</b> (${away(L.putWall)}): hỗ trợ`);
-    if (L.flip) out.push(`🟪 Điểm lật gamma <b>${k(L.flip)}</b>: giá đang ${spot > L.flip ? "TRÊN, thị trường êm" : "DƯỚI, dễ giật mạnh"}`);
-    if (mp && mp.k) out.push(`🧲 Max pain hạn ${dstr(mp.exp)}: <b>${k(mp.k)}</b>, giá hay bị hút về đây sát giờ đáo hạn`);
+      `🟥 Tường call <b>${k(L.callWall)}</b> (${away(L.callWall)})${g(L.callWall)}: kháng cự`,
+      `🟩 Tường put <b>${k(L.putWall)}</b> (${away(L.putWall)})${g(L.putWall)}: hỗ trợ`);
+    if (L.flip) out.push(`🟪 Điểm lật gamma <b>${k(L.flip)}</b>${g(L.flip)}: giá đang ${spot > L.flip ? "TRÊN, thị trường êm" : "DƯỚI, dễ giật mạnh"}`);
+    if (mp && mp.k) out.push(`🧲 Max pain hạn ${dstr(mp.exp)}: <b>${k(mp.k)}</b>${g(mp.k)}, giá hay bị hút về đây sát giờ đáo hạn`);
     out.push(`<blockquote expandable>Tường call: giá thực hiện có nhiều call nhất phía trên giá. Nhà tạo lập đã bán các call này nên khi giá lên gần, họ bán ra để phòng hộ, tạo lực cản.
 Tường put: tương tự ở phía dưới, họ mua vào khi giá xuống gần nên thành vùng đỡ.
 Điểm lật gamma: trên mức này nhà tạo lập mua khi giá giảm và bán khi giá tăng (kéo giá về giữa); dưới mức này họ làm ngược lại (đẩy giá chạy xa hơn).
@@ -67,7 +69,7 @@ Max pain: mức giá làm người mua quyền chọn lỗ nhiều nhất lúc �
     out.push("", "📏 <b>BIÊN ĐỘ DỰ KIẾN</b>");
     for (const m of moves) {
       const em = m.atm * spot * Math.sqrt(m.days / 365);
-      out.push(`Hạn ${dstr(m.exp)} (còn ${m.days < 2 ? m.days.toFixed(1) : Math.round(m.days)} ngày): <b>±${k(em)}</b> (±${(em / spot * 100).toFixed(2)}%) → ${k(spot - em)} – ${k(spot + em)}`);
+      out.push(`Hạn ${dstr(m.exp)} (còn ${m.days < 2 ? m.days.toFixed(1) : Math.round(m.days)} ngày): <b>±${k(em)}</b> (±${(em / spot * 100).toFixed(2)}%) → ${k(spot - em)} – ${k(spot + em)}${R ? `\n   <i>≈ ${R.low} ${R.fmt(spot - em)} – ${R.fmt(spot + em)}</i>` : ""}`);
     }
     out.push(`<blockquote expandable>Tính từ IV của quyền chọn ngay giá hiện tại: biên độ = IV × giá × √(số ngày còn lại / 365). Quyền chọn đang định giá khoảng 68% khả năng giá vẫn nằm trong vùng này lúc đáo hạn. Giá ra ngoài vùng là thị trường bị bất ngờ. Cách dùng thường gặp: đặt cắt lỗ ngoài vùng, chốt lời trong vùng.</blockquote>`);
   }
@@ -109,6 +111,8 @@ export function optListHtml(states, now = Date.now()) {
     const spot = st.chain.spot, k = v => px(v, spot);
     const lean = leanOf(st.lines), dot = DOT[Math.sign(lean.score)], ic = iconOf(st.asset);
     out.push(`${ic ? ic + " " : ""}<b>${escHtml(st.asset)}</b> ${k(spot)} · ${dot} ${lean.text.replace("trung lập, ", "")}${st.L ? ` · ${k(st.L.putWall)} – ${k(st.L.callWall)}` : ""}`);
+    const R = refOf(st.chain); // GLD, SLV, USO: thêm dòng quy ra giá vàng, bạc, dầu
+    if (R) out.push(`   <i>≈ ${R.low} ${R.fmt(spot)}${st.L ? ` · ${R.fmt(st.L.putWall)} – ${R.fmt(st.L.callWall)}` : ""}</i>`);
   }
   out.push("", "👇 Bấm một mã để xem bản tin đầy đủ kèm giải thích.");
   return out.join("\n");

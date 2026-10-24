@@ -1,14 +1,14 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: tab Tín hiệu. Kho lịch sử, sổ tín hiệu tự chấm điểm, thống kê theo bối cảnh, kế hoạch trước phiên.
 // Phần tính nằm ở signals.js, context.js, levels.js, plan.js; phần nạp dữ liệu ở histdata.js và eventlog.js.
-import { SIGNALS, VERDICT, prepBars, detectAll, placeEvents, scoreEvents, baseline, scorecard, byContext, edgesFor, horizonsFor, fmtH } from "./signals.js?v=202610240716";
-import { contextSeries, sessionOf } from "./context.js?v=202610240716";
-import { liveZones } from "./levels.js?v=202610240716";
-import { buildPlan, planText, planHtml, sessionWindow } from "./plan.js?v=202610240716";
-import { sigListHtml, sigListText, sigDetailHtml, sigDetailText, sigKeyboard, parseSigTap } from "./sigbrief.js?v=202610240716";
-import { storeStatus, startFetch, loadHistory } from "./histdata.js?v=202610240716";
-import { liveEvents, eventCount } from "./eventlog.js?v=202610240716";
-import { getJson, INTERVALS, decimalsFor, fmtTime } from "./util.js?v=202610240716";
+import { SIGNALS, VERDICT, prepBars, detectAll, placeEvents, scoreEvents, baseline, scorecard, byContext, edgesFor, horizonsFor, fmtH } from "./signals.js?v=202610240731";
+import { contextSeries, sessionOf } from "./context.js?v=202610240731";
+import { liveZones } from "./levels.js?v=202610240731";
+import { buildPlan, planText, planHtml, sessionWindow } from "./plan.js?v=202610240731";
+import { sigListHtml, sigListText, sigDetailHtml, sigDetailText, sigKeyboard, parseSigTap } from "./sigbrief.js?v=202610240731";
+import { storeStatus, startFetch, loadHistory } from "./histdata.js?v=202610240731";
+import { liveEvents, eventCount } from "./eventlog.js?v=202610240731";
+import { getJson, INTERVALS, decimalsFor, fmtTime } from "./util.js?v=202610240731";
 
 export const VERIFIED_KEY = "lailong.verified";
 const TFS = ["5m", "15m", "1h", "4h"];

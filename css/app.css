@@ -638,6 +638,9 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 .chaintab td.k { text-align: center; font-weight: 700; color: var(--accent); background: var(--panel-2); border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 .chaintab td.itm { background: color-mix(in srgb, var(--accent) 7%, transparent); }
 .chaintab tr.atm td.k { color: #000; background: var(--accent); }
+.chaintab td.ref, .chaintab th.ref { text-align: center; background: var(--panel-2); border-right: 1px solid var(--line); }
+.chaintab td.ref { color: var(--ink); font-weight: 600; }
+.refpx { color: var(--muted); font-weight: 500; }
 .chaintab tr:hover td { background: color-mix(in srgb, var(--ink) 6%, transparent); }
 .chaintab td.oi { position: relative; min-width: 76px; }
 .chaintab td.oi i { position: absolute; top: 2px; bottom: 2px; }
