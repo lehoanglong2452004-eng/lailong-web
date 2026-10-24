@@ -7,11 +7,11 @@
 // - COT: chỉ số COT 3 năm của đầu cơ lớn ở USD, BTC, ETH, vàng, dầu và các hợp đồng đang ở cực trị.
 // - Lịch tin mạnh hôm nay, kèm khung giờ nên đứng ngoài.
 // - Ngân sách rủi ro hôm nay lấy từ nhật ký: rủi ro mỗi lệnh, còn được lỗ bao nhiêu trước khi bị khoá, số lệnh còn lại.
-import { riskLock, guard } from "./journal.js?v=202610240537";
-import { cotNote } from "./instview.js?v=202610240537";
-import { etfSummary } from "./flowsview.js?v=202610240537";
-import { TOP } from "./shock.js?v=202610240537";
-import { fmtDate, FLAG, pad2 } from "./util.js?v=202610240537";
+import { riskLock, guard } from "./journal.js?v=202610240545";
+import { cotNote } from "./instview.js?v=202610240545";
+import { etfSummary } from "./flowsview.js?v=202610240545";
+import { TOP } from "./shock.js?v=202610240545";
+import { fmtDate, FLAG, pad2 } from "./util.js?v=202610240545";
 
 const MIN = 60e3;
 const WD = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
