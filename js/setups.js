@@ -10,7 +10,7 @@
 // Cả hai: chốt lời ở 2R, hết maxBars nến mà chưa chạm thì đóng ở giá đóng cửa. Nến chạm cả cắt lỗ lẫn chốt lời
 // thì tính là cắt lỗ (giả định xấu nhất). Một setup chỉ giữ một lệnh mỗi lúc.
 // Chi phí: phí taker hai chiều cộng trượt giá hai chiều, đổi ra R theo khoảng cắt lỗ của từng lệnh.
-import { equityStats } from "./fractal.js?v=202610240647";
+import { equityStats } from "./fractal.js?v=202610240703";
 
 export const SETUPS = {
   wake: { name: "Đánh thức", mode: "follow", confirm: 3, tip: "Theo hướng khối lượng bất thường xuất hiện giữa lúc nhàm chán, sau khi giá xác nhận bằng một nến đóng cửa vượt nến sự kiện" },

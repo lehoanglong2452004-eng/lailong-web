@@ -2,14 +2,15 @@
 // Lai Long Web: cảnh báo bằng tiếng và thông báo trình duyệt.
 // Loại cảnh báo: nghi iceberg, tường lớn xuất hiện gần giá, tường bị rút khi giá tới gần, Big Trade, giá chạm mức đã đặt,
 // gác cổng kỷ luật (gỡ gạc, sắp khoá, đã khoá), kịch bản sốc 60 phút trước tin lớn, la bàn 4 lần mỗi ngày,
-// đồng thuận 4 lớp (vĩ mô, COT, cấu trúc giá, order flow cùng chiều), bản tin nóng gom mỗi 30 phút.
+// đồng thuận 4 lớp (vĩ mô, COT, cấu trúc giá, order flow cùng chiều), bản tin nóng gom mỗi 30 phút,
+// bản tin quyền chọn BTC mỗi sáng.
 // Cài đặt và các mức giá được lưu trên máy này (sessionStorage). Mỗi loại kêu tối đa một lần mỗi 5 giây.
 // Telegram: mã bot và chat id lưu trong localStorage của máy này, gửi thẳng từ trình duyệt tới api.telegram.org.
 // Mọi tin Telegram được gắn biểu tượng trước mã giao dịch (₿ BTCUSDT, 🥇 XAUUSDT, 🇪🇺🇺🇸 EURUSD).
-import { withIcons } from "./icons.js?v=202610240647";
+import { withIcons } from "./icons.js?v=202610240703";
 
 const KEY = "lailong.alerts";
-const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: true, disc: true, shock: true, compass: true, consensus: true, verifiedOnly: false, sound: true, notify: false, levels: [] };
+const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: true, disc: true, shock: true, compass: true, consensus: true, optBrief: true, verifiedOnly: false, sound: true, notify: false, levels: [] };
 const TG_KEY = "lailong.telegram";
 const TONES = { up: [880, 1175], down: [523, 392], ice: [988, 988], price: [1319, 1047, 1319] };
 
@@ -23,25 +24,27 @@ export class Alerts {
   saveTg() { try { localStorage.setItem(TG_KEY, JSON.stringify(this.tg)); } catch { /* chế độ riêng tư */ } }
   // gửi kiểu "no-cors": trình duyệt không đọc được kết quả, nên nút Gửi thử là cách kiểm tra.
   // html: bản tin định dạng sẵn theo kiểu HTML của Telegram (chữ bro gõ phải được thoát ký tự trước)
-  telegram(text, force = false, html = null) {
+  // markup: hàng nút dưới tin ({ inline_keyboard }), Desk đang mở sẽ nghe nút bấm (tgbot.js)
+  telegram(text, force = false, html = null, markup = null) {
     const { on, token, chat } = this.tg;
     if ((!on && !force) || !token || !chat) return false;
     const body = html ? { chat_id: chat, text: withIcons(html, true), parse_mode: "HTML", link_preview_options: JSON.stringify({ is_disabled: true }) } :
       { chat_id: chat, text: `Lai Long: ${withIcons(text)}` };
+    if (markup) body.reply_markup = JSON.stringify(markup);
     try { fetch(`https://api.telegram.org/bot${encodeURIComponent(token)}/sendMessage`, { method: "POST", mode: "no-cors", body: new URLSearchParams(body) }).catch(() => {}); } catch { /* không có mạng */ }
     return true;
   }
   save() { try { sessionStorage.setItem(KEY, JSON.stringify(this.cfg)); } catch { /* chế độ riêng tư */ } }
 
-  // opt.html: bản tin Telegram định dạng sẵn; opt.toast false: không hiện thông báo nhỏ (nơi gọi đã tự hiện)
-  fire(kind, text, tone = "price", force = false, { html = null, toast = true } = {}) {
+  // opt.html: bản tin Telegram định dạng sẵn; opt.toast false: không hiện thông báo nhỏ (nơi gọi đã tự hiện); opt.markup: hàng nút
+  fire(kind, text, tone = "price", force = false, { html = null, toast = true, markup = null } = {}) {
     const now = Date.now();
     if (!force && now - (this.last[kind] || 0) < 5000) return false;
     this.last[kind] = now;
     this.hist.unshift({ t: now, text }); if (this.hist.length > 20) this.hist.pop();
     if (toast) this.show(text);
     if (this.cfg.sound) this.beep(tone);
-    this.telegram(text, false, html);
+    this.telegram(text, false, html, markup);
     if (this.cfg.notify && typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
       try { new Notification("Lai Long Desk", { body: text, tag: kind, icon: "icons/icon-192.png" }); } catch { /* trình duyệt không hỗ trợ */ }
     }

@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202610240647">
-<link rel="stylesheet" href="css/app.css?v=202610240647">
+<link rel="stylesheet" href="fonts/fonts.css?v=202610240703">
+<link rel="stylesheet" href="css/app.css?v=202610240703">
 </head>
 <body>
 <header class="menubar">
@@ -55,6 +55,7 @@
       <label data-g="shock-test"><input type="checkbox" data-al="shock"> Kịch bản sốc (60 phút trước tin lớn)</label>
       <label data-g="compass"><input type="checkbox" data-al="compass"> La bàn (4 bản tin mỗi ngày: 7:30, 11:30, 15:30, 20:00)</label>
       <label data-g="consensus"><input type="checkbox" data-al="consensus"> Đồng thuận 4 lớp (vĩ mô, COT, cấu trúc, order flow)</label>
+      <label data-g="opt-brief"><input type="checkbox" data-al="optBrief"> Quyền chọn BTC (7:30 mỗi sáng, sau La bàn)</label>
       <label data-g="signals-book" data-tip="Iceberg, tường bị rút và Big Trade chỉ kêu khi sổ tín hiệu đã chấm loại đó là Có lợi thế cho mã này (chung, hoặc trong phiên đang chạy). Cần chấm điểm ở tab Tín hiệu trước"><input type="checkbox" data-al="verifiedOnly"> Chỉ báo tín hiệu đã kiểm chứng</label>
       <div class="mh">Giá chạm mức</div>
       <div class="row aladd"><input type="number" id="alPrice" step="any" placeholder="Mức giá"><button id="alAdd">Thêm</button></div>
@@ -512,6 +513,7 @@
     <span class="newstabs" id="gexAssets"></span>
     <span class="newstabs" id="gexHoriz"></span>
     <small class="muted" id="gexSrc"></small>
+    <button class="tool" id="gexTg" data-tip="Gửi danh sách quyền chọn 11 tài sản qua Telegram, mỗi mã một dòng. Bấm mã ở hàng nút dưới tin để nhận bản tin đầy đủ kèm giải thích (Desk phải đang mở)">Gửi Telegram</button>
   </div>
   <div class="cards">
     <section class="card wide">
@@ -790,6 +792,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610240647"></script>
+<script type="module" src="js/app.js?v=202610240703"></script>
 </body>
 </html>

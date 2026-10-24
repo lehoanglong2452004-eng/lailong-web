@@ -2,11 +2,16 @@
 // Lai Long Web: tab Quyền chọn. GEX theo strike, đường GEX theo giá (điểm lật gamma), OI, nụ cười IV và bề mặt IV 3D.
 // BTC/ETH lấy trực tiếp từ Deribit trong trình duyệt; chỉ số và ETF Mỹ đọc data/gex_<mã>.json (CBOE, chậm 15 phút)
 // do GitHub Actions cập nhật mỗi 30 phút, hoặc máy chủ laptop lấy trực tiếp (lailong/terminal/gex.py).
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610240647";
-import { setFresh } from "./fresh.js?v=202610240647";
-import { initOptPro } from "./optview.js?v=202610240647";
-import { initChain } from "./chainview.js?v=202610240647";
-import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610240647";
+// Nút "Gửi Telegram" gửi tin danh sách 11 tài sản kèm hàng nút; bấm mã nào dưới tin thì Desk đang mở gửi bản tin đầy đủ
+// của mã đó (optbrief.js, tgbot.js). Mỗi sáng từ 7:31, ngay sau La bàn sáng, tự gửi bản BTC (bật ở menu Cảnh báo).
+// Ngày đã gửi lưu trên máy này.
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610240703";
+import { briefState, optBriefHtml, optBriefText, optListHtml, optKeyboard } from "./optbrief.js?v=202610240703";
+import { dayKey } from "./compass.js?v=202610240703";
+import { setFresh } from "./fresh.js?v=202610240703";
+import { initOptPro } from "./optview.js?v=202610240703";
+import { initChain } from "./chainview.js?v=202610240703";
+import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202610240703";
 
 export const ASSETS = [
   { id: "BTC", src: "deribit", name: "Bitcoin (Deribit)" }, { id: "ETH", src: "deribit", name: "Ethereum (Deribit)" },
@@ -36,7 +41,9 @@ export function readGex(L, spot) {
   return out;
 }
 
-export function initGex({ $, esc }) {
+const AUTO = "lailong.optbrief", AUTO_AT = 7 * 60 + 31;
+
+export function initGex({ $, esc, alerts, toast }) {
   let asset = "BTC", horiz = "30", exp = null, zoom = 0.1, mode = "gex", chain = null, L = null, err = "", loading = false, rot = { a: -0.6, b: 0.85 };
   try { const s = JSON.parse(sessionStorage.getItem("lailong.gex") || "{}"); asset = s.asset || asset; horiz = s.horiz || horiz; } catch { /* bỏ qua */ }
   const save = () => { try { sessionStorage.setItem("lailong.gex", JSON.stringify({ asset, horiz })); } catch { /* bỏ qua */ } };
@@ -44,20 +51,30 @@ export function initGex({ $, esc }) {
   const cvs = { bars: fitCanvas($("gexBars"), () => drawBars()), prof: fitCanvas($("gexProf"), () => drawProf()), smile: fitCanvas($("gexSmile"), () => drawSmile()), surf: fitCanvas($("gexSurf"), () => drawSurf()) };
   let hoverK = null;
 
+  // chuỗi quyền chọn của một tài sản, dùng lại bản đã tải trong 1 phút (Deribit) hoặc 5 phút (file của tài sản Mỹ)
+  async function fetchChain(id) {
+    const a = ASSETS.find(x => x.id === id), c = cache.get(id);
+    if (c && Date.now() - c.t < (a.src ? 60e3 : 300e3)) return c.ch;
+    let ch;
+    if (a.src === "deribit") {
+      const r = await getJson(`https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=${id}&kind=option`);
+      ch = { ...fromDeribit(r.result || []), updated: Date.now(), live: true };
+    } else ch = await getJson(`data/gex_${id}.json?t=${Math.floor(Date.now() / 60e3)}`);
+    cache.set(id, { t: Date.now(), ch });
+    return ch;
+  }
   async function load() {
-    const a = ASSETS.find(x => x.id === asset), key = asset, c = cache.get(key);
-    if (c && Date.now() - c.t < (a.src ? 60e3 : 300e3)) { chain = c.ch; return compute(); }
-    loading = true; err = ""; renderHead();
-    try {
-      let ch;
-      if (a.src === "deribit") {
-        const r = await getJson(`https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=${asset}&kind=option`);
-        ch = { ...fromDeribit(r.result || []), updated: Date.now(), live: true };
-      } else ch = await getJson(`data/gex_${asset}.json?t=${Math.floor(Date.now() / 60e3)}`);
-      cache.set(key, { t: Date.now(), ch });
-      if (key === asset) chain = ch;
-    } catch (e) { err = `Không tải được chuỗi quyền chọn ${asset}: ${e.message}`; chain = null; }
+    const key = asset, a = ASSETS.find(x => x.id === key), c = cache.get(key);
+    if (!c || Date.now() - c.t >= (a.src ? 60e3 : 300e3)) { loading = true; err = ""; renderHead(); }
+    try { const ch = await fetchChain(key); if (key === asset) chain = ch; } catch (e) { err = `Không tải được chuỗi quyền chọn ${asset}: ${e.message}`; chain = null; }
     loading = false; compute();
+  }
+  // số liệu của bản tin Telegram cho một tài sản, kể cả khi tab Quyền chọn chưa mở
+  async function briefFor(id) {
+    const a = ASSETS.find(x => x.id === id), ch = await fetchChain(id);
+    if (!ch || !ch.rows || !ch.rows.length) return null;
+    const ex = await pro.extras(id, ch, !!a.src);
+    return briefState({ asset: id, chain: ch, live: !!a.src, ex });
   }
 
   function sub() {
@@ -254,7 +271,43 @@ export function initGex({ $, esc }) {
   sv.onpointerup = sv.onpointercancel = () => { drag = null; };
 
   let timer = null;
+  // ---------- bản tin Telegram ----------
+  const KB = optKeyboard(ASSETS.map(a => a.id));
+  const sendBrief = async id => { const st = await briefFor(id); if (st) alerts.telegram(optBriefText(st), true, optBriefHtml(st), KB); return st; };
+  $("gexTg").onclick = async () => {
+    if (!alerts.tg.token || !alerts.tg.chat) return toast("Nhập mã bot và chat id ở menu Cảnh báo trước", true);
+    const b = $("gexTg"); b.disabled = true; toast("Đang tải quyền chọn 11 tài sản…");
+    const all = await Promise.all(ASSETS.map(a => briefFor(a.id).catch(() => null))), ok = all.filter(Boolean);
+    if (ok.length) { alerts.telegram(`Quyền chọn: tổng quan ${ok.length} tài sản`, true, optListHtml(ok), optKeyboard(ok.map(s => s.asset))); toast(`Đã gửi danh sách quyền chọn ${ok.length} tài sản qua Telegram`); }
+    else toast("Không tải được dữ liệu quyền chọn", true);
+    b.disabled = false;
+  };
+  // bấm nút dưới tin Telegram: "opt:SPX" → gửi bản tin đầy đủ của SPX
+  async function onTap(data) {
+    const id = /^opt:([A-Z]+)$/.exec(data || "")?.[1];
+    if (id && ASSETS.some(a => a.id === id)) await sendBrief(id);
+  }
+  // mỗi ngày một bản BTC từ 7:31 (ngay sau La bàn sáng); Desk mở muộn thì gửi lúc mở; lỗi mạng thì thử lại phút sau
+  let autoBusy = false;
+  async function autoTick() {
+    const now = new Date(), d = new Date(now); d.setHours(0, AUTO_AT, 0, 0);
+    if (!alerts.cfg.optBrief || autoBusy || now < d) return;
+    let last = ""; try { last = JSON.parse(localStorage.getItem(AUTO) || "{}").day || ""; } catch { /* chế độ riêng tư */ }
+    if (last === dayKey(now)) return;
+    autoBusy = true;
+    try {
+      const st = await briefFor("BTC");
+      if (st) {
+        try { localStorage.setItem(AUTO, JSON.stringify({ day: dayKey(now) })); } catch { /* chế độ riêng tư */ }
+        alerts.fire("optBrief", optBriefText(st), "price", true, { html: optBriefHtml(st), markup: KB });
+      }
+    } catch { /* Deribit chưa trả lời: thử lại phút sau */ }
+    autoBusy = false;
+  }
+  setTimeout(autoTick, 45e3); setInterval(autoTick, 60e3);
+
   return {
+    onTap,
     show() { zoom = ["BTC", "ETH"].includes(asset) ? 0.15 : 0.06; load(); if (!timer) timer = setInterval(() => { cache.delete(asset); load(); }, 120e3); },
     hide() { clearInterval(timer); timer = null; },
   };
