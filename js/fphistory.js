@@ -7,9 +7,9 @@
 // 2. Chính xác (Binance): tải ngược từng lệnh khớp (aggTrades) cho các nến gần nhất và thay
 //    phần ước tính bằng số liệu thật. Có giới hạn số lần gọi để không vượt hạn mức của sàn.
 
-import { INTERVALS, getJson, sleep } from "./util.js?v=202610240629";
-import { smartTape } from "./orderflow.js?v=202610240629";
-import { intrabar } from "./footprint.js?v=202610240629";
+import { INTERVALS, getJson, sleep } from "./util.js?v=202610240642";
+import { smartTape } from "./orderflow.js?v=202610240642";
+import { intrabar } from "./footprint.js?v=202610240642";
 
 const SUB = { "1m": null, "5m": "1m", "15m": "1m", "1h": "5m", "4h": "15m", "1d": "1h" };
 const SUB_CAP = { BINANCE: 12000, BYBIT: 12000, OKX: 3000, HYPERLIQUID: 5000, SIM: 12000 };

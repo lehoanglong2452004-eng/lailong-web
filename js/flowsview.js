@@ -3,8 +3,8 @@
 //   - Quỹ ETF Bitcoin/Ethereum giao ngay (Farside): tiền vào/ra ròng mỗi ngày, triệu USD. Cuối ngày.
 //   - Stablecoin (DefiLlama): tổng lượng đang lưu hành, thay đổi 1/7/30 ngày. Cuối ngày.
 // Bản web đọc data/flows.json do GitHub Actions cập nhật; bản laptop lấy qua máy chủ (lailong/terminal/flows.py).
-import { getJson, fitCanvas, MONO } from "./util.js?v=202610240629";
-import { setFresh } from "./fresh.js?v=202610240629";
+import { getJson, fitCanvas, MONO } from "./util.js?v=202610240642";
+import { setFresh } from "./fresh.js?v=202610240642";
 
 const LLAMA = "https://stablecoins.llama.fi/stablecoins?includePrices=false";
 const usdM = x => x == null || !isFinite(x) ? "–" : `${x >= 0 ? "+" : "−"}${Math.abs(x) >= 1000 ? (Math.abs(x) / 1000).toFixed(2) + " tỷ" : Math.abs(x).toFixed(1) + " tr"}`;

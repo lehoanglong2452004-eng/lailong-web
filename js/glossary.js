@@ -884,8 +884,8 @@ export const GLOSSARY = [
   },
   {
     id: "crypto-news", group: "Công cụ", term: "Tin tức theo 6 mục",
-    short: "Tin chia 6 mục: Kinh tế, Tài chính, Kim loại quý, Năng lượng, Địa chính trị, Crypto. 🔥 là tin nóng. Cập nhật mỗi 30 phút.",
-    body: "<p>Nguồn: CNBC, MarketWatch, Investing.com, ForexLive, OilPrice, Google News (kim loại, năng lượng), BBC, Al Jazeera, thông cáo của Fed và ECB, cùng CoinDesk, Cointelegraph, Decrypt, The Block, Bitcoin Magazine.</p><p>Mục của mỗi tin được xếp tự động theo từ khoá trong tiêu đề, nên đôi khi xếp nhầm. Tiêu đề giữ nguyên tiếng Anh gốc để không sai thuật ngữ. Trong mục Crypto, nút <b>Mọi coin / Chỉ tin về ...</b> lọc theo đồng đang xem.</p><p>Bật \"Tin nóng mới\" trong nút 🔔 để được báo khi có tin nóng mới.</p>"
+    short: "Tin chia 6 mục: Kinh tế, Tài chính, Kim loại quý, Năng lượng, Địa chính trị, Crypto. 🔥 là tin nóng, được gom thành bản tin Telegram tối đa mỗi 30 phút. Cập nhật mỗi 30 phút.",
+    body: "<p>Nguồn: 51 nguồn quốc tế như CNBC, Bloomberg, MarketWatch, Investing.com, ForexLive, OilPrice, Google News (kim loại, năng lượng), BBC, Al Jazeera, thông cáo của Fed và ECB, cùng CoinDesk, Cointelegraph, Decrypt, The Block, Bitcoin Magazine.</p><p><b>Không bao giờ dùng tin của báo, tác giả hay tổ chức Việt Nam, kể cả tin tiếng Việt.</b> Tin có tên nguồn hoặc tên miền Việt Nam (đuôi .vn, VnExpress, CafeF…) hay tiêu đề có dấu tiếng Việt đều bị bỏ, cả khi đến qua Google News.</p><p>Mục của mỗi tin được xếp tự động theo từ khoá trong tiêu đề, nên đôi khi xếp nhầm. Tiêu đề giữ nguyên tiếng Anh gốc để không sai thuật ngữ. Trong mục Crypto, nút <b>Mọi coin / Chỉ tin về ...</b> lọc theo đồng đang xem.</p><p><b>Bản tin nóng qua Telegram</b> (bật sẵn trong nút 🔔): tối đa một bản mỗi 30 phút, gồm các tin 🔥 trong 2 giờ qua chưa gửi lần nào, chia theo 6 mục, bấm vào tiêu đề để mở bài. Cùng một chuyện nhiều báo đưa thì gộp một dòng; tin về Fed, lạm phát, việc làm, lãi suất xếp trước. Tin thuần chính trị (bầu cử, phát ngôn) chỉ xem ở đây, không gửi. Chỉ gửi khi Desk đang mở.</p>"
   },
   {
     id: "multibook", group: "Bookmap", term: "Multibook (gộp nhiều sàn)",

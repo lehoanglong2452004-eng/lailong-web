@@ -3,7 +3,7 @@
 // Coin dùng ký hiệu của chính coin đó (Unicode chưa có logo BTC, ETH nên dùng ₿ và Ξ), coin lạ dùng 🪙.
 // Hàng hoá dùng vật: 🛢️ dầu, 🥇 vàng, 🥈 bạc (chưa có emoji thỏi vàng, thỏi bạc), 🪨 quặng đồng, 🔥 khí đốt, 🌽 ngô…
 // Ngoại hối dùng cờ của hai nước trong cặp, chỉ số chứng khoán dùng 📈.
-import { FLAG } from "./util.js?v=202610240629";
+import { FLAG } from "./util.js?v=202610240642";
 
 export const CCY = {
   ...FLAG, SGD: "🇸🇬", HKD: "🇭🇰", KRW: "🇰🇷", INR: "🇮🇳", MXN: "🇲🇽", BRL: "🇧🇷", TRY: "🇹🇷", ZAR: "🇿🇦",
@@ -42,7 +42,9 @@ export function iconOf(sym) {
 
 // gắn biểu tượng trước các mã giao dịch trong tin (BTCUSDT, XAUUSDT, EURUSD…). Chỉ nhận mã có đuôi USDT/USDC/USD
 // hoặc cặp ngoại hối đủ hai đồng, nên chữ thường như "100 USDT", "USD CPI" giữ nguyên. Mã đã có biểu tượng thì bỏ qua.
-export function withIcons(text) {
+// html: tin dạng HTML của Telegram, chỉ gắn vào chữ, không đụng vào thẻ và đường dẫn (<a href="…">).
+export function withIcons(text, html = false) {
+  if (html) return String(text ?? "").split(/(<[^>]*>)/).map((s, i) => i % 2 ? s : withIcons(s)).join("");
   return String(text ?? "").replace(/\b(?:1000)?[A-Z0-9]{2,16}\b/g, (tok, at, all) => {
     const fx = tok.match(/^([A-Z]{3})([A-Z]{3})$/), pair = (fx && CCY[fx[1]] && CCY[fx[2]]) || (QUOTE.test(tok) && !COIN[tok]);
     if (!pair) return tok;
