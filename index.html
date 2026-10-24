@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202610240703">
-<link rel="stylesheet" href="css/app.css?v=202610240703">
+<link rel="stylesheet" href="fonts/fonts.css?v=202610240716">
+<link rel="stylesheet" href="css/app.css?v=202610240716">
 </head>
 <body>
 <header class="menubar">
@@ -449,6 +449,7 @@
     <label class="small" data-tip="Trượt giá mỗi chiều, phần vạn">Trượt bps <input id="sgSlip" type="number" min="0" step="0.5" style="width:52px"></label>
     <label class="small" data-tip="Mốc chính dùng để kết luận và soạn kế hoạch">Mốc chính <select id="sgH"></select></label>
     <button class="tool" id="sgRun">Chấm điểm</button>
+    <button class="tool" id="sgTg" data-tip="Gửi sổ tín hiệu qua Telegram dạng danh sách kèm nút; bấm một tín hiệu dưới tin để nhận bản chi tiết: chạy tốt trong bối cảnh nào, các lần gần nhất (Desk cần đang mở)">Gửi Telegram</button>
     <small class="muted" id="sgStatus"></small>
   </div>
   <div class="cards">
@@ -462,7 +463,7 @@
     </section>
     <section class="card wide">
       <h3>Kế hoạch trước phiên <button class="q" data-g="session-plan">?</button>
-        <span class="inl rsopts"><button class="tool" id="sgPlanRe">Soạn lại</button> <button class="tool" id="sgPlanTg">Gửi Telegram</button> <label data-tip="Mỗi khi sang phiên Á, Âu, Mỹ, tự chấm lại và gửi kế hoạch qua Telegram (cần bật Telegram ở nút 🔔 và để trang mở)"><input type="checkbox" id="sgAutoTg"> Tự gửi đầu mỗi phiên</label></span></h3>
+        <span class="inl rsopts"><button class="tool" id="sgPlanRe">Soạn lại</button> <button class="tool" id="sgPlanTg">Gửi Telegram</button> <label data-tip="Mỗi khi sang phiên Á, Âu, Mỹ, tự chấm lại và gửi kế hoạch qua Telegram kèm nút xem từng tín hiệu (cần bật Telegram ở nút 🔔 và để trang mở)"><input type="checkbox" id="sgAutoTg"> Tự gửi đầu mỗi phiên</label></span></h3>
       <div id="sgPlan"></div>
     </section>
     <section class="card wide">
@@ -792,6 +793,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610240703"></script>
+<script type="module" src="js/app.js?v=202610240716"></script>
 </body>
 </html>

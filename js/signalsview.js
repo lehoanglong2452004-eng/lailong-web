@@ -1,13 +1,14 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: tab Tín hiệu. Kho lịch sử, sổ tín hiệu tự chấm điểm, thống kê theo bối cảnh, kế hoạch trước phiên.
 // Phần tính nằm ở signals.js, context.js, levels.js, plan.js; phần nạp dữ liệu ở histdata.js và eventlog.js.
-import { SIGNALS, VERDICT, prepBars, detectAll, placeEvents, scoreEvents, baseline, scorecard, byContext, edgesFor, horizonsFor, fmtH } from "./signals.js?v=202610240703";
-import { contextSeries, sessionOf } from "./context.js?v=202610240703";
-import { liveZones } from "./levels.js?v=202610240703";
-import { buildPlan, planText, sessionWindow } from "./plan.js?v=202610240703";
-import { storeStatus, startFetch, loadHistory } from "./histdata.js?v=202610240703";
-import { liveEvents, eventCount } from "./eventlog.js?v=202610240703";
-import { getJson, INTERVALS, decimalsFor, fmtTime } from "./util.js?v=202610240703";
+import { SIGNALS, VERDICT, prepBars, detectAll, placeEvents, scoreEvents, baseline, scorecard, byContext, edgesFor, horizonsFor, fmtH } from "./signals.js?v=202610240716";
+import { contextSeries, sessionOf } from "./context.js?v=202610240716";
+import { liveZones } from "./levels.js?v=202610240716";
+import { buildPlan, planText, planHtml, sessionWindow } from "./plan.js?v=202610240716";
+import { sigListHtml, sigListText, sigDetailHtml, sigDetailText, sigKeyboard, parseSigTap } from "./sigbrief.js?v=202610240716";
+import { storeStatus, startFetch, loadHistory } from "./histdata.js?v=202610240716";
+import { liveEvents, eventCount } from "./eventlog.js?v=202610240716";
+import { getJson, INTERVALS, decimalsFor, fmtTime } from "./util.js?v=202610240716";
 
 export const VERIFIED_KEY = "lailong.verified";
 const TFS = ["5m", "15m", "1h", "4h"];
@@ -28,6 +29,7 @@ export function initSignals({ $, esc, S, toast, alerts, liveSources = () => [] }
   try { ui = { ...ui, ...JSON.parse(sessionStorage.getItem("lailong.sig") || "{}") }; } catch { /* bỏ qua */ }
   const saveUi = () => { try { sessionStorage.setItem("lailong.sig", JSON.stringify(ui)); } catch { /* bỏ qua */ } };
   let res = null, busy = false, store = null, poll = null, visible = false, lastSession = sessionWindow().id;
+  const snaps = new Map(); // sổ đã chấm gần đây theo "mã|khung", để trả lời nút bấm Telegram
 
   // ---------- kho lịch sử ----------
   async function renderStore() {
@@ -64,32 +66,40 @@ export function initSignals({ $, esc, S, toast, alerts, liveSources = () => [] }
   }
 
   // ---------- chạy chấm điểm ----------
+  // tính sổ cho một mã và khung, không đụng giao diện (dùng cả khi bấm nút dưới tin Telegram cho mã khác)
+  async function compute({ sym, tf, ex, days, say = () => {} }) {
+    const tfMs = INTERVALS[tf];
+    if (store === null) store = await storeStatus();
+    const hist = await loadHistory({ ex, symbol: sym, tf, days, store, onStatus: say });
+    if (hist.bars.length < 100) throw new Error(`chỉ có ${hist.bars.length} nến, chưa đủ để chấm`);
+    say("Đang tìm tín hiệu trong lịch sử…");
+    await new Promise(r => setTimeout(r, 0));
+    const bars = prepBars(hist.bars), horizons = horizonsFor(tfMs);
+    const step = hist.fpStep || 0;
+    const found = detectAll(bars, { tfMs, step });
+    const live = placeEvents(await liveEvents(sym), bars, tfMs);
+    say("Đang chấm điểm…");
+    let news = [];
+    try { news = ((await getJson(`data/calendar.json?t=${Math.floor(Date.now() / 6e5)}`)).events || []).filter(e => e.impact === "High").map(e => e.t); } catch { /* không có lịch */ }
+    const zl = liveSources(sym), flip = (zl.find(x => x.kind === "flip") || {}).price || null;
+    const tags = contextSeries(bars, { tfMs, news, gammaFlip: flip, liveFrom: Date.now() - 3 * tfMs });
+    const scored = scoreEvents([...found, ...live], bars, { horizons, feePct: ui.fee, slipBps: ui.slip });
+    const base = baseline(bars, horizons), card = scorecard(scored, horizons, base);
+    const hMain = horizons.includes(ui.h) ? ui.h : horizons[Math.min(1, horizons.length - 1)];
+    const r = { sym, tf, tfMs, ex, days, hist, bars, horizons, hMain, scored, base, card, tags, live: live.length, at: Date.now(), dec: decimalsFor(bars.at(-1).c / 1e4) };
+    snaps.set(`${sym}|${tf}`, r);
+    if (snaps.size > 6) snaps.delete(snaps.keys().next().value);
+    return r;
+  }
   async function run() {
     if (busy) return; busy = true;
-    const sym = S.symbol.toUpperCase(), tf = ui.tf, tfMs = INTERVALS[tf], ex = S.ex;
     const say = t => { $("sgStatus").textContent = t; };
     $("sgRun").disabled = true;
     try {
-      if (store === null) store = await storeStatus();
-      const hist = await loadHistory({ ex, symbol: sym, tf, days: ui.days, store, onStatus: say });
-      if (hist.bars.length < 100) throw new Error(`chỉ có ${hist.bars.length} nến, chưa đủ để chấm`);
-      say("Đang tìm tín hiệu trong lịch sử…");
-      await new Promise(r => setTimeout(r, 0));
-      const bars = prepBars(hist.bars), horizons = horizonsFor(tfMs);
-      const step = hist.fpStep || 0;
-      const found = detectAll(bars, { tfMs, step });
-      const live = placeEvents(await liveEvents(sym), bars, tfMs);
-      say("Đang chấm điểm…");
-      let news = [];
-      try { news = ((await getJson(`data/calendar.json?t=${Math.floor(Date.now() / 6e5)}`)).events || []).filter(e => e.impact === "High").map(e => e.t); } catch { /* không có lịch */ }
-      const zl = liveSources(sym), flip = (zl.find(x => x.kind === "flip") || {}).price || null;
-      const tags = contextSeries(bars, { tfMs, news, gammaFlip: flip, liveFrom: Date.now() - 3 * tfMs });
-      const scored = scoreEvents([...found, ...live], bars, { horizons, feePct: ui.fee, slipBps: ui.slip });
-      const base = baseline(bars, horizons), card = scorecard(scored, horizons, base);
-      const hMain = horizons.includes(ui.h) ? ui.h : horizons[Math.min(1, horizons.length - 1)];
-      res = { sym, tf, tfMs, ex, hist, bars, horizons, hMain, scored, base, card, tags, live: live.length, at: Date.now(), dec: decimalsFor(bars.at(-1).c / 1e4) };
+      res = await compute({ sym: S.symbol.toUpperCase(), tf: ui.tf, ex: S.ex, days: ui.days, say });
+      const { sym, hist, bars, scored, live, tf } = res;
       saveVerified();
-      say(`${sym} · ${hist.src} · ${bars.length.toLocaleString("vi-VN")} nến ${tf} từ ${new Date(bars[0].t).toLocaleDateString("vi-VN")} · ${scored.length.toLocaleString("vi-VN")} tín hiệu (${live.length} ghi trực tiếp)${hist.note ? " · " + hist.note : ""}`);
+      say(`${sym} · ${hist.src} · ${bars.length.toLocaleString("vi-VN")} nến ${tf} từ ${new Date(bars[0].t).toLocaleDateString("vi-VN")} · ${scored.length.toLocaleString("vi-VN")} tín hiệu (${live} ghi trực tiếp)${hist.note ? " · " + hist.note : ""}`);
       render(); renderPlan();
     } catch (e) { say(`Lỗi: ${e.message}`); }
     busy = false; $("sgRun").disabled = false;
@@ -147,18 +157,21 @@ export function initSignals({ $, esc, S, toast, alerts, liveSources = () => [] }
 
   // ---------- kế hoạch phiên ----------
   let plan = null;
-  function renderPlan() {
-    const el = $("sgPlan");
-    if (!res) { el.innerHTML = `<p class="muted small">Bấm Chấm điểm để soạn kế hoạch.</p>`; return; }
-    const { bars, tags, card, hMain, base, scored, dec, sym, tfMs } = res, i = bars.length - 1;
+  function makePlan(r) {
+    const { bars, tags, card, hMain, base, scored, dec, sym, tfMs } = r, i = bars.length - 1;
     const tagNow = { ...tags[i] };
     if (tagNow.news) delete tagNow.news;
     const zones = liveZones(bars.slice(-Math.round(10 * 864e5 / tfMs)), liveSources(sym));
     const edges = edgesFor(card, tags, tagNow, hMain, base);
     let news = [];
     try { news = (window.__llCalendar || []).filter(e => e.impact === "High"); } catch { /* bỏ qua */ }
-    const verdictOf = sig => { const r = card.find(x => x.sig === sig); return r ? r.h[hMain].verdict : null; };
-    plan = buildPlan({ sym, price: bars[i].c, dec, tagNow, zones, edges, news, recent: scored.map(e => ({ ...e, verdict: verdictOf(e.sig) })), hName: fmtH(hMain, tfMs) });
+    const verdictOf = sig => { const x = card.find(y => y.sig === sig); return x ? x.h[hMain].verdict : null; };
+    return buildPlan({ sym, price: bars[i].c, dec, tagNow, zones, edges, news, recent: scored.map(e => ({ ...e, verdict: verdictOf(e.sig) })), hName: fmtH(hMain, tfMs) });
+  }
+  function renderPlan() {
+    const el = $("sgPlan");
+    if (!res) { el.innerHTML = `<p class="muted small">Bấm Chấm điểm để soạn kế hoạch.</p>`; return; }
+    plan = makePlan(res);
     el.innerHTML = `<div class="plan">${plan.sections.map(s => `<div class="plansec"><div class="mh">${esc(s.name)}</div><ul class="readout">${s.items.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`).join("")}</div><p class="muted small">Soạn lúc ${fmtTime(plan.at, true)} từ ${esc(res.tf)} · phiên tiếp theo app tự soạn lại khi tab này đang mở${alerts && alerts.tg && alerts.tg.on ? " và có thể tự gửi Telegram" : ""}.</p>`;
   }
   async function loadCalendar() {
@@ -175,23 +188,47 @@ export function initSignals({ $, esc, S, toast, alerts, liveSources = () => [] }
   $("sgH").onchange = () => { ui.h = +$("sgH").value; saveUi(); if (res) { res.hMain = ui.h; saveVerified(); render(); renderPlan(); } };
   $("sgCard").onclick = e => { const tr = e.target.closest("[data-sig]"); if (!tr) return; ui.sel = tr.dataset.sig; saveUi(); render(); };
   $("sgPlanRe").onclick = async () => { await loadCalendar(); renderPlan(); };
+  // ---------- Telegram: sổ dạng danh sách, bấm nút để xem chi tiết từng tín hiệu ----------
+  const tgReady = () => alerts && alerts.tg && alerts.tg.token && alerts.tg.chat;
+  const sendPlan = (r, p) => alerts.telegram(planText(p), true, planHtml(p), sigKeyboard(r, { plan: false }));
+  const sendList = r => alerts.telegram(sigListText(r), true, sigListHtml(r), sigKeyboard(r, { list: false }));
+  $("sgTg").onclick = () => {
+    if (!res) return toast("Bấm Chấm điểm trước", true);
+    if (!tgReady()) return toast("Nhập mã bot và chat id ở menu Cảnh báo trước", true);
+    sendList(res); toast(`Đã gửi sổ tín hiệu ${res.sym} qua Telegram`);
+  };
   $("sgPlanTg").onclick = () => {
     if (!plan) return toast("Chưa có kế hoạch", true);
-    if (!alerts || !alerts.tg || !alerts.tg.token) return toast("Chưa cài Telegram (nút 🔔)", true);
-    alerts.telegram(planText(plan), true); toast("Đã gửi kế hoạch qua Telegram");
+    if (!tgReady()) return toast("Nhập mã bot và chat id ở menu Cảnh báo trước", true);
+    sendPlan(res, plan); toast("Đã gửi kế hoạch qua Telegram");
   };
+  // bấm nút dưới tin Telegram: "sig:BTCUSDT:1h:div.bull" → bản chi tiết; ":list" → cả sổ; ":plan" → kế hoạch phiên.
+  // Dùng sổ đã chấm trong 2 giờ qua cho đúng mã và khung đó; không có thì chấm lại (Desk có thể vừa mở lại)
+  async function onTap(data) {
+    const t = parseSigTap(data); if (!t || !INTERVALS[t.tf]) return;
+    let r = res && res.sym === t.sym && res.tf === t.tf ? res : snaps.get(`${t.sym}|${t.tf}`);
+    if (!r || Date.now() - r.at > 2 * 3600e3) {
+      try { r = await compute({ sym: t.sym, tf: t.tf, ex: r ? r.ex : S.ex, days: r ? r.days : ui.days }); }
+      catch (e) { return alerts.telegram(`Không chấm lại được sổ tín hiệu ${t.sym} ${t.tf}: ${e.message}`, true); }
+    }
+    if (t.what === "list") return sendList(r);
+    if (t.what === "plan") { await loadCalendar(); return sendPlan(r, makePlan(r)); }
+    const html = sigDetailHtml(r, t.what);
+    if (html) alerts.telegram(sigDetailText(r, t.what), true, html, sigKeyboard(r));
+  }
   $("sgAutoTg").onchange = () => { ui.autoTg = $("sgAutoTg").checked; saveUi(); };
-  // sang phiên mới: soạn lại kế hoạch (và gửi Telegram nếu bật)
+  // sang phiên mới: soạn lại kế hoạch (và gửi Telegram nếu bật, kèm nút xem từng tín hiệu)
   setInterval(async () => {
     const s = sessionWindow().id; if (s === lastSession) return; lastSession = s;
     if (!visible && !ui.autoTg) return;
     await loadCalendar(); await run();
-    if (ui.autoTg && plan && alerts && alerts.tg && alerts.tg.on) alerts.telegram(planText(plan), true);
+    if (ui.autoTg && plan && res && alerts && alerts.tg && alerts.tg.on) sendPlan(res, plan);
   }, 60e3);
 
   return {
     async show() { visible = true; await loadCalendar(); renderStore(); if (!res || res.sym !== S.symbol.toUpperCase() || res.ex !== S.ex) run(); else { render(); renderPlan(); } },
     hide() { visible = false; },
+    onTap,
     refreshPlan() { if (res) renderPlan(); },
   };
 }

@@ -2,9 +2,10 @@
 // Lai Long Web: bản kế hoạch trước phiên (phần soạn nội dung, không vẽ). Trước mỗi phiên Á, Âu, Mỹ, gom cho một
 // tài sản: bối cảnh lúc này, các vùng hợp lưu gần giá, những tín hiệu có lợi thế đã kiểm chứng trong đúng bối cảnh
 // đó, tin mạnh sắp ra, và các tín hiệu vừa xuất hiện. Mục tiêu: vào phiên với kế hoạch, không mở app ra mới nghĩ.
-import { TAGS, describe, sessionOf } from "./context.js?v=202610240703";
-import { SIGNALS, VERDICT } from "./signals.js?v=202610240703";
-import { KINDS } from "./levels.js?v=202610240703";
+import { TAGS, describe, sessionOf } from "./context.js?v=202610240716";
+import { SIGNALS, VERDICT } from "./signals.js?v=202610240716";
+import { KINDS } from "./levels.js?v=202610240716";
+import { escHtml } from "./discipline.js?v=202610240716";
 
 const H = 36e5;
 export const SESSION_START = { asia: 0, eu: 7 * 60, us: 13 * 60 + 30, off: 20 * 60 }; // phút UTC
@@ -50,4 +51,13 @@ export function buildPlan(inp) {
 
 export function planText(p) {
   return [`📋 ${p.title}`, ...p.sections.flatMap(s => ["", `■ ${s.name}`, ...s.items.map(x => `• ${x}`)])].join("\n");
+}
+
+// bản Telegram định dạng HTML (cùng thứ tự mục với buildPlan)
+const SEC_ICON = ["🧭", "🧱", "🎯", "📅", "🕒"];
+export function planHtml(p) {
+  const hm = new Date(p.at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  return [`📋 <b>${escHtml(p.title)}</b> · ${hm}`,
+    ...p.sections.flatMap((s, i) => ["", `${SEC_ICON[i] || "■"} <b>${escHtml(s.name)}</b>`, ...s.items.map(x => `• ${escHtml(x)}`)]),
+    "", "<i>Bấm nút bên dưới để xem chi tiết từng tín hiệu. Thống kê quá khứ, không phải lời khuyên vào lệnh.</i>"].join("\n");
 }
