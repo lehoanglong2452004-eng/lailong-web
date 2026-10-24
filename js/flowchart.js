@@ -5,16 +5,16 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610240622";
-import { cvd as cvdOf } from "./analytics.js?v=202610240622";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610240622";
-import { GROUPS } from "./flowtools.js?v=202610240622";
-import { WALL_KIND } from "./walls.js?v=202610240622";
-import { T, alpha, watermark } from "./theme.js?v=202610240622";
-import { drawConfl, conflTip } from "./levels.js?v=202610240622";
-import { drawShapes } from "./drawings.js?v=202610240622";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610240622";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610240622";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610240629";
+import { cvd as cvdOf } from "./analytics.js?v=202610240629";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610240629";
+import { GROUPS } from "./flowtools.js?v=202610240629";
+import { WALL_KIND } from "./walls.js?v=202610240629";
+import { T, alpha, watermark } from "./theme.js?v=202610240629";
+import { drawConfl, conflTip } from "./levels.js?v=202610240629";
+import { drawShapes } from "./drawings.js?v=202610240629";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610240629";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610240629";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -32,8 +32,18 @@ const STAT_ROWS = [
   { name: "Số lệnh", get: s => s.n, fmt: v => fmtVol(v), col: "#c678dd", tip: "Số lệnh khớp (Binance gộp các lệnh khớp cùng giá cùng lúc). Nhiều lệnh nhỏ là nhỏ lẻ; ít lệnh mà khối lượng lớn là lệnh to" },
   { name: "KL/lệnh", get: s => s.n ? s.v / s.n : null, fmt: v => fmtVol(v), col: "#f5c542", tip: "Khối lượng trung bình mỗi lệnh khớp: tăng đột biến là có lệnh lớn tham gia" },
 ];
+// footprint thu nhỏ: nến hẹp hơn COMPACT px thì vẽ nến thường, ghi số long/short dưới nến khi nến rộng từ LS_TXT px, thêm ô Long/Short cao LS_H
+const LS_H = 58, COMPACT = 40, LS_TXT = 24;
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
+
+// khối lượng mua chủ động (long) và bán chủ động (short) của một nến, từ delta hoặc khối lượng mua chủ động của sàn
+export function longShort(b) {
+  const d = b.d != null ? b.d : typeof b.bv === "number" ? 2 * b.bv - b.v : null;
+  if (d == null || !(b.v > 0)) return null;
+  const buy = Math.max(0, (b.v + d) / 2);
+  return { buy, sell: Math.max(0, b.v - buy) };
+}
 
 // mất cân bằng theo đường chéo (như ATAS): mua ở dòng k so với bán ở dòng k − 1, bán ở dòng k so với mua ở dòng k + 1
 // (dòng ở mép nến không có dòng kề để so thì bỏ qua)
@@ -94,13 +104,16 @@ export class FlowChart {
   setOverlays(o) { Object.assign(this, o); this.dirty = true; }
 
   get sp() { return this.spacing[this.type]; }
+  // footprint đầy đủ khi nến đủ rộng; thu nhỏ quá thì vẽ nến thường và thêm ô Long/Short bên dưới
+  get fp() { return this.type === "box" && this.sp >= COMPACT; }
+  get compact() { return this.type === "box" && this.sp < COMPACT; }
   _layout() {
     const w = this.S.w, h = this.S.h, pw = w - AXIS_W, ph = h - TIME_H;
     const hasOi = this.show.oi && this.bars.some(b => b.oi != null);
     const pane = this.pane, wantDelta = this.show.delta && (pane === "deltaCvd" || pane === "delta"), wantCvd = (this.show.cvd || hasOi) && pane !== "delta";
     const deltaH = wantDelta ? Math.round(ph * (pane === "delta" ? 0.18 : 0.1)) : 0;
     const cvdH = wantCvd ? Math.round(ph * (pane === "deltaCvd" ? 0.14 : 0.22)) : 0;
-    const statsH = this.type === "box" && this.show.stats ? STAT_ROWS.length * STAT_H + 3 : 0;
+    const statsH = this.fp && this.show.stats ? STAT_ROWS.length * STAT_H + 3 : this.compact ? LS_H : 0;
     const priceH = ph - deltaH - cvdH - statsH;
     return { w, h, pw, ph, priceH, deltaTop: priceH, deltaH, cvdTop: priceH + deltaH, cvdH, statsTop: priceH + deltaH + cvdH, statsH, hasOi };
   }
@@ -119,8 +132,8 @@ export class FlowChart {
     if (this.rowMult !== "auto") return this.step * Number(this.rowMult);
     const r = []; for (let i = first; i <= last; i++) r.push(this.bars[i].h - this.bars[i].l);
     r.sort((a, b) => a - b);
-    const med = r.length ? r[r.length >> 1] : 0, target = this.type === "box" ? 12 : 4, ppp = this._ph / (this._pmax - this._pmin || 1);
-    for (const m of MULTS) { const rs = this.step * m; if (med / rs <= target * 1.5 && rs * ppp >= (this.type === "box" ? 13 : 2)) return rs; }
+    const med = r.length ? r[r.length >> 1] : 0, target = this.fp ? 12 : 4, ppp = this._ph / (this._pmax - this._pmin || 1);
+    for (const m of MULTS) { const rs = this.step * m; if (med / rs <= target * 1.5 && rs * ppp >= (this.fp ? 13 : 2)) return rs; }
     return this.step * MULTS[MULTS.length - 1];
   }
 
@@ -135,18 +148,19 @@ export class FlowChart {
     for (let i = first; i <= last; i++) { lo = Math.min(lo, this.bars[i].l); hi = Math.max(hi, this.bars[i].h); }
     const mid = (hi + lo) / 2, half = Math.max((hi - lo) / 2, mid * 0.0005) * 1.1 * this.yZoom;
     this._pmin = mid - half; this._pmax = mid + half; this._ph = L.priceH - 12;
+    if (this.compact && this.sp >= LS_TXT) this._pmin -= (this._pmax - this._pmin) * 26 / this._ph; // chừa chỗ ghi số dưới nến thấp nhất
     const rowStep = this._rowStep(first, last); this._rowStepUsed = rowStep;
     this._grid(L);
     ctx.save(); ctx.beginPath(); ctx.rect(0, 0, L.pw, L.priceH); ctx.clip();
-    if (this.show.profile) this._profile(first, last, this.type === "box" ? rowStep : this._profileStep(), L);
+    if (this.show.profile) this._profile(first, last, this.fp ? rowStep : this._profileStep(), L);
     if (this.show.dayProfile) this._dayProfiles(first, last, L);
     this._ranges(first, last, L);
     if (this.show.zones) this._zones(first, L);
     if (this.show.confl) drawConfl(ctx, this.confl, p => this.yOf(p), L.pw, L.priceH, `10px ${MONO}`);
     if (this.show.levels) this._levels(L);
-    if (this.type === "box" && this.show.imb) this._stacked(first, last, rowStep, L);
-    if (this.type === "box") this._boxes(first, last, rowStep); else this._candles(first, last);
-    if (this.type === "box" && this.show.auction) this._auctions(first, last, rowStep, L);
+    if (this.fp && this.show.imb) this._stacked(first, last, rowStep, L);
+    if (this.fp) this._boxes(first, last, rowStep); else this._candles(first, last);
+    if (this.fp && this.show.auction) this._auctions(first, last, rowStep, L);
     if (this.show.diverg) this._diverg(first, last);
     this._lines(first, last);
     if (this.show.radar) this._radar(first, last, L);
@@ -157,6 +171,7 @@ export class FlowChart {
     if (this.show.spoof) this._spoofs(first, last);
     if (this.show.score) this._scores(first, last);
     if (this.show.liq) this._liqMarks(first, last);
+    if (this.compact && this.sp >= LS_TXT) this._lsLabels(first, last); // số nằm trên các dấu khác cho dễ đọc
     this._selBand(L);
     if (this.show.liqMap && this.liqMap) this._liqMap(L);
     this._markers(first, last);
@@ -166,7 +181,7 @@ export class FlowChart {
     if (L.deltaH) this._delta(first, last, L);
     if (L.cvdH) this._cvdPane(first, last, L);
     this._axes(first, last, L);
-    if (L.statsH) this._statsPane(first, last, L);
+    if (L.statsH) this.compact ? this._longShort(first, last, L) : this._statsPane(first, last, L);
     this._cross(L);
     this._legend(L);
   }
@@ -323,6 +338,40 @@ export class FlowChart {
       });
       ctx.fillStyle = C.axis; ctx.textAlign = "left"; ctx.fillText(row.name, L.pw + 4, y + STAT_H / 2); ctx.textAlign = "center";
     });
+  }
+
+  // footprint thu nhỏ: số long (xanh) và short (đỏ) ngay dưới râu nến
+  _lsLabels(first, last) {
+    const ctx = this.ctx, fs = this.sp >= 32 ? 10 : 9;
+    ctx.font = `${fs}px ${MONO}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (let i = first; i <= last; i++) {
+      const b = this.bars[i], s = longShort(b); if (!s) continue;
+      const x = this.xOf(i), y = this.yOf(b.l) + 3, tl = fmtVol(s.buy), ts = fmtVol(s.sell), tw = Math.max(ctx.measureText(tl).width, ctx.measureText(ts).width) + 4;
+      ctx.fillStyle = alpha(T.bg, 0.75); ctx.fillRect(x - tw / 2, y - 1, tw, 2 * fs + 3);
+      ctx.fillStyle = C.up; ctx.fillText(tl, x, y);
+      ctx.fillStyle = C.down; ctx.fillText(ts, x, y + fs + 1);
+    }
+  }
+
+  // footprint thu nhỏ: mỗi nến một thanh mua chủ động (long, xanh, lên) và bán chủ động (short, đỏ, xuống), kèm tổng vùng đang xem
+  _longShort(first, last, L) {
+    const ctx = this.ctx, top = L.statsTop, H = L.statsH, mid = top + H / 2, bw = Math.max(1, Math.min(this.sp * 0.7, this.sp - 2)), xs = [];
+    let mx = 0, buy = 0, sell = 0;
+    for (let i = first; i <= last; i++) { const s = longShort(this.bars[i]); xs.push(s); if (s) { mx = Math.max(mx, s.buy, s.sell); buy += s.buy; sell += s.sell; } }
+    ctx.fillStyle = T.panel; ctx.fillRect(0, top, L.w, H);
+    ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.moveTo(0, mid + 0.5); ctx.lineTo(L.pw, mid + 0.5); ctx.stroke();
+    if (mx) xs.forEach((s, j) => {
+      if (!s) return; const x = Math.round(this.xOf(first + j) - bw / 2), hb = s.buy / mx * (H / 2 - 4), hs = s.sell / mx * (H / 2 - 4);
+      ctx.fillStyle = alpha(T.up, s.buy >= s.sell ? 0.9 : 0.45); ctx.fillRect(x, mid - hb, Math.round(bw), Math.max(1, hb));
+      ctx.fillStyle = alpha(T.down, s.sell > s.buy ? 0.9 : 0.45); ctx.fillRect(x, mid + 1, Math.round(bw), Math.max(1, hs));
+    });
+    const tot = buy + sell, pct = tot ? Math.round(buy / tot * 100) : 50;
+    ctx.font = `10px ${MONO}`; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+    ctx.fillStyle = C.up; ctx.fillText(`Long ${pct}%`, L.pw + 4, top + H / 4);
+    ctx.fillStyle = C.down; ctx.fillText(`Short ${100 - pct}%`, L.pw + 4, top + H * 3 / 4);
+    ctx.fillStyle = C.axis; ctx.textBaseline = "top"; ctx.fillText("Long / Short (mua · bán chủ động)", 6, top + 3);
+    const hint = this.sp >= LS_TXT ? "số dưới nến: xanh long, đỏ short" : "phóng to thêm để thấy số long/short dưới nến";
+    this._lsSum = tot ? `Đã thu nhỏ: hiện nến · ${last - first + 1} nến đang xem: Long ${fmtVol(buy)} (${pct}%) · Short ${fmtVol(sell)} (${100 - pct}%) · chênh ${sgn(buy - sell)} · ${hint}` : `Đã thu nhỏ: hiện nến · ${hint}`;
   }
 
   _stacked(first, last, rowStep, L) {
@@ -496,7 +545,7 @@ export class FlowChart {
       const d = this.bars[i].d || 0, hh = Math.abs(d) / maxD * (H / 2 - 3), x = this.xOf(i);
       ctx.fillStyle = d >= 0 ? alpha(T.up, 0.75) : alpha(T.down, 0.75);
       ctx.fillRect(Math.round(x - bw / 2), d >= 0 ? mid - hh : mid, Math.round(bw), Math.max(1, hh));
-      if (this.type === "box" && this.sp >= 50) { ctx.fillStyle = d >= 0 ? C.up : C.down; ctx.font = `10px ${MONO}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText((d >= 0 ? "+" : "") + fmtVol(d), x, d >= 0 ? mid + 7 : mid - 7); }
+      if (this.fp && this.sp >= 50) { ctx.fillStyle = d >= 0 ? C.up : C.down; ctx.font = `10px ${MONO}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText((d >= 0 ? "+" : "") + fmtVol(d), x, d >= 0 ? mid + 7 : mid - 7); }
     }
     ctx.fillStyle = C.axis; ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "top";
     ctx.fillText(`Delta${this.info.deltaApprox ? " (ước tính từ nến)" : ""}`, 6, top + 3);
@@ -669,7 +718,7 @@ export class FlowChart {
     this._bigVis = vis;
     for (const p of vis) {
       const i = this._barIndexAt(p.t); if (i < first || i > last) continue;
-      const x = this.xOf(i), y = this.yOf(p.vwap), r = Math.max(3, Math.min(this.type === "box" ? this.sp * 0.3 : 22, Math.sqrt(p.q / maxQ) * (this.type === "box" ? this.sp * 0.3 : 22)));
+      const x = this.xOf(i), y = this.yOf(p.vwap), r = Math.max(3, Math.min(this.fp ? this.sp * 0.3 : 22, Math.sqrt(p.q / maxQ) * (this.fp ? this.sp * 0.3 : 22)));
       const col = p.side === "buy" ? T.up : T.down;
       ctx.fillStyle = alpha(col, 0.35); ctx.strokeStyle = col; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
@@ -680,11 +729,11 @@ export class FlowChart {
   // ô footprint tìm được bằng Cluster Search
   _clusters(first, last, rowStep) {
     if (!this.clusters.length) return;
-    const ctx = this.ctx, w = this.type === "box" ? this.sp * 0.88 : Math.max(4, this.sp * 0.9);
+    const ctx = this.ctx, w = this.fp ? this.sp * 0.88 : Math.max(4, this.sp * 0.9);
     ctx.strokeStyle = "#ff9f1c"; ctx.lineWidth = 2;
     for (const c of this.clusters) {
       if (c.i < first || c.i > last) continue;
-      const x = this.xOf(c.i), p0 = this.type === "box" ? Math.floor(c.price / rowStep + 1e-9) * rowStep : c.price, p1 = this.type === "box" ? p0 + rowStep : c.price + this.step;
+      const x = this.xOf(c.i), p0 = this.fp ? Math.floor(c.price / rowStep + 1e-9) * rowStep : c.price, p1 = this.fp ? p0 + rowStep : c.price + this.step;
       const y0 = this.yOf(p1), y1 = this.yOf(p0);
       ctx.strokeRect(x - w / 2, y0, w, Math.max(3, y1 - y0));
       c._x = x; c._y0 = y0; c._y1 = Math.max(y0 + 3, y1); c._w = w;
@@ -795,13 +844,18 @@ export class FlowChart {
     ctx.font = `12px ${MONO}`; ctx.textBaseline = "top"; ctx.textAlign = "left";
     ctx.fillStyle = alpha(T.bg, 0.8); ctx.fillRect(4, 4, Math.min(L.pw - 8, 900), 20);
     let x = 8; for (const [t, c] of parts) { ctx.fillStyle = c; ctx.fillText(t, x, 8); x += ctx.measureText(t).width; }
-    if (this.type === "box") { ctx.fillStyle = C.axis; ctx.fillText(`Tầng giá ${this._rowStepUsed.toFixed(decimalsFor(this._rowStepUsed))} · viền liền: từ từng lệnh khớp thật · viền nét đứt: ước tính từ nến nhỏ hơn${this.fpProgress ? " · " + this.fpProgress : ""}`, 8, 28); }
+    if (this.compact) { ctx.fillStyle = C.axis; ctx.fillText(this._lsSum || "", 8, 28); }
+    else if (this.type === "box") { ctx.fillStyle = C.axis; ctx.fillText(`Tầng giá ${this._rowStepUsed.toFixed(decimalsFor(this._rowStepUsed))} · viền liền: từ từng lệnh khớp thật · viền nét đứt: ước tính từ nến nhỏ hơn${this.fpProgress ? " · " + this.fpProgress : ""}`, 8, 28); }
   }
 
   // Chú thích cho đối tượng dưới con trỏ (mức giá, vùng, thanh lý, lệnh backtest)
   hitTest(x, y) {
     const L = this._L; if (!L || !this.bars.length || x > L.pw) return null;
     const dec = decimalsFor(this.info.tick || this.step), i = Math.min(this.bars.length - 1, Math.max(0, this.iAt(x))), b = this.bars[i];
+    if (L.statsH && y >= L.statsTop && this.compact) {
+      const s = longShort(b); if (!s) return `Nến ${fmtTime(b.t)}: chưa có khối lượng mua/bán chủ động.`;
+      return `Long / Short nến ${fmtTime(b.t)}: mua chủ động (long) ${fmtVol(s.buy)} · bán chủ động (short) ${fmtVol(s.sell)} · chênh ${sgn(s.buy - s.sell)} (${Math.round(s.buy / (s.buy + s.sell) * 100)}% long). Thanh xanh lên là long, thanh đỏ xuống là short; phóng to để xem lại footprint.`;
+    }
     if (L.statsH && y >= L.statsTop) {
       const row = STAT_ROWS[Math.floor((y - L.statsTop - 2) / STAT_H)]; if (!row) return null;
       const st = barStats(b), v = row.get(st);
@@ -836,7 +890,7 @@ export class FlowChart {
       for (const [p, name] of [[r.prof.poc, "POC (giá khớp nhiều nhất)"], [r.prof.vah, "VAH (cạnh trên vùng giá trị 70%)"], [r.prof.val, "VAL (cạnh dưới vùng giá trị 70%)"]]) if (Math.abs(y - this.yOf(p)) < 4) return `${name} của vùng tự chọn ${fmtTime(this.bars[r.from].t, true)} → ${fmtTime(this.bars[r.to].t, true)}: ${p.toFixed(dec)}. Tổng khối lượng ${fmtVol(r.prof.total)}, delta ${r.prof.delta >= 0 ? "+" : ""}${fmtVol(r.prof.delta)}. HVN: ${r.prof.hvn.slice(0, 4).map(v => v.toFixed(dec)).join(", ") || "-"} · LVN: ${r.prof.lvn.slice(0, 4).map(v => v.toFixed(dec)).join(", ") || "-"}. Bấm chuột phải vào vùng để xoá.`;
     }
     for (const mk of this.markers) if (mk.t === b.t && Math.abs(y - this.yOf(mk.price)) < 8) return mk.exit ? `Thoát lệnh tại ${mk.price.toFixed(dec)}` : `Vào lệnh ${mk.dir > 0 ? "LONG" : "SHORT"} tại ${mk.price.toFixed(dec)}`;
-    const st = this.show.imb && this.type === "box" && this._stkVis && this._stkVis.find(v => x >= v.xa && x <= v.xb && y >= v.ya - 2 && y <= v.yb + 2 && !(b.fp && b.fp.size && x >= this.xOf(i) - this.sp * 0.44 && x <= this.xOf(i) + this.sp * 0.44 && y >= this.yOf(b.h) && y <= this.yOf(b.l)));
+    const st = this.show.imb && this.fp && this._stkVis && this._stkVis.find(v => x >= v.xa && x <= v.xb && y >= v.ya - 2 && y <= v.yb + 2 && !(b.fp && b.fp.size && x >= this.xOf(i) - this.sp * 0.44 && x <= this.xOf(i) + this.sp * 0.44 && y >= this.yOf(b.h) && y <= this.yOf(b.l)));
     if (st) { const z = st.z; return `Mất cân bằng xếp chồng ${z.n} dòng liền nhau, phe ${z.side === "buy" ? "MUA" : "BÁN"} chủ động gấp ít nhất 3 lần phe kia (so theo đường chéo), vùng ${z.lo.toFixed(dec)} – ${z.hi.toFixed(dec)}, nến ${fmtTime(z.t)}. ${z.end != null ? "Đã có nến đóng cửa xuyên qua (nét đứt)." : `Chưa bị xuyên qua: vùng ${z.side === "buy" ? "hỗ trợ" : "kháng cự"} tiềm năng.`}`; }
     if (this.show.levels) for (const lv of this.levels) if (Math.abs(y - this.yOf(lv.price)) < 4) return `${lv.kind === "support" ? "Hỗ trợ" : "Kháng cự"} ${lv.price.toFixed(dec)}: chạm ${lv.touches} lần, bị test ${lv.tests} lần, độ mạnh ${Math.round(lv.strength)}/100${lv.flipped ? ", đã đảo vai" : lv.broken ? ", đã bị phá (nét đứt)" : ", còn giữ"}.`;
     if (this.show.confl) { const c = conflTip(this.confl, y, p => this.yOf(p), dec); if (c) return c; }
@@ -845,7 +899,7 @@ export class FlowChart {
     const candle = `Nến ${fmtTime(b.t)} (${this.info.interval || ""}): mở ${b.o.toFixed(dec)} · cao ${b.h.toFixed(dec)} · thấp ${b.l.toFixed(dec)} · đóng ${b.c.toFixed(dec)} (${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%). ` +
       `${b.c >= b.o ? "Nến xanh: giá đóng cửa cao hơn giá mở cửa." : "Nến đỏ: giá đóng cửa thấp hơn giá mở cửa."} Thân nến là đoạn mở → đóng, râu là giá cao nhất/thấp nhất. ` +
       `Khối lượng ${fmtVol(b.v)}${d != null ? `, delta (mua − bán chủ động) ${d >= 0 ? "+" : ""}${fmtVol(d)}${this.info.deltaApprox ? " (ước tính)" : ""}` : ""}.`;
-    if (this.type === "box" && b.fp) {
+    if (this.fp && b.fp) {
       const m = FP_MODES[this.fpMode] || FP_MODES.bidask, rs = this._rowStepUsed, k = Math.floor(this.pAt(y) / rs + 1e-9), r = fpRows(b, Math.max(1, Math.round(rs / this.step))).get(k);
       const cell = r ? `Ô ${(k * rs).toFixed(dec)}: bán chủ động ${fmtVol(r[0])} · mua chủ động ${fmtVol(r[1])} · tổng ${fmtVol(r[0] + r[1])} · delta ${sgn(r[1] - r[0])}. ` : "";
       return cell + (b.fpApprox ? "Footprint ước tính: chia khối lượng mua/bán của các nến nhỏ hơn lên khoảng giá (viền nét đứt). " : `Footprint thật từ từng lệnh khớp, chế độ ${m.name}: ${m.tip}; khung vàng là mức giá khớp nhiều nhất. `) + candle;
@@ -891,7 +945,7 @@ export class FlowChart {
     cv.addEventListener("dblclick", () => { this.offset = this._defOff(); this.yZoom = 1; this.dirty = true; });
     cv.addEventListener("wheel", e => {
       e.preventDefault(); const p = pos(e), before = this.fAt(p.x), k = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-      const [mn, mx] = this.type === "box" ? [30, 260] : [1, 60];
+      const [mn, mx] = this.type === "box" ? [3, 260] : [1, 60];
       this.spacing[this.type] = Math.min(mx, Math.max(mn, this.sp * k)); this.offset -= this.fAt(p.x) - before; this.dirty = true;
     }, { passive: false });
     let touch = null;
@@ -903,7 +957,7 @@ export class FlowChart {
     cv.addEventListener("touchmove", e => {
       if (!touch) return; e.preventDefault();
       if (touch.pinch) { // hai ngón: chụm/mở để thu/phóng nến
-        if (e.touches.length < 2 || touch.dx < 30) return; const [mn, mx] = this.type === "box" ? [30, 260] : [1, 60];
+        if (e.touches.length < 2 || touch.dx < 30) return; const [mn, mx] = this.type === "box" ? [3, 260] : [1, 60];
         this.spacing[this.type] = Math.min(mx, Math.max(mn, touch.sp * spanX(e) / touch.dx)); this.dirty = true; return;
       }
       this.offset = Math.max(3 - this.bars.length, touch.offset - (e.touches[0].clientX - touch.x) / this.sp); this.dirty = true; }, { passive: false });

@@ -1,7 +1,7 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: trang Sức khoẻ dữ liệu. Mỗi nguồn: đang chạy hay chết, độ trễ đo được, lần cập nhật cuối.
-import { SOURCES, healthState, status, median, probeAll, onHealth, clockSkew } from "./health.js?v=202610240622";
-import { freshTag, ageText } from "./fresh.js?v=202610240622";
+import { SOURCES, healthState, status, median, probeAll, onHealth, clockSkew } from "./health.js?v=202610240629";
+import { freshTag, ageText } from "./fresh.js?v=202610240629";
 
 const ST = {
   run: { name: "Đang chạy", cls: "up" }, slow: { name: "Cũ quá mức", cls: "warn" }, dead: { name: "Lỗi", cls: "dn" },

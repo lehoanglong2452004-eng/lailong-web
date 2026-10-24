@@ -4,8 +4,8 @@
 // - Kiểm tra lệnh vừa vào: gỡ gạc ngay sau lệnh thua, rủi ro vượt mức cho phép, vào sát giờ tin mạnh.
 // - Báo trước khi sắp bị khoá: còn một lệnh thua nữa là đủ chuỗi thua, lỗ ngày hoặc tuần đã gần chạm giới hạn.
 // - Soạn tin Telegram theo kiểu HTML của Telegram (chỉ in đậm), mọi chữ bro gõ đều được thoát ký tự.
-import { result, riskLock, guard, weekStart } from "./journal.js?v=202610240622";
-import { fmtDate, FLAG } from "./util.js?v=202610240622";
+import { result, riskLock, guard, weekStart } from "./journal.js?v=202610240629";
+import { fmtDate, FLAG } from "./util.js?v=202610240629";
 
 export const REVENGE_MIN = 15; // vào lệnh trong chừng này phút sau một lệnh thua thì coi là gỡ gạc
 export const OVERSIZE = 1.25; // rủi ro lệnh vượt 1,25 lần mức % vốn cho phép
