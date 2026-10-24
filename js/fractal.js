@@ -14,7 +14,7 @@
 // tối đa H nến. Nến chạm cả chốt lời và cắt lỗ tính là thua (thận trọng). Hết giờ: tính theo giá lúc đó.
 // Phí và trượt giá trừ vào mỗi lệnh. Kết quả quy ra R (1R = khoảng cắt lỗ).
 
-import { atrSeries } from "./flowtools.js?v=202610240531";
+import { atrSeries } from "./flowtools.js?v=202610240537";
 
 export const HOUR = 36e5;
 export const HOLDS = [

@@ -2,8 +2,8 @@
 // Lai Long Web: báo cáo hiệu suất theo tháng (lợi nhuận, sụt giảm tối đa, tỷ lệ thắng, kỳ vọng mỗi lệnh).
 // Nguồn: nhật ký trên máy này, lịch sử lãi/lỗ thật của Binance (qua máy chủ laptop, khoá API chỉ đọc),
 // hoặc file CSV xuất từ sàn. Nút "In / lưu PDF" tạo bản báo cáo sạch để gửi nhà đầu tư.
-import { fromJournal, fromIncome, parseCsv, report } from "./perf.js?v=202610240531";
-import { getJson, postJson, fmtVol } from "./util.js?v=202610240531";
+import { fromJournal, fromIncome, parseCsv, report } from "./perf.js?v=202610240537";
+import { getJson, postJson, fmtVol } from "./util.js?v=202610240537";
 
 const STORE = "lailong.perf.v1";
 const pct = (x, k = 1) => x == null || !isFinite(x) ? "–" : `${x >= 0 ? "+" : ""}${(x * 100).toFixed(k)}%`;
