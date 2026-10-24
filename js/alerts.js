@@ -5,6 +5,8 @@
 // đồng thuận 4 lớp (vĩ mô, COT, cấu trúc giá, order flow cùng chiều).
 // Cài đặt và các mức giá được lưu trên máy này (sessionStorage). Mỗi loại kêu tối đa một lần mỗi 5 giây.
 // Telegram: mã bot và chat id lưu trong localStorage của máy này, gửi thẳng từ trình duyệt tới api.telegram.org.
+// Mọi tin Telegram được gắn biểu tượng trước mã giao dịch (₿ BTCUSDT, 🥇 XAUUSDT, 🇪🇺🇺🇸 EURUSD).
+import { withIcons } from "./icons.js?v=202610240610";
 
 const KEY = "lailong.alerts";
 const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: false, disc: true, shock: true, compass: true, consensus: true, verifiedOnly: false, sound: true, notify: false, levels: [] };
@@ -24,7 +26,7 @@ export class Alerts {
   telegram(text, force = false, html = null) {
     const { on, token, chat } = this.tg;
     if ((!on && !force) || !token || !chat) return false;
-    const body = html ? { chat_id: chat, text: html, parse_mode: "HTML" } : { chat_id: chat, text: `Lai Long: ${text}` };
+    const body = html ? { chat_id: chat, text: withIcons(html), parse_mode: "HTML" } : { chat_id: chat, text: `Lai Long: ${withIcons(text)}` };
     try { fetch(`https://api.telegram.org/bot${encodeURIComponent(token)}/sendMessage`, { method: "POST", mode: "no-cors", body: new URLSearchParams(body) }).catch(() => {}); } catch { /* không có mạng */ }
     return true;
   }
