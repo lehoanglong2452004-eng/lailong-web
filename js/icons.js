@@ -3,7 +3,7 @@
 // Coin dùng ký hiệu của chính coin đó (Unicode chưa có logo BTC, ETH nên dùng ₿ và Ξ), coin lạ dùng 🪙.
 // Hàng hoá dùng vật: 🛢️ dầu, 🥇 vàng, 🥈 bạc (chưa có emoji thỏi vàng, thỏi bạc), 🪨 quặng đồng, 🔥 khí đốt, 🌽 ngô…
 // Ngoại hối dùng cờ của hai nước trong cặp, chỉ số chứng khoán dùng 📈.
-import { FLAG } from "./util.js?v=202610240647";
+import { FLAG } from "./util.js?v=202610240703";
 
 export const CCY = {
   ...FLAG, SGD: "🇸🇬", HKD: "🇭🇰", KRW: "🇰🇷", INR: "🇮🇳", MXN: "🇲🇽", BRL: "🇧🇷", TRY: "🇹🇷", ZAR: "🇿🇦",
@@ -22,6 +22,7 @@ const ASSET = {
   CL: "🛢️", WTI: "🛢️", USOIL: "🛢️", OIL: "🛢️", BZ: "🛢️", BRENT: "🛢️", UKOIL: "🛢️",
   NG: "🔥", NATGAS: "🔥", ZC: "🌽", ZS: "🫘", ZW: "🌾", KC: "☕", SB: "🍬", CC: "🍫", LE: "🐄", HE: "🐖",
   ES: "📈", SPX: "📈", NQ: "📈", NDX: "📈", RTY: "📈", YM: "📈", DJI: "📈", VX: "🌡️", VIX: "🌡️",
+  SPY: "📈", QQQ: "📈", IWM: "📈", GLD: "🥇", SLV: "🥈", USO: "🛢️", TLT: "📜",
   ZN: "📜", ZT: "📜", ZB: "📜", DX: "💵", DXY: "💵",
   "6E": CCY.EUR, "6J": CCY.JPY, "6B": CCY.GBP, "6A": CCY.AUD, "6C": CCY.CAD, "6S": CCY.CHF, "6N": CCY.NZD,
 };

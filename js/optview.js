@@ -3,9 +3,9 @@
 // chỉ số biến động 1 năm (DVOL của Deribit cho BTC/ETH, VIX/VXN/GVZ/OVX… cho tài sản Mỹ), dòng lệnh quyền chọn lớn.
 // BTC/ETH: Deribit trực tiếp (DVOL, lệnh khớp) + nến ngày Binance cho biến động thực tế.
 // Tài sản Mỹ: data/gex_<mã>.json có thêm closes (giá đóng cửa ngày) và volIdx (chỉ số biến động) từ Yahoo, trễ.
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610240647";
-import { setFresh } from "./fresh.js?v=202610240647";
-import { termStructure, ivRank, realizedVol, putCall, flowSummary, readSentiment } from "./optpro.js?v=202610240647";
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610240703";
+import { setFresh } from "./fresh.js?v=202610240703";
+import { briefState } from "./optbrief.js?v=202610240703";
 
 const DERIBIT = "https://www.deribit.com/api/v2/public";
 const C = { atm: "#ff9f1c", call: "#1fb57a", put: "#e5484d", grid: "#2b2b2b", muted: "#a3a3a3", text: "#e6e6e6", rv: "#4ea1ff" };
@@ -42,12 +42,8 @@ export function initOptPro({ $, esc }) {
 
   async function update(asset, chain, live, L) {
     if (!chain) { S = null; return render(); }
-    const ex = await loadExtras(asset, chain, live), now = Date.now();
-    const ts = termStructure(chain, now), pc = putCall(chain, now);
-    const volVals = ex.vol ? ex.vol.map(r => r[1]) : [], rank = volVals.length ? ivRank(volVals) : null;
-    const rv = ex.closes ? realizedVol(ex.closes, 30, live ? 365 : 252) : null;
-    const flow = ex.trades ? flowSummary(ex.trades, { now, bigUsd: asset === "ETH" ? 50e3 : 100e3 }) : null;
-    S = { asset, chain, live, ts, pc, rank, rv, flow, ex, L, lines: readSentiment({ ts, pc, rank, rv, flow, spot: chain.spot, gex: L }) };
+    const ex = await loadExtras(asset, chain, live);
+    S = briefState({ asset, chain, live, ex, L });
     render();
     return ex;
   }
@@ -143,5 +139,5 @@ export function initOptPro({ $, esc }) {
     const d0 = new Date(t0); ctx.fillText(`${d0.getUTCMonth() + 1}/${d0.getUTCFullYear()}`, pad.l, h - 4); ctx.textAlign = "right"; ctx.fillText("nay", w - pad.r, h - 4);
   }
 
-  return { update };
+  return { update, extras: loadExtras };
 }
