@@ -2,9 +2,9 @@
 // Lai Long Web: bản kế hoạch trước phiên (phần soạn nội dung, không vẽ). Trước mỗi phiên Á, Âu, Mỹ, gom cho một
 // tài sản: bối cảnh lúc này, các vùng hợp lưu gần giá, những tín hiệu có lợi thế đã kiểm chứng trong đúng bối cảnh
 // đó, tin mạnh sắp ra, và các tín hiệu vừa xuất hiện. Mục tiêu: vào phiên với kế hoạch, không mở app ra mới nghĩ.
-import { TAGS, describe, sessionOf } from "./context.js?v=202610240523";
-import { SIGNALS, VERDICT } from "./signals.js?v=202610240523";
-import { KINDS } from "./levels.js?v=202610240523";
+import { TAGS, describe, sessionOf } from "./context.js?v=202610240531";
+import { SIGNALS, VERDICT } from "./signals.js?v=202610240531";
+import { KINDS } from "./levels.js?v=202610240531";
 
 const H = 36e5;
 export const SESSION_START = { asia: 0, eu: 7 * 60, us: 13 * 60 + 30, off: 20 * 60 }; // phút UTC

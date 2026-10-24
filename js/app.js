@@ -1,49 +1,50 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202610240523";
-import { MarketState, Book } from "./market.js?v=202610240523";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610240523";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610240523";
-import { FlowChart } from "./flowchart.js?v=202610240523";
-import { TpoChart } from "./tpo.js?v=202610240523";
-import { Dom } from "./dom.js?v=202610240523";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610240523";
-import { initBacktest } from "./backtestview.js?v=202610240523";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610240523";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610240523";
-import { Tape } from "./tape.js?v=202610240523";
-import { LiqMap } from "./liqmap.js?v=202610240523";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202610240523";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202610240523";
-import { Alerts } from "./alerts.js?v=202610240523";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610240523";
-import { initNews } from "./newsview.js?v=202610240523";
-import { initMarkets } from "./marketsview.js?v=202610240523";
-import { initGex } from "./gexview.js?v=202610240523";
-import { initInst } from "./instview.js?v=202610240523";
-import { setFresh, tickFresh } from "./fresh.js?v=202610240523";
-import { initRadar } from "./radarview.js?v=202610240523";
-import { Drawings } from "./drawings.js?v=202610240523";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610240523";
-import { PaperBroker } from "./paper.js?v=202610240523";
-import { OrderLines } from "./orderlines.js?v=202610240523";
-import { MultiChart } from "./multichart.js?v=202610240523";
-import { DOM_COLS } from "./dom.js?v=202610240523";
-import { initFractal } from "./fractalview.js?v=202610240523";
-import { initJournal } from "./journalview.js?v=202610240523";
-import { installHealth, clockSkew } from "./health.js?v=202610240523";
-import { initHealth } from "./healthview.js?v=202610240523";
-import { initFlows } from "./flowsview.js?v=202610240523";
-import { initPerf } from "./perfview.js?v=202610240523";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202610240523";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202610240523";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202610240523";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202610240523";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202610240523";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610240523";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610240523";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610240523";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202610240531";
+import { MarketState, Book } from "./market.js?v=202610240531";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610240531";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610240531";
+import { FlowChart } from "./flowchart.js?v=202610240531";
+import { TpoChart } from "./tpo.js?v=202610240531";
+import { Dom } from "./dom.js?v=202610240531";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610240531";
+import { initBacktest } from "./backtestview.js?v=202610240531";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610240531";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610240531";
+import { Tape } from "./tape.js?v=202610240531";
+import { LiqMap } from "./liqmap.js?v=202610240531";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202610240531";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202610240531";
+import { Alerts } from "./alerts.js?v=202610240531";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610240531";
+import { initNews } from "./newsview.js?v=202610240531";
+import { initMarkets } from "./marketsview.js?v=202610240531";
+import { initGex } from "./gexview.js?v=202610240531";
+import { initInst } from "./instview.js?v=202610240531";
+import { setFresh, tickFresh } from "./fresh.js?v=202610240531";
+import { initRadar } from "./radarview.js?v=202610240531";
+import { Drawings } from "./drawings.js?v=202610240531";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610240531";
+import { PaperBroker } from "./paper.js?v=202610240531";
+import { OrderLines } from "./orderlines.js?v=202610240531";
+import { MultiChart } from "./multichart.js?v=202610240531";
+import { DOM_COLS } from "./dom.js?v=202610240531";
+import { initFractal } from "./fractalview.js?v=202610240531";
+import { initJournal } from "./journalview.js?v=202610240531";
+import { installHealth, clockSkew } from "./health.js?v=202610240531";
+import { initHealth } from "./healthview.js?v=202610240531";
+import { initFlows } from "./flowsview.js?v=202610240531";
+import { initPerf } from "./perfview.js?v=202610240531";
+import { initShock } from "./shockview.js?v=202610240531";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202610240531";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202610240531";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202610240531";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202610240531";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202610240531";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202610240531";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610240531";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610240531";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
@@ -631,6 +632,7 @@ const journal = initJournal({ $, S, esc, table, market, toast, events: () => new
   if (lk) bar.textContent = `ĐANG KHOÁ GIAO DỊCH tới ${fmtDate(lk.until)}: ${lk.why}. Lệnh giả lập mới bị chặn, chỉ được đóng bớt vị thế.`;
 } });
 const perfView = initPerf({ $, esc, toast, journal });
+const shockView = initShock({ $, esc, table, alerts, journal, events: () => newsView.events(), reactions: () => newsView.reactions() });
 const healthView = initHealth({ $, esc });
 const flowsView = initFlows({ $, esc });
 
@@ -849,7 +851,7 @@ function setView(v) {
   heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
   if (v === "signals") signalsView.show(); else signalsView.hide();
   if (v === "analysis") { renderAnalysis(); renderConfl(); instView.show(); flowsView.show(); } else { instView.hide(); flowsView.hide(); }
-  if (v === "journal") { journal.show(); perfView.show(); }
+  if (v === "journal") { journal.show(); perfView.show(); shockView.render(); }
   if (v === "health") healthView.show(); else healthView.hide();
   if (v === "markets") marketsView.show(); else marketsView.hide();
   if (v === "options") gexView.show(); else gexView.hide();

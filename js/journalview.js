@@ -3,12 +3,12 @@
 // Dữ liệu chỉ lưu trên trình duyệt của máy này (localStorage); nút Xuất file để sao lưu hoặc chuyển máy.
 // Gác cổng kỷ luật: hỏi lại khi lệnh mới giống gỡ gạc, quá rủi ro hoặc sát giờ tin; báo khi sắp khoá và khi đã khoá.
 // notify(kind, text, html, toast) gửi cảnh báo ra ngoài (tiếng, Telegram); events() là lịch kinh tế.
-import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202610240523";
-import { entryChecks, nearLock, daySummary, gateHtml, nearHtml, lockHtml, GATE } from "./discipline.js?v=202610240523";
-import { atrSeries } from "./radar.js?v=202610240523";
-import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202610240523";
-import { EquityChart } from "./fractalview.js?v=202610240523";
-import { fmtVol, fmtDate, decimalsFor, getJson } from "./util.js?v=202610240523";
+import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202610240531";
+import { entryChecks, nearLock, daySummary, gateHtml, nearHtml, lockHtml, GATE } from "./discipline.js?v=202610240531";
+import { atrSeries } from "./radar.js?v=202610240531";
+import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202610240531";
+import { EquityChart } from "./fractalview.js?v=202610240531";
+import { fmtVol, fmtDate, decimalsFor, getJson } from "./util.js?v=202610240531";
 
 const STORE = "lailong.journal.v1";
 const WD = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -227,5 +227,5 @@ export function initJournal({ $, S, esc, table, market, toast, onLock, notify, e
   }
   resetForm(); $("szSym").value = S.symbol; $("szLev").value = 10;
   render();
-  return { render, trades: () => db.trades, capital: () => db.cfg.capital, lock: () => lockNow(), show() { fillStrats(); if (!$("szEntry").value && market.last) { $("szEntry").value = market.last.p; $("szSym").value = S.symbol; } render(); } };
+  return { render, trades: () => db.trades, capital: () => db.cfg.capital, cfg: () => db.cfg, lock: () => lockNow(), show() { fillStrats(); if (!$("szEntry").value && market.last) { $("szEntry").value = market.last.p; $("szSym").value = S.symbol; } render(); } };
 }
