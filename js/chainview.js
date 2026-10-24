@@ -1,9 +1,9 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: tab Quyền chọn, phần "Nguồn dữ liệu" (mỗi thành phần lấy từ đâu, trực tiếp hay trễ)
 // và bảng chuỗi quyền chọn (depth view): call bên trái, put bên phải theo strike cho một hạn.
-import { fmtUsd, fmtVol } from "./util.js?v=202610240716";
-import { freshTag } from "./fresh.js?v=202610240716";
-import { chainTable } from "./chain.js?v=202610240716";
+import { fmtUsd, fmtVol } from "./util.js?v=202610240731";
+import { freshTag } from "./fresh.js?v=202610240731";
+import { chainTable, refOf } from "./chain.js?v=202610240731";
 
 const DAY = 864e5;
 const dstr = t => { const d = new Date(t); return `${d.getUTCDate()}/${d.getUTCMonth() + 1}`; };
@@ -59,6 +59,9 @@ export function initChain({ $, esc }) {
     const T = ei == null ? null : chainTable(ch, ei, { n, now });
     if (!T) { box.innerHTML = `<div class="empty">Không có hợp đồng nào cho hạn này.</div>`; return; }
     const S0 = T.spot, dp = S0 >= 1000 ? 0 : S0 >= 100 ? 1 : 2, kf = k => k.toLocaleString("en-US", { maximumFractionDigits: dp === 0 ? 0 : 2 });
+    // GLD, SLV, USO: thêm cột quy strike ra giá vàng, bạc, dầu
+    const R = refOf(ch), cols = R ? 14 : 13, rk = k => R ? ` <small class="refpx">≈ ${R.fmt(k)}</small>` : "";
+    const spotRow = `<tr class="spotrow"><td colspan="${cols}">Giá ${kf(S0)}${R ? ` · ≈ ${esc(R.low)} ${R.fmt(S0)}` : ""}</td></tr>`;
     const px = v => v == null ? "–" : v >= 100 ? v.toFixed(0) : v >= 1 ? v.toFixed(2) : v.toFixed(3);
     const iv = x => x ? (x.iv * 100).toFixed(1) : "–", dl = x => x ? x.delta.toFixed(2) : "–";
     const oiCell = (x, right) => {
@@ -70,28 +73,28 @@ export function initChain({ $, esc }) {
     let spotDone = false;
     const rows = T.rows.map(e => {
       let pre = "";
-      if (!spotDone && e.k >= S0) { spotDone = true; pre = `<tr class="spotrow"><td colspan="13">Giá ${kf(S0)}</td></tr>`; }
+      if (!spotDone && e.k >= S0) { spotDone = true; pre = spotRow; }
       const cItm = e.k < S0, pItm = e.k > S0;
       return pre + `<tr class="${e.k === T.atmK ? "atm" : ""}">` +
         oiCell(e.c, false) + `<td class="${cItm ? "itm" : ""}">${e.c ? fmtVol(e.c.vol) : ""}</td><td class="${cItm ? "itm" : ""}">${iv(e.c)}</td><td class="${cItm ? "itm" : ""}">${dl(e.c)}</td><td class="${cItm ? "itm" : ""} up">${px(e.c && e.c.bid)}</td><td class="${cItm ? "itm" : ""} dn">${px(e.c && e.c.ask)}</td>` +
-        `<td class="k">${kf(e.k)} ${mark(e.k)}</td>` +
+        `<td class="k">${kf(e.k)} ${mark(e.k)}</td>` + (R ? `<td class="ref">${R.fmt(e.k)}</td>` : "") +
         `<td class="${pItm ? "itm" : ""} up">${px(e.p && e.p.bid)}</td><td class="${pItm ? "itm" : ""} dn">${px(e.p && e.p.ask)}</td><td class="${pItm ? "itm" : ""}">${dl(e.p)}</td><td class="${pItm ? "itm" : ""}">${iv(e.p)}</td><td class="${pItm ? "itm" : ""}">${e.p ? fmtVol(e.p.vol) : ""}</td>` + oiCell(e.p, true) + `</tr>`;
-    }).join("") + (spotDone ? "" : `<tr class="spotrow"><td colspan="13">Giá ${kf(S0)}</td></tr>`);
+    }).join("") + (spotDone ? "" : spotRow);
     const unit = live ? `USD mỗi 1 ${esc(S.asset)}` : "USD mỗi cổ phiếu (1 hợp đồng = 100)";
     const old = box.querySelector(".chainwrap"), key = `${T.exp}|${n}`, keep = old && box.dataset.k === key ? old.scrollTop : null;
     box.dataset.k = key;
     box.innerHTML = `<div class="kpis chainkpis">` +
       [["Đáo hạn", `${dstr(T.exp)} · ${T.days.toFixed(T.days < 2 ? 1 : 0)} ngày`, "Deribit đáo hạn 08:00 UTC, CBOE khoảng 16:00 giờ New York"],
-        ["Biên độ dự kiến", `±${kf(T.move)} <small>(±${T.movePct.toFixed(2)}%)</small>`, T.moveSrc === "straddle" ? "Theo giá straddle ATM (call + put tại strike sát giá): thị trường đang định giá giá đi khoảng chừng này tới ngày đáo hạn" : "Theo IV ATM × căn thời gian (không có giá mua/bán)"],
+        ["Biên độ dự kiến", `±${kf(T.move)} <small>(±${T.movePct.toFixed(2)}%)</small>${R ? ` <small class="refpx">≈ ±${R.fmt(T.move)}</small>` : ""}`, T.moveSrc === "straddle" ? "Theo giá straddle ATM (call + put tại strike sát giá): thị trường đang định giá giá đi khoảng chừng này tới ngày đáo hạn" : "Theo IV ATM × căn thời gian (không có giá mua/bán)"],
         ["Put/Call OI", T.pcrOi != null ? T.pcrOi.toFixed(2) : "–", "Tổng OI put chia OI call của hạn này. Trên 1 là nghiêng phòng hộ giảm"],
         ["Put/Call KL", T.pcrVol != null ? T.pcrVol.toFixed(2) : "–", live ? "Theo khối lượng 24 giờ" : "Theo khối lượng hôm nay"],
-        ["Tường call / put", `${kf(T.callWall)} / ${kf(T.putWall)}`, "Strike có OI call / put lớn nhất của hạn này"],
-        ["Max pain", T.maxPain != null ? kf(T.maxPain) : "–", "Gần đáo hạn giá hay bị hút về mức này"],
+        ["Tường call / put", `${kf(T.callWall)} / ${kf(T.putWall)}${R ? ` <small class="refpx">≈ ${R.fmt(T.callWall)} / ${R.fmt(T.putWall)}</small>` : ""}`, "Strike có OI call / put lớn nhất của hạn này"],
+        ["Max pain", T.maxPain != null ? kf(T.maxPain) + rk(T.maxPain) : "–", "Gần đáo hạn giá hay bị hút về mức này"],
       ].map(([a, b, t]) => `<div data-tip="${esc(t)}"><small>${a}</small><b>${b}</b></div>`).join("") + `</div>` +
-      `<div class="tablewrap chainwrap"><table class="chaintab"><thead><tr><th colspan="6" class="ch">CALL</th><th></th><th colspan="6" class="ph">PUT</th></tr>` +
+      `<div class="tablewrap chainwrap"><table class="chaintab"><thead><tr><th colspan="6" class="ch">CALL</th><th${R ? ` colspan="2"` : ""}></th><th colspan="6" class="ph">PUT</th></tr>` +
       `<tr><th data-tip="Hợp đồng mở">OI</th><th data-tip="${live ? "Khối lượng 24 giờ" : "Khối lượng hôm nay"}">KL</th><th data-tip="Độ biến động ngụ ý (%)">IV</th><th data-tip="Delta Black-Scholes tính từ IV">Δ</th><th data-tip="Giá mua tốt nhất, ${unit}">Mua</th><th data-tip="Giá bán tốt nhất, ${unit}">Bán</th>` +
-      `<th>Strike</th><th>Mua</th><th>Bán</th><th>Δ</th><th>IV</th><th>KL</th><th>OI</th></tr></thead><tbody>${rows}</tbody></table></div>` +
-      `<p class="note">Vùng tô đậm là quyền chọn đang có lãi nội tại (ITM). ⚑: khối lượng vượt hợp đồng mở. Giá tính bằng ${unit}.${live ? "" : " Ngoài giờ giao dịch Mỹ giá mua/bán có thể bằng 0 và hiện là –."}</p>`;
+      `<th>Strike</th>${R ? `<th class="ref" data-tip="${esc(R.tip)}">≈ ${esc(R.name)}</th>` : ""}<th>Mua</th><th>Bán</th><th>Δ</th><th>IV</th><th>KL</th><th>OI</th></tr></thead><tbody>${rows}</tbody></table></div>` +
+      `<p class="note">Vùng tô đậm là quyền chọn đang có lãi nội tại (ITM). ⚑: khối lượng vượt hợp đồng mở. Giá tính bằng ${unit}.${R ? ` Cột ≈ ${esc(R.low)}: strike quy ra giá ${esc(R.low)} (${esc(R.unit)}), giá quỹ × ${R.ratio.toFixed(R.ratio >= 1 ? 3 : 4)}.` : ""}${live ? "" : " Ngoài giờ giao dịch Mỹ giá mua/bán có thể bằng 0 và hiện là –."}</p>`;
     // Bảng cuộn trong khung: giữ vị trí người dùng đã cuộn, lần đầu đưa dòng giá về giữa.
     const wrap = box.querySelector(".chainwrap"), spot = wrap.querySelector(".spotrow");
     if (keep != null) wrap.scrollTop = keep;

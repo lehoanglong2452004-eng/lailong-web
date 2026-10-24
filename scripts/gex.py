@@ -12,6 +12,7 @@ from __future__ import annotations
 import gzip
 import json
 import re
+import statistics
 import sys
 import time
 import urllib.parse
@@ -44,6 +45,13 @@ VOL_INDEX = {
     "GLD": ("^GVZ", "GVZ (vàng)"),
     "USO": ("^OVX", "OVX (dầu)"),
     "TLT": ("^MOVE", "MOVE (trái phiếu)"),
+}
+# quỹ ETF hàng hoá: quy giá quỹ ra giá tài sản thật để đọc strike theo giá vàng, bạc, dầu quen thuộc
+# (mã Yahoo của hợp đồng tương lai gần nhất, tên, đơn vị)
+REF = {
+    "GLD": ("GC=F", "Vàng", "USD/oz"),
+    "SLV": ("SI=F", "Bạc", "USD/oz"),
+    "USO": ("CL=F", "Dầu WTI", "USD/thùng"),
 }
 YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/{}?range=1y&interval=1d"
 OPT = re.compile(r"^([A-Z]+)(\d{2})(\d{2})(\d{2})([CP])(\d{8})$")
@@ -126,15 +134,48 @@ def parse_daily(raw: dict) -> list[list[float]]:
     ]
 
 
+def _trade_day(t_ms: int) -> int:
+    """Ngày giao dịch của một nến ngày Yahoo. Cổ phiếu ghi 13:30 UTC, hợp đồng tương lai ghi
+    04:00 UTC hoặc lúc mở phiên tối hôm trước (22:00–23:00 UTC); cộng 6 giờ thì cả ba rơi
+    đúng ngày giao dịch."""
+    return (t_ms // 1000 + 6 * 3600) // 86400
+
+
+def ref_ratio(etf: list[list[float]], ref: list[list[float]], n: int = 5) -> float | None:
+    """Giá tài sản thật chia giá quỹ: trung vị của n phiên gần nhất mà cả hai cùng có giá đóng
+    cửa. Ghép theo ngày giao dịch để không lấy giá vàng đêm nay chia giá quỹ hôm qua."""
+    by = {_trade_day(t): c for t, c in ref if c}
+    xs = [by[_trade_day(t)] / c for t, c in etf if c > 0 and _trade_day(t) in by][-n:]
+    return round(statistics.median(xs), 6) if xs else None
+
+
 def fetch(sym: str) -> dict:
     code, cboe, name = next(x for x in SYMBOLS if x[0] == sym)
     raw = json.loads(_get(URL.format(cboe)))
     out = compact(raw)
     out.update({"sym": code, "name": name, "quoteTime": raw.get("timestamp")})
+    daily = []
     try:
-        out["closes"] = [c for _, c in yahoo_daily(YAHOO_SPOT.get(code, code))][-60:]
+        daily = yahoo_daily(YAHOO_SPOT.get(code, code))
+        out["closes"] = [c for _, c in daily][-60:]
     except Exception:
         pass
+    if code in REF and daily:
+        ysym, rname, unit = REF[code]
+        try:
+            ref = yahoo_daily(ysym)
+            ratio = ref_ratio(daily, ref)
+            if ratio:
+                out["ref"] = {
+                    "sym": ysym,
+                    "name": rname,
+                    "unit": unit,
+                    "ratio": ratio,
+                    "px": ref[-1][1],
+                    "t": ref[-1][0],
+                }
+        except Exception:
+            pass
     if code in VOL_INDEX:
         ysym, vname = VOL_INDEX[code]
         try:

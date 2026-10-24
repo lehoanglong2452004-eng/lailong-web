@@ -3,10 +3,10 @@
 // Tin danh sách: mỗi tín hiệu một dòng ở mốc chính, có lợi thế xếp trước, kèm bối cảnh lúc này và tín hiệu 24 giờ qua.
 // Hàng nút bên dưới gửi lại "sig:<mã>:<khung>:<tín hiệu>" cho Desk đang mở (tgbot.js); Desk trả về bản chi tiết:
 // kết quả theo từng mốc, bối cảnh chạy tốt hay kém, các lần gần nhất, giải thích để trong trích dẫn thu gọn.
-import { SIGNALS, VERDICT, byContext, edgesFor, fmtH } from "./signals.js?v=202610240716";
-import { describe } from "./context.js?v=202610240716";
-import { escHtml } from "./discipline.js?v=202610240716";
-import { iconOf } from "./icons.js?v=202610240716";
+import { SIGNALS, VERDICT, byContext, edgesFor, fmtH } from "./signals.js?v=202610240731";
+import { describe } from "./context.js?v=202610240731";
+import { escHtml } from "./discipline.js?v=202610240731";
+import { iconOf } from "./icons.js?v=202610240731";
 
 const H = 36e5;
 const ORDER = { edge: 0, unclear: 1, lose: 2, few: 3 };
