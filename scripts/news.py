@@ -32,7 +32,7 @@ CALENDAR_URLS = [
     "https://nfs.faireconomy.media/ff_calendar_nextweek.json",
 ]
 # (nguồn, đường dẫn, mục mặc định); mục thật của từng tin còn được chỉnh lại theo từ khoá.
-# Nguồn nào bị chặn (ví dụ Investing.com ở Việt Nam) chỉ bị bỏ qua sau vài giây, không làm chậm nguồn khác.
+# Nguồn nào bị chặn hay quá chậm chỉ bị bỏ qua sau vài giây, không làm chậm nguồn khác.
 GN = "https://news.google.com/rss/search?hl=en-US&gl=US&ceid=US:en&q="
 FEEDS = [
     # crypto
@@ -92,13 +92,39 @@ FEEDS = [
     ("Financial Times", "https://www.ft.com/world?format=rss", "geo"),
     ("Bloomberg", "https://feeds.bloomberg.com/politics/news.rss", "geo"),
     ("Google News", GN + "site:reuters.com+world+when:1d", "geo"),
-    # tiếng Việt
-    ("VnExpress", "https://vnexpress.net/rss/kinh-doanh.rss", "fin"),
-    ("VnExpress", "https://vnexpress.net/rss/the-gioi.rss", "geo"),
-    ("CafeF", "https://cafef.vn/thi-truong-chung-khoan.rss", "fin"),
-    ("CafeF", "https://cafef.vn/tai-chinh-quoc-te.rss", "fin"),
-    ("Vietstock", "https://vietstock.vn/830/the-gioi/tai-chinh-quoc-te.rss", "fin"),
 ]
+
+# Không bao giờ dùng tin của tác giả, báo hay tổ chức Việt Nam, kể cả tin tiếng Việt. Tin bị bỏ khi tên nguồn hay tên miền
+# là của Việt Nam (đuôi .vn, vn.investing.com, VnExpress, CafeF, Tuổi Trẻ…) hoặc tiêu đề có dấu tiếng Việt.
+# Google News ghi tên báo ở cuối tiêu đề, nên tin Google News lấy từ báo Việt Nam cũng bị bỏ.
+# web/js/newsdigest.js lọc lại y như vậy trên trình duyệt.
+_VN_CHARS = re.compile("[ăđơưĂĐƠƯ\u1ea0-\u1ef9]")
+_VN_WORDS = re.compile(
+    r"\b(viet\s?nam\w*|cafef|cafebiz|vnexpress|vietstock|vneconomy|vnanet|tuoi\s?tre|thanh\s?nien|dan\s?tri|znews|"
+    r"zing\s?news|kenh14|ttxvn|bnews|baodautu|tinnhanhchungkhoan|saigon\w*|hanoi\w*|markettimes|petrotimes|"
+    r"nhan\s?dan|lao\s?dong|tien\s?phong)\b",
+    re.I,
+)
+# tên ngắn chỉ tính khi là cả tên nguồn, để không bắt nhầm chữ trong tên báo nước ngoài
+_VN_NAMES = set("vn vtv vov vtc vir plo sggp nld soha 24h vndirect ssi fiingroup cand qdnd".split())
+_VN_NAMES |= {"vtc news", "the investor"}
+
+
+def is_vietnamese(item: dict) -> bool:
+    """Tin của báo, tác giả, tổ chức Việt Nam hoặc viết bằng tiếng Việt."""
+    src = (item.get("source") or "").strip()
+    host = (urllib.parse.urlparse(item.get("link") or "").hostname or "").lower()
+    return bool(
+        _VN_CHARS.search(src)
+        or len(_VN_CHARS.findall(item.get("title") or "")) >= 2
+        or src.lower() in _VN_NAMES
+        or _VN_WORDS.search(src)
+        or host.endswith(".vn")
+        or host.startswith("vn.")
+        or _VN_WORDS.search(host.replace(".", " "))
+    )
+
+
 CATS = ["econ", "fin", "metal", "energy", "geo", "crypto"]
 # thứ tự ưu tiên khi một tin khớp nhiều mục
 CAT_WORDS = [
@@ -663,7 +689,8 @@ def fetch_news(per_cat: int = 80) -> dict:
             if err:
                 errors.append(err)
     now = int(time.time() * 1000)
-    items = [x for x in items if x["t"] <= now + 3_600_000]  # bỏ tin ghi giờ tương lai
+    # bỏ tin ghi giờ tương lai và mọi tin của Việt Nam
+    items = [x for x in items if x["t"] <= now + 3_600_000 and not is_vietnamese(x)]
     seen, out, per = set(), [], {c: 0 for c in CATS}
     for it in sorted(items, key=lambda x: -x["t"]):
         key = re.sub(r"\W+", " ", it["title"].lower())[:80]

@@ -2,14 +2,14 @@
 // Lai Long Web: cảnh báo bằng tiếng và thông báo trình duyệt.
 // Loại cảnh báo: nghi iceberg, tường lớn xuất hiện gần giá, tường bị rút khi giá tới gần, Big Trade, giá chạm mức đã đặt,
 // gác cổng kỷ luật (gỡ gạc, sắp khoá, đã khoá), kịch bản sốc 60 phút trước tin lớn, la bàn 4 lần mỗi ngày,
-// đồng thuận 4 lớp (vĩ mô, COT, cấu trúc giá, order flow cùng chiều).
+// đồng thuận 4 lớp (vĩ mô, COT, cấu trúc giá, order flow cùng chiều), bản tin nóng gom mỗi 30 phút.
 // Cài đặt và các mức giá được lưu trên máy này (sessionStorage). Mỗi loại kêu tối đa một lần mỗi 5 giây.
 // Telegram: mã bot và chat id lưu trong localStorage của máy này, gửi thẳng từ trình duyệt tới api.telegram.org.
 // Mọi tin Telegram được gắn biểu tượng trước mã giao dịch (₿ BTCUSDT, 🥇 XAUUSDT, 🇪🇺🇺🇸 EURUSD).
-import { withIcons } from "./icons.js?v=202610240629";
+import { withIcons } from "./icons.js?v=202610240642";
 
 const KEY = "lailong.alerts";
-const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: false, disc: true, shock: true, compass: true, consensus: true, verifiedOnly: false, sound: true, notify: false, levels: [] };
+const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: true, disc: true, shock: true, compass: true, consensus: true, verifiedOnly: false, sound: true, notify: false, levels: [] };
 const TG_KEY = "lailong.telegram";
 const TONES = { up: [880, 1175], down: [523, 392], ice: [988, 988], price: [1319, 1047, 1319] };
 
@@ -26,7 +26,8 @@ export class Alerts {
   telegram(text, force = false, html = null) {
     const { on, token, chat } = this.tg;
     if ((!on && !force) || !token || !chat) return false;
-    const body = html ? { chat_id: chat, text: withIcons(html), parse_mode: "HTML" } : { chat_id: chat, text: `Lai Long: ${withIcons(text)}` };
+    const body = html ? { chat_id: chat, text: withIcons(html, true), parse_mode: "HTML", link_preview_options: JSON.stringify({ is_disabled: true }) } :
+      { chat_id: chat, text: `Lai Long: ${withIcons(text)}` };
     try { fetch(`https://api.telegram.org/bot${encodeURIComponent(token)}/sendMessage`, { method: "POST", mode: "no-cors", body: new URLSearchParams(body) }).catch(() => {}); } catch { /* không có mạng */ }
     return true;
   }

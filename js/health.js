@@ -14,7 +14,7 @@ export const SOURCES = [
   { id: "deribit", name: "Deribit", kind: "live", feeds: "Quyền chọn BTC/ETH, DVOL", hosts: ["www.deribit.com"], probe: "https://www.deribit.com/api/v2/public/get_time", expect: 300e3 },
   { id: "coinbase", name: "Coinbase", kind: "live", feeds: "Chênh giá Coinbase (Radar, chỉ số tổ chức)", hosts: ["api.exchange.coinbase.com"], probe: "https://api.exchange.coinbase.com/time", expect: 600e3 },
   { id: "d-calendar", name: "Lịch kinh tế", kind: "delay", feeds: "ForexFactory + số thực tế Nasdaq", file: "data/calendar.json", expect: 45 * 60e3 },
-  { id: "d-news", name: "Tin tức (56 nguồn)", kind: "delay", feeds: "Tab Phân tích, bản đồ tác động tin", file: "data/news.json", expect: 45 * 60e3 },
+  { id: "d-news", name: "Tin tức (51 nguồn)", kind: "delay", feeds: "Tab Phân tích, bản đồ tác động tin", file: "data/news.json", expect: 45 * 60e3 },
   { id: "d-reactions", name: "Giá phản ứng sau tin", kind: "delay", feeds: "Bản đồ tác động tin", file: "data/reactions.json", expect: 45 * 60e3 },
   { id: "d-markets", name: "Hàng hoá, forex, crypto", kind: "delay", feeds: "Tab Thị trường (Yahoo, trễ 10–15 phút)", file: "data/markets.json", expect: 45 * 60e3 },
   { id: "d-whales", name: "Cá voi Hyperliquid", kind: "delay", feeds: "Tab Thị trường", file: "data/whales.json", expect: 45 * 60e3 },

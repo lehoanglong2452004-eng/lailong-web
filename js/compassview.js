@@ -3,8 +3,8 @@
 // Mỗi khung gửi một lần. Nếu tới giờ mà Desk chưa mở thì gửi khung gần nhất ngay khi mở; các khung đã qua trước đó bỏ qua.
 // Các khung đã gửi hôm nay và gió của mấy bản gần nhất (để so với bản trước) lưu trên máy này.
 // Bản web đọc data/markets.json, vol.json, flows.json, cot.json do GitHub Actions cập nhật; bản laptop lấy qua máy chủ.
-import { compass, compassHtml, compassText, SLOTS, slotOf, dayKey } from "./compass.js?v=202610240629";
-import { getJson } from "./util.js?v=202610240629";
+import { compass, compassHtml, compassText, SLOTS, slotOf, dayKey } from "./compass.js?v=202610240642";
+import { getJson } from "./util.js?v=202610240642";
 
 const STORE = "lailong.compass";
 

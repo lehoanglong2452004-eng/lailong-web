@@ -2,8 +2,11 @@
 // Lai Long Web: lịch kinh tế, tin tức 6 mục, bản đồ tác động và phản ứng giá sau tin.
 // Bản web đọc data/calendar.json, data/news.json, data/reactions.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/news.py).
-import { setFresh } from "./fresh.js?v=202610240629";
-import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202610240629";
+// Không dùng tin của báo, tác giả, tổ chức Việt Nam hay tin tiếng Việt. Tin nóng được gom thành bản tin Telegram
+// tối đa mỗi 30 phút (xem newsdigest.js); các tin đã gửi lưu trên máy này để không gửi lại.
+import { setFresh } from "./fresh.js?v=202610240642";
+import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202610240642";
+import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202610240642";
 
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],
   [/FOMC|Federal Funds|Fed Chair|Powell/i, "Fed"], [/Retail Sales/i, "doanh số bán lẻ"], [/GDP/i, "GDP"], [/PCE/i, "chi tiêu PCE (Fed hay dùng)"],
@@ -11,10 +14,8 @@ const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/No
   [/Interest Rate|Rate Decision|Cash Rate|Rate Statement|Policy Rate/i, "quyết định lãi suất"]];
 const viName = t => { const m = VI.find(([re]) => re.test(t)); return m ? m[1] : ""; };
 
-export const CATS = [
-  { id: "econ", name: "Kinh tế", icon: "🏛" }, { id: "fin", name: "Tài chính", icon: "💹" }, { id: "metal", name: "Kim loại quý", icon: "🥇" },
-  { id: "energy", name: "Năng lượng", icon: "🛢" }, { id: "geo", name: "Địa chính trị", icon: "🌍" }, { id: "crypto", name: "Crypto", icon: "₿" },
-];
+export { CATS };
+const DIGEST = "lailong.newsdigest";
 // cách đọc từng chủ đề: phản ứng thường thấy, không phải lúc nào cũng đúng
 const HOWTO = {
   fed: "Fed nghiêng về giữ lãi suất cao (diều hâu): USD và lợi suất tăng; vàng, chứng khoán, BTC thường giảm. Nghiêng về giảm lãi suất (bồ câu) thì ngược lại.",
@@ -76,18 +77,25 @@ export function avgReaction(events, assets) {
 }
 
 export function initNews({ $, esc, alerts, coin }) {
-  let cal = null, news = null, react = null, onlyCoin = false, cat = "", seenHot = null, sel = null; const firedEv = new Set();
+  let cal = null, news = null, react = null, onlyCoin = false, cat = "", sel = null, dg = { at: 0, sent: [] }; const firedEv = new Set();
   try { cat = sessionStorage.getItem("lailong.newscat") || ""; } catch { /* bỏ qua */ }
+  try { dg = { ...dg, ...JSON.parse(localStorage.getItem(DIGEST) || "{}") }; } catch { /* chế độ riêng tư */ }
+  if (!Array.isArray(dg.sent)) dg.sent = [];
   async function load() {
     const get = async u => { try { return await getJson(`${u}?t=${Math.floor(Date.now() / 60e3)}`); } catch { return null; } };
     const [c, n, r] = await Promise.all([get("data/calendar.json"), get("data/news.json"), get("data/reactions.json")]);
-    if (c) cal = c; if (n) news = n; if (r) react = r;
-    if (news && alerts.cfg.newsHot) {
-      const hot = news.items.filter(x => x.hot && Date.now() - x.t < 3 * 3600e3);
-      if (seenHot) for (const x of hot) if (!seenHot.has(x.link)) alerts.fire("newsHot", `Tin nóng (${x.source}): ${x.title}`, "price");
-      seenHot = new Set(hot.map(x => x.link));
-    } else if (news) seenHot = new Set(news.items.map(x => x.link));
-    render(); tick();
+    if (c) cal = c; if (n) news = { ...n, items: n.items.filter(x => !isVN(x)) }; if (r) react = r;
+    render(); tick(); digest();
+  }
+  // bản tin nóng qua Telegram: tối đa một bản mỗi 30 phút, mỗi tin chỉ gửi một lần
+  function digest() {
+    const now = Date.now();
+    if (!news || !alerts.cfg.newsHot || now - dg.at < DIGEST_GAP) return;
+    const { list, links } = pickDigest(news.items, new Set(dg.sent), now);
+    if (!list.length) return;
+    dg = { at: now, sent: [...dg.sent, ...links].slice(-500) };
+    try { localStorage.setItem(DIGEST, JSON.stringify(dg)); } catch { /* chế độ riêng tư */ }
+    alerts.fire("newsHot", digestText(list), "price", true, { html: digestHtml(list, now) });
   }
   const upcoming = () => cal ? cal.events.filter(e => e.t > Date.now() - 2 * 3600e3) : [];
   // thanh nhắc trên menu: sự kiện mạnh tiếp theo trong 3 giờ tới
@@ -123,7 +131,7 @@ export function initNews({ $, esc, alerts, coin }) {
     $("newsOnly").textContent = onlyCoin ? `Chỉ tin về ${c}` : "Mọi coin";
     const items = news ? news.items.filter(x => (!cat || (x.cat || "crypto") === cat) && (cat !== "crypto" || !onlyCoin || (x.coins || []).includes(c))) : [];
     nb.innerHTML = !news ? `<div class="empty">Chưa tải được tin.</div>` : !items.length ? `<div class="empty">Không có tin nào trong mục này.</div>` : items.slice(0, 60).map(newsRow).join("");
-    setFresh($("newsUpd"), "delay", news ? news.updated : cal ? cal.updated : null, { label: "Tin và lịch: làm mới mỗi 30 phút", expect: 2 * 3600e3, note: `56 nguồn RSS, bản web do máy chủ GitHub gom mỗi 30 phút, bản laptop gom mỗi 10 phút.${cal ? ` Lịch cập nhật ${fmtTime(cal.updated)}.` : ""} Tin mới nhất có thể trễ tới 30 phút so với nguồn` });
+    setFresh($("newsUpd"), "delay", news ? news.updated : cal ? cal.updated : null, { label: "Tin và lịch: làm mới mỗi 30 phút", expect: 2 * 3600e3, note: `51 nguồn RSS quốc tế (không dùng nguồn Việt Nam), bản web do máy chủ GitHub gom mỗi 30 phút, bản laptop gom mỗi 10 phút.${cal ? ` Lịch cập nhật ${fmtTime(cal.updated)}.` : ""} Tin mới nhất có thể trễ tới 30 phút so với nguồn` });
   }
 
   // bản đồ tác động: mỗi ô là một chủ đề, ô càng đỏ càng nóng, ô to là 3 chủ đề nóng nhất
