@@ -1,12 +1,12 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: cảnh báo bằng tiếng và thông báo trình duyệt.
 // Loại cảnh báo: nghi iceberg, tường lớn xuất hiện gần giá, tường bị rút khi giá tới gần, Big Trade, giá chạm mức đã đặt,
-// gác cổng kỷ luật (gỡ gạc, sắp khoá, đã khoá).
+// gác cổng kỷ luật (gỡ gạc, sắp khoá, đã khoá), kịch bản sốc 60 phút trước tin lớn.
 // Cài đặt và các mức giá được lưu trên máy này (sessionStorage). Mỗi loại kêu tối đa một lần mỗi 5 giây.
 // Telegram: mã bot và chat id lưu trong localStorage của máy này, gửi thẳng từ trình duyệt tới api.telegram.org.
 
 const KEY = "lailong.alerts";
-const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: false, disc: true, verifiedOnly: false, sound: true, notify: false, levels: [] };
+const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: false, disc: true, shock: true, verifiedOnly: false, sound: true, notify: false, levels: [] };
 const TG_KEY = "lailong.telegram";
 const TONES = { up: [880, 1175], down: [523, 392], ice: [988, 988], price: [1319, 1047, 1319] };
 

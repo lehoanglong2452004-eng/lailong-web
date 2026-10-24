@@ -2,8 +2,8 @@
 // Lai Long Web: lịch kinh tế, tin tức 6 mục, bản đồ tác động và phản ứng giá sau tin.
 // Bản web đọc data/calendar.json, data/news.json, data/reactions.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/news.py).
-import { setFresh } from "./fresh.js?v=202610240523";
-import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202610240523";
+import { setFresh } from "./fresh.js?v=202610240531";
+import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202610240531";
 
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],
   [/FOMC|Federal Funds|Fed Chair|Powell/i, "Fed"], [/Retail Sales/i, "doanh số bán lẻ"], [/GDP/i, "GDP"], [/PCE/i, "chi tiêu PCE (Fed hay dùng)"],
@@ -206,5 +206,5 @@ export function initNews({ $, esc, alerts, coin }) {
   $("newsTabs").onclick = e => { const b = e.target.closest("[data-cat]"); if (!b) return; cat = b.dataset.cat; try { sessionStorage.setItem("lailong.newscat", cat); } catch { /* bỏ qua */ } renderNews(); };
   $("newsOnly").onclick = () => { onlyCoin = !onlyCoin; renderNews(); };
   load(); setInterval(load, 5 * 60e3); setInterval(tick, 30e3);
-  return { render, load, events: () => cal ? cal.events : [] };
+  return { render, load, events: () => cal ? cal.events : [], reactions: () => react };
 }

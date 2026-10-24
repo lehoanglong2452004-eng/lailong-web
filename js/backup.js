@@ -8,7 +8,7 @@
 export const KEEP_KEYS = [
   "lailong.journal.v1", "lailong.paper.v1", "lailong.layout.presets", "lailong.multi.presets",
   "lailong.perf.v1", "lailong.forward.v1", "lailong.forward.v1.at", "lailong.telegram",
-  "lailong.events.v1", "lailong.verified",
+  "lailong.events.v1", "lailong.verified", "lailong.shock.sent",
 ];
 export const SECRET_KEYS = new Set(["lailong.telegram"]);
 export const BACKUP_KEYS = KEEP_KEYS.filter(k => !SECRET_KEYS.has(k));
@@ -16,6 +16,7 @@ const NAMES = {
   "lailong.journal.v1": "nhật ký giao dịch", "lailong.paper.v1": "tài khoản giả lập", "lailong.layout.presets": "bố cục đã lưu",
   "lailong.multi.presets": "bố cục đa biểu đồ", "lailong.perf.v1": "báo cáo hiệu suất", "lailong.forward.v1": "chiến lược forward test",
   "lailong.events.v1": "sổ tín hiệu ghi trực tiếp", "lailong.verified": "kết quả chấm điểm tín hiệu",
+  "lailong.shock.sent": "các tin lớn đã báo kịch bản sốc",
 };
 
 export function packBackup(storage, now = Date.now()) {
