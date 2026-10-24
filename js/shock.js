@@ -7,7 +7,7 @@
 // - Ba kịch bản: đồng tiền của tin mạnh lên, yếu đi, và giật hai chiều quét cả hai phía (mọi lệnh cùng bị đi ngược).
 //   Coin, vàng, dầu tính bằng USD nên USD mạnh lên thì giá giảm.
 // - Giá chạm cắt lỗ thì coi như khớp trượt thêm 20% quãng sốc; chạm mục tiêu thì chốt ở mục tiêu.
-import { fmtDate, FLAG } from "./util.js?v=202610240622";
+import { fmtDate, FLAG } from "./util.js?v=202610240629";
 
 export const LEAD_MIN = 60; // báo trước tin chừng này phút
 export const SLIP = 0.2; // trượt giá khi cắt lỗ bị quét lúc ra tin, tính theo quãng sốc
