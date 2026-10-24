@@ -2,7 +2,7 @@
 // Lai Long Web: báo cáo hiệu suất (phần tính toán). Nguồn: nhật ký, lịch sử lãi/lỗ Binance qua máy chủ laptop,
 // hoặc file CSV xuất từ sàn. Mọi nguồn đổi về cùng một dạng:
 //   trades: [{ t, sym, pnl (đã trừ phí), fee, R? }]   flows: [{ t, kind: "funding" | "transfer", v }]
-import { result } from "./journal.js?v=202610240642";
+import { result } from "./journal.js?v=202610240647";
 
 const DAY = 864e5;
 export const monthKey = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };

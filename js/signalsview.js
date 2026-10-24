@@ -1,13 +1,13 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: tab Tín hiệu. Kho lịch sử, sổ tín hiệu tự chấm điểm, thống kê theo bối cảnh, kế hoạch trước phiên.
 // Phần tính nằm ở signals.js, context.js, levels.js, plan.js; phần nạp dữ liệu ở histdata.js và eventlog.js.
-import { SIGNALS, VERDICT, prepBars, detectAll, placeEvents, scoreEvents, baseline, scorecard, byContext, edgesFor, horizonsFor, fmtH } from "./signals.js?v=202610240642";
-import { contextSeries, sessionOf } from "./context.js?v=202610240642";
-import { liveZones } from "./levels.js?v=202610240642";
-import { buildPlan, planText, sessionWindow } from "./plan.js?v=202610240642";
-import { storeStatus, startFetch, loadHistory } from "./histdata.js?v=202610240642";
-import { liveEvents, eventCount } from "./eventlog.js?v=202610240642";
-import { getJson, INTERVALS, decimalsFor, fmtTime } from "./util.js?v=202610240642";
+import { SIGNALS, VERDICT, prepBars, detectAll, placeEvents, scoreEvents, baseline, scorecard, byContext, edgesFor, horizonsFor, fmtH } from "./signals.js?v=202610240647";
+import { contextSeries, sessionOf } from "./context.js?v=202610240647";
+import { liveZones } from "./levels.js?v=202610240647";
+import { buildPlan, planText, sessionWindow } from "./plan.js?v=202610240647";
+import { storeStatus, startFetch, loadHistory } from "./histdata.js?v=202610240647";
+import { liveEvents, eventCount } from "./eventlog.js?v=202610240647";
+import { getJson, INTERVALS, decimalsFor, fmtTime } from "./util.js?v=202610240647";
 
 export const VERIFIED_KEY = "lailong.verified";
 const TFS = ["5m", "15m", "1h", "4h"];
@@ -24,7 +24,7 @@ export function isVerified(sym, sig, now = Date.now()) {
 }
 
 export function initSignals({ $, esc, S, toast, alerts, liveSources = () => [] }) {
-  let ui = { sym: "", tf: "1h", days: 180, fee: 0.05, slip: 2, h: null, sel: null, autoTg: false };
+  let ui = { tf: "1h", days: 180, fee: 0.05, slip: 2, h: null, sel: null, autoTg: false };
   try { ui = { ...ui, ...JSON.parse(sessionStorage.getItem("lailong.sig") || "{}") }; } catch { /* bỏ qua */ }
   const saveUi = () => { try { sessionStorage.setItem("lailong.sig", JSON.stringify(ui)); } catch { /* bỏ qua */ } };
   let res = null, busy = false, store = null, poll = null, visible = false, lastSession = sessionWindow().id;
@@ -66,7 +66,7 @@ export function initSignals({ $, esc, S, toast, alerts, liveSources = () => [] }
   // ---------- chạy chấm điểm ----------
   async function run() {
     if (busy) return; busy = true;
-    const sym = (ui.sym || S.symbol).toUpperCase(), tf = ui.tf, tfMs = INTERVALS[tf], ex = S.ex;
+    const sym = S.symbol.toUpperCase(), tf = ui.tf, tfMs = INTERVALS[tf], ex = S.ex;
     const say = t => { $("sgStatus").textContent = t; };
     $("sgRun").disabled = true;
     try {
@@ -89,7 +89,7 @@ export function initSignals({ $, esc, S, toast, alerts, liveSources = () => [] }
       const hMain = horizons.includes(ui.h) ? ui.h : horizons[Math.min(1, horizons.length - 1)];
       res = { sym, tf, tfMs, ex, hist, bars, horizons, hMain, scored, base, card, tags, live: live.length, at: Date.now(), dec: decimalsFor(bars.at(-1).c / 1e4) };
       saveVerified();
-      say(`${hist.src} · ${bars.length.toLocaleString("vi-VN")} nến ${tf} từ ${new Date(bars[0].t).toLocaleDateString("vi-VN")} · ${scored.length.toLocaleString("vi-VN")} tín hiệu (${live.length} ghi trực tiếp)${hist.note ? " · " + hist.note : ""}`);
+      say(`${sym} · ${hist.src} · ${bars.length.toLocaleString("vi-VN")} nến ${tf} từ ${new Date(bars[0].t).toLocaleDateString("vi-VN")} · ${scored.length.toLocaleString("vi-VN")} tín hiệu (${live.length} ghi trực tiếp)${hist.note ? " · " + hist.note : ""}`);
       render(); renderPlan();
     } catch (e) { say(`Lỗi: ${e.message}`); }
     busy = false; $("sgRun").disabled = false;
@@ -166,10 +166,9 @@ export function initSignals({ $, esc, S, toast, alerts, liveSources = () => [] }
   }
 
   // ---------- điều khiển ----------
-  $("sgSym").value = ui.sym || ""; $("sgSym").placeholder = S.symbol;
   $("sgTf").innerHTML = TFS.map(t => `<option ${t === ui.tf ? "selected" : ""}>${t}</option>`).join("");
   $("sgDays").value = ui.days; $("sgFee").value = ui.fee; $("sgSlip").value = ui.slip; $("sgAutoTg").checked = ui.autoTg;
-  const read = () => { ui.sym = $("sgSym").value.trim().toUpperCase(); ui.tf = $("sgTf").value; ui.days = Math.max(7, Math.min(ui.tf === "5m" ? 60 : 1100, +$("sgDays").value || 180)); ui.fee = +$("sgFee").value || 0; ui.slip = +$("sgSlip").value || 0; saveUi(); };
+  const read = () => { ui.tf = $("sgTf").value; ui.days = Math.max(7, Math.min(ui.tf === "5m" ? 60 : 1100, +$("sgDays").value || 180)); ui.fee = +$("sgFee").value || 0; ui.slip = +$("sgSlip").value || 0; saveUi(); };
   $("sgRun").onclick = () => { read(); run(); };
   for (const id of ["sgTf", "sgDays"]) $(id).onchange = () => { read(); run(); };
   for (const id of ["sgFee", "sgSlip"]) $(id).onchange = () => { read(); if (res) { const card = scoreEvents(res.scored, res.bars, { horizons: res.horizons, feePct: ui.fee, slipBps: ui.slip }); res.scored = card; res.card = scorecard(card, res.horizons, res.base); saveVerified(); render(); renderPlan(); } };
@@ -191,7 +190,7 @@ export function initSignals({ $, esc, S, toast, alerts, liveSources = () => [] }
   }, 60e3);
 
   return {
-    async show() { visible = true; await loadCalendar(); renderStore(); if (!res || res.sym !== (ui.sym || S.symbol).toUpperCase()) run(); else { render(); renderPlan(); } },
+    async show() { visible = true; await loadCalendar(); renderStore(); if (!res || res.sym !== S.symbol.toUpperCase() || res.ex !== S.ex) run(); else { render(); renderPlan(); } },
     hide() { visible = false; },
     refreshPlan() { if (res) renderPlan(); },
   };
