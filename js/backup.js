@@ -16,7 +16,7 @@ const NAMES = {
   "lailong.journal.v1": "nhật ký giao dịch", "lailong.paper.v1": "tài khoản giả lập", "lailong.layout.presets": "bố cục đã lưu",
   "lailong.multi.presets": "bố cục đa biểu đồ", "lailong.perf.v1": "báo cáo hiệu suất", "lailong.forward.v1": "chiến lược forward test",
   "lailong.events.v1": "sổ tín hiệu ghi trực tiếp", "lailong.verified": "kết quả chấm điểm tín hiệu",
-  "lailong.shock.sent": "các tin lớn đã báo kịch bản sốc", "lailong.compass": "giờ gửi la bàn sáng",
+  "lailong.shock.sent": "các tin lớn đã báo kịch bản sốc", "lailong.compass": "các bản la bàn đã gửi hôm nay",
   "lailong.consensus": "danh sách mã theo dõi đồng thuận",
 };
 

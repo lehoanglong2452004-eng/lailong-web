@@ -1,26 +1,35 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
-// Lai Long Web: La bàn sáng (phần tính toán, không đụng giao diện).
+// Lai Long Web: La bàn trong ngày (phần tính toán, không đụng giao diện).
 //
-// Mỗi sáng một bản tin gồm bốn phần:
+// Bốn bản tin cố định mỗi ngày: sáng 7:30, trưa 11:30, chiều 15:30, tối 20:00 (giờ máy). Mỗi bản gồm bốn phần:
 // - Vĩ mô: USD đang mạnh lên hay yếu đi (DXY 5 và 20 phiên), tâm lý thị trường (VIX và VIX 3 tháng), dòng tiền ETF BTC,
 //   rồi gộp lại thành gió xuôi / gió ngược cho coin, vàng, dầu. Đây là bối cảnh trong vài ngày, không phải tín hiệu vào lệnh.
 // - COT: chỉ số COT 3 năm của đầu cơ lớn ở USD, BTC, ETH, vàng, dầu và các hợp đồng đang ở cực trị.
-// - Lịch tin mạnh hôm nay, kèm khung giờ nên đứng ngoài.
+// - Lịch tin mạnh từ 0h hôm nay tới 7:30 sáng mai, tin đã ra kèm kết quả, tin sắp ra kèm khung giờ nên đứng ngoài.
 // - Ngân sách rủi ro hôm nay lấy từ nhật ký: rủi ro mỗi lệnh, còn được lỗ bao nhiêu trước khi bị khoá, số lệnh còn lại.
-import { riskLock, guard } from "./journal.js?v=202610240545";
-import { cotNote } from "./instview.js?v=202610240545";
-import { etfSummary } from "./flowsview.js?v=202610240545";
-import { TOP } from "./shock.js?v=202610240545";
-import { fmtDate, FLAG, pad2 } from "./util.js?v=202610240545";
+// Từ bản thứ hai trở đi có thêm một dòng so gió xuôi / gió ngược với bản trước.
+import { riskLock, guard } from "./journal.js?v=202610240605";
+import { cotNote } from "./instview.js?v=202610240605";
+import { etfSummary } from "./flowsview.js?v=202610240605";
+import { TOP } from "./shock.js?v=202610240605";
+import { fmtDate, FLAG, pad2 } from "./util.js?v=202610240605";
 
 const MIN = 60e3;
 const WD = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 const num = (x, d = 2) => (Math.round(x * 10 ** d) / 10 ** d).toLocaleString("en-US");
 const pct = x => `${x > 0 ? "+" : ""}${x.toFixed(1)}%`;
 const hm = t => `${pad2(new Date(t).getHours())}:${pad2(new Date(t).getMinutes())}`;
-const dayKey = t => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+export const dayKey = t => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 export const COT_SHOW = ["DX", "BTC", "ETH", "GC", "CL"];
 export const COT_NAME = { DX: "USD", BTC: "Bitcoin CME", ETH: "Ether CME", GC: "Vàng", CL: "Dầu WTI" };
+export const SLOTS = [{ id: "sang", at: "07:30", name: "sáng" }, { id: "trua", at: "11:30", name: "trưa" }, { id: "chieu", at: "15:30", name: "chiều" }, { id: "toi", at: "20:00", name: "tối" }];
+export const slotTime = (s, t) => { const d = new Date(t), [h, m] = s.at.split(":").map(Number); d.setHours(h, m, 0, 0); return d.getTime(); };
+
+// khung đang chạy: khung gần nhất đã tới giờ hôm nay; trước 7:30 vẫn là khung tối hôm qua (today = false)
+export function slotOf(now = Date.now()) {
+  const due = SLOTS.filter(s => slotTime(s, now) <= now);
+  return due.length ? { slot: due[due.length - 1], today: true } : { slot: SLOTS[SLOTS.length - 1], today: false };
+}
 
 // USD theo DXY: 5 phiên lệch quá 0,4% và 20 phiên lệch quá 1% thì tính là có hướng
 export function usdTrend(fx) {
@@ -79,17 +88,22 @@ export function cotLines(items, max = 7) {
   return { date: xs.length ? xs[0].date : null, rows };
 }
 
-// tin mạnh trong ngày (giờ máy), các tin cùng giờ cùng nước gộp làm một
+// tin mạnh từ 0h hôm nay tới 7:30 sáng mai (giờ máy), để bản tối thấy cả tin Mỹ ra lúc nửa đêm; trước 7:30 thì tính theo hôm qua.
+// Các tin cùng giờ cùng nước gộp làm một.
 export function todayEvents(events, now = Date.now()) {
-  const out = [], day = dayKey(now);
+  const out = [], { today } = slotOf(now), d = new Date(now);
+  if (!today) d.setDate(d.getDate() - 1);
+  d.setHours(0, 0, 0, 0);
+  const from = d.getTime(); d.setDate(d.getDate() + 1);
+  const mid = d.getTime(), to = slotTime(SLOTS[0], mid);
   for (const e of events || []) {
-    if (e.impact !== "High" || dayKey(e.t) !== day) continue;
+    if (e.impact !== "High" || e.t < from || e.t >= to) continue;
     const g = out.find(x => x.t === e.t && x.country === e.country);
     if (g) { g.titles.push(e.title); if (e.actual) g.actual.push(`${e.title} ${e.actual}`); }
     else out.push({ t: e.t, country: e.country, titles: [e.title], actual: e.actual ? [`${e.title} ${e.actual}`] : [] });
   }
   for (const g of out) g.top = g.country === "USD" && g.titles.some(x => TOP.test(x));
-  return out.sort((a, b) => a.t - b.t).map(g => ({ ...g, txt: `${hm(g.t)} ${FLAG[g.country] || g.country} ${g.titles.join(", ")}${g.top ? " ⭐" : ""}` +
+  return out.sort((a, b) => a.t - b.t).map(g => ({ ...g, txt: `${hm(g.t)} ${FLAG[g.country] || g.country} ${g.titles.join(", ")}${g.top ? " ⭐" : ""}${g.t >= mid && today ? " (rạng sáng mai)" : ""}` +
     (g.t < now ? ` (đã ra${g.actual.length ? `: ${g.actual.join(", ")}` : ""})` : `: đứng ngoài ${hm(g.t - 15 * MIN)}–${hm(g.t + 5 * MIN)}`) }));
 }
 
@@ -107,19 +121,30 @@ export function riskBudget(trades, cfg, now = Date.now(), prevLock = null) {
   return { per, dayLeft, weekLeft, lock: L.lock, lines };
 }
 
+// so gió xuôi / gió ngược với bản trước (prev: { day, name, leans: [{ name, label }] }); bỏ qua nếu bản trước đã quá 24 giờ
+export function leanChanges(prev, L, now = Date.now()) {
+  if (!prev || !prev.leans || !(prev.t > now - 864e5)) return null;
+  const name = prev.day === dayKey(now) ? prev.name : prev.name === "tối" ? "tối qua" : `${prev.name} hôm qua`;
+  const d = L.map(x => { const p = prev.leans.find(y => y.name === x.name); return p && p.label !== x.label ? `${x.name} ${p.label} → ${x.label}` : null; }).filter(Boolean);
+  return `So với bản ${name}: ${d.length ? d.join(", ") : "gió không đổi"}.`;
+}
+
 // gộp thành các mục { title, lines } để vẽ thẻ và soạn tin Telegram
-export function compass({ fx, vol, flows, cot, events, trades, cfg, lock = null, now = Date.now() }) {
+export function compass({ fx, vol, flows, cot, events, trades, cfg, lock = null, now = Date.now(), slot = slotOf(now).slot, prev = null }) {
   const usd = usdTrend(fx), mood = riskMood(vol), etf = etfFlow(flows), L = leans(usd, mood, etf);
   const macro = [usd, mood, etf].filter(Boolean).map(x => x.txt);
-  if (usd || mood || etf) macro.push("→ " + L.map(x => `${x.name}: ${x.label}${x.why.length ? ` (${x.why.join(", ")})` : ""}`).join(" · "));
+  if (usd || mood || etf) {
+    macro.push("→ " + L.map(x => `${x.name}: ${x.label}${x.why.length ? ` (${x.why.join(", ")})` : ""}`).join(" · "));
+    const ch = leanChanges(prev, L, now); if (ch) macro.push(ch);
+  }
   const c = cotLines(cot), ev = todayEvents(events, now), b = cfg ? riskBudget(trades || [], cfg, now, lock) : null;
   const d = new Date(now);
   return {
-    day: dayKey(now), title: `${WD[d.getDay()]} ${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`, leans: L,
+    day: dayKey(now), slot, title: `${WD[d.getDay()]} ${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`, leans: L,
     sections: [
       { title: "Vĩ mô", lines: macro.length ? macro : ["Chưa tải được dữ liệu USD, VIX, ETF."] },
       { title: `COT${c.date ? ` (báo cáo ${c.date.slice(8, 10)}/${c.date.slice(5, 7)})` : ""}`, lines: c.rows.length ? c.rows.map(r => r.txt) : ["Chưa tải được COT."] },
-      { title: "Lịch tin mạnh hôm nay", lines: ev.length ? ev.map(e => e.txt) : ["Không có tin mạnh nào hôm nay."] },
+      { title: "Lịch tin mạnh hôm nay và đêm nay", lines: ev.length ? ev.map(e => e.txt) : ["Không có tin mạnh nào hôm nay và đêm nay."] },
       ...(b ? [{ title: "Ngân sách rủi ro hôm nay", lines: b.lines }] : []),
     ],
   };
@@ -127,7 +152,7 @@ export function compass({ fx, vol, flows, cot, events, trades, cfg, lock = null,
 
 const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 export function compassHtml(c) {
-  return `🧭 <b>LA BÀN SÁNG</b> · ${c.title}\n` + c.sections.map(s => `<b>${esc(s.title)}</b>\n` + s.lines.map(l => (l.startsWith("→") || l.startsWith("⛔") ? "" : "• ") + esc(l)).join("\n")).join("\n") +
+  return `🧭 <b>LA BÀN ${c.slot.name.toUpperCase()}</b> · ${c.title}\n` + c.sections.map(s => `<b>${esc(s.title)}</b>\n` + s.lines.map(l => (l.startsWith("→") || l.startsWith("⛔") ? "" : "• ") + esc(l)).join("\n")).join("\n") +
     "\n<i>Bối cảnh trong ngày, không phải tín hiệu vào lệnh.</i>";
 }
-export const compassText = c => `La bàn sáng ${c.title}: ${c.leans.map(x => `${x.name} ${x.label}`).join(", ")}`;
+export const compassText = c => `La bàn ${c.slot.name} ${c.title}: ${c.leans.map(x => `${x.name} ${x.label}`).join(", ")}`;

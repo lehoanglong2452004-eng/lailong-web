@@ -2,17 +2,17 @@
 // Lai Long Web: Đồng thuận 4 lớp (phần tính toán, không đụng giao diện).
 //
 // Bốn lớp chấm độc lập cho mỗi mã, mỗi lớp cho +1 (ủng hộ LONG), -1 (ủng hộ SHORT) hoặc 0:
-// 1. Vĩ mô: gió xuôi / gió ngược của La bàn sáng cho nhóm của mã (coin, vàng, dầu).
+// 1. Vĩ mô: gió xuôi / gió ngược của La bàn cho nhóm của mã (coin, vàng, dầu).
 // 2. COT: đầu cơ lớn tăng hay giảm vị thế ròng trong tuần (từ 1% open interest), trừ khi đã đông ở cực trị 3 năm:
 //    chỉ số từ 90 thì nghiêng xuống (đám đông long đã chật), tới 10 thì nghiêng lên (dễ bị ép mua lại).
 // 3. Cấu trúc giá nến 1 giờ: giá trên EMA20 trên EMA50, EMA20 đi lên và đỉnh đáy 12 nến gần nhất không thấp hơn
 //    12 nến trước (ngược lại cho SHORT).
 // 4. Order flow nến 1 giờ: chênh lệch mua bán chủ động 24 nến từ 3% khối lượng và 6 nến gần nhất cùng chiều.
 // Cả bốn cùng chiều mới là đồng thuận. Kèm vùng vào, cắt lỗ theo ATR và khối lượng tính bằng sizeFor của nhật ký.
-import { sizeFor } from "./journal.js?v=202610240545";
-import { atrSeries } from "./radar.js?v=202610240545";
-import { assetClass, parts } from "./shock.js?v=202610240545";
-import { escHtml } from "./discipline.js?v=202610240545";
+import { sizeFor } from "./journal.js?v=202610240605";
+import { atrSeries } from "./radar.js?v=202610240605";
+import { assetClass, parts } from "./shock.js?v=202610240605";
+import { escHtml } from "./discipline.js?v=202610240605";
 
 export const FLOW_MIN = 0.03; // chênh lệch mua bán chủ động tối thiểu, theo tỷ lệ khối lượng 24 nến
 export const COT_MOVE = 0.01; // thay đổi vị thế ròng tối thiểu của đầu cơ trong tuần, theo tỷ lệ open interest

@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202610240545">
-<link rel="stylesheet" href="css/app.css?v=202610240545">
+<link rel="stylesheet" href="fonts/fonts.css?v=202610240605">
+<link rel="stylesheet" href="css/app.css?v=202610240605">
 </head>
 <body>
 <header class="menubar">
@@ -53,7 +53,7 @@
       <label data-g="crypto-news"><input type="checkbox" data-al="newsHot"> Tin nóng mới (mọi mục)</label>
       <label data-g="discipline-gate"><input type="checkbox" data-al="disc"> Gác cổng kỷ luật (gỡ gạc, sắp khoá, đã khoá)</label>
       <label data-g="shock-test"><input type="checkbox" data-al="shock"> Kịch bản sốc (60 phút trước tin lớn)</label>
-      <label data-g="compass"><input type="checkbox" data-al="compass"> La bàn sáng (mỗi ngày một bản tin)</label>
+      <label data-g="compass"><input type="checkbox" data-al="compass"> La bàn (4 bản tin mỗi ngày: 7:30, 11:30, 15:30, 20:00)</label>
       <label data-g="consensus"><input type="checkbox" data-al="consensus"> Đồng thuận 4 lớp (vĩ mô, COT, cấu trúc, order flow)</label>
       <label data-g="signals-book" data-tip="Iceberg, tường bị rút và Big Trade chỉ kêu khi sổ tín hiệu đã chấm loại đó là Có lợi thế cho mã này (chung, hoặc trong phiên đang chạy). Cần chấm điểm ở tab Tín hiệu trước"><input type="checkbox" data-al="verifiedOnly"> Chỉ báo tín hiệu đã kiểm chứng</label>
       <div class="mh">Giá chạm mức</div>
@@ -676,7 +676,7 @@
   </aside>
   <section class="frresult">
     <section class="card" id="compassCard">
-      <h3>La bàn sáng <button class="q" data-g="compass">?</button> <span class="inl"><label data-tip="Giờ gửi La bàn qua Telegram mỗi ngày (giờ máy). Nếu lúc đó Desk chưa mở thì gửi ngay khi mở trong ngày">Gửi lúc <input type="time" id="compassAt"></label><button class="tool" id="compassSend">Gửi Telegram ngay</button></span></h3>
+      <h3>La bàn trong ngày <button class="q" data-g="compass">?</button> <span class="inl"><button class="tool" id="compassSend" data-tip="Gửi bản đang xem qua Telegram ngay. Không ảnh hưởng 4 bản tự gửi lúc 7:30, 11:30, 15:30, 20:00">Gửi Telegram ngay</button></span></h3>
       <div id="compassBody" class="compass"></div>
     </section>
     <section class="card" id="cnsCard">
@@ -791,6 +791,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610240545"></script>
+<script type="module" src="js/app.js?v=202610240605"></script>
 </body>
 </html>
