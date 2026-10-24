@@ -1,7 +1,7 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: cảnh báo bằng tiếng và thông báo trình duyệt.
 // Loại cảnh báo: nghi iceberg, tường lớn xuất hiện gần giá, tường bị rút khi giá tới gần, Big Trade, giá chạm mức đã đặt,
-// gác cổng kỷ luật (gỡ gạc, sắp khoá, đã khoá), kịch bản sốc 60 phút trước tin lớn, la bàn sáng mỗi ngày,
+// gác cổng kỷ luật (gỡ gạc, sắp khoá, đã khoá), kịch bản sốc 60 phút trước tin lớn, la bàn 4 lần mỗi ngày,
 // đồng thuận 4 lớp (vĩ mô, COT, cấu trúc giá, order flow cùng chiều).
 // Cài đặt và các mức giá được lưu trên máy này (sessionStorage). Mỗi loại kêu tối đa một lần mỗi 5 giây.
 // Telegram: mã bot và chat id lưu trong localStorage của máy này, gửi thẳng từ trình duyệt tới api.telegram.org.

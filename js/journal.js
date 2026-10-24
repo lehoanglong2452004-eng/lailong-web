@@ -4,7 +4,7 @@
 // - Tính khối lượng lệnh theo % rủi ro: lỗ khi chạm cắt lỗ (cộng phí hai chiều) đúng bằng số tiền chấp nhận mất.
 // - Rào chắn trong ngày: lỗ đã chốt hôm nay, số lệnh hôm nay, tổng rủi ro các lệnh đang mở.
 // - Thống kê nhật ký theo chiến lược, phía, giờ vào lệnh, thứ trong tuần và theo từng lỗi hay mắc.
-import { equityStats } from "./fractal.js?v=202610240545";
+import { equityStats } from "./fractal.js?v=202610240605";
 
 export const MISTAKES = [
   ["early", "Vào sớm, chưa đủ tín hiệu"], ["fomo", "FOMO, đuổi giá"], ["noplan", "Ngoài kế hoạch"],
