@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202610220403">
-<link rel="stylesheet" href="css/app.css?v=202610220403">
+<link rel="stylesheet" href="fonts/fonts.css?v=202610240523">
+<link rel="stylesheet" href="css/app.css?v=202610240523">
 </head>
 <body>
 <header class="menubar">
@@ -51,6 +51,7 @@
       <label data-g="big-trades"><input type="checkbox" data-al="big"> Big Trade (top 0,5% lệnh gốc)</label>
       <label data-g="econ-calendar"><input type="checkbox" data-al="newsEv"> Tin kinh tế mạnh (báo trước 15 phút)</label>
       <label data-g="crypto-news"><input type="checkbox" data-al="newsHot"> Tin nóng mới (mọi mục)</label>
+      <label data-g="discipline-gate"><input type="checkbox" data-al="disc"> Gác cổng kỷ luật (gỡ gạc, sắp khoá, đã khoá)</label>
       <label data-g="signals-book" data-tip="Iceberg, tường bị rút và Big Trade chỉ kêu khi sổ tín hiệu đã chấm loại đó là Có lợi thế cho mã này (chung, hoặc trong phiên đang chạy). Cần chấm điểm ở tab Tín hiệu trước"><input type="checkbox" data-al="verifiedOnly"> Chỉ báo tín hiệu đã kiểm chứng</label>
       <div class="mh">Giá chạm mức</div>
       <div class="row aladd"><input type="number" id="alPrice" step="any" placeholder="Mức giá"><button id="alAdd">Thêm</button></div>
@@ -775,6 +776,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610220403"></script>
+<script type="module" src="js/app.js?v=202610240523"></script>
 </body>
 </html>

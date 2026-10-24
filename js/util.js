@@ -37,6 +37,9 @@ export function niceStep(x) {
   return nm * e;
 }
 
+// cờ theo mã tiền tệ trong lịch kinh tế
+export const FLAG = { USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", JPY: "🇯🇵", CNY: "🇨🇳", CAD: "🇨🇦", AUD: "🇦🇺", NZD: "🇳🇿", CHF: "🇨🇭" };
+
 export const pad2 = n => (n < 10 ? "0" + n : "" + n);
 
 export function fmtTime(ms, withDate = false) {
