@@ -1,23 +1,28 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: trang Nhật ký: quản lý rủi ro, tính khối lượng lệnh, ghi lệnh và thống kê bản thân.
 // Dữ liệu chỉ lưu trên trình duyệt của máy này (localStorage); nút Xuất file để sao lưu hoặc chuyển máy.
-import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202610220403";
-import { atrSeries } from "./radar.js?v=202610220403";
-import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202610220403";
-import { EquityChart } from "./fractalview.js?v=202610220403";
-import { fmtVol, fmtDate, decimalsFor, getJson } from "./util.js?v=202610220403";
+// Gác cổng kỷ luật: hỏi lại khi lệnh mới giống gỡ gạc, quá rủi ro hoặc sát giờ tin; báo khi sắp khoá và khi đã khoá.
+// notify(kind, text, html, toast) gửi cảnh báo ra ngoài (tiếng, Telegram); events() là lịch kinh tế.
+import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202610240523";
+import { entryChecks, nearLock, daySummary, gateHtml, nearHtml, lockHtml, GATE } from "./discipline.js?v=202610240523";
+import { atrSeries } from "./radar.js?v=202610240523";
+import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202610240523";
+import { EquityChart } from "./fractalview.js?v=202610240523";
+import { fmtVol, fmtDate, decimalsFor, getJson } from "./util.js?v=202610240523";
 
 const STORE = "lailong.journal.v1";
 const WD = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 const EMO = [[1, "1 · Rất bình tĩnh"], [2, "2 · Bình tĩnh"], [3, "3 · Bình thường"], [4, "4 · Hồi hộp"], [5, "5 · Rất căng thẳng"]];
 
-export function initJournal({ $, S, esc, table, market, toast, onLock }) {
+export function initJournal({ $, S, esc, table, market, toast, onLock, notify, events }) {
   let db;
   try { db = JSON.parse(localStorage.getItem(STORE) || "null"); } catch { db = null; }
   db = db || { cfg: { ...SETTINGS_DEF }, trades: [], seq: 1 };
   db.cfg = { ...SETTINGS_DEF, ...db.cfg };
   const save = () => { try { localStorage.setItem(STORE, JSON.stringify(db)); } catch { toast("Trình duyệt không cho lưu, hãy xuất file để giữ dữ liệu", true); } };
   const eq = new EquityChart($("jEq"));
+  const evs = () => { try { return events ? events() : []; } catch { return []; } };
+  const LIVE = 60 * 60e3; // lệnh ghi cách hiện tại quá 60 phút là ghi bù, không hỏi lại và không gửi tin
   let editId = null;
 
   // danh sách chiến lược (MIDOTI nạp sau nên dựng lại mỗi lần mở trang)
@@ -57,7 +62,9 @@ export function initJournal({ $, S, esc, table, market, toast, onLock }) {
       (r.rr != null ? line("Lời / lỗ (R:R)", `1 : ${r.rr.toFixed(2)}`, r.rr >= 1.5 ? "pos" : r.rr < 1 ? "neg" : "") : "") +
       `</div>` +
       (r.stopBeyondLiq ? `<div class="jwarn stop">Cắt lỗ nằm sau giá thanh lý: sẽ bị thanh lý trước khi kịp cắt lỗ. Giảm đòn bẩy.</div>` : "") +
-      (r.minLev > 3 ? `<div class="jwarn">Giá trị lệnh bằng ${r.minLev.toFixed(1)} lần vốn: cắt lỗ đang quá gần, dễ bị quét bởi nhiễu.</div>` : "");
+      (r.minLev > 3 ? `<div class="jwarn">Giá trị lệnh bằng ${r.minLev.toFixed(1)} lần vốn: cắt lỗ đang quá gần, dễ bị quét bởi nhiễu.</div>` : "") +
+      entryChecks(db.trades, { id: -1, t: Date.now(), sym: ($("szSym").value || S.symbol).toUpperCase().trim(), side: r.side, entry: num("szEntry"), stop: num("szStop"), qty: r.qty }, db.cfg, { events: evs() })
+        .filter(x => x.code !== "size").map(x => `<div class="jwarn ${x.lvl}">Gác cổng: ${esc(x.txt)}</div>`).join("");
     return r;
   }
   const coinOf = s => String(s || "").toUpperCase().replace(/USDT$|USD$|USDC$/, "") || "coin";
@@ -112,8 +119,19 @@ export function initJournal({ $, S, esc, table, market, toast, onLock }) {
     };
     if (!(t.entry > 0) || !(t.stop > 0) || t.entry === t.stop) return toast("Cần giá vào và giá cắt lỗ (khác nhau) để tính R", true);
     const L = lockNow();
-    if (L && !db.trades.some(x => x.id === t.id) && t.t >= L.since) return toast(`Đang khoá giao dịch tới ${fmtDate(L.until)}: ${L.why}. Chỉ được đóng lệnh đang mở.`, true);
+    if (L && !db.trades.some(x => x.id === t.id) && t.t >= Math.floor(L.since / 60e3) * 60e3) return toast(`Đang khoá giao dịch tới ${fmtDate(L.until)}: ${L.why}. Chỉ được đóng lệnh đang mở.`, true);
     if ((t.side === "long") !== (t.stop < t.entry)) return toast(t.side === "long" ? "Lệnh LONG thì cắt lỗ phải dưới giá vào" : "Lệnh SHORT thì cắt lỗ phải trên giá vào", true);
+    const old = db.trades.find(x => x.id === t.id);
+    if (old) { if (old.gate) t.gate = old.gate; } else {
+      const g = entryChecks(db.trades, t, db.cfg, { events: evs() });
+      if (g.length) {
+        t.gate = g.map(x => x.code);
+        if (Date.now() - t.t <= LIVE) {
+          if (!confirm(`GÁC CỔNG KỶ LUẬT\n\n${g.map(x => "• " + x.txt).join("\n")}\n\nVẫn ghi lệnh này?`)) return toast("Chưa ghi lệnh. Nghỉ một chút rồi xem lại kế hoạch");
+          notify && notify("gate", `Gác cổng: ${t.sym} ${g.map(x => GATE[x.code]).join(", ")}`, gateHtml(t, g), false);
+        }
+      }
+    }
     if (t.exit > 0 && !t.tExit) t.tExit = Date.now();
     if (t.fee == null && t.qty > 0 && t.exit > 0) t.fee = +((t.entry + t.exit) * t.qty * db.cfg.fee / 100).toFixed(4); // ước tính phí taker hai chiều
     const i = db.trades.findIndex(x => x.id === t.id);
@@ -156,16 +174,30 @@ export function initJournal({ $, S, esc, table, market, toast, onLock }) {
   // khoá giao dịch: tính lại mỗi lần vẽ, lưu lại để sửa/xoá lệnh lỗ không mở được khoá
   function lockNow() {
     const L = riskLock(db.trades, db.cfg, Date.now(), db.lock);
-    if (L.lock && (!db.lock || db.lock.until !== L.lock.until)) { db.lock = L.lock; save(); toast(`Khoá giao dịch tới ${fmtDate(L.lock.until)}: ${L.lock.why}`, true); }
+    if (L.lock && (!db.lock || db.lock.until !== L.lock.until)) {
+      db.lock = L.lock; save(); toast(`Khoá giao dịch tới ${fmtDate(L.lock.until)}: ${L.lock.why}`, true);
+      notify && notify("lock", `Khoá giao dịch tới ${fmtDate(L.lock.until)}: ${L.lock.why}`, lockHtml(L.lock, daySummary(db.trades)), false);
+    }
     if (db.lock && db.lock.until <= Date.now()) { db.lock = null; save(); }
     onLock && onLock(db.lock);
     return db.lock;
   }
+  // sắp khoá: mỗi mốc (theo ngày, tuần) chỉ báo ra ngoài một lần, danh sách đã báo lưu cùng nhật ký
+  function watchNear() {
+    const items = nearLock(db.trades, db.cfg, Date.now(), db.lock), sent = db.disc || (db.disc = []);
+    const fresh = items.filter(i => !sent.includes(i.key));
+    if (fresh.length) {
+      sent.push(...fresh.map(i => i.key)); db.disc = sent.slice(-60); save();
+      notify && notify("near", `Sắp khoá giao dịch: ${fresh.map(i => i.txt).join(" ")}`, nearHtml(fresh), true);
+    }
+    return items;
+  }
   function render() {
-    const g = guard(db.trades, db.cfg), js = journalStats(db.trades, db.cfg), st = js.st, L = riskLock(db.trades, db.cfg, Date.now(), db.lock), lk = lockNow();
+    const g = guard(db.trades, db.cfg), js = journalStats(db.trades, db.cfg), st = js.st, L = riskLock(db.trades, db.cfg, Date.now(), db.lock), lk = lockNow(), near = lk ? [] : watchNear();
     $("jGuard").innerHTML = (lk ? `<div class="jlock"><b>ĐANG KHOÁ GIAO DỊCH</b> tới ${fmtDate(lk.until)}<br>${esc(lk.why)}. Không ghi được lệnh mới, lệnh giả lập cũng bị chặn. Khoá tự mở khi tới giờ; sửa hay xoá lệnh lỗ không mở được khoá.</div>` : "") +
       `<div class="kv"><span>Vốn hiện tại</span><b>${fmtVol(g.equity)} USDT</b><span>Lãi/lỗ hôm nay</span><b class="${cls(L.dayPnl)}">${fmtVol(L.dayPnl)} / −${fmtVol(L.dayLim)}</b><span>Lãi/lỗ tuần này</span><b class="${cls(L.weekPnl)}">${fmtVol(L.weekPnl)} / −${fmtVol(L.weekLim)}</b><span>Thua liên tiếp hôm nay</span><b>${L.streak} / ${db.cfg.lossStreak}</b><span>Lệnh hôm nay</span><b>${g.todayN} / ${db.cfg.maxTrades}</b><span>Rủi ro đang mở</span><b>${fmtVol(g.openRisk)} USDT (${g.openRiskPct.toFixed(1)}%)</b></div>` +
-      (g.warn.length ? g.warn.filter(w => !(lk && w.lvl === "stop")).map(w => `<div class="jwarn ${w.lvl}">${esc(w.txt)}</div>`).join("") : lk ? "" : `<div class="jok">Trong giới hạn an toàn.</div>`);
+      near.map(n => `<div class="jwarn stop">Sắp khoá: ${esc(n.txt)}</div>`).join("") +
+      (g.warn.length ? g.warn.filter(w => !(lk && w.lvl === "stop") && !(w.code === "dayNear" && near.length)).map(w => `<div class="jwarn ${w.lvl}">${esc(w.txt)}</div>`).join("") : lk || near.length ? "" : `<div class="jok">Trong giới hạn an toàn.</div>`);
     const box = (k, v, c = "", tip = "") => `<div class="stat"${tip ? ` data-tip="${esc(tip)}"` : ""}><span>${k}</span><b class="${c}">${v}</b></div>`;
     $("jStats").innerHTML = st.n ? [
       box("Lệnh đã đóng", `${st.n}`), box("Tỷ lệ thắng", `${(st.wr * 100).toFixed(0)}%`),
@@ -189,7 +221,7 @@ export function initJournal({ $, S, esc, table, market, toast, onLock }) {
     const rows = db.trades.slice().sort((a, b) => b.t - a.t);
     $("jTrades").innerHTML = table(["Vào lúc", "Mã", "Phía", "Chiến lược", "Giá vào", "Cắt lỗ", "Giá ra", "R", "USDT", "Lỗi", "Lý do", ""], rows.map(t => {
       const r = result(t);
-      return `<tr><td>${fmtDate(t.t)}</td><td>${esc(t.sym)}</td><td class="${t.side === "long" ? "pos" : "neg"}">${t.side === "long" ? "LONG" : "SHORT"}</td><td class="t">${esc(t.strat || "")}</td><td>${t.entry}</td><td>${t.stop}</td><td>${t.exit > 0 ? t.exit : `<span class="tag flat">đang mở</span>`}</td><td class="${r ? cls(r.R) : ""}">${r ? sgn(r.R) : "-"}</td><td class="${r ? cls(r.pnl) : ""}">${r && t.qty ? fmtVol(r.pnl) : "-"}</td><td class="t">${esc((t.mistakes || []).map(mName).join(", "))}</td><td class="t jreason">${esc(t.reason || "")}</td><td class="t"><button class="icon" data-jedit="${t.id}" data-tip="Sửa hoặc đóng lệnh">✎</button><button class="icon" data-jdel="${t.id}" data-tip="Xoá">✕</button></td></tr>`;
+      return `<tr><td>${fmtDate(t.t)}</td><td>${esc(t.sym)}</td><td class="${t.side === "long" ? "pos" : "neg"}">${t.side === "long" ? "LONG" : "SHORT"}</td><td class="t">${esc(t.strat || "")}</td><td>${t.entry}</td><td>${t.stop}</td><td>${t.exit > 0 ? t.exit : `<span class="tag flat">đang mở</span>`}</td><td class="${r ? cls(r.R) : ""}">${r ? sgn(r.R) : "-"}</td><td class="${r ? cls(r.pnl) : ""}">${r && t.qty ? fmtVol(r.pnl) : "-"}</td><td class="t">${(t.gate || []).map(c => `<span class="tag gate" data-tip="Gác cổng kỷ luật đã cảnh báo lúc ghi lệnh">⚠ ${esc(GATE[c] || c)}</span> `).join("")}${esc((t.mistakes || []).map(mName).join(", "))}</td><td class="t jreason">${esc(t.reason || "")}</td><td class="t"><button class="icon" data-jedit="${t.id}" data-tip="Sửa hoặc đóng lệnh">✎</button><button class="icon" data-jdel="${t.id}" data-tip="Xoá">✕</button></td></tr>`;
     }), "Chưa có lệnh nào trong nhật ký.");
     calc();
   }

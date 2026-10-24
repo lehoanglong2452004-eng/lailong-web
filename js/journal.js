@@ -4,7 +4,7 @@
 // - Tính khối lượng lệnh theo % rủi ro: lỗ khi chạm cắt lỗ (cộng phí hai chiều) đúng bằng số tiền chấp nhận mất.
 // - Rào chắn trong ngày: lỗ đã chốt hôm nay, số lệnh hôm nay, tổng rủi ro các lệnh đang mở.
 // - Thống kê nhật ký theo chiến lược, phía, giờ vào lệnh, thứ trong tuần và theo từng lỗi hay mắc.
-import { equityStats } from "./fractal.js?v=202610220403";
+import { equityStats } from "./fractal.js?v=202610240523";
 
 export const MISTAKES = [
   ["early", "Vào sớm, chưa đủ tín hiệu"], ["fomo", "FOMO, đuổi giá"], ["noplan", "Ngoài kế hoạch"],
@@ -82,10 +82,10 @@ export function guard(trades, cfg, now = Date.now()) {
   const longs = open.filter(t => t.side === "long").length, shorts = open.length - longs;
   const limitUsd = equity * cfg.dayLossPct / 100;
   const warn = [];
-  if (dayPnl <= -limitUsd && limitUsd > 0) warn.push({ lvl: "stop", txt: `Hôm nay đã lỗ ${fmt(-dayPnl)} USDT, chạm giới hạn ${cfg.dayLossPct}% vốn. Nên dừng giao dịch tới ngày mai.` });
-  else if (dayPnl < -limitUsd * 0.66 && limitUsd > 0) warn.push({ lvl: "warn", txt: `Hôm nay đã lỗ ${fmt(-dayPnl)} USDT, gần chạm giới hạn ${fmt(limitUsd)} USDT.` });
-  if (today.length >= cfg.maxTrades) warn.push({ lvl: "warn", txt: `Đã vào ${today.length} lệnh hôm nay, bằng hoặc vượt mức tối đa ${cfg.maxTrades}. Giao dịch quá nhiều thường do cảm xúc.` });
-  if (Math.max(longs, shorts) >= 2) warn.push({ lvl: "warn", txt: `Đang mở ${Math.max(longs, shorts)} lệnh cùng chiều ${longs >= shorts ? "LONG" : "SHORT"}. Các coin lớn thường chạy cùng nhau, nên rủi ro thật gần bằng tổng các lệnh: ${fmt(openRisk)} USDT (${(openRisk / equity * 100).toFixed(1)}% vốn).` });
+  if (dayPnl <= -limitUsd && limitUsd > 0) warn.push({ code: "dayStop", lvl: "stop", txt: `Hôm nay đã lỗ ${fmt(-dayPnl)} USDT, chạm giới hạn ${cfg.dayLossPct}% vốn. Nên dừng giao dịch tới ngày mai.` });
+  else if (dayPnl < -limitUsd * 0.66 && limitUsd > 0) warn.push({ code: "dayNear", lvl: "warn", txt: `Hôm nay đã lỗ ${fmt(-dayPnl)} USDT, gần chạm giới hạn ${fmt(limitUsd)} USDT.` });
+  if (today.length >= cfg.maxTrades) warn.push({ code: "maxTrades", lvl: "warn", txt: `Đã vào ${today.length} lệnh hôm nay, bằng hoặc vượt mức tối đa ${cfg.maxTrades}. Giao dịch quá nhiều thường do cảm xúc.` });
+  if (Math.max(longs, shorts) >= 2) warn.push({ code: "sameSide", lvl: "warn", txt: `Đang mở ${Math.max(longs, shorts)} lệnh cùng chiều ${longs >= shorts ? "LONG" : "SHORT"}. Các coin lớn thường chạy cùng nhau, nên rủi ro thật gần bằng tổng các lệnh: ${fmt(openRisk)} USDT (${(openRisk / equity * 100).toFixed(1)}% vốn).` });
   return { equity, dayPnl, limitUsd, todayN: today.length, open: open.length, openRisk, openRiskPct: equity > 0 ? openRisk / equity * 100 : 0, warn };
 }
 const fmt = x => (Math.round(x * 100) / 100).toLocaleString("en-US");
@@ -115,8 +115,8 @@ export function journalStats(trades, cfg) {
 }
 
 export function toCsv(trades) {
-  const head = ["thoi_gian_vao", "ma", "phia", "chien_luoc", "gia_vao", "cat_lo", "muc_tieu", "gia_ra", "thoi_gian_ra", "khoi_luong", "phi", "R", "lai_lo_usdt", "loi", "cam_xuc", "ly_do", "ghi_chu"];
+  const head = ["thoi_gian_vao", "ma", "phia", "chien_luoc", "gia_vao", "cat_lo", "muc_tieu", "gia_ra", "thoi_gian_ra", "khoi_luong", "phi", "R", "lai_lo_usdt", "loi", "cam_xuc", "ly_do", "ghi_chu", "gac_cong"];
   const q = v => { const s = v == null ? "" : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const iso = t => t ? new Date(t).toISOString() : "";
-  return [head.join(",")].concat(trades.map(t => { const r = result(t); return [iso(t.t), t.sym, t.side, t.strat, t.entry, t.stop, t.target, t.exit, iso(t.tExit), t.qty, t.fee, r ? r.R.toFixed(3) : "", r ? r.pnl.toFixed(2) : "", (t.mistakes || []).join("|"), t.emo, t.reason, t.note].map(q).join(","); })).join("\n");
+  return [head.join(",")].concat(trades.map(t => { const r = result(t); return [iso(t.t), t.sym, t.side, t.strat, t.entry, t.stop, t.target, t.exit, iso(t.tExit), t.qty, t.fee, r ? r.R.toFixed(3) : "", r ? r.pnl.toFixed(2) : "", (t.mistakes || []).join("|"), t.emo, t.reason, t.note, (t.gate || []).join("|")].map(q).join(","); })).join("\n");
 }

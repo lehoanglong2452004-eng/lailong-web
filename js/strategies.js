@@ -9,7 +9,7 @@
 //     tp1Px?, tp2Px?   chốt lời theo giá riêng của chiến lược (mặc định theo R chung),
 //     forceExit?(k)    true thì đóng lệnh ở giá đóng cửa nến k (ví dụ cuối ngày) }
 // Bộ máy chạy lệnh nằm trong backtest.js.
-import { atr, pivots } from './analytics.js?v=202610220403';
+import { atr, pivots } from './analytics.js?v=202610240523';
 
 // ---------- chỉ báo dùng chung, tính một lần cho mỗi bộ nến ----------
 const cxCache = new WeakMap();
