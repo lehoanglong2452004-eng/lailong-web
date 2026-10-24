@@ -362,6 +362,11 @@ canvas { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: n
 .jwarn { margin-top: 6px; padding: 5px 8px; border-left: 3px solid #f5c542; background: color-mix(in srgb, #f5c542 12%, transparent); font-size: 12px; }
 .jwarn.stop { border-left-color: var(--sell); background: color-mix(in srgb, var(--sell) 16%, transparent); font-weight: 700; }
 .jok { margin-top: 6px; color: var(--buy); font-size: 12px; }
+.compass { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 4px 18px; }
+.compass .note { grid-column: 1 / -1; }
+.compass h4 { margin: 6px 0 4px; }
+.compass ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.5; }
+.compass li.lean { list-style: none; margin-left: -18px; font-weight: 700; }
 .tag.gate { background: color-mix(in srgb, var(--warn) 25%, transparent); color: var(--warn); margin-right: 3px; }
 .jmist > span { color: var(--muted); }
 .jmist label { display: flex; gap: 6px; align-items: center; padding: 2px 0; font-size: 12.5px; }

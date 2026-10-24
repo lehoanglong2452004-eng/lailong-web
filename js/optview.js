@@ -3,9 +3,9 @@
 // chỉ số biến động 1 năm (DVOL của Deribit cho BTC/ETH, VIX/VXN/GVZ/OVX… cho tài sản Mỹ), dòng lệnh quyền chọn lớn.
 // BTC/ETH: Deribit trực tiếp (DVOL, lệnh khớp) + nến ngày Binance cho biến động thực tế.
 // Tài sản Mỹ: data/gex_<mã>.json có thêm closes (giá đóng cửa ngày) và volIdx (chỉ số biến động) từ Yahoo, trễ.
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610240531";
-import { setFresh } from "./fresh.js?v=202610240531";
-import { termStructure, ivRank, realizedVol, putCall, flowSummary, readSentiment } from "./optpro.js?v=202610240531";
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202610240537";
+import { setFresh } from "./fresh.js?v=202610240537";
+import { termStructure, ivRank, realizedVol, putCall, flowSummary, readSentiment } from "./optpro.js?v=202610240537";
 
 const DERIBIT = "https://www.deribit.com/api/v2/public";
 const C = { atm: "#ff9f1c", call: "#1fb57a", put: "#e5484d", grid: "#2b2b2b", muted: "#a3a3a3", text: "#e6e6e6", rv: "#4ea1ff" };
