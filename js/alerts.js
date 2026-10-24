@@ -6,7 +6,7 @@
 // Cài đặt và các mức giá được lưu trên máy này (sessionStorage). Mỗi loại kêu tối đa một lần mỗi 5 giây.
 // Telegram: mã bot và chat id lưu trong localStorage của máy này, gửi thẳng từ trình duyệt tới api.telegram.org.
 // Mọi tin Telegram được gắn biểu tượng trước mã giao dịch (₿ BTCUSDT, 🥇 XAUUSDT, 🇪🇺🇺🇸 EURUSD).
-import { withIcons } from "./icons.js?v=202610240610";
+import { withIcons } from "./icons.js?v=202610240622";
 
 const KEY = "lailong.alerts";
 const DEF = { ice: true, spoof: true, wallNew: false, big: false, newsEv: true, newsHot: false, disc: true, shock: true, compass: true, consensus: true, verifiedOnly: false, sound: true, notify: false, levels: [] };

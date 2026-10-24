@@ -4,16 +4,16 @@
 // Bốn bản tin cố định mỗi ngày: sáng 7:30, trưa 11:30, chiều 15:30, tối 20:00 (giờ máy). Mỗi bản gồm bốn phần:
 // - Vĩ mô: USD đang mạnh lên hay yếu đi (DXY 5 và 20 phiên), tâm lý thị trường (VIX và VIX 3 tháng), dòng tiền ETF BTC,
 //   rồi gộp lại thành gió xuôi / gió ngược cho coin, vàng, dầu. Đây là bối cảnh trong vài ngày, không phải tín hiệu vào lệnh.
-// - COT: chỉ số COT 3 năm của đầu cơ lớn ở USD, BTC, ETH, vàng, dầu và các hợp đồng đang ở cực trị.
 // - Lịch tin mạnh từ 0h hôm nay tới 7:30 sáng mai, tin đã ra kèm kết quả, tin sắp ra kèm khung giờ nên đứng ngoài.
+// - COT: chỉ số COT 3 năm của đầu cơ lớn ở USD, vàng, dầu, các hợp đồng đang ở cực trị, rồi BTC, ETH ở cuối.
 // - Ngân sách rủi ro hôm nay lấy từ nhật ký: rủi ro mỗi lệnh, còn được lỗ bao nhiêu trước khi bị khoá, số lệnh còn lại.
 // Từ bản thứ hai trở đi có thêm một dòng so gió xuôi / gió ngược với bản trước.
-import { riskLock, guard } from "./journal.js?v=202610240610";
-import { cotNote } from "./instview.js?v=202610240610";
-import { etfSummary } from "./flowsview.js?v=202610240610";
-import { TOP } from "./shock.js?v=202610240610";
-import { fmtDate, FLAG, pad2 } from "./util.js?v=202610240610";
-import { iconOf, GROUP } from "./icons.js?v=202610240610";
+import { riskLock, guard } from "./journal.js?v=202610240622";
+import { cotNote } from "./instview.js?v=202610240622";
+import { etfSummary } from "./flowsview.js?v=202610240622";
+import { TOP } from "./shock.js?v=202610240622";
+import { fmtDate, FLAG, pad2 } from "./util.js?v=202610240622";
+import { iconOf, GROUP } from "./icons.js?v=202610240622";
 
 const MIN = 60e3;
 const WD = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
@@ -21,7 +21,8 @@ const num = (x, d = 2) => (Math.round(x * 10 ** d) / 10 ** d).toLocaleString("en
 const pct = x => `${x > 0 ? "+" : ""}${x.toFixed(1)}%`;
 const hm = t => `${pad2(new Date(t).getHours())}:${pad2(new Date(t).getMinutes())}`;
 export const dayKey = t => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
-export const COT_SHOW = ["DX", "BTC", "ETH", "GC", "CL"];
+export const COT_SHOW = ["DX", "GC", "CL", "BTC", "ETH"];
+const CRYPTO = ["BTC", "ETH"];
 export const COT_NAME = { DX: "USD", BTC: "Bitcoin CME", ETH: "Ether CME", GC: "Vàng", CL: "Dầu WTI" };
 export const SLOTS = [
   { id: "sang", at: "07:30", name: "sáng", icon: "🌅" }, { id: "trua", at: "11:30", name: "trưa", icon: "☀️" },
@@ -79,13 +80,13 @@ export function leans(usd, mood, etf) {
   ];
 }
 
-// COT: các hợp đồng chính và mọi hợp đồng đang ở cực trị 3 năm (chỉ số từ 90 hoặc tới 10)
+// COT: các hợp đồng chính và mọi hợp đồng đang ở cực trị 3 năm (chỉ số từ 90 hoặc tới 10); crypto luôn nằm cuối danh sách
 export function cotLines(items, max = 7) {
   const xs = (items || []).filter(x => x.specIdx != null);
-  const main = COT_SHOW.map(s => xs.find(x => x.sym === s)).filter(Boolean);
+  const main = COT_SHOW.map(s => xs.find(x => x.sym === s)).filter(Boolean), coin = main.filter(x => CRYPTO.includes(x.sym));
   const ext = xs.filter(x => !COT_SHOW.includes(x.sym) && (x.specIdx >= 90 || x.specIdx <= 10)).sort((a, b) => Math.abs(b.specIdx - 50) - Math.abs(a.specIdx - 50));
   const lab = i => i >= 80 ? "đầu cơ long đông" : i <= 20 ? "đầu cơ short đông" : "trung tính";
-  const rows = [...main, ...ext].slice(0, max).map(x => {
+  const rows = [...[...main.filter(x => !coin.includes(x)), ...ext].slice(0, max - coin.length), ...coin].map(x => {
     const note = cotNote(x);
     return { sym: x.sym, idx: x.specIdx, txt: `${iconOf(x.sym) ? iconOf(x.sym) + " " : ""}${COT_NAME[x.sym] || x.name}: chỉ số ${Math.round(x.specIdx)} (${lab(x.specIdx)}), tuần này đầu cơ ${x.specChg >= 0 ? "tăng" : "giảm"} ròng ${num(Math.abs(x.specChg), 0)} hợp đồng${note ? `. ${note}` : ""}.` };
   });
@@ -147,8 +148,8 @@ export function compass({ fx, vol, flows, cot, events, trades, cfg, lock = null,
     day: dayKey(now), slot, title: `${WD[d.getDay()]} ${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`, leans: L,
     sections: [
       { title: "Vĩ mô", lines: macro.length ? macro : ["Chưa tải được dữ liệu USD, VIX, ETF."] },
-      { title: `COT${c.date ? ` (báo cáo ${c.date.slice(8, 10)}/${c.date.slice(5, 7)})` : ""}`, lines: c.rows.length ? c.rows.map(r => r.txt) : ["Chưa tải được COT."] },
       { title: "Lịch tin mạnh hôm nay và đêm nay", lines: ev.length ? ev.map(e => e.txt) : ["Không có tin mạnh nào hôm nay và đêm nay."] },
+      { title: `COT${c.date ? ` (báo cáo ${c.date.slice(8, 10)}/${c.date.slice(5, 7)})` : ""}`, lines: c.rows.length ? c.rows.map(r => r.txt) : ["Chưa tải được COT."] },
       ...(b ? [{ title: "Ngân sách rủi ro hôm nay", lines: b.lines }] : []),
     ],
   };
