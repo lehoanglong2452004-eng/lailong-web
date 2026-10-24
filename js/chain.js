@@ -1,8 +1,8 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: bảng chuỗi quyền chọn (depth view) cho một hạn: call bên trái, put bên phải theo từng strike.
 // Hàng chuỗi: [strike, i_hạn, ±1, OI, iv, KL trong ngày, giá mua, giá bán] (giá mua/bán theo USD, có thể thiếu).
-import { bsDelta } from "./optpro.js?v=202610240610";
-import { pick, maxPain } from "./gex.js?v=202610240610";
+import { bsDelta } from "./optpro.js?v=202610240622";
+import { pick, maxPain } from "./gex.js?v=202610240622";
 
 const YEAR = 365 * 864e5;
 const side = r => ({ oi: r[3], vol: r[5] || 0, iv: r[4], bid: r[6] > 0 ? r[6] : null, ask: r[7] > 0 ? r[7] : null });
