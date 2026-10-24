@@ -2,11 +2,11 @@
 // Lai Long Web: thẻ Kịch bản sốc ở trang Nhật ký, và cảnh báo 60 phút trước mỗi tin lớn khi đang có lệnh mở.
 // Giá hiện tại và biên độ một ngày lấy từ nến ngày Binance Futures; mã không có trên Binance thì tính từ giá vào
 // và biên độ ước lượng theo loại tài sản. Mỗi tin chỉ báo một lần (danh sách đã báo lưu trên máy này).
-import { bigEvents, shockScenarios, shockHtml, shockText, assetClass, tone, FALLBACK, LEAD_MIN } from "./shock.js?v=202610240537";
-import { riskLock, guard } from "./journal.js?v=202610240537";
-import { avgReaction } from "./newsview.js?v=202610240537";
-import { atrSeries } from "./radar.js?v=202610240537";
-import { getJson, fmtDate, fmtVol, FLAG } from "./util.js?v=202610240537";
+import { bigEvents, shockScenarios, shockHtml, shockText, assetClass, tone, FALLBACK, LEAD_MIN } from "./shock.js?v=202610240545";
+import { riskLock, guard } from "./journal.js?v=202610240545";
+import { avgReaction } from "./newsview.js?v=202610240545";
+import { atrSeries } from "./radar.js?v=202610240545";
+import { getJson, fmtDate, fmtVol, FLAG } from "./util.js?v=202610240545";
 
 const SENT = "lailong.shock.sent";
 const COL = { crypto: "BTC", metal: "Vàng", oil: "Dầu WTI", fx: "DXY" }; // cột phản ứng giá gần nhất với từng loại tài sản

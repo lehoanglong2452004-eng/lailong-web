@@ -367,6 +367,8 @@ canvas { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: n
 .compass h4 { margin: 6px 0 4px; }
 .compass ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.5; }
 .compass li.lean { list-style: none; margin-left: -18px; font-weight: 700; }
+#cnsSyms { width: 260px; max-width: 100%; }
+.cpip { font-size: 13px; cursor: help; }
 .tag.gate { background: color-mix(in srgb, var(--warn) 25%, transparent); color: var(--warn); margin-right: 3px; }
 .jmist > span { color: var(--muted); }
 .jmist label { display: flex; gap: 6px; align-items: center; padding: 2px 0; font-size: 12.5px; }

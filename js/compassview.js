@@ -2,8 +2,8 @@
 // Lai Long Web: thẻ La bàn sáng ở trang Nhật ký, và tin Telegram mỗi ngày một lần vào giờ đã chọn.
 // Nếu tới giờ mà Desk chưa mở thì gửi ngay khi mở trong ngày đó. Giờ gửi và ngày đã gửi lưu trên máy này.
 // Bản web đọc data/markets.json, vol.json, flows.json, cot.json do GitHub Actions cập nhật; bản laptop lấy qua máy chủ.
-import { compass, compassHtml, compassText } from "./compass.js?v=202610240537";
-import { getJson } from "./util.js?v=202610240537";
+import { compass, compassHtml, compassText } from "./compass.js?v=202610240545";
+import { getJson } from "./util.js?v=202610240545";
 
 const STORE = "lailong.compass";
 
@@ -48,5 +48,5 @@ export function initCompass({ $, esc, toast, alerts, journal, events }) {
   };
   load(); setInterval(load, 30 * 60e3);
   setTimeout(tick, 20e3); setInterval(tick, 60e3);
-  return { render, tick };
+  return { render, tick, data: () => data };
 }
