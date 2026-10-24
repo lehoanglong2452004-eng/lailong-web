@@ -4,8 +4,8 @@
 //   footprint 5 phút) qua máy chủ: /api/hist/*. Dài tới nhiều năm.
 //   Bản web (hoặc khi kho chưa có mã đó): nến Binance qua API công khai (có mua chủ động), OI và tỷ lệ long/short
 //   chỉ 30 ngày gần nhất. Sàn khác: chỉ có nến.
-import { EXCHANGES, attachOi } from "./exchanges.js?v=202610240642";
-import { getJson, INTERVALS } from "./util.js?v=202610240642";
+import { EXCHANGES, attachOi } from "./exchanges.js?v=202610240647";
+import { getJson, INTERVALS } from "./util.js?v=202610240647";
 
 const FAPI = "https://fapi.binance.com";
 const DAY = 864e5;

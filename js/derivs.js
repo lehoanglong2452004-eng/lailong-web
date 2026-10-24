@@ -4,7 +4,7 @@
 //                    funding hiện tại, open interest.
 //   Deribit:         quyền chọn BTC/ETH: tỷ lệ put/call theo OI và khối lượng, điểm "max pain", các giá
 //                    thực hiện có OI lớn nhất (thường thành nam châm hút giá gần ngày đáo hạn).
-import { getJson } from "./util.js?v=202610240642";
+import { getJson } from "./util.js?v=202610240647";
 
 const FAPI = "https://fapi.binance.com";
 const DERIBIT = "https://www.deribit.com/api/v2/public";
