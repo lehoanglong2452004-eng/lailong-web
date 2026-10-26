@@ -4,7 +4,7 @@
 // - Tính khối lượng lệnh theo % rủi ro: lỗ khi chạm cắt lỗ (cộng phí hai chiều) đúng bằng số tiền chấp nhận mất.
 // - Rào chắn trong ngày: lỗ đã chốt hôm nay, số lệnh hôm nay, tổng rủi ro các lệnh đang mở.
 // - Thống kê nhật ký theo chiến lược, phía, giờ vào lệnh, thứ trong tuần và theo từng lỗi hay mắc.
-import { equityStats } from "./fractal.js?v=202610240731";
+import { equityStats } from "./fractal.js?v=202610260704";
 
 export const MISTAKES = [
   ["early", "Vào sớm, chưa đủ tín hiệu"], ["fomo", "FOMO, đuổi giá"], ["noplan", "Ngoài kế hoạch"],
@@ -91,7 +91,7 @@ export function guard(trades, cfg, now = Date.now()) {
 const fmt = x => (Math.round(x * 100) / 100).toLocaleString("en-US");
 
 // nhóm các lệnh đã đóng theo khoá, trả về thống kê R cho mỗi nhóm
-function groupBy(rows, keyFn, riskPct) {
+export function groupBy(rows, keyFn, riskPct) {
   const m = new Map();
   for (const r of rows) for (const k of [].concat(keyFn(r))) { if (k == null) continue; (m.get(k) || m.set(k, []).get(k)).push(r); }
   return [...m].map(([k, rs]) => ({ key: k, n: rs.length, pnl: rs.reduce((a, r) => a + r.pnl, 0), st: equityStats(rs.map(r => r.R), riskPct) }));
@@ -114,9 +114,10 @@ export function journalStats(trades, cfg) {
   };
 }
 
-export function toCsv(trades) {
-  const head = ["thoi_gian_vao", "ma", "phia", "chien_luoc", "gia_vao", "cat_lo", "muc_tieu", "gia_ra", "thoi_gian_ra", "khoi_luong", "phi", "R", "lai_lo_usdt", "loi", "cam_xuc", "ly_do", "ghi_chu", "gac_cong"];
+// extra: cột thêm {head: [...], row: t => [...]}, ví dụ bối cảnh lúc vào lệnh
+export function toCsv(trades, extra = null) {
+  const head = ["thoi_gian_vao", "ma", "phia", "chien_luoc", "gia_vao", "cat_lo", "muc_tieu", "gia_ra", "thoi_gian_ra", "khoi_luong", "phi", "R", "lai_lo_usdt", "loi", "cam_xuc", "ly_do", "ghi_chu", "gac_cong", ...(extra ? extra.head : [])];
   const q = v => { const s = v == null ? "" : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const iso = t => t ? new Date(t).toISOString() : "";
-  return [head.join(",")].concat(trades.map(t => { const r = result(t); return [iso(t.t), t.sym, t.side, t.strat, t.entry, t.stop, t.target, t.exit, iso(t.tExit), t.qty, t.fee, r ? r.R.toFixed(3) : "", r ? r.pnl.toFixed(2) : "", (t.mistakes || []).join("|"), t.emo, t.reason, t.note, (t.gate || []).join("|")].map(q).join(","); })).join("\n");
+  return [head.join(",")].concat(trades.map(t => { const r = result(t); return [iso(t.t), t.sym, t.side, t.strat, t.entry, t.stop, t.target, t.exit, iso(t.tExit), t.qty, t.fee, r ? r.R.toFixed(3) : "", r ? r.pnl.toFixed(2) : "", (t.mistakes || []).join("|"), t.emo, t.reason, t.note, (t.gate || []).join("|"), ...(extra ? extra.row(t) : [])].map(q).join(","); })).join("\n");
 }
