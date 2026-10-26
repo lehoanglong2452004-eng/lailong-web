@@ -3,18 +3,22 @@
 // Dữ liệu chỉ lưu trên trình duyệt của máy này (localStorage); nút Xuất file để sao lưu hoặc chuyển máy.
 // Gác cổng kỷ luật: hỏi lại khi lệnh mới giống gỡ gạc, quá rủi ro hoặc sát giờ tin; báo khi sắp khoá và khi đã khoá.
 // notify(kind, text, html, toast) gửi cảnh báo ra ngoài (tiếng, Telegram); events() là lịch kinh tế.
-import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202610240731";
-import { entryChecks, nearLock, daySummary, gateHtml, nearHtml, lockHtml, GATE } from "./discipline.js?v=202610240731";
-import { atrSeries } from "./radar.js?v=202610240731";
-import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202610240731";
-import { EquityChart } from "./fractalview.js?v=202610240731";
-import { fmtVol, fmtDate, decimalsFor, getJson } from "./util.js?v=202610240731";
+// Bối cảnh lúc vào lệnh: lệnh mới ghi trong vòng 60 phút được chụp lại 4 lớp đồng thuận, phiên, xu hướng, tín hiệu
+// vừa xuất hiện và gamma; ctx.macro() là dữ liệu La bàn, ctx.flip(sym) là điểm lật gamma (BTC, ETH).
+import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202610260704";
+import { buildCtx, ctxLines, ctxStats, alignOf, CTX_LABEL, CTX_CSV } from "./tradectx.js?v=202610260704";
+import { liveEvents } from "./eventlog.js?v=202610260704";
+import { entryChecks, nearLock, daySummary, gateHtml, nearHtml, lockHtml, GATE } from "./discipline.js?v=202610260704";
+import { atrSeries } from "./radar.js?v=202610260704";
+import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202610260704";
+import { EquityChart } from "./fractalview.js?v=202610260704";
+import { fmtVol, fmtDate, decimalsFor, getJson } from "./util.js?v=202610260704";
 
 const STORE = "lailong.journal.v1";
 const WD = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 const EMO = [[1, "1 · Rất bình tĩnh"], [2, "2 · Bình tĩnh"], [3, "3 · Bình thường"], [4, "4 · Hồi hộp"], [5, "5 · Rất căng thẳng"]];
 
-export function initJournal({ $, S, esc, table, market, toast, onLock, notify, events }) {
+export function initJournal({ $, S, esc, table, market, toast, onLock, notify, events, ctx: ctxSrc = {} }) {
   let db;
   try { db = JSON.parse(localStorage.getItem(STORE) || "null"); } catch { db = null; }
   db = db || { cfg: { ...SETTINGS_DEF }, trades: [], seq: 1 };
@@ -122,7 +126,7 @@ export function initJournal({ $, S, esc, table, market, toast, onLock, notify, e
     if (L && !db.trades.some(x => x.id === t.id) && t.t >= Math.floor(L.since / 60e3) * 60e3) return toast(`Đang khoá giao dịch tới ${fmtDate(L.until)}: ${L.why}. Chỉ được đóng lệnh đang mở.`, true);
     if ((t.side === "long") !== (t.stop < t.entry)) return toast(t.side === "long" ? "Lệnh LONG thì cắt lỗ phải dưới giá vào" : "Lệnh SHORT thì cắt lỗ phải trên giá vào", true);
     const old = db.trades.find(x => x.id === t.id);
-    if (old) { if (old.gate) t.gate = old.gate; } else {
+    if (old) { if (old.gate) t.gate = old.gate; if (old.ctx && old.sym === t.sym) t.ctx = old.ctx; } else {
       const g = entryChecks(db.trades, t, db.cfg, { events: evs() });
       if (g.length) {
         t.gate = g.map(x => x.code);
@@ -137,7 +141,26 @@ export function initJournal({ $, S, esc, table, market, toast, onLock, notify, e
     const i = db.trades.findIndex(x => x.id === t.id);
     if (i >= 0) db.trades[i] = t; else db.trades.push(t);
     save(); resetForm(); render(); toast(i >= 0 ? "Đã lưu thay đổi" : "Đã ghi lệnh vào nhật ký");
+    if (!old && Date.now() - t.t <= LIVE) capture(t);
   };
+
+  // chụp bối cảnh sau khi đã lưu lệnh, để nút Lưu không phải chờ mạng; thiếu nguồn nào thì lớp đó ghi là chưa có
+  async function capture(t) {
+    let bars = null;
+    try {
+      const k = await getJson(`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(t.sym)}&interval=1h&limit=200`);
+      bars = k.map(r => ({ t: r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4], v: +r[5], bv: +r[9] }));
+    } catch { /* mã không có trên Binance Futures */ }
+    const [live, flip] = await Promise.all([
+      liveEvents(t.sym, 1).catch(() => []),
+      Promise.resolve(ctxSrc.flip ? ctxSrc.flip(t.sym) : null).catch(() => null),
+    ]);
+    try {
+      const c = buildCtx({ sym: t.sym, t: t.t, entry: t.entry, bars, macro: ctxSrc.macro ? ctxSrc.macro() : null, live, flip });
+      const cur = db.trades.find(x => x.id === t.id); if (!cur || cur.sym !== t.sym) return;
+      cur.ctx = c; save(); render();
+    } catch (e) { console.warn("Không chụp được bối cảnh lệnh", e); }
+  }
   $("jCancel").onclick = () => resetForm();
   $("jTrades").onclick = e => {
     const ed = e.target.closest("[data-jedit]"), del = e.target.closest("[data-jdel]");
@@ -149,7 +172,7 @@ export function initJournal({ $, S, esc, table, market, toast, onLock, notify, e
   const download = (name, text, type) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
   const stamp = () => new Date().toISOString().slice(0, 10);
   $("jExport").onclick = () => download(`lailong-nhatky-${stamp()}.json`, JSON.stringify(db, null, 1), "application/json");
-  $("jCsv").onclick = () => download(`lailong-nhatky-${stamp()}.csv`, "﻿" + toCsv(db.trades), "text/csv");
+  $("jCsv").onclick = () => download(`lailong-nhatky-${stamp()}.csv`, "﻿" + toCsv(db.trades, CTX_CSV), "text/csv");
   $("jImport").onclick = () => $("jFile").click();
   $("jFile").onchange = async () => {
     const f = $("jFile").files[0]; if (!f) return;
@@ -170,6 +193,24 @@ export function initJournal({ $, S, esc, table, market, toast, onLock, notify, e
   function groupTable(title, gs, label) {
     if (!gs.length) return "";
     return `<h4>${title}</h4>` + table(["Nhóm", "Số lệnh", "Tỷ lệ thắng", "Kỳ vọng (R)", "Tổng R", "PF", "Lãi/lỗ USDT"], gs.map(g => `<tr><td class="t">${esc(label(g.key))}</td><td>${g.n}</td><td>${(g.st.wr * 100).toFixed(0)}%</td><td class="${cls(g.st.avgR)}">${sgn(g.st.avgR)}</td><td class="${cls(g.st.totalR)}">${sgn(g.st.totalR)}</td><td>${pf(g.st.pf)}</td><td class="${cls(g.pnl)}">${fmtVol(g.pnl)}</td></tr>`), "Chưa có lệnh đã đóng.");
+  }
+  // bối cảnh lúc vào lệnh: mỗi chấm là một lớp đồng thuận, xanh cùng chiều lệnh, đỏ ngược chiều, xám trung lập hoặc chưa có
+  function ctxCell(t) {
+    if (!t.ctx) return `<span class="muted" data-tip="${Date.now() - t.t <= LIVE ? "Đang chụp bối cảnh…" : "Không có bối cảnh: lệnh ghi bù sau hơn 60 phút, hoặc ghi trước khi Desk có tính năng này"}">–</span>`;
+    const a = alignOf(t);
+    return `<span class="ctxcell" data-tip="${esc(ctxLines(t).join("\n"))}">${a.rels.map(x => `<i class="${x === "with" ? "pos" : x === "against" ? "neg" : "muted"}">${x === "with" || x === "against" ? "●" : "○"}</i>`).join("")} ${a.with}/${a.known}</span>`;
+  }
+  const rTxt = e => `<b class="${cls(e.avgR)}">${sgn(e.avgR)}R</b> × ${e.n} lệnh`;
+  function ctxHtml() {
+    const cx = ctxStats(db.trades, db.cfg), L = CTX_LABEL;
+    const head = `<h3>Theo bối cảnh lúc vào lệnh <button class="q" data-g="trade-ctx">?</button></h3>`;
+    const sess = groupTable("Theo phiên", cx.bySession, L.bySession);
+    if (!cx.covered) return head + `<p class="note">Chưa có lệnh đã đóng nào được chụp bối cảnh. Từ giờ mỗi lệnh mới ghi trong vòng 60 phút sẽ tự có; lệnh ghi bù thì không.</p>` + sess;
+    const hl = [cx.strong.n ? `Lệnh có từ 3 lớp cùng chiều và không lớp nào ngược: ${rTxt(cx.strong)}.` : "", cx.vsMacro.n ? `Lệnh ngược vĩ mô (la bàn): ${rTxt(cx.vsMacro)}.` : ""].filter(Boolean).join(" ");
+    return head + `<p class="note">${cx.covered}/${cx.n} lệnh đã đóng có bối cảnh. ${hl}</p>` +
+      groupTable("Theo số lớp đồng thuận cùng chiều lệnh", cx.byAlign, L.byAlign) + groupTable("Theo từng lớp", cx.byLayer, L.byLayer) +
+      groupTable("Theo xu hướng 24 giờ", cx.byTrend, L.byTrend) + sess + groupTable("Theo biến động", cx.byVol, L.byVol) +
+      groupTable("Theo tín hiệu xuất hiện trước khi vào", cx.bySig, L.bySig) + groupTable("Theo gamma (BTC, ETH)", cx.byGamma, L.byGamma);
   }
   // khoá giao dịch: tính lại mỗi lần vẽ, lưu lại để sửa/xoá lệnh lỗ không mở được khoá
   function lockNow() {
@@ -214,14 +255,15 @@ export function initJournal({ $, S, esc, table, market, toast, onLock, notify, e
     const mistakeNote = js.byMistake.length ? `<p class="note">Lỗi gây thiệt hại nhiều nhất: <b>${esc(mName(js.byMistake[0].key))}</b> (${sgn(js.byMistake[0].st.totalR)}R qua ${js.byMistake[0].n} lệnh).${js.dirty.n && js.clean.n ? ` Nếu bỏ hết các lệnh có lỗi, kỳ vọng sẽ là ${sgn(js.clean.avgR)}R thay vì ${sgn(st.avgR)}R mỗi lệnh.` : ""}</p>` : "";
     $("jGroups").innerHTML = !st.n ? `<div class="empty">Thống kê theo nhóm sẽ hiện khi có lệnh đã đóng.</div>` :
       `<p class="note">Nhóm nào có kỳ vọng âm sau khoảng 20 lệnh trở lên thì nên bỏ hoặc sửa. Nhóm ít lệnh chỉ để tham khảo.</p>` +
+      ctxHtml() + `<h3>Theo cách vào lệnh</h3>` +
       groupTable("Theo chiến lược", js.byStrat, k => k) + mistakeNote + groupTable("Theo lỗi đã mắc", js.byMistake, mName) +
       groupTable("Theo phía", js.bySide, k => k === "long" ? "LONG" : "SHORT") +
       groupTable("Theo giờ vào lệnh (giờ máy)", js.byHour, k => `${String(k).padStart(2, "0")}:00 – ${String(k).padStart(2, "0")}:59`) +
       groupTable("Theo thứ trong tuần", js.byWeekday, k => WD[k]) + groupTable("Theo cảm xúc lúc vào", js.byEmo, k => (EMO.find(e => e[0] === k) || [0, k])[1]);
     const rows = db.trades.slice().sort((a, b) => b.t - a.t);
-    $("jTrades").innerHTML = table(["Vào lúc", "Mã", "Phía", "Chiến lược", "Giá vào", "Cắt lỗ", "Giá ra", "R", "USDT", "Lỗi", "Lý do", ""], rows.map(t => {
+    $("jTrades").innerHTML = table(["Vào lúc", "Mã", "Phía", "Chiến lược", ["Bối cảnh", "trade-ctx"], "Giá vào", "Cắt lỗ", "Giá ra", "R", "USDT", "Lỗi", "Lý do", ""], rows.map(t => {
       const r = result(t);
-      return `<tr><td>${fmtDate(t.t)}</td><td>${esc(t.sym)}</td><td class="${t.side === "long" ? "pos" : "neg"}">${t.side === "long" ? "LONG" : "SHORT"}</td><td class="t">${esc(t.strat || "")}</td><td>${t.entry}</td><td>${t.stop}</td><td>${t.exit > 0 ? t.exit : `<span class="tag flat">đang mở</span>`}</td><td class="${r ? cls(r.R) : ""}">${r ? sgn(r.R) : "-"}</td><td class="${r ? cls(r.pnl) : ""}">${r && t.qty ? fmtVol(r.pnl) : "-"}</td><td class="t">${(t.gate || []).map(c => `<span class="tag gate" data-tip="Gác cổng kỷ luật đã cảnh báo lúc ghi lệnh">⚠ ${esc(GATE[c] || c)}</span> `).join("")}${esc((t.mistakes || []).map(mName).join(", "))}</td><td class="t jreason">${esc(t.reason || "")}</td><td class="t"><button class="icon" data-jedit="${t.id}" data-tip="Sửa hoặc đóng lệnh">✎</button><button class="icon" data-jdel="${t.id}" data-tip="Xoá">✕</button></td></tr>`;
+      return `<tr><td>${fmtDate(t.t)}</td><td>${esc(t.sym)}</td><td class="${t.side === "long" ? "pos" : "neg"}">${t.side === "long" ? "LONG" : "SHORT"}</td><td class="t">${esc(t.strat || "")}</td><td>${ctxCell(t)}</td><td>${t.entry}</td><td>${t.stop}</td><td>${t.exit > 0 ? t.exit : `<span class="tag flat">đang mở</span>`}</td><td class="${r ? cls(r.R) : ""}">${r ? sgn(r.R) : "-"}</td><td class="${r ? cls(r.pnl) : ""}">${r && t.qty ? fmtVol(r.pnl) : "-"}</td><td class="t">${(t.gate || []).map(c => `<span class="tag gate" data-tip="Gác cổng kỷ luật đã cảnh báo lúc ghi lệnh">⚠ ${esc(GATE[c] || c)}</span> `).join("")}${esc((t.mistakes || []).map(mName).join(", "))}</td><td class="t jreason">${esc(t.reason || "")}</td><td class="t"><button class="icon" data-jedit="${t.id}" data-tip="Sửa hoặc đóng lệnh">✎</button><button class="icon" data-jdel="${t.id}" data-tip="Xoá">✕</button></td></tr>`;
     }), "Chưa có lệnh nào trong nhật ký.");
     calc();
   }

@@ -3,7 +3,7 @@
 // Coin dùng ký hiệu của chính coin đó (Unicode chưa có logo BTC, ETH nên dùng ₿ và Ξ), coin lạ dùng 🪙.
 // Hàng hoá dùng vật: 🛢️ dầu, 🥇 vàng, 🥈 bạc (chưa có emoji thỏi vàng, thỏi bạc), 🪨 quặng đồng, 🔥 khí đốt, 🌽 ngô…
 // Ngoại hối dùng cờ của hai nước trong cặp, chỉ số chứng khoán dùng 📈.
-import { FLAG } from "./util.js?v=202610240731";
+import { FLAG } from "./util.js?v=202610260704";
 
 export const CCY = {
   ...FLAG, SGD: "🇸🇬", HKD: "🇭🇰", KRW: "🇰🇷", INR: "🇮🇳", MXN: "🇲🇽", BRL: "🇧🇷", TRY: "🇹🇷", ZAR: "🇿🇦",

@@ -3,7 +3,7 @@
 // Cùng thông số, chạy trên nhiều coin, chia thời gian thành nhiều đoạn liên tiếp và tách theo
 // trạng thái thị trường (lên, xuống, đi ngang). Lợi thế thật phải còn ở hầu hết các phần,
 // không chỉ nhờ một coin hay một giai đoạn may mắn.
-import { tradeStats, splitTrades } from "./backtest.js?v=202610240731";
+import { tradeStats, splitTrades } from "./backtest.js?v=202610260704";
 
 export const REGIMES = [["up", "Thị trường lên"], ["down", "Thị trường xuống"], ["flat", "Đi ngang"]];
 
