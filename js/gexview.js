@@ -5,14 +5,14 @@
 // Nút "Gửi Telegram" gửi tin danh sách 11 tài sản kèm hàng nút; bấm mã nào dưới tin thì Desk đang mở gửi bản tin đầy đủ
 // của mã đó (optbrief.js, tgbot.js). Mỗi sáng từ 7:31, ngay sau La bàn sáng, tự gửi bản BTC (bật ở menu Cảnh báo).
 // Ngày đã gửi lưu trên máy này.
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202611022110";
-import { briefState, optBriefHtml, optBriefText, optListHtml, optKeyboard } from "./optbrief.js?v=202611022110";
-import { dayKey } from "./compass.js?v=202611022110";
-import { setFresh } from "./fresh.js?v=202611022110";
-import { initOptPro } from "./optview.js?v=202611022110";
-import { initChain } from "./chainview.js?v=202611022110";
-import { refOf } from "./chain.js?v=202611022110";
-import { fromDeribit, pick, levels, smile, atmIv, ivSurface } from "./gex.js?v=202611022110";
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202611022122";
+import { briefState, optBriefHtml, optBriefText, optListHtml, optKeyboard } from "./optbrief.js?v=202611022122";
+import { dayKey } from "./compass.js?v=202611022122";
+import { setFresh } from "./fresh.js?v=202611022122";
+import { initOptPro } from "./optview.js?v=202611022122";
+import { initChain } from "./chainview.js?v=202611022122";
+import { refOf } from "./chain.js?v=202611022122";
+import { fromDeribit, pick, levels, smile, atmIv, ivSurface, greeksByStrike, addGexPoint } from "./gex.js?v=202611022122";
 
 export const ASSETS = [
   { id: "BTC", src: "deribit", name: "Bitcoin (Deribit)" }, { id: "ETH", src: "deribit", name: "Ethereum (Deribit)" },
@@ -22,6 +22,14 @@ export const ASSETS = [
 const HORIZ = [{ id: "7", name: "≤ 7 ngày" }, { id: "30", name: "≤ 30 ngày" }, { id: "90", name: "≤ 90 ngày" }, { id: "all", name: "Mọi hạn" }];
 const C = { call: "#1fb57a", put: "#e5484d", net: "#ff9f1c", spot: "#ffffff", flip: "#b48cff", grid: "#2b2b2b", muted: "#a3a3a3" };
 const DAY = 864e5;
+const HIST = "lailong.gexhist.v1";
+// chế độ của biểu đồ theo strike: [nhãn trục dưới, hàm lấy giá trị ròng, chú thích]
+const NET_MODES = {
+  dex: ["DEX: delta nhà tạo lập đang giữ", x => x.dex || 0, "USD hợp đồng tương lai nhà tạo lập đang nắm để cân vị thế quyền chọn ở strike này"],
+  vanna: ["Vanna: delta đổi khi IV +1 điểm", x => x.vanna || 0, "Delta (USD) của nhà tạo lập đổi bao nhiêu khi IV tăng 1 điểm. Dương: IV tăng thì họ phải bán thêm; IV giảm (sau tin, cuối tuần) thì họ mua lại"],
+  charm: ["Charm: delta đổi sau mỗi ngày", x => x.charm || 0, "Delta (USD) của nhà tạo lập đổi bao nhiêu sau một ngày trôi qua. Âm: thời gian trôi làm họ phải mua lại, hay đẩy giá lên gần ngày đáo hạn"],
+};
+const loadHist = () => { try { return JSON.parse(localStorage.getItem(HIST) || "{}"); } catch { return {}; } };
 
 const fmtG = v => (v >= 0 ? "+" : "-") + fmtUsd(Math.abs(v));
 const fmtK = (k, spot) => spot >= 1000 ? Math.round(k).toLocaleString("en-US") : spot >= 100 ? k.toFixed(k % 1 ? 1 : 0) : k.toFixed(2);
@@ -50,7 +58,7 @@ export function initGex({ $, esc, alerts, toast }) {
   try { const s = JSON.parse(sessionStorage.getItem("lailong.gex") || "{}"); asset = s.asset || asset; horiz = s.horiz || horiz; } catch { /* bỏ qua */ }
   const save = () => { try { sessionStorage.setItem("lailong.gex", JSON.stringify({ asset, horiz })); } catch { /* bỏ qua */ } };
   const cache = new Map(), pro = initOptPro({ $, esc }), chainView = initChain({ $, esc });
-  const cvs = { bars: fitCanvas($("gexBars"), () => drawBars()), prof: fitCanvas($("gexProf"), () => drawProf()), smile: fitCanvas($("gexSmile"), () => drawSmile()), surf: fitCanvas($("gexSurf"), () => drawSurf()) };
+  const cvs = { bars: fitCanvas($("gexBars"), () => drawBars()), prof: fitCanvas($("gexProf"), () => drawProf()), hist: fitCanvas($("gexHist"), () => drawHist()), smile: fitCanvas($("gexSmile"), () => drawSmile()), surf: fitCanvas($("gexSurf"), () => drawSurf()) };
   let hoverK = null;
 
   // chuỗi quyền chọn của một tài sản, dùng lại bản đã tải trong 1 phút (Deribit) hoặc 5 phút (file của tài sản Mỹ)
@@ -68,7 +76,7 @@ export function initGex({ $, esc, alerts, toast }) {
   async function load() {
     const key = asset, a = ASSETS.find(x => x.id === key), c = cache.get(key);
     if (!c || Date.now() - c.t >= (a.src ? 60e3 : 300e3)) { loading = true; err = ""; renderHead(); }
-    try { const ch = await fetchChain(key); if (key === asset) chain = ch; } catch (e) { err = `Không tải được chuỗi quyền chọn ${asset}: ${e.message}`; chain = null; }
+    try { const ch = await fetchChain(key); if (key === asset) chain = ch; record(key, ch); } catch (e) { err = `Không tải được chuỗi quyền chọn ${asset}: ${e.message}`; chain = null; }
     loading = false; compute();
   }
   // số liệu của bản tin Telegram cho một tài sản, kể cả khi tab Quyền chọn chưa mở
@@ -79,12 +87,22 @@ export function initGex({ $, esc, alerts, toast }) {
     return briefState({ asset: id, chain: ch, live: !!a.src, ex });
   }
 
+  // mỗi giờ ghi một điểm GEX ròng (mọi hạn) của tài sản vào máy này để vẽ GEX theo thời gian
+  function record(id, ch) {
+    if (!ch || !ch.rows || !ch.rows.length) return;
+    try {
+      const all = loadHist(), lv = levels(ch); if (!lv) return;
+      all[id] = addGexPoint(all[id], { t: Date.now(), net: lv.net, spot: ch.spot });
+      localStorage.setItem(HIST, JSON.stringify(all));
+    } catch { /* chế độ riêng tư hoặc đầy bộ nhớ */ }
+  }
   function sub() {
     if (!chain) return null;
     return exp ? pick(chain, { exp }) : pick(chain, { maxDays: horiz === "all" ? Infinity : +horiz });
   }
   function compute() {
     const s = sub(); L = s && s.rows.length ? levels(s) : null;
+    if (L) { const g = new Map(greeksByStrike(s).map(x => [x.k, x])); for (const x of L.strikes) Object.assign(x, g.get(x.k) || { dex: 0, vanna: 0, charm: 0 }); }
     render();
     const a = ASSETS.find(x => x.id === asset);
     const live = !!(a && a.src), cur = asset, ch = chain;
@@ -137,7 +155,7 @@ export function initGex({ $, esc, alerts, toast }) {
     const st = visStrikes(); if (!st.length) return;
     const sp = chain.spot, top = 8, bot = h - 18, lx = 64;
     const kLo = st[0].k, kHi = st[st.length - 1].k, y = k => bot - (k - kLo) / ((kHi - kLo) || 1) * (bot - top);
-    const val = x => mode === "gex" ? [x.call, x.put] : [x.callOi, -x.putOi];
+    const nm = NET_MODES[mode], val = x => nm ? [Math.max(0, nm[1](x)), Math.min(0, nm[1](x))] : mode === "gex" ? [x.call, x.put] : [x.callOi, -x.putOi];
     const mx = Math.max(1e-9, ...st.map(x => Math.max(Math.abs(val(x)[0]), Math.abs(val(x)[1]))));
     const cx = lx + (w - lx - 8) / 2, sc = (w - lx - 8) / 2 / mx;
     const bh = Math.max(1, Math.min(14, (bot - top) / st.length - 1));
@@ -147,8 +165,8 @@ export function initGex({ $, esc, alerts, toast }) {
     const marks = [L.callWall, L.putWall, hoverK].filter(k => k != null).map(y);
     st.forEach((x, i) => {
       const yy = y(x.k), [c, p] = val(x);
-      ctx.fillStyle = C.call; ctx.fillRect(cx, yy - bh / 2, c * sc, bh);
-      ctx.fillStyle = C.put; ctx.fillRect(cx, yy - bh / 2, p * sc, bh);
+      ctx.fillStyle = nm ? "#4ea1ff" : C.call; ctx.fillRect(cx, yy - bh / 2, c * sc, bh);
+      ctx.fillStyle = nm ? "#b48cff" : C.put; ctx.fillRect(cx, yy - bh / 2, p * sc, bh);
       if (mode === "gex") { ctx.fillStyle = C.net; ctx.fillRect(cx + x.net * sc - 1, yy - bh / 2, 2, bh); }
       const mark = x.k === L.callWall || x.k === L.putWall || x.k === hoverK;
       const near = !mark && marks.some(m => Math.abs(m - yy) < 11);
@@ -165,7 +183,7 @@ export function initGex({ $, esc, alerts, toast }) {
       ctx.fillStyle = col; ctx.textAlign = "right"; ctx.fillText(label, w - 4, ty);
     }
     ctx.fillStyle = C.muted; ctx.textAlign = "center";
-    ctx.fillText(mode === "gex" ? `← put (âm)   ${fmtUsd(mx)} / 1%   call (dương) →` : `← OI put   ${Math.round(mx).toLocaleString("en-US")} hợp đồng   OI call →`, cx, h - 7);
+    ctx.fillText(nm ? `← âm   ${nm[0]} (tối đa ${fmtUsd(mx)})   dương →` : mode === "gex" ? `← put (âm)   ${fmtUsd(mx)} / 1%   call (dương) →` : `← OI put   ${Math.round(mx).toLocaleString("en-US")} hợp đồng   OI call →`, cx, h - 7);
   }
 
   // ---------- GEX tổng theo giá ----------
@@ -187,6 +205,25 @@ export function initGex({ $, esc, alerts, toast }) {
     v(sp, C.spot, "Giá"); v(L.flip, C.flip, "Lật gamma");
     ctx.fillStyle = C.muted; ctx.textAlign = "left"; ctx.fillText(fmtK(lo, sp), l, h - 5); ctx.textAlign = "right"; ctx.fillText(fmtK(hi, sp), r, h - 5);
     ctx.textAlign = "center"; ctx.fillText(`GEX tổng nếu giá ở mức này (đỉnh ${fmtUsd(gmx)})`, w / 2, h - 5);
+  }
+
+  // ---------- GEX ròng theo thời gian (điểm mỗi giờ, tích luỹ trên máy này) ----------
+  function drawHist() {
+    const { ctx, w, h } = cvs.hist; ctx.clearRect(0, 0, w, h);
+    const pts = (loadHist()[asset] || []).slice(-24 * 30);
+    ctx.font = `10px ${MONO}`; ctx.fillStyle = C.muted; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    if (pts.length < 2) { ctx.fillText("Đang tích luỹ: mỗi giờ mở tab này lưu một điểm GEX ròng của tài sản trên máy này.", w / 2, h / 2); return; }
+    const l = 8, r = w - 52, top = 10, bot = h - 18, gmx = Math.max(1e-9, ...pts.map(p => Math.abs(p.net)));
+    const sLo = Math.min(...pts.map(p => p.spot)), sHi = Math.max(...pts.map(p => p.spot));
+    const t0 = pts[0].t, t1 = pts[pts.length - 1].t, x = t => l + (t - t0) / ((t1 - t0) || 1) * (r - l), mid = (top + bot) / 2;
+    const bw = Math.max(1, Math.min(10, (r - l) / pts.length - 1));
+    ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(l, mid); ctx.lineTo(r, mid); ctx.stroke();
+    for (const p of pts) { const hh = p.net / gmx * (bot - top) / 2; ctx.fillStyle = p.net >= 0 ? C.call : C.put; ctx.fillRect(x(p.t) - bw / 2, hh >= 0 ? mid - hh : mid, bw, Math.abs(hh)); }
+    const ys = s => bot - (s - sLo) / ((sHi - sLo) || 1) * (bot - top);
+    ctx.strokeStyle = C.net; ctx.lineWidth = 1.5; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(x(p.t), ys(p.spot)) : ctx.moveTo(x(p.t), ys(p.spot))); ctx.stroke(); ctx.lineWidth = 1;
+    ctx.textAlign = "left"; ctx.fillStyle = C.net; ctx.fillText(fmtK(sHi, sHi), r + 4, top + 8); ctx.fillText(fmtK(sLo, sLo), r + 4, bot);
+    ctx.fillStyle = C.muted; ctx.fillText(dstr(t0), l, h - 4); ctx.textAlign = "right"; ctx.fillText(dstr(t1), r, h - 4);
+    ctx.textAlign = "center"; ctx.fillText(`cột: GEX ròng (đỉnh ${fmtUsd(gmx)}) · đường cam: giá`, (l + r) / 2, h - 4);
   }
 
   // ---------- nụ cười IV các hạn gần + IV ATM theo hạn ----------
@@ -252,7 +289,7 @@ export function initGex({ $, esc, alerts, toast }) {
     renderHead(); renderKpis();
     for (const b of $("gexMode").children) b.classList.toggle("on", b.dataset.gm === mode);
     for (const b of $("gexZoom").children) b.classList.toggle("on", +b.dataset.gz === zoom);
-    drawBars(); drawProf(); drawSmile(); drawSurf();
+    drawBars(); drawProf(); drawHist(); drawSmile(); drawSurf();
   }
 
   $("gexAssets").onclick = e => { const b = e.target.closest("[data-ga]"); if (!b) return; asset = b.dataset.ga; exp = null; zoom = ["BTC", "ETH"].includes(asset) ? 0.15 : 0.06; save(); chain = null; L = null; render(); load(); };
@@ -265,7 +302,7 @@ export function initGex({ $, esc, alerts, toast }) {
     const k = kLo + (bot - (e.clientY - r.top)) / (bot - top) * (kHi - kLo), x = st.reduce((a, b) => Math.abs(b.k - k) < Math.abs(a.k - k) ? b : a);
     if (x.k !== hoverK) { hoverK = x.k; drawBars(); }
     const R = refOf(chain);
-    e.target.dataset.tip = `Strike ${fmtK(x.k, chain.spot)}${R ? ` (≈ ${R.low} ${R.fmt(x.k)})` : ""}: GEX call ${fmtUsd(x.call)}, put -${fmtUsd(-x.put)}, ròng ${fmtG(x.net)}. OI call ${Math.round(x.callOi).toLocaleString("en-US")}, OI put ${Math.round(x.putOi).toLocaleString("en-US")}.`;
+    e.target.dataset.tip = `Strike ${fmtK(x.k, chain.spot)}${R ? ` (≈ ${R.low} ${R.fmt(x.k)})` : ""}: GEX call ${fmtUsd(x.call)}, put -${fmtUsd(-x.put)}, ròng ${fmtG(x.net)}. DEX ${fmtG(x.dex || 0)}, vanna ${fmtG(x.vanna || 0)} mỗi 1 điểm IV, charm ${fmtG(x.charm || 0)} mỗi ngày. OI call ${Math.round(x.callOi).toLocaleString("en-US")}, OI put ${Math.round(x.putOi).toLocaleString("en-US")}.${NET_MODES[mode] ? " " + NET_MODES[mode][2] + "." : ""}`;
   };
   $("gexBars").onmouseleave = () => { hoverK = null; drawBars(); };
   let drag = null;

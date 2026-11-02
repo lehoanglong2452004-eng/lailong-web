@@ -57,6 +57,9 @@ input[type=number] { font-family: var(--mono); }
 .pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
 .pill.ok i { background: var(--buy); }
 .pill.bad i { background: var(--sell); }
+.apipill { font-family: var(--mono); }
+.apipill.warn { color: var(--warn); border-color: var(--warn); }
+.apipill.bad { color: var(--sell); border-color: var(--sell); }
 .tool { font-weight: 700; color: var(--accent); background: transparent; border-color: var(--line); }
 .tool.on { background: var(--accent); color: #000; }
 .icon { padding: 2px 8px; background: transparent; border-color: transparent; color: var(--muted); }
@@ -550,6 +553,11 @@ body.dragging-panel, body.dragging-panel * { cursor: grabbing !important; }
 .mc-panel .mcnum { color: var(--accent); }
 .mc-panel .mcsym { width: 100px; padding: 2px 6px; text-transform: uppercase; }
 .mc-panel .mciv { padding: 2px 4px; }
+.mc-panel .mctype { padding: 2px 4px; }
+.mcgrp { flex: 0 0 auto; width: 20px; height: 20px; padding: 0; border-radius: 3px; font: 700 11px var(--mono); color: var(--muted); background: transparent; border: 1px dashed var(--line); }
+.mcgrp.gA { color: #000; background: var(--accent); border: 0; }
+.mcgrp.gB { color: #001a33; background: #4ea1ff; border: 0; }
+.mcbar .field.small { gap: 4px; }
 .mc-panel .mcpx { font-family: var(--mono); white-space: nowrap; }
 .mc-panel .hint { flex: 1; }
 @media (max-width: 900px) {
@@ -713,3 +721,32 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 
 .copyright { position: fixed; right: 6px; bottom: 3px; z-index: 5; font: 500 9px/1 var(--mono); color: var(--ink); opacity: .28; pointer-events: none; user-select: none; }
 @media (max-width: 900px) { .copyright { display: none; } }
+
+/* ---- Phân tích: tab con và ô thiên hướng ---- */
+.atabs { padding: 8px 12px 0; }
+.biascard { display: flex; flex-wrap: wrap; gap: 16px 28px; margin: 8px 12px 0; padding: 14px 16px; }
+.biascard small { color: var(--muted); font-size: 12px; }
+.biasL { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.biasR { flex: 2 1 420px; min-width: 0; }
+.biasV b { font-size: 26px; }
+.biasV span { font: 600 20px var(--mono); margin-left: 8px; }
+.biasbar { position: relative; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--sell), #3a3a3a 50%, var(--buy)); }
+.biasbar i { position: absolute; top: -5px; width: 4px; height: 18px; border-radius: 2px; background: #fff; box-shadow: 0 0 0 2px #000; transform: translateX(-50%); left: 50%; }
+.biasax { display: flex; justify-content: space-between; font: 11px var(--mono); color: var(--muted); }
+.biaslv { display: flex; flex-wrap: wrap; gap: 8px; font: 12px var(--mono); }
+.biaslv span { padding: 3px 8px; border: 1px solid var(--line); }
+.biasR ul { margin: 6px 0 0; padding: 0; list-style: none; }
+.biasR li { padding: 7px 0; border-bottom: 1px solid var(--line); line-height: 1.45; }
+.biasR li b { display: inline-block; min-width: 38px; font-family: var(--mono); }
+
+/* ---- Thị trường: bản đồ nhiệt ---- */
+.hmbox { position: relative; height: 520px; background: #000; border: 1px solid var(--line); overflow: hidden; }
+.hmtile { position: absolute; box-sizing: border-box; border: 1px solid #000; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; text-align: center; color: #fff; text-decoration: none; line-height: 1.15; }
+.hmtile:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 1; }
+.hmtile b { font-weight: 700; }
+.hmtile span { font-family: var(--mono); opacity: .92; }
+.hmgroup { position: absolute; padding: 1px 6px; background: rgba(0,0,0,.72); color: #e5e5e5; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; pointer-events: none; z-index: 2; }
+.hmlegend { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin-top: 6px; font: 11px var(--mono); }
+.hmlegend span { min-width: 56px; padding: 2px 6px; text-align: center; color: #fff; }
+.hmlegend small { margin-left: 10px; font-family: var(--sans); }
+@media (max-width: 700px) { .hmbox { height: 380px; } }

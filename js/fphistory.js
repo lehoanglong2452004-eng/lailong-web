@@ -7,9 +7,9 @@
 // 2. Chính xác (Binance): tải ngược từng lệnh khớp (aggTrades) cho các nến gần nhất và thay
 //    phần ước tính bằng số liệu thật. Có giới hạn số lần gọi để không vượt hạn mức của sàn.
 
-import { INTERVALS, getJson, sleep } from "./util.js?v=202611022110";
-import { smartTape } from "./orderflow.js?v=202611022110";
-import { intrabar } from "./footprint.js?v=202611022110";
+import { INTERVALS, getJson, sleep } from "./util.js?v=202611022122";
+import { smartTape } from "./orderflow.js?v=202611022122";
+import { intrabar } from "./footprint.js?v=202611022122";
 
 const SUB = { "1m": null, "5m": "1m", "15m": "1m", "1h": "5m", "4h": "15m", "1d": "1h" };
 const SUB_CAP = { BINANCE: 12000, BYBIT: 12000, OKX: 3000, HYPERLIQUID: 5000, SIM: 12000 };
@@ -22,6 +22,14 @@ function addRange(fp, step, l, h, sell, buy) {
 function buyOf(b) {
   if (typeof b.bv === "number" && isFinite(b.bv)) return b.bv;
   const r = b.h - b.l; return r > 0 ? b.v * (0.5 + 0.5 * (b.c - b.o) / r) : b.v / 2;
+}
+
+// footprint ước tính của một nến từ chính nó (dùng cho nến mới tới qua luồng nến, chưa có nến nhỏ hơn)
+export function approxBar(b, step) {
+  const fp = new Map(), buy = buyOf(b);
+  addRange(fp, step, b.l, b.h, b.v - buy, buy);
+  b.fp = fp; b.fpApprox = true;
+  return b;
 }
 
 // Lớp 1: footprint ước tính cho mọi nến chưa có footprint
@@ -77,10 +85,15 @@ export async function exactFootprintBinance(symbol, market, isCurrent, { maxRequ
     }
     market.emit("footprint");
   };
+  let fails = 0;
   for (let r = 0; r < maxRequests && isCurrent(); r++) {
     let rows;
-    try { rows = await getJson(minId === null ? `${url}?symbol=${symbol}&limit=1000` : `${url}?symbol=${symbol}&fromId=${Math.max(0, minId - 1000)}&limit=1000`); }
-    catch { await sleep(2000); continue; }
+    try { rows = await getJson(minId === null ? `${url}?symbol=${symbol}&limit=1000` : `${url}?symbol=${symbol}&fromId=${Math.max(0, minId - 1000)}&limit=1000`); fails = 0; }
+    catch (e) {
+      // sàn báo quá hạn mức hoặc tạm chặn: dừng hẳn, giữ phần ước tính, không gọi tiếp cho lệnh cấm dài thêm
+      if (/HTTP (429|418)/.test(e.message) || ++fails >= 3) break;
+      await sleep(2000); continue;
+    }
     if (!isCurrent() || !rows.length) break;
     for (const x of rows) {
       if (minId !== null && x.a >= minId) continue;
@@ -105,7 +118,7 @@ export async function exactFootprintBinance(symbol, market, isCurrent, { maxRequ
     done = bars.length - idx.get(barStart) || 0;
     if (onProgress) onProgress(Math.min(done, maxBars), maxBars, earliest);
     if (earliest <= oldest || minId <= 0) break;
-    await sleep(450); // giữ dưới hạn mức 2400 trọng số/phút của Binance
+    await sleep(900); // mỗi lần 20 trọng số: khoảng 1300/phút, chừa chỗ cho nến, sổ lệnh (getJson còn tự giữ dưới 1800)
   }
   if (isCurrent() && onProgress) onProgress(null);
 }

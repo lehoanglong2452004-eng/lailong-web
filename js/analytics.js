@@ -492,3 +492,36 @@ export function vwapReactions(bars, vwap, { tolAtr = 0.2, horizon = 12, moveAtr 
   };
   return { events, support: group('support'), resistance: group('resistance') };
 }
+
+// ---------- thiên hướng tổng hợp ----------
+// Gộp điểm xu hướng (70%) và động lượng (30%) của nhiều khung thành một điểm −100…+100, khung lớn nặng hơn.
+// rows: [{ tf, trend: { score, label, structure }, momentum: { score, label } }]; levels: các mức HT/KC (tuỳ chọn), last: giá hiện tại
+const BIAS_W = { "5m": 0.1, "15m": 0.15, "1h": 0.25, "4h": 0.25, "1d": 0.25 };
+export function biasLabel(score) {
+  return score >= 50 ? "Tăng mạnh" : score >= 15 ? "Tăng nhẹ" : score <= -50 ? "Giảm mạnh" : score <= -15 ? "Giảm nhẹ" : "Trung tính";
+}
+export function biasSummary(rows, { levels = [], last = null } = {}) {
+  let sum = 0, wsum = 0;
+  const parts = [];
+  for (const r of rows) {
+    const w = BIAS_W[r.tf]; if (!w || !r.trend || r.trend.score == null) continue;
+    const s = 0.7 * r.trend.score + 0.3 * (r.momentum && r.momentum.score != null ? r.momentum.score : 0);
+    sum += w * s; wsum += w; parts.push({ tf: r.tf, w, s, r });
+  }
+  if (!wsum) return null;
+  const score = Math.max(-100, Math.min(100, sum / wsum));
+  const group = (name, tfs) => {
+    const g = parts.filter(p => tfs.includes(p.tf)); if (!g.length) return null;
+    const gw = g.reduce((a, p) => a + p.w, 0), s = g.reduce((a, p) => a + p.w * p.s, 0) / gw;
+    const st = g.map(p => p.r.trend.structure).filter(Boolean);
+    return { w: Math.round(s * gw / wsum), text: `${name} (${g.map(p => p.tf).join(", ")}): ${biasLabel(s).toLowerCase()}${st.length ? `, cấu trúc ${[...new Set(st)].join(" / ")}` : ""}` };
+  };
+  const reasons = [group("Khung ngắn", ["5m", "15m"]), group("Khung giữa", ["1h", "4h"]), group("Khung ngày", ["1d"])].filter(Boolean);
+  let sup = null, res = null;
+  if (last != null) for (const l of levels) {
+    if (l.broken) continue;
+    if (l.price < last && (!sup || l.price > sup.price)) sup = l;
+    if (l.price > last && (!res || l.price < res.price)) res = l;
+  }
+  return { score: Math.round(score), label: biasLabel(score), reasons, support: sup, resistance: res };
+}

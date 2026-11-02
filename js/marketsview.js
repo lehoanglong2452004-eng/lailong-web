@@ -3,8 +3,9 @@
 // crypto top 10, công ty và quỹ ETF nắm giữ BTC/ETH, cá voi dùng đòn bẩy trên Hyperliquid, thanh lý lớn trực tiếp.
 // Bản web đọc data/markets.json và data/whales.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/markets.py).
-import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202611022110";
-import { setFresh } from "./fresh.js?v=202611022110";
+import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202611022122";
+import { setFresh } from "./fresh.js?v=202611022122";
+import { layoutGroups, heatColor, cryptoTiles, HEAT_COLORS } from "./treemap.js?v=202611022122";
 
 const HL = "https://api.hyperliquid.xyz/info";
 const LIQ_WS = "wss://fstream.binance.com/market/ws/!forceOrder@arr";
@@ -28,6 +29,23 @@ const FX_NOTE = {
   SGD: "Singapore không dùng lãi suất điều hành: MAS điều chỉnh tỷ giá SGD trong một biên độ, nên không có mức lãi suất neo.",
   CNY: "CNY được quản lý quanh tỷ giá trung tâm PBOC công bố mỗi sáng; lãi suất là LPR 1 năm.",
 };
+
+// tỷ trọng giao dịch ngoại hối theo đồng tiền (BIS, %): làm cỡ ô cho bản đồ nhiệt forex
+const FX_SHARE = { USD: 88, EUR: 31, JPY: 17, GBP: 13, CNY: 7, AUD: 6.4, CAD: 6.2, CHF: 5.2, HKD: 2.6, SGD: 2.4 };
+const FX_REGION = { USD: "Đô la Mỹ", EUR: "Châu Âu", GBP: "Châu Âu", CHF: "Châu Âu", JPY: "Châu Á", CNY: "Châu Á", HKD: "Châu Á", SGD: "Châu Á", AUD: "Hàng hoá", CAD: "Hàng hoá" };
+// % thay đổi sau `days` phiên từ chuỗi giá đóng cửa ngày (1 phiên thì dùng chg có sẵn)
+export function chgOver(x, days) {
+  if (days <= 1 || !Array.isArray(x.closes) || x.closes.length <= days) return x.chg;
+  const c = x.closes, a = c[c.length - 1 - days], b = c[c.length - 1];
+  return a > 0 ? (b / a - 1) * 100 : x.chg;
+}
+// các ô của bản đồ nhiệt theo lớp tài sản: { sym, group, v (cỡ ô), chg (màu), href? }
+export function heatItems(cls, mk, cryptoTickers, days = 1) {
+  if (cls === "crypto") return (cryptoTickers ? cryptoTiles(cryptoTickers) : []).map(t => ({ ...t, href: `?ex=BINANCE&s=${t.symbol}&v=terminal` }));
+  if (cls === "comm") return ((mk && mk.commodities) || []).map(c => ({ sym: c.name, sub: c.code, group: c.group || "Khác", v: (c.price || 0) * (c.volume || 0) * (c.mult || 1), chg: chgOver(c, days) }));
+  if (cls === "fx") return ((mk && mk.fx) || []).map(f => ({ sym: f.code, sub: f.name, group: FX_REGION[f.code] || "Khác", v: FX_SHARE[f.code] || 1, chg: fxStrength({ ...f, chg: chgOver(f, days) }) }));
+  return [];
+}
 
 // khoảng cách từ giá hiện tại tới giá thanh lý, % (dương = còn xa)
 export function liqDistance(p) {
@@ -78,6 +96,7 @@ const mflow = v => v == null ? "–" : `${v > 0 ? "+" : ""}${v.toFixed(1)}M`;
 export function initMarkets({ $, esc }) {
   let mk = null, wh = null, news = null, cal = null, fxSel = "USD", trCoin = "btc", etfCoin = "btc", openW = null, live = false;
   let showAll = false, sock = null, liqs = [], liqMin = 100e3, timer = null;
+  let hmCls = "crypto", hmDays = 1, tickers = null, tickT = 0, hmTimer = null;
   try { liqMin = +sessionStorage.getItem("lailong.liqmin") || liqMin; } catch { /* bỏ qua */ }
 
   async function load() {
@@ -239,7 +258,34 @@ export function initMarkets({ $, esc }) {
       `<table class="mktab"><tbody>${liqs.map(l => `<tr><td>${fmtTime(l.t)}</td><td class="t"><b>${esc(l.sym)}</b></td><td class="${l.side === "long" ? "dn" : "up"}">${l.side === "long" ? "LONG bị thanh lý" : "SHORT bị thanh lý"}</td><td>${px(l.px)}</td><td><b>${fmtUsd(l.usd)}</b></td></tr>`).join("")}</tbody></table>`;
   }
 
+  // ---------- bản đồ nhiệt ----------
+  async function loadTickers() {
+    if (tickers && Date.now() - tickT < 55e3) return;
+    try { tickers = await getJson("https://fapi.binance.com/fapi/v1/ticker/24hr"); tickT = Date.now(); } catch { /* giữ bản cũ */ }
+  }
+  async function renderHeat() {
+    const box = $("hmBox"); if (!box) return;
+    for (const b of $("hmCls").children) b.classList.toggle("on", b.dataset.hc === hmCls);
+    for (const b of $("hmDays").children) b.classList.toggle("on", +b.dataset.hd === hmDays);
+    $("hmDays").hidden = hmCls === "crypto";
+    if (hmCls === "crypto") await loadTickers();
+    const items = heatItems(hmCls, mk, tickers, hmDays), W = box.clientWidth || 1000, H = box.clientHeight || 520;
+    if (!items.length) { box.innerHTML = `<div class="empty">${hmCls === "crypto" ? "Chưa tải được bảng giá Binance." : "Chưa tải được dữ liệu."}</div>`; return; }
+    const scale = hmCls === "crypto" ? 6 : hmCls === "fx" ? 0.8 * Math.sqrt(hmDays) : 3 * Math.sqrt(hmDays);
+    const { groups, tiles } = layoutGroups(items, W, H), pct = (a, b) => (a / b * 100).toFixed(3) + "%";
+    box.innerHTML = tiles.map(t => {
+      const m = Math.min(t.w, t.h), fs = m > 140 ? 26 : m > 90 ? 19 : m > 56 ? 14 : m > 34 ? 11 : 0;
+      const ch = t.chg == null ? "–" : (t.chg >= 0 ? "+" : "") + t.chg.toFixed(2) + "%";
+      const tip = `${t.sym}${t.sub ? " · " + t.sub : ""}: ${ch}${hmCls === "crypto" ? `, giá trị giao dịch 24 giờ ${fmtUsd(t.v)}. Bấm để mở trong Terminal` : ""}`;
+      const tag = t.href ? "a" : "div", href = t.href ? ` href="${esc(t.href)}"` : "";
+      return `<${tag}${href} class="hmtile" style="left:${pct(t.x, W)};top:${pct(t.y, H)};width:${pct(t.w, W)};height:${pct(t.h, H)};background:${heatColor(t.chg, scale)}" data-tip="${esc(tip)}">${fs ? `<b style="font-size:${fs}px">${esc(t.sym)}</b>${fs >= 11 && t.h > 30 ? `<span style="font-size:${Math.max(10, Math.round(fs * 0.62))}px">${ch}</span>` : ""}` : ""}</${tag}>`;
+    }).join("") + groups.map(g => `<span class="hmgroup" style="left:${pct(g.x, W)};top:${pct(g.y, H)}">${esc(g.name)}</span>`).join("");
+    const th = [-0.6, -0.3, -0.06, 0, 0.06, 0.3, 0.6];
+    $("hmLegend").innerHTML = HEAT_COLORS.map((c, i) => `<span style="background:${c}">${i === 3 ? "0" : (th[i] > 0 ? "+" : "−") + Math.abs(th[i] * scale).toFixed(hmCls === "fx" ? 2 : 1) + "%"}</span>`).join("") +
+      `<small class="muted">${hmCls === "crypto" ? "Cỡ ô: giá trị giao dịch 24 giờ (Binance Futures, trực tiếp). Màu: % thay đổi 24 giờ" : hmCls === "comm" ? "Cỡ ô: giá trị giao dịch. Màu: % thay đổi" : "Cỡ ô: tỷ trọng giao dịch ngoại hối toàn cầu. Màu: đồng tiền mạnh lên (xanh) hay yếu đi (đỏ) so với USD; USD là DXY"}</small>`;
+  }
   function render() {
+    renderHeat();
     renderCommodities(); renderFx(); renderCrypto(); renderTreasury(); renderEtf(); renderWhales(); renderLiq();
     const t = mk && mk.updated, snap = "Bản trên web được máy chủ GitHub cập nhật mỗi 30 phút; bản trên laptop lấy mới tối đa mỗi 15 phút";
     setFresh($("mkUpd"), "delay", t, { label: "Trễ 10–15 phút", note: `Yahoo Finance: giá hợp đồng tương lai CME, NYMEX, COMEX, ICE chậm 10 đến 15 phút. ${snap}` });
@@ -249,6 +295,9 @@ export function initMarkets({ $, esc }) {
   }
 
   $("cmdAll").onclick = () => { showAll = !showAll; renderCommodities(); };
+  $("hmCls").onclick = e => { const b = e.target.closest("[data-hc]"); if (b) { hmCls = b.dataset.hc; renderHeat(); } };
+  $("hmDays").onclick = e => { const b = e.target.closest("[data-hd]"); if (b) { hmDays = +b.dataset.hd; renderHeat(); } };
+  { let rt = null; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if ($("hmBox").clientWidth) renderHeat(); }, 150); }).observe($("hmBox")); }
   $("fxBody").onclick = e => { const r = e.target.closest("[data-fx]"); if (r) { fxSel = r.dataset.fx; renderFx(); } };
   $("trTabs").onclick = e => { const b = e.target.closest("[data-tr]"); if (b) { trCoin = b.dataset.tr; renderTreasury(); } };
   $("etfTabs").onclick = e => { const b = e.target.closest("[data-etf]"); if (b) { etfCoin = b.dataset.etf; renderEtf(); } };
@@ -263,7 +312,8 @@ export function initMarkets({ $, esc }) {
       if (!loaded) { loaded = true; load(); }
       startLiq();
       if (!timer) timer = setInterval(load, 5 * 60e3);
+      if (!hmTimer) hmTimer = setInterval(() => { if (hmCls === "crypto") renderHeat(); }, 60e3);
     },
-    hide() { if (sock) { const s = sock; sock = null; s.onclose = null; s.close(); } clearInterval(timer); timer = null; },
+    hide() { clearInterval(hmTimer); hmTimer = null; if (sock) { const s = sock; sock = null; s.onclose = null; s.close(); } clearInterval(timer); timer = null; },
   };
 }

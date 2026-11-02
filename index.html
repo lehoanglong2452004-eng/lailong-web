@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611022110">
-<link rel="stylesheet" href="css/app.css?v=202611022110">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611022122">
+<link rel="stylesheet" href="css/app.css?v=202611022122">
 </head>
 <body>
 <header class="menubar">
@@ -75,6 +75,7 @@
   <div class="spacer"></div>
   <div class="pill evpill" id="evPill" hidden></div>
   <div class="pill" id="connPill" data-tip="Trạng thái kết nối dữ liệu trực tiếp với sàn"><i></i><span>Đang kết nối</span></div>
+  <div class="pill apipill" id="apiPill" hidden></div>
   <button id="installBtn" class="tool" hidden data-tip="Cài Lai Long Desk như một ứng dụng trên máy này (mở từ màn hình chính, không cần thanh địa chỉ)">⬇ Cài app</button>
   <button id="glossBtn" class="tool" data-tip="Mở danh sách giải thích thuật ngữ">?<span class="lbl"> Giải thích</span></button>
   <button id="themeBtn" class="tool" data-tip="Đổi màu giao diện"><span class="mob">Màu</span><span class="lbl">Màu sắc</span></button>
@@ -368,76 +369,83 @@
 <main class="view mcview" id="view-multi" hidden></main>
 
 <main class="view analysis" id="view-analysis" hidden>
+  <div class="newstabs atabs" id="aTabs" role="tablist" aria-label="Mục phân tích"><button data-at="overview" class="on">Tổng quan</button><button data-at="levels">Mức giá</button><button data-at="derivs">Phái sinh</button><button data-at="macro">Vĩ mô và dòng tiền</button><button data-at="news">Tin tức và lịch</button></div>
+  <section class="card biascard" id="biasCard" data-g="mtf">
+    <div class="biasL"><small>Thiên hướng <span id="biasSym"></span> (gộp 5 khung)</small><div class="biasV"><b id="biasLabel">Đang tính…</b> <span id="biasScore"></span></div>
+      <div class="biasbar"><i id="biasMark"></i></div><div class="biasax"><span>−100 giảm mạnh</span><span>0</span><span>+100 tăng mạnh</span></div>
+      <div class="biaslv" id="biasLv"></div></div>
+    <div class="biasR"><small>Vì sao</small><ul id="biasWhy"></ul></div>
+  </section>
   <div class="cards">
-    <section class="card wide">
+    <section class="card wide" data-at="overview levels">
       <h3>Bản đồ mức giá hợp lưu <button class="q" data-g="confluence">?</button> <small id="conflInfo"></small></h3>
       <div id="conflBody" class="tablewrap"></div>
     </section>
-    <section class="card wide">
+    <section class="card wide" data-at="derivs">
       <h3>Chỉ số tổ chức theo dõi: crypto <button class="q" data-g="inst-crypto">?</button> <span id="instCryptoFresh"></span></h3>
       <div id="instCrypto" class="tablewrap"></div>
     </section>
-    <section class="card wide">
+    <section class="card wide" data-at="macro">
       <h3>Biến động Mỹ: VIX, cấu trúc kỳ hạn, VVIX, SKEW, MOVE <button class="q" data-g="inst-vol">?</button> <span id="instVolFresh"></span></h3>
       <div class="gexcv"><canvas id="instVix"></canvas></div>
       <div id="instVol"></div>
     </section>
-    <section class="card wide">
+    <section class="card wide" data-at="macro">
       <h3>Dòng tiền ETF Bitcoin/Ethereum và stablecoin <button class="q" data-g="flows">?</button> <span id="flowsFresh"></span></h3>
       <div class="kpis" id="flowsKpis"></div>
       <div class="gexcv flowscv"><canvas id="flowsChart"></canvas></div>
       <div id="flowsBody"></div>
     </section>
-    <section class="card wide">
+    <section class="card wide" data-at="derivs macro">
       <h3>COT của CFTC: tổ chức đang long hay short <button class="q" data-g="cot">?</button> <span id="instCotFresh"></span></h3>
       <div id="instCotTabs" class="newstabs"></div>
       <div id="instCot"></div>
     </section>
-    <section class="card wide">
+    <section class="card wide" data-at="overview news">
       <h3>Bản đồ tác động tin tức <button class="q" data-g="impact-map">?</button> <small id="impactUpd"></small></h3>
       <div id="impactMap" class="impactmap"></div>
       <div id="impactDetail" class="impactdetail"></div>
     </section>
-    <section class="card">
+    <section class="card" data-at="news">
       <h3>Lịch kinh tế tuần này <button class="q" data-g="econ-calendar">?</button></h3>
       <div id="calBody" class="tablewrap newsbox"></div>
     </section>
-    <section class="card">
+    <section class="card" data-at="news">
       <h3>Tin tức <button class="q" data-g="crypto-news">?</button> <button class="tool" id="newsOnly" hidden>Mọi coin</button> <small id="newsUpd"></small></h3>
       <div id="newsTabs" class="newstabs"></div>
       <div id="newsBody" class="newsbox"></div>
     </section>
-    <section class="card wide">
+    <section class="card wide" data-at="news">
       <h3>Giá phản ứng sau tin <button class="q" data-g="news-reaction">?</button> <small>DXY, vàng, dầu, lợi suất 10 năm, S&amp;P 500, BTC chạy bao nhiêu sau 15, 30, 60 phút (nguồn Yahoo Finance, chậm khoảng 15 phút)</small></h3>
       <div id="reactBody"></div>
     </section>
-    <section class="card wide">
+    <section class="card wide" data-at="overview levels">
       <h3>Xu hướng, động lượng và độ biến động theo khung thời gian <button class="q" data-g="mtf">?</button> <span id="fsMtf"></span></h3>
       <div id="mtfTable" class="tablewrap"></div>
     </section>
-    <section class="card wide">
+    <section class="card wide" data-at="levels">
       <h3>Chỉ báo hấp thụ theo khung thời gian <button class="q" data-g="absorption">?</button> <small id="absInfo"></small></h3>
       <div id="absTable" class="tablewrap"></div>
       <p class="note">Mỗi khung dùng 500 nến gần nhất. Khung đang xem trên Terminal dùng footprint; các khung khác tính từ khối lượng mua/bán chủ động của cả nến nên kém chi tiết hơn. "Đúng" = sau tín hiệu, giá đảo chiều được 1 ATR trong 10 nến mà không phá đáy/đỉnh nến hấp thụ.</p>
     </section>
-    <section class="card">
+    <section class="card" data-at="levels">
       <h3>Hỗ trợ / kháng cự đã được test <button class="q" data-g="sr-level">?</button> <small id="srInfo"></small></h3>
       <div id="srTable" class="tablewrap"></div>
     </section>
-    <section class="card">
+    <section class="card" data-at="levels">
       <h3>Vùng khối lượng bất thường <button class="q" data-g="abnormal-volume">?</button></h3>
       <div id="zoneTable" class="tablewrap"></div>
     </section>
-    <section class="card">
+    <section class="card" data-at="levels">
       <h3>Hồ sơ khối lượng <button class="q" data-g="volume-profile">?</button></h3>
       <div id="vpStats"></div>
     </section>
-    <section class="card wide">
+    <section class="card wide" data-at="overview derivs">
       <h3>Dữ liệu phái sinh: long/short, funding, quyền chọn <button class="q" data-g="derivs">?</button> <span id="drvInfo"></span></h3>
       <div class="drvgrid"><div id="drvStats"></div><div id="optStats"></div></div>
       <div class="mini"><canvas id="drvCanvas"></canvas></div>
     </section>
-    <section class="card">
+    <section class="card" data-at="derivs">
       <h3>Biến động quyền chọn (Deribit DVOL) <button class="q" data-g="dvol">?</button></h3>
       <div id="dvolStats"></div>
       <div class="mini"><canvas id="dvolCanvas"></canvas></div>
@@ -479,6 +487,13 @@
 
 <main class="view analysis" id="view-markets" hidden>
   <div class="cards">
+    <section class="card wide hmcard">
+      <h3>Bản đồ nhiệt <button class="q" data-g="crypto-top">?</button>
+        <span class="newstabs inl" id="hmCls"><button data-hc="crypto" class="on">Crypto</button><button data-hc="comm">Hàng hoá</button><button data-hc="fx">Forex</button></span>
+        <span class="newstabs inl" id="hmDays" hidden><button data-hd="1" class="on">1 phiên</button><button data-hd="5">5 phiên</button><button data-hd="20">20 phiên</button></span></h3>
+      <div class="hmbox" id="hmBox"></div>
+      <div class="hmlegend" id="hmLegend"></div>
+    </section>
     <section class="card wide">
       <h3>Hàng hoá phái sinh: top theo giá trị giao dịch <button class="q" data-g="term-structure">?</button> <span id="mkUpd"></span> <button class="tool" id="cmdAll">Xem tất cả</button></h3>
       <div id="cmdBody" class="tablewrap tall"></div>
@@ -520,17 +535,38 @@
     <small class="muted" id="gexSrc"></small>
     <button class="tool" id="gexTg" data-tip="Gửi danh sách quyền chọn 11 tài sản qua Telegram, mỗi mã một dòng. Bấm mã ở hàng nút dưới tin để nhận bản tin đầy đủ kèm giải thích (Desk phải đang mở)">Gửi Telegram</button>
   </div>
+  <div class="kpis gexkpis" id="gexKpis"></div>
   <div class="cards">
-    <section class="card wide">
-      <h3>Nguồn dữ liệu của tài sản này <button class="q" data-g="opt-sources">?</button></h3>
-      <div id="optSources" class="tablewrap"></div>
+    <section class="card optnow">
+      <h3>Cách đọc lúc này <button class="q" data-g="gamma-flip">?</button></h3>
+      <ul class="gexread" id="gexRead"></ul>
     </section>
-    <section class="card wide">
-      <h3>Bảng chuỗi quyền chọn (depth view) <button class="q" data-g="opt-chain">?</button> <span id="chainFresh"></span>
-        <select id="chainN" data-tip="Số strike mỗi bên quanh giá"><option value="8">±8 strike</option><option value="12">±12 strike</option><option value="20">±20 strike</option><option value="40">±40 strike</option></select></h3>
-      <div id="chainExps" class="newstabs"></div>
-      <div id="chainBody"></div>
+    <section class="card gexmain">
+      <h3>Theo strike <button class="q" data-g="gex">?</button>
+        <span class="newstabs inl" id="gexMode"><button data-gm="gex" class="on" data-tip="Gamma: USD nhà tạo lập phải mua/bán khi giá đi 1%">GEX</button><button data-gm="dex" data-tip="Delta nhà tạo lập đang giữ theo từng strike">DEX</button><button data-gm="vanna" data-tip="Delta của nhà tạo lập đổi khi IV tăng 1 điểm">Vanna</button><button data-gm="charm" data-tip="Delta của nhà tạo lập đổi sau mỗi ngày trôi qua">Charm</button><button data-gm="oi">OI</button></span>
+        <span class="newstabs inl" id="gexZoom"><button data-gz="0.03">±3%</button><button data-gz="0.06">±6%</button><button data-gz="0.1">±10%</button><button data-gz="0.15">±15%</button><button data-gz="0.25">±25%</button></span></h3>
+      <div class="gexcv tallcv"><canvas id="gexBars"></canvas></div>
     </section>
+    <section class="card">
+      <h3>GEX tổng theo giá <button class="q" data-g="gamma-flip">?</button></h3>
+      <div class="gexcv"><canvas id="gexProf"></canvas></div>
+    </section>
+    <section class="card">
+      <h3>GEX ròng theo thời gian <button class="q" data-g="gex">?</button></h3>
+      <div class="gexcv"><canvas id="gexHist"></canvas></div>
+      <p class="note">Mỗi giờ mở tab này, trang lưu một điểm GEX ròng (mọi hạn) trên máy này, giữ 90 ngày. Không cần máy chủ.</p>
+    </section>
+    <section class="card">
+      <h3>Nụ cười IV các hạn gần <button class="q" data-g="iv-smile">?</button></h3>
+      <div class="gexcv"><canvas id="gexSmile"></canvas></div>
+    </section>
+    <section class="card gexsurf">
+      <h3>Bề mặt IV 3D <button class="q" data-g="iv-surface">?</button></h3>
+      <div class="gexcv surfcv"><canvas id="gexSurf"></canvas></div>
+    </section>
+  </div>
+  <h3 class="sechead">Tâm lý, chuỗi quyền chọn và dòng lệnh lớn</h3>
+  <div class="cards">
     <section class="card wide">
       <h3>Đọc tâm lý quyền chọn <button class="q" data-g="opt-read">?</button> <span id="optFresh"></span></h3>
       <div class="kpis" id="optKpis"></div>
@@ -550,29 +586,15 @@
       <h3 id="optFlowH">Dòng lệnh quyền chọn lớn <button class="q" data-g="opt-flow">?</button> <span id="optFlowFresh"></span></h3>
       <div id="optFlow"></div>
     </section>
-  </div>
-  <h3 class="sechead">GEX, tường call/put, nụ cười và bề mặt IV</h3>
-  <div class="kpis gexkpis" id="gexKpis"></div>
-  <div class="cards">
-    <section class="card gexmain">
-      <h3>GEX theo strike <button class="q" data-g="gex">?</button>
-        <span class="newstabs inl" id="gexMode"><button data-gm="gex" class="on">GEX</button><button data-gm="oi">OI</button></span>
-        <span class="newstabs inl" id="gexZoom"><button data-gz="0.03">±3%</button><button data-gz="0.06">±6%</button><button data-gz="0.1">±10%</button><button data-gz="0.15">±15%</button><button data-gz="0.25">±25%</button></span></h3>
-      <div class="gexcv tallcv"><canvas id="gexBars"></canvas></div>
+    <section class="card wide">
+      <h3>Bảng chuỗi quyền chọn (depth view) <button class="q" data-g="opt-chain">?</button> <span id="chainFresh"></span>
+        <select id="chainN" data-tip="Số strike mỗi bên quanh giá"><option value="8">±8 strike</option><option value="12">±12 strike</option><option value="20">±20 strike</option><option value="40">±40 strike</option></select></h3>
+      <div id="chainExps" class="newstabs"></div>
+      <div id="chainBody"></div>
     </section>
-    <section class="card">
-      <h3>Cách đọc lúc này <button class="q" data-g="gamma-flip">?</button></h3>
-      <ul class="gexread" id="gexRead"></ul>
-      <h3>GEX tổng theo giá <button class="q" data-g="gamma-flip">?</button></h3>
-      <div class="gexcv"><canvas id="gexProf"></canvas></div>
-    </section>
-    <section class="card">
-      <h3>Nụ cười IV các hạn gần <button class="q" data-g="iv-smile">?</button></h3>
-      <div class="gexcv"><canvas id="gexSmile"></canvas></div>
-    </section>
-    <section class="card gexsurf">
-      <h3>Bề mặt IV 3D <button class="q" data-g="iv-surface">?</button></h3>
-      <div class="gexcv surfcv"><canvas id="gexSurf"></canvas></div>
+    <section class="card wide">
+      <h3>Nguồn dữ liệu của tài sản này <button class="q" data-g="opt-sources">?</button></h3>
+      <div id="optSources" class="tablewrap"></div>
     </section>
   </div>
 </main>
@@ -797,6 +819,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611022110"></script>
+<script type="module" src="js/app.js?v=202611022122"></script>
 </body>
 </html>

@@ -66,9 +66,46 @@ export const MONO = "'IBM Plex Mono', Consolas, 'Cascadia Mono', Menlo, monospac
 
 export function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// Ngân sách REST của Binance Futures (2400 trọng số/phút cho mỗi IP). Trang chạy thẳng trong trình duyệt nên
+// tự đếm trọng số các lần gọi trong 60 giây gần nhất và chờ khi sắp chạm 75% hạn mức. Bị 429 thì nghỉ theo
+// Retry-After (mặc định 60 giây), bị 418 (sàn tạm cấm IP) thì nghỉ 5 phút: trong lúc nghỉ không gửi thêm,
+// tránh việc cố gọi tiếp làm lệnh cấm kéo dài.
+const BN_HOST = "fapi.binance.com", BN_LIMIT = 2400, BN_SOFT = 1800;
+const bn = { log: [], until: 0, status: 0 };
+export function binanceWeight(url) {
+  const u = new URL(url), lim = +(u.searchParams.get("limit") || 0), p = u.pathname;
+  if (p.endsWith("/aggTrades")) return 20;
+  if (p.endsWith("/klines") || p.endsWith("/continuousKlines")) return lim >= 1000 ? 10 : lim >= 500 ? 5 : lim >= 100 ? 2 : 1;
+  if (p.endsWith("/depth")) return lim >= 1000 ? 20 : lim >= 500 ? 10 : lim >= 100 ? 5 : 2;
+  if (p.endsWith("/ticker/24hr") && !u.searchParams.get("symbol")) return 40;
+  return 1;
+}
+export function binanceBudget(now = Date.now()) {
+  bn.log = bn.log.filter(x => now - x.t < 60e3);
+  return { used: bn.log.reduce((a, x) => a + x.w, 0), limit: BN_LIMIT, blockedFor: Math.max(0, bn.until - now), status: bn.status };
+}
+export function binanceBlock(status, retryAfterSec, now = Date.now()) {
+  bn.until = now + (retryAfterSec > 0 ? retryAfterSec * 1000 : status === 418 ? 300e3 : 60e3); bn.status = status;
+}
+async function binanceGate(url) {
+  const w = binanceWeight(url);
+  for (;;) {
+    const now = Date.now();
+    if (bn.until > now) throw new Error(`HTTP ${bn.status} (Binance đang tạm chặn, thử lại sau ${Math.ceil((bn.until - now) / 1000)} giây) ${url.split("?")[0]}`);
+    const b = binanceBudget(now);
+    if (!bn.log.length || b.used + w <= BN_SOFT) { bn.log.push({ t: now, w }); return; }
+    await sleep(Math.max(250, 60e3 - (now - bn.log[0].t) + 50));
+  }
+}
+
 export async function getJson(url, opts) {
+  const isBn = typeof url === "string" && url.includes(BN_HOST);
+  if (isBn) await binanceGate(url);
   const resp = await fetch(url, opts);
-  if (!resp.ok) throw new Error(`HTTP ${resp.status} ${url.split("?")[0]}`);
+  if (!resp.ok) {
+    if (isBn && (resp.status === 429 || resp.status === 418)) binanceBlock(resp.status, +resp.headers.get("Retry-After"));
+    throw new Error(`HTTP ${resp.status} ${url.split("?")[0]}`);
+  }
   return resp.json();
 }
 

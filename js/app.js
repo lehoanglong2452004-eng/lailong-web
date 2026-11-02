@@ -1,52 +1,52 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611022110";
-import { MarketState, Book } from "./market.js?v=202611022110";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611022110";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611022110";
-import { FlowChart } from "./flowchart.js?v=202611022110";
-import { Dom } from "./dom.js?v=202611022110";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202611022110";
-import { initBacktest } from "./backtestview.js?v=202611022110";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611022110";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202611022110";
-import { Tape } from "./tape.js?v=202611022110";
-import { LiqMap } from "./liqmap.js?v=202611022110";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611022110";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611022110";
-import { Alerts } from "./alerts.js?v=202611022110";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202611022110";
-import { initNews } from "./newsview.js?v=202611022110";
-import { initMarkets } from "./marketsview.js?v=202611022110";
-import { initGex } from "./gexview.js?v=202611022110";
-import { initTgBot } from "./tgbot.js?v=202611022110";
-import { initInst } from "./instview.js?v=202611022110";
-import { setFresh, tickFresh } from "./fresh.js?v=202611022110";
-import { initRadar } from "./radarview.js?v=202611022110";
-import { Drawings } from "./drawings.js?v=202611022110";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611022110";
-import { PaperBroker } from "./paper.js?v=202611022110";
-import { OrderLines } from "./orderlines.js?v=202611022110";
-import { MultiChart } from "./multichart.js?v=202611022110";
-import { DOM_COLS } from "./dom.js?v=202611022110";
-import { initFractal } from "./fractalview.js?v=202611022110";
-import { initJournal } from "./journalview.js?v=202611022110";
-import { installHealth, clockSkew } from "./health.js?v=202611022110";
-import { initHealth } from "./healthview.js?v=202611022110";
-import { initFlows } from "./flowsview.js?v=202611022110";
-import { initPerf } from "./perfview.js?v=202611022110";
-import { initShock } from "./shockview.js?v=202611022110";
-import { initCompass } from "./compassview.js?v=202611022110";
-import { initConsensus } from "./consensusview.js?v=202611022110";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202611022110";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611022110";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611022110";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611022110";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611022110";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202611022110";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611022110";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202611022110";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611022122";
+import { MarketState, Book } from "./market.js?v=202611022122";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611022122";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611022122";
+import { FlowChart } from "./flowchart.js?v=202611022122";
+import { Dom } from "./dom.js?v=202611022122";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, biasSummary } from "./analytics.js?v=202611022122";
+import { initBacktest } from "./backtestview.js?v=202611022122";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611022122";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202611022122";
+import { Tape } from "./tape.js?v=202611022122";
+import { LiqMap } from "./liqmap.js?v=202611022122";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611022122";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611022122";
+import { Alerts } from "./alerts.js?v=202611022122";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202611022122";
+import { initNews } from "./newsview.js?v=202611022122";
+import { initMarkets } from "./marketsview.js?v=202611022122";
+import { initGex } from "./gexview.js?v=202611022122";
+import { initTgBot } from "./tgbot.js?v=202611022122";
+import { initInst } from "./instview.js?v=202611022122";
+import { setFresh, tickFresh } from "./fresh.js?v=202611022122";
+import { initRadar } from "./radarview.js?v=202611022122";
+import { Drawings } from "./drawings.js?v=202611022122";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611022122";
+import { PaperBroker } from "./paper.js?v=202611022122";
+import { OrderLines } from "./orderlines.js?v=202611022122";
+import { MultiChart } from "./multichart.js?v=202611022122";
+import { DOM_COLS } from "./dom.js?v=202611022122";
+import { initFractal } from "./fractalview.js?v=202611022122";
+import { initJournal } from "./journalview.js?v=202611022122";
+import { installHealth, clockSkew } from "./health.js?v=202611022122";
+import { initHealth } from "./healthview.js?v=202611022122";
+import { initFlows } from "./flowsview.js?v=202611022122";
+import { initPerf } from "./perfview.js?v=202611022122";
+import { initShock } from "./shockview.js?v=202611022122";
+import { initCompass } from "./compassview.js?v=202611022122";
+import { initConsensus } from "./consensusview.js?v=202611022122";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202611022122";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611022122";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611022122";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611022122";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611022122";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202611022122";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611022122";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611022122";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
@@ -489,16 +489,41 @@ async function renderAnalysisNow() {
   const near = (arr, n) => arr.slice().sort((a, b) => Math.abs(a - last) - Math.abs(b - last)).slice(0, n).sort((a, b) => b - a).map(x => x.toFixed(dec)).join(", ") || "-";
   $("vpStats").innerHTML = `<div class="kv"><span>Phạm vi</span><b>500 nến ${S.interval} gần nhất</b><span data-g="poc">POC (giá nhiều KL nhất)</span><b>${vp.poc == null ? "-" : vp.poc.toFixed(dec)}</b><span data-g="value-area">Vùng giá trị 70%</span><b>${vp.val == null ? "-" : vp.val.toFixed(dec) + " – " + vp.vah.toFixed(dec)}</b><span data-g="hvn">Nút khối lượng cao (HVN)</span><b>${near(vp.hvn, 6)}</b><span data-g="lvn">Nút khối lượng thấp (LVN)</span><b>${near(vp.lvn, 6)}</b></div><p class="note">HVN thường là vùng giá dễ bị hút về và đi ngang; LVN là vùng giá dễ chạy nhanh qua.</p>`;
   renderDvol(); renderDerivs(); newsView.render();
-  const tfs = ["5m", "15m", "1h", "4h", "1d"], rows = [];
+  const tfs = ["5m", "15m", "1h", "4h", "1d"], rows = [], sums = [];
   const got = await Promise.allSettled(tfs.map(tfBars));
   for (const [j, tf] of tfs.entries()) {
     const g = got[j];
     if (g.status === "rejected") { rows.push(`<tr><td>${tf}</td><td colspan="7" class="t muted">Lỗi: ${esc(g.reason.message)}</td></tr>`); continue; }
     const { trend: t, momentum: m, volatility: v } = summary(g.value, INTERVALS[tf]);
+    sums.push({ tf, trend: t, momentum: m });
     const sc = x => x == null ? "-" : `<span class="bar"><i style="${x >= 0 ? "left:50%" : `left:${50 + x / 2}%`};width:${Math.abs(x) / 2}%;background:${x >= 0 ? "var(--buy)" : "var(--sell)"}"></i></span>${x.toFixed(0)}`;
     rows.push(`<tr><td>${tf}</td><td>${trendTag(t.label, t.score)}</td><td>${sc(t.score)}</td><td class="t">${esc(t.structure || "-")}</td><td>${trendTag(m.label, m.score)} ${sc(m.score)}</td><td>${fmtPct(m.roc10)}</td><td class="t">${esc(v.regime || "-")} (${v.percentile == null ? "-" : v.percentile.toFixed(0)}%)</td><td>${v.realized == null ? "-" : v.realized.toFixed(0) + "%"} · ATR ${v.atrPct == null ? "-" : v.atrPct.toFixed(2) + "%"}</td></tr>`);
   }
   $("mtfTable").innerHTML = table([["Khung", "mtf"], "Xu hướng", ["Điểm xu hướng", "trend-score"], ["Cấu trúc", "structure"], ["Động lượng", "momentum"], ["Thay đổi 10 nến", "roc"], ["Chế độ biến động", "vol-regime"], ["Biến động năm hoá", "realized-vol"]], rows, "");
+  renderBias(biasSummary(sums, { levels: analysis.levels, last }), dec);
+}
+// ô thiên hướng đầu tab Phân tích: điểm −100…+100 gộp từ 5 khung, lý do và HT/KC gần nhất
+function renderBias(b, dec) {
+  $("biasSym").textContent = S.symbol;
+  if (!b) { $("biasLabel").textContent = "Chưa đủ dữ liệu"; $("biasScore").textContent = ""; $("biasWhy").innerHTML = ""; $("biasLv").innerHTML = ""; return; }
+  const cls = b.score >= 15 ? "pos" : b.score <= -15 ? "neg" : "";
+  $("biasLabel").textContent = b.label; $("biasLabel").className = cls;
+  $("biasScore").textContent = (b.score > 0 ? "+" : "") + b.score; $("biasScore").className = cls;
+  $("biasMark").style.left = (50 + b.score / 2) + "%";
+  $("biasWhy").innerHTML = b.reasons.map(r => `<li><b class="${r.w > 0 ? "pos" : r.w < 0 ? "neg" : ""}">${r.w > 0 ? "+" : ""}${r.w}</b> ${esc(r.text)}</li>`).join("");
+  const lv = (l, name, c) => l ? `<span class="${c}">${name} ${l.price.toFixed(dec)} · độ mạnh ${l.strength.toFixed(0)}</span>` : "";
+  $("biasLv").innerHTML = lv(b.support, "HT gần", "pos") + lv(b.resistance, "KC gần", "neg");
+}
+{ // tab con của Phân tích: mỗi khối gắn data-at với các tab nó thuộc về; nhớ tab đang chọn trong phiên
+  let at = "overview"; try { at = sessionStorage.getItem("lailong.atab") || at; } catch { /* bỏ qua */ }
+  const apply = () => {
+    for (const b of $("aTabs").children) b.classList.toggle("on", b.dataset.at === at);
+    for (const sec of document.querySelectorAll("#view-analysis section[data-at]")) sec.hidden = !sec.dataset.at.split(" ").includes(at);
+    $("biasCard").hidden = at !== "overview";
+    try { sessionStorage.setItem("lailong.atab", at); } catch { /* bỏ qua */ }
+  };
+  $("aTabs").onclick = e => { const b = e.target.closest("[data-at]"); if (b) { at = b.dataset.at; apply(); } };
+  apply();
 }
 
 const absCache = new Map();
@@ -869,6 +894,14 @@ $("intervals").innerHTML = Object.keys(INTERVALS).map(i => `<button data-i="${i}
 $("intervals").onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; S.interval = b.dataset.i; for (const x of $("intervals").children) x.classList.toggle("on", x === b); load(); };
 // đồng hồ đếm ngược tới lúc đóng nến của khung đang xem
 setInterval(() => { const el = $("cdTerm"), cd = candleCountdown(INTERVALS[S.interval], Date.now() + clockSkew()); el.textContent = `⏱ ${cd.text}`; el.classList.toggle("warn", cd.soon); }, 1000);
+// ngân sách gọi REST Binance trong 60 giây qua; đỏ khi sàn đang tạm chặn (lúc đó trang tự ngừng gọi)
+setInterval(() => {
+  const b = binanceBudget(), el = $("apiPill"); el.hidden = !b.used && !b.blockedFor;
+  const pct = Math.round(b.used / b.limit * 100);
+  el.className = "pill apipill" + (b.blockedFor ? " bad" : pct >= 60 ? " warn" : "");
+  el.textContent = b.blockedFor ? `API Binance tạm chặn ${Math.ceil(b.blockedFor / 1000)}s` : `API ${pct}%`;
+  el.dataset.tip = b.blockedFor ? `Binance trả lỗi ${b.status} vì gọi quá nhiều. Trang tự ngừng gọi REST tới khi hết hạn; dữ liệu trực tiếp qua WebSocket vẫn chạy` : `Đã dùng ${b.used}/${b.limit} trọng số gọi REST Binance trong 60 giây qua. Trang tự chờ khi chạm 75% để không bị chặn`;
+}, 1000);
 $("views").onclick = e => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); };
 $("chartMode").onclick = e => { const b = e.target.closest("[data-mode]"); if (b) setMode(b.dataset.mode); };
 $("layerBtn").onclick = e => { e.stopPropagation(); $("layerBtn").parentElement.classList.toggle("open"); };

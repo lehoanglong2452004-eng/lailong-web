@@ -2,20 +2,48 @@
 // Lai Long Web: tab Đa biểu đồ. Tối đa 6 biểu đồ nến, mỗi ô chọn mã và khung thời gian riêng.
 //   Bố cục dùng chung lưới ghép với Terminal: kéo tiêu đề để đổi chỗ, kéo đường chia để đổi cỡ, nút — để thu nhỏ.
 //   Nút 1 / 2 / 3 / 4 / 6 dựng lại lưới đều theo số ô. Mọi tuỳ chỉnh chỉ giữ trong lúc tab còn mở.
-import { FlowChart } from "./flowchart.js?v=202611022110";
-import { Layout } from "./layout.js?v=202611022110";
-import { deltaOf, footprintStep } from "./market.js?v=202611022110";
-import { INTERVALS, niceStep } from "./util.js?v=202611022110";
-import { analyze } from "./radar.js?v=202611022110";
-import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202611022110";
-import { clockSkew } from "./health.js?v=202611022110";
+import { FlowChart } from "./flowchart.js?v=202611022122";
+import { Layout } from "./layout.js?v=202611022122";
+import { deltaOf, footprintStep } from "./market.js?v=202611022122";
+import { INTERVALS, niceStep } from "./util.js?v=202611022122";
+import { analyze } from "./radar.js?v=202611022122";
+import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202611022122";
+import { clockSkew } from "./health.js?v=202611022122";
+import { approxFootprint, approxBar } from "./fphistory.js?v=202611022122";
 
-const MAX = 6, KEY = "lailong.multi.v1", POLL = 3000;
+const MAX = 6, KEY = "lailong.multi.v2", POLL = 3000;
 const IDS = Array.from({ length: MAX }, (_, i) => "mc" + i);
+// types: kiểu biểu đồ từng ô ("candle" nến, "fp" footprint ước tính từ nến nhỏ hơn)
+// groups: nhóm liên kết từng ô ("A", "B" hoặc "" là đứng riêng); sync: trong một nhóm, đổi gì thì các ô cùng nhóm đổi theo
 export const MC_DEFAULT = {
   n: 4,
   cells: [["BTCUSDT", "1m"], ["ETHUSDT", "1m"], ["BTCUSDT", "15m"], ["SOLUSDT", "5m"], ["BTCUSDT", "1h"], ["ETHUSDT", "4h"]],
+  types: ["candle", "candle", "candle", "candle", "candle", "candle"],
+  groups: ["A", "A", "B", "B", "A", "B"],
+  sync: { sym: false, iv: false, cross: true },
 };
+// hai mẫu dựng sẵn: (a) nhiều mã cùng một khung, (c) một mã nhiều kiểu biểu đồ và khung
+export const MC_PRESETS = {
+  symbols: { n: 4, cells: [["BTCUSDT", "5m"], ["ETHUSDT", "5m"], ["SOLUSDT", "5m"], ["XRPUSDT", "5m"], ["BNBUSDT", "5m"], ["DOGEUSDT", "5m"]], types: Array(MAX).fill("candle"), groups: Array(MAX).fill("A"), sync: { sym: false, iv: true, cross: true } },
+  mixed: { n: 4, cells: [["BTCUSDT", "1m"], ["BTCUSDT", "5m"], ["BTCUSDT", "15m"], ["BTCUSDT", "1h"], ["ETHUSDT", "5m"], ["ETHUSDT", "1h"]], types: ["fp", "candle", "fp", "candle", "fp", "candle"], groups: ["A", "A", "A", "A", "B", "B"], sync: { sym: true, iv: false, cross: true } },
+};
+// trạng thái lưu từ bản cũ thiếu trường mới thì lấy theo mặc định
+export function fixState(st) {
+  const d = JSON.parse(JSON.stringify(MC_DEFAULT));
+  if (!st || !Array.isArray(st.cells) || st.cells.length !== MAX) return d;
+  const ok = (a, f) => Array.isArray(a) && a.length === MAX && a.every(f);
+  return {
+    n: [1, 2, 3, 4, 6].includes(st.n) ? st.n : d.n, cells: st.cells,
+    types: ok(st.types, t => t === "candle" || t === "fp") ? st.types : d.types,
+    groups: ok(st.groups, g => g === "A" || g === "B" || g === "") ? st.groups : d.groups,
+    sync: st.sync && typeof st.sync === "object" ? { ...d.sync, ...st.sync } : d.sync,
+  };
+}
+// các ô cùng nhóm với ô i (không gồm i); ô đứng riêng thì không có
+export function groupMates(groups, i) {
+  const g = groups[i]; if (!g) return [];
+  return groups.map((x, j) => (x === g && j !== i ? j : -1)).filter(j => j >= 0);
+}
 const ROWS = { 1: [1], 2: [2], 3: [3], 4: [2, 2], 6: [3, 3] };
 
 // lưới đều cho n ô đầu; các ô còn lại nằm cuối hàng cuối (đang thu nhỏ)
@@ -44,20 +72,29 @@ export class MultiChart {
     this.ex = ex; this.visible = false; this.timer = null; this.loaded = [];
     let st = null;
     try { st = JSON.parse(sessionStorage.getItem(KEY) || "null"); } catch { /* bỏ qua */ }
-    this.st = st && Array.isArray(st.cells) && st.cells.length === MAX ? st : JSON.parse(JSON.stringify(MC_DEFAULT));
+    this.st = fixState(st);
     const ivs = Object.keys(INTERVALS);
     root.innerHTML = `<div class="mcbar">
         <span class="title">Đa biểu đồ</span>
+        <span class="muted">Mẫu</span><div class="seg" id="mcPreset">
+          <button data-preset="symbols" data-tip="4 mã khác nhau cùng khung 5 phút, cùng nhóm A, đổi khung một ô thì cả nhóm đổi theo">Nhiều mã cùng khung</button>
+          <button data-preset="mixed" data-tip="BTC ở nhiều khung, trộn footprint và nến; đổi mã một ô thì cả nhóm đổi theo">Trộn kiểu biểu đồ</button>
+        </div>
         <span class="muted">Số ô</span><div class="seg" id="mcCount">${Object.keys(ROWS).map(k => `<button data-n="${k}">${k}</button>`).join("")}</div>
+        <span class="muted" data-tip="Các ô cùng màu nhóm (A cam, B xanh) đồng bộ với nhau. Bấm ô vuông màu ở đầu mỗi ô để đổi nhóm">Đồng bộ trong nhóm</span>
+        <label class="field small"><input type="checkbox" id="mcSyncSym"> Mã</label>
+        <label class="field small"><input type="checkbox" id="mcSyncIv"> Khung</label>
+        <label class="field small"><input type="checkbox" id="mcSyncCross"> Con trỏ</label>
         <button id="mcSync" data-tip="Đổi mã của mọi ô thành mã của ô 1">Cùng mã ô 1</button>
         <button id="mcRadar" class="on" data-tip="Hiện sự kiện Radar trên mọi ô: khối lượng bất thường theo bối cảnh, mức giá và phản ứng (xanh: chính thức, đỏ: tạm thời, vàng: chưa rõ)">Radar</button>
         <button id="mcReset" data-tip="Về 4 ô mặc định: BTC 1m, ETH 1m, BTC 15m, SOL 5m">Về mặc định</button>
         <span class="hint">Kéo tiêu đề ô để đổi chỗ · kéo đường chia để đổi cỡ · lăn chuột: phóng to · kéo: di chuyển · bấm đúp: về hiện tại</span>
       </div>
       <div class="mcws" id="mcws">${IDS.map((id, i) => `<section class="panel mc-panel" id="${id}">
-        <div class="panel-head"><b class="mcnum">${i + 1}</b>
+        <div class="panel-head"><button class="mcgrp" data-mcgrp="${i}" aria-label="Nhóm liên kết ô ${i + 1}"></button><b class="mcnum">${i + 1}</b>
           <input class="mcsym" list="symbolList" spellcheck="false" aria-label="Mã ô ${i + 1}">
           <select class="mciv" aria-label="Khung thời gian ô ${i + 1}">${ivs.map(v => `<option>${v}</option>`).join("")}</select>
+          <select class="mctype" aria-label="Kiểu biểu đồ ô ${i + 1}" data-tip="Kiểu biểu đồ của ô này. Footprint ở đây là ước tính từ nến nhỏ hơn (viền nét đứt), footprint thật từng lệnh khớp có ở Terminal"><option value="candle">Nến</option><option value="fp">Footprint</option></select>
           <span class="mcpx"></span><span class="mccd" data-tip="Thời gian còn lại tới lúc đóng nến của ô này (giờ sàn)"></span><span class="hint"></span>
           <button class="icon max" data-mcmax="${id}" data-tip="Phóng to / thu lại ô này">⤢</button>
           <button class="icon" data-mcmin="${id}" data-tip="Thu nhỏ ô này xuống thanh dưới">—</button>
@@ -79,7 +116,20 @@ export class MultiChart {
       p.querySelector(".mcsym").addEventListener("change", e => this.setCell(i, e.target.value.trim().toUpperCase() || sym, null));
       p.querySelector(".mcsym").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
       p.querySelector(".mciv").onchange = e => this.setCell(i, null, e.target.value);
+      p.querySelector(".mctype").onchange = e => this.setType(i, e.target.value);
+      // con trỏ đồng bộ: rê chuột trên một ô thì các ô cùng nhóm hiện vạch dọc ở cùng thời điểm
+      const cv = document.getElementById(id + "c");
+      cv.addEventListener("mousemove", () => this.crossFrom(i));
+      cv.addEventListener("mouseleave", () => this.crossFrom(i, true));
     });
+    const sy = { mcSyncSym: "sym", mcSyncIv: "iv", mcSyncCross: "cross" };
+    for (const [elId, k] of Object.entries(sy)) {
+      const cb = root.querySelector("#" + elId); cb.checked = !!this.st.sync[k];
+      cb.onchange = () => { this.st.sync[k] = cb.checked; this.save(); if (k === "cross" && !cb.checked) this.crossClear(); };
+    }
+    root.querySelector("#mcPreset").onclick = e => { const b = e.target.closest("[data-preset]"); if (b) this.applyPreset(b.dataset.preset); };
+    this.charts.forEach((c, i) => c.setType(this.st.types[i] === "fp" ? "box" : "candle"));
+    this.paintHeads();
     this.layout = new Layout(this.ws, IDS, {
       key: "lailong.multi.layout", presets: "lailong.multi.presets", names: this.names,
       tree: () => gridTree(this.st.n, this.ws.clientWidth || innerWidth, (this.ws.clientHeight || innerHeight - 120)),
@@ -93,12 +143,10 @@ export class MultiChart {
       this.charts.forEach((c, i) => { c.show.radar = on; if (on) this.radar(i); c.dirty = true; });
     };
     root.querySelector("#mcSync").onclick = () => { for (let i = 1; i < MAX; i++) this.setCell(i, this.st.cells[0][0], null); };
-    root.querySelector("#mcReset").onclick = () => {
-      this.st = JSON.parse(JSON.stringify(MC_DEFAULT));
-      IDS.forEach((id, i) => { const p = document.getElementById(id); p.querySelector(".mcsym").value = this.st.cells[i][0]; p.querySelector(".mciv").value = this.st.cells[i][1]; this.loaded[i] = null; });
-      this.setCount(this.st.n);
-    };
+    root.querySelector("#mcReset").onclick = () => this.applyState(JSON.parse(JSON.stringify(MC_DEFAULT)));
     this.ws.addEventListener("click", e => {
+      const gb = e.target.closest("[data-mcgrp]");
+      if (gb) { e.stopPropagation(); const i = +gb.dataset.mcgrp, g = this.st.groups[i]; this.st.groups[i] = g === "A" ? "B" : g === "B" ? "" : "A"; this.save(); this.paintHeads(); return; }
       const mn = e.target.closest("[data-mcmin]"), mx = e.target.closest("[data-mcmax]");
       if (mn) { e.stopPropagation(); document.getElementById(mn.dataset.mcmin).classList.remove("maxed"); this.layout.minimize(mn.dataset.mcmin); }
       if (mx) { const p = document.getElementById(mx.dataset.mcmax), on = !p.classList.contains("maxed"); for (const x of this.ws.querySelectorAll(".maxed")) x.classList.remove("maxed"); p.classList.toggle("maxed", on); this.dirty(); }
@@ -119,14 +167,67 @@ export class MultiChart {
     this.st.n = n; this.save(); this.markCount();
     this.layout.hiddenDefault = IDS.slice(n); this.layout.reset(); this.changed();
   }
-  setCell(i, sym, iv) {
+  setCell(i, sym, iv, follow = false) {
     const c = this.st.cells[i];
+    if ((!sym || sym === c[0]) && (!iv || iv === c[1]) && follow) return;
     if (sym) c[0] = sym;
     if (iv) c[1] = iv;
     const p = document.getElementById(IDS[i]); p.querySelector(".mcsym").value = c[0]; p.querySelector(".mciv").value = c[1];
     this.save(); this.loaded[i] = null; this.rename();
     if (this.visible && this.shown(i)) { this.load(i); this.stream(); }
+    // ô cùng nhóm đổi theo (chỉ phần đang bật đồng bộ)
+    if (!follow) for (const j of groupMates(this.st.groups, i)) {
+      const s2 = this.st.sync.sym ? sym : null, i2 = this.st.sync.iv ? iv : null;
+      if (s2 || i2) this.setCell(j, s2, i2, true);
+    }
   }
+  setType(i, t) {
+    this.st.types[i] = t; this.save();
+    const p = document.getElementById(IDS[i]); p.querySelector(".mctype").value = t;
+    this.charts[i].setType(t === "fp" ? "box" : "candle");
+    if (t === "fp" && this.charts[i].bars.length) this.footprint(i);
+  }
+  // footprint ước tính cho ô i: chia khối lượng mua/bán của các nến nhỏ hơn lên khoảng giá của chúng
+  async footprint(i) {
+    const c = this.charts[i], tag = this.loaded[i], [sym, iv] = this.st.cells[i];
+    if (!tag || tag.err || !c.bars.length) return;
+    const shim = { bars: c.bars, fpStep: c.step, intervalMs: INTERVALS[iv], interval: iv, emit: () => c.refresh() };
+    try { await approxFootprint(this.ex(), sym, shim, () => this.loaded[i] === tag); } catch { /* giữ dạng nến */ }
+  }
+  applyPreset(name) { this.applyState(JSON.parse(JSON.stringify(MC_PRESETS[name]))); }
+  applyState(st) {
+    this.st = fixState(st);
+    IDS.forEach((id, i) => {
+      const p = document.getElementById(id); p.querySelector(".mcsym").value = this.st.cells[i][0]; p.querySelector(".mciv").value = this.st.cells[i][1];
+      p.querySelector(".mctype").value = this.st.types[i]; this.charts[i].setType(this.st.types[i] === "fp" ? "box" : "candle"); this.loaded[i] = null;
+    });
+    for (const [elId, k] of [["mcSyncSym", "sym"], ["mcSyncIv", "iv"], ["mcSyncCross", "cross"]]) document.getElementById(elId).checked = !!this.st.sync[k];
+    this.paintHeads(); this.rename(); this.setCount(this.st.n);
+  }
+  paintHeads() {
+    IDS.forEach((id, i) => {
+      const g = this.st.groups[i], b = document.getElementById(id).querySelector(".mcgrp");
+      b.textContent = g || "·"; b.className = "mcgrp" + (g ? " g" + g : "");
+      b.dataset.tip = g ? `Nhóm ${g}: ô cùng nhóm đồng bộ theo các ô Mã / Khung / Con trỏ trên thanh. Bấm để đổi nhóm` : "Ô đứng riêng, không đồng bộ. Bấm để đưa vào nhóm A";
+      document.getElementById(id).querySelector(".mctype").value = this.st.types[i];
+    });
+  }
+  // vạch dọc ở cùng thời điểm trên các ô cùng nhóm khi rê chuột trên ô i
+  crossFrom(i, leave = false) {
+    if (!this.st.sync.cross) return;
+    const src = this.charts[i];
+    let t = null;
+    if (!leave && src.mouse && src._L && src.bars.length) { const k = Math.min(src.bars.length - 1, Math.max(0, src.iAt(src.mouse.x))); t = src.bars[k].t + INTERVALS[this.st.cells[i][1]] * (src.fAt(src.mouse.x) - k); }
+    for (const j of groupMates(this.st.groups, i)) {
+      const c = this.charts[j]; if (!c.bars.length || !c._L) continue;
+      if (t == null) { c.mouse = null; c.dirty = true; continue; }
+      const ms = INTERVALS[this.st.cells[j][1]], b0 = c.bars[0].t, f = (t - b0) / ms;
+      if (f < 0 || f > c.bars.length + 5) { c.mouse = null; c.dirty = true; continue; }
+      const x = c._L.pw - (c.bars.length - 1 - f + c.offset) * c.sp - c.sp / 2;
+      c.mouse = { x, y: -1, synced: true }; c.dirty = true;
+    }
+  }
+  crossClear() { for (const c of this.charts) if (c.mouse && c.mouse.synced) { c.mouse = null; c.dirty = true; } }
   changed() {
     this.dirty();
     if (this.visible) { for (let i = 0; i < MAX; i++) if (this.shown(i) && !this.fresh(i)) this.load(i); this.stream(); }
@@ -144,7 +245,9 @@ export class MultiChart {
       if (!raw.length) throw new Error("không có dữ liệu");
       const bars = mergeBars([], raw), last = bars[bars.length - 1].c;
       chart.setData(bars, { step: footprintStep(last, INTERVALS[iv], 0), tick: niceStep(last * 1e-5), intervalMs: INTERVALS[iv], symbol: sym, exchangeName: exn.name, interval: iv });
+      chart.setType(this.st.types[i] === "fp" ? "box" : "candle");
       this.price(i); this.radar(i);
+      if (this.st.types[i] === "fp") this.footprint(i);
     } catch (e) {
       if (this.loaded[i] !== tag) return;
       chart.opts.emptyText = `Không tải được ${sym} ${iv}: ${e.message}`; chart.dirty = true;
@@ -183,7 +286,9 @@ export class MultiChart {
   // nhận một nến mới hoặc nến đang chạy cho ô i
   push(i, fresh) {
     const c = this.charts[i], n0 = c.bars.length;
-    mergeBars(c.bars, fresh); c.refresh(); this.price(i);
+    mergeBars(c.bars, fresh);
+    if (this.st.types[i] === "fp") for (let k = Math.max(0, c.bars.length - 2); k < c.bars.length; k++) if (!c.bars[k].fp) approxBar(c.bars[k], c.step);
+    c.refresh(); this.price(i);
     if (c.bars.length !== n0) this.radar(i); // có nến mới đóng thì tính lại Radar
   }
   // sàn có WebSocket nến (Binance): mọi ô dùng chung một kết nối, cập nhật ngay từng lệnh khớp;

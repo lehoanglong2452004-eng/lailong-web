@@ -56,6 +56,41 @@ export function gexByStrike(ch, S = ch.spot, now = Date.now()) {
 
 export const totalGex = (ch, S, now) => gexByStrike(ch, S, now).reduce((s, x) => s + x.net, 0);
 
+// DEX, vanna, charm theo strike, cùng quy ước phía nhà tạo lập như GEX (giữ call của khách, bán put cho khách):
+//   dex   = delta × OI × hệ số × giá: số USD hợp đồng tương lai nhà tạo lập đang nắm để cân vị thế
+//   vanna = ∂delta/∂IV × OI × hệ số × giá × 1%: delta (USD) của nhà tạo lập đổi bao nhiêu khi IV tăng 1 điểm
+//   charm = delta (USD) của nhà tạo lập đổi bao nhiêu sau mỗi ngày trôi qua (giá, IV giữ nguyên)
+// Để cân lại, nhà tạo lập làm ngược dấu: dương thì phải bán hợp đồng tương lai, âm thì phải mua.
+// (lãi suất và cổ tức coi như 0, giống bsGamma)
+export function greeksByStrike(ch, S = ch.spot, now = Date.now()) {
+  const m = new Map();
+  for (const [k, ie, cp, oi, iv] of ch.rows) {
+    const T = Math.max((ch.exps[ie] - now) / YEAR, 1 / (365 * 24));
+    if (!(S > 0 && k > 0 && iv > 0)) continue;
+    const v = iv * Math.sqrt(T), d1 = (Math.log(S / k) + 0.5 * iv * iv * T) / v, d2 = d1 - v, pdf = Math.exp(-0.5 * d1 * d1) / SQ2PI;
+    const nd1 = 0.5 * (1 + erf(d1 / Math.SQRT2)), delta = cp > 0 ? nd1 : nd1 - 1;
+    const side = cp > 0 ? 1 : -1, unit = oi * ch.mult * S;
+    const x = m.get(k) || { k, dex: 0, vanna: 0, charm: 0 };
+    x.dex += side * delta * unit;
+    x.vanna += side * (-pdf * d2 / iv) * unit * 0.01;
+    x.charm += side * (pdf * d2 / (2 * T)) * unit / 365; // delta đổi theo thời gian trôi: −∂Δ/∂T = φ(d1)·d2 / 2T
+    m.set(k, x);
+  }
+  return [...m.values()].sort((a, b) => a.k - b.k);
+}
+// hàm lỗi (Abramowitz–Stegun 7.1.26, sai số < 1.5e-7)
+function erf(x) {
+  const s = x < 0 ? -1 : 1, a = Math.abs(x), t = 1 / (1 + 0.3275911 * a);
+  return s * (1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a));
+}
+
+// GEX ròng theo thời gian: mỗi tài sản giữ một điểm mỗi giờ trên máy này (tối đa `keep` ngày), lưu trong localStorage
+export function addGexPoint(hist, { t, net, spot }, keep = 90) {
+  const hour = Math.floor(t / 36e5) * 36e5, out = (hist || []).filter(p => p.t >= hour - keep * 864e5 && p.t !== hour);
+  out.push({ t: hour, net, spot }); out.sort((a, b) => a.t - b.t);
+  return out;
+}
+
 // đường GEX tổng khi giá chạy từ lo đến hi; điểm lật = nơi đổi dấu gần giá hiện tại nhất
 export function gexProfile(ch, { range = 0.1, steps = 60, now = Date.now() } = {}) {
   const S0 = ch.spot, pts = [];
