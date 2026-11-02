@@ -7,7 +7,7 @@
 // Bản tin nóng: tối đa một bản mỗi 30 phút, chỉ gồm tin nóng trong 2 giờ qua chưa gửi lần nào. Cùng một câu chuyện
 // nhiều báo đưa thì gộp thành một dòng. Chủ đề ảnh hưởng giá mạnh (Fed, lạm phát, việc làm, lãi suất) xếp trước;
 // tin chỉ thuần chính trị (bầu cử, phát ngôn) vẫn xem được ở trang Phân tích nhưng không gửi.
-import { escHtml } from "./discipline.js?v=202610260704";
+import { escHtml } from "./discipline.js?v=202610300405";
 
 export const CATS = [
   { id: "econ", name: "Kinh tế", icon: "🏛" }, { id: "fin", name: "Tài chính", icon: "💹" }, { id: "metal", name: "Kim loại quý", icon: "🥇" },

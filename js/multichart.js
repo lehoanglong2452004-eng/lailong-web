@@ -2,13 +2,15 @@
 // Lai Long Web: tab Đa biểu đồ. Tối đa 6 biểu đồ nến, mỗi ô chọn mã và khung thời gian riêng.
 //   Bố cục dùng chung lưới ghép với Terminal: kéo tiêu đề để đổi chỗ, kéo đường chia để đổi cỡ, nút — để thu nhỏ.
 //   Nút 1 / 2 / 3 / 4 / 6 dựng lại lưới đều theo số ô. Mọi tuỳ chỉnh chỉ giữ trong lúc tab còn mở.
-import { FlowChart } from "./flowchart.js?v=202610260704";
-import { Layout } from "./layout.js?v=202610260704";
-import { deltaOf, footprintStep } from "./market.js?v=202610260704";
-import { INTERVALS, niceStep } from "./util.js?v=202610260704";
-import { analyze } from "./radar.js?v=202610260704";
-import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202610260704";
-import { clockSkew } from "./health.js?v=202610260704";
+//   Nút Cung / cầu: vùng Supply/Demand và FVG đa khung (supdem.js) trên mọi ô, ⚙ để chỉnh như bản Pine.
+import { FlowChart } from "./flowchart.js?v=202610300405";
+import { Layout } from "./layout.js?v=202610300405";
+import { deltaOf, footprintStep } from "./market.js?v=202610300405";
+import { INTERVALS, niceStep } from "./util.js?v=202610300405";
+import { analyze } from "./radar.js?v=202610300405";
+import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202610300405";
+import { clockSkew } from "./health.js?v=202610300405";
+import { SD_TFS, SD_DEFAULT, SD_H1M15, supplyDemand, autoPip, weekly } from "./supdem.js?v=202610300405";
 
 const MAX = 6, KEY = "lailong.multi.v1", POLL = 3000;
 const IDS = Array.from({ length: MAX }, (_, i) => "mc" + i);
@@ -17,6 +19,37 @@ export const MC_DEFAULT = {
   cells: [["BTCUSDT", "1m"], ["ETHUSDT", "1m"], ["BTCUSDT", "15m"], ["SOLUSDT", "5m"], ["BTCUSDT", "1h"], ["ETHUSDT", "4h"]],
 };
 const ROWS = { 1: [1], 2: [2], 3: [3], 4: [2, 2], 6: [3, 3] };
+const SD_KEY = "lailong.multi.sd", SD_N = 500;
+// ô số trong bảng cài đặt Cung / cầu: [khoá, nhãn, nhỏ nhất, lớn nhất, bước]
+const SD_NUM = {
+  tf: [["piv", "Đỉnh/đáy = cao/thấp nhất trong X nến mỗi bên", 1, 20, 1], ["merge", "Gộp đỉnh/đáy cách vùng ≤ (pip)", 0, 1000, 1],
+    ["minThk", "Độ dày vùng tối thiểu (pip)", 0, 1000, 1], ["pip", "1 pip = (0 = tự động; vàng 0,1)", 0, 1e6, "any"]],
+  zone: [["maxBig", "Số vùng tối đa: Tuần / Ngày / H4", 1, 20, 1], ["maxSmall", "Số vùng tối đa: H1 / M15 / M5", 1, 20, 1],
+    ["strongN", "Vùng mạnh khi bị test ≥ (lần)", 1, 50, 1]],
+  fvg: [["minFvg", "Khoảng trống tối thiểu (pip)", 0, 1000, 1], ["maxF", "Số FVG tối đa mỗi khung", 1, 20, 1]],
+};
+export function sdMenu() {
+  const num = ([k, t, mn, mx, st]) => `<label class="row">${t} <input type="number" data-sd="${k}" min="${mn}" max="${mx}" step="${st}"></label>`;
+  const tfs = attr => `<div class="sdtf">${SD_TFS.map(x => `<label><input type="checkbox" data-${attr}="${x.name}"> ${x.vn}</label>`).join("")}</div>`;
+  const col = (k, t) => `<label><input type="color" data-sd="${k}"> ${t}</label>`;
+  return `<p class="note">Price Action + Supply&amp;Demand, chỉ dùng giá. Mỗi ô chỉ vẽ các khung ≥ khung của ô đó. Nhấp đúp vào ô số để về mặc định.</p>
+    <h4>Khung &amp; đỉnh/đáy</h4>${tfs("sdtf")}${SD_NUM.tf.map(num).join("")}
+    <h4>Vùng Supply / Demand</h4>${SD_NUM.zone.map(num).join("")}
+    <h4>FVG</h4><label><input type="checkbox" data-sd="fvg"> Hiện FVG</label>${tfs("sdfvg")}${SD_NUM.fvg.map(num).join("")}
+    <label data-tip="Tắt: giá phải lấp hết khoảng trống. FVG đã lấp sẽ bị xoá"><input type="checkbox" data-sd="half"> Tính đã lấp khi chạm 50%</label>
+    <h4>Màu</h4><div class="sdtf">${col("cSup", "Supply")}${col("cDem", "Demand")}${col("cFvg", "FVG")}</div>
+    <div class="sdbtns"><button data-sdpreset="h1m15" data-tip="Như bản Pine H1-M15: chỉ vùng và FVG của H1 và M15">Chỉ H1 + M15</button><button data-sdpreset="reset">Về mặc định</button></div>`;
+}
+// cài đặt đã lưu -> cài đặt dùng được (khoá lạ hoặc sai kiểu thì bỏ, thiếu thì lấy mặc định)
+export function sdLoadOpts(saved) {
+  const o = JSON.parse(JSON.stringify({ on: true, ...SD_DEFAULT }));
+  if (!saved || typeof saved !== "object") return o;
+  for (const [k, v] of Object.entries(saved)) {
+    if (k === "tf" || k === "fvgTf") { for (const x of SD_TFS) if (typeof v?.[x.name] === "boolean") o[k][x.name] = v[x.name]; }
+    else if (k in o && typeof v === typeof o[k]) o[k] = v;
+  }
+  return o;
+}
 
 // lưới đều cho n ô đầu; các ô còn lại nằm cuối hàng cuối (đang thu nhỏ)
 export function gridTree(n, W = 1200, H = 700) {
@@ -42,6 +75,9 @@ export function mergeBars(bars, fresh) {
 export class MultiChart {
   constructor(root, { ex }) {
     this.ex = ex; this.visible = false; this.timer = null; this.loaded = [];
+    this.htf = new Map(); this.infos = new Map();
+    let sd = null; try { sd = JSON.parse(sessionStorage.getItem(SD_KEY) || "null"); } catch { /* bỏ qua */ }
+    this.sdo = sdLoadOpts(sd);
     let st = null;
     try { st = JSON.parse(sessionStorage.getItem(KEY) || "null"); } catch { /* bỏ qua */ }
     this.st = st && Array.isArray(st.cells) && st.cells.length === MAX ? st : JSON.parse(JSON.stringify(MC_DEFAULT));
@@ -51,6 +87,8 @@ export class MultiChart {
         <span class="muted">Số ô</span><div class="seg" id="mcCount">${Object.keys(ROWS).map(k => `<button data-n="${k}">${k}</button>`).join("")}</div>
         <button id="mcSync" data-tip="Đổi mã của mọi ô thành mã của ô 1">Cùng mã ô 1</button>
         <button id="mcRadar" class="on" data-tip="Hiện sự kiện Radar trên mọi ô: khối lượng bất thường theo bối cảnh, mức giá và phản ứng (xanh: chính thức, đỏ: tạm thời, vàng: chưa rõ)">Radar</button>
+        <button id="mcSD" class="${this.sdo.on ? "on" : ""}" data-g="supply-demand" data-tip="Price Action + Supply&amp;Demand đa khung trên mọi ô: vùng cung (đỏ) từ râu trên tới đỉnh thân của đỉnh, vùng cầu (xanh) từ râu dưới tới đáy thân của đáy, FVG (xanh dương). Khung càng lớn viền càng đậm. Rê chuột vào vùng để xem số lần test">Cung / cầu</button>
+        <div class="dropdown"><button id="mcSDCfg" data-tip="Cài đặt Cung / cầu: khung, đỉnh/đáy, số vùng, FVG, màu">⚙ ▾</button><div class="menu hmcfg" id="mcSDMenu">${sdMenu()}</div></div>
         <button id="mcReset" data-tip="Về 4 ô mặc định: BTC 1m, ETH 1m, BTC 15m, SOL 5m">Về mặc định</button>
         <span class="hint">Kéo tiêu đề ô để đổi chỗ · kéo đường chia để đổi cỡ · lăn chuột: phóng to · kéo: di chuyển · bấm đúp: về hiện tại</span>
       </div>
@@ -67,7 +105,7 @@ export class MultiChart {
     this.charts = IDS.map(id => {
       const c = new FlowChart(document.getElementById(id + "c"), { emptyText: "Đang tải nến..." });
       c.pane = "delta";
-      c.show.radar = true;
+      c.show.radar = true; c.show.sd = this.sdo.on;
       for (const k of ["cvd", "oi", "liq", "liqMap", "absorb", "big", "cluster", "algo", "spoof", "score", "levels", "zones"]) c.show[k] = false;
       return c;
     });
@@ -92,6 +130,12 @@ export class MultiChart {
       const on = !e.currentTarget.classList.contains("on"); e.currentTarget.classList.toggle("on", on);
       this.charts.forEach((c, i) => { c.show.radar = on; if (on) this.radar(i); c.dirty = true; });
     };
+    root.querySelector("#mcSD").onclick = e => {
+      this.sdo.on = !this.sdo.on; e.currentTarget.classList.toggle("on", this.sdo.on); this.sdSave();
+      this.charts.forEach((c, i) => { c.show.sd = this.sdo.on; if (this.sdo.on) this.sdCalc(i); c.dirty = true; });
+    };
+    root.querySelector("#mcSDCfg").onclick = e => { e.stopPropagation(); e.currentTarget.parentElement.classList.toggle("open"); };
+    this.sdBind(root.querySelector("#mcSDMenu"));
     root.querySelector("#mcSync").onclick = () => { for (let i = 1; i < MAX; i++) this.setCell(i, this.st.cells[0][0], null); };
     root.querySelector("#mcReset").onclick = () => {
       this.st = JSON.parse(JSON.stringify(MC_DEFAULT));
@@ -144,7 +188,7 @@ export class MultiChart {
       if (!raw.length) throw new Error("không có dữ liệu");
       const bars = mergeBars([], raw), last = bars[bars.length - 1].c;
       chart.setData(bars, { step: footprintStep(last, INTERVALS[iv], 0), tick: niceStep(last * 1e-5), intervalMs: INTERVALS[iv], symbol: sym, exchangeName: exn.name, interval: iv });
-      this.price(i); this.radar(i);
+      this.price(i); this.radar(i); this.sdCalc(i);
     } catch (e) {
       if (this.loaded[i] !== tag) return;
       chart.opts.emptyText = `Không tải được ${sym} ${iv}: ${e.message}`; chart.dirty = true;
@@ -156,6 +200,65 @@ export class MultiChart {
     const c = this.charts[i]; if (!c.show.radar || c.bars.length < 120) { c.setOverlays({ radar: [] }); return; }
     const ms = INTERVALS[this.st.cells[i][1]];
     try { c.setOverlays({ radar: analyze(c.bars.map(b => ({ ...b, tb: b.bv ?? null })), ms).items }); } catch { c.setOverlays({ radar: [] }); }
+  }
+  // bảng cài đặt Cung / cầu: điền giá trị, đổi là tính lại mọi ô
+  sdBind(m) {
+    const fill = () => {
+      for (const el of m.querySelectorAll("[data-sd]")) { const v = this.sdo[el.dataset.sd]; if (el.type === "checkbox") el.checked = !!v; else el.value = String(v); }
+      for (const el of m.querySelectorAll("[data-sdtf]")) el.checked = !!this.sdo.tf[el.dataset.sdtf];
+      for (const el of m.querySelectorAll("[data-sdfvg]")) el.checked = !!this.sdo.fvgTf[el.dataset.sdfvg];
+    };
+    const apply = () => { this.sdSave(); fill(); this.sdAll(); };
+    m.addEventListener("change", e => {
+      const el = e.target, k = el.dataset.sd;
+      if (el.dataset.sdtf) this.sdo.tf[el.dataset.sdtf] = el.checked;
+      else if (el.dataset.sdfvg) this.sdo.fvgTf[el.dataset.sdfvg] = el.checked;
+      else if (el.type === "checkbox") this.sdo[k] = el.checked;
+      else if (el.type === "number") {
+        let v = +el.value; if (!isFinite(v) || el.value === "") v = SD_DEFAULT[k];
+        this.sdo[k] = Math.min(+el.max, Math.max(+el.min, v));
+      } else if (k) this.sdo[k] = el.value;
+      apply();
+    });
+    m.addEventListener("dblclick", e => { const el = e.target.closest("input[type=number][data-sd]"); if (el) { this.sdo[el.dataset.sd] = SD_DEFAULT[el.dataset.sd]; apply(); } });
+    m.addEventListener("click", e => {
+      const b = e.target.closest("[data-sdpreset]"); if (!b) return;
+      if (b.dataset.sdpreset === "h1m15") { this.sdo.tf = { ...SD_H1M15.tf }; this.sdo.fvgTf = { ...SD_H1M15.fvgTf }; }
+      else this.sdo = { ...sdLoadOpts(null), on: this.sdo.on };
+      apply();
+    });
+    fill();
+  }
+  sdSave() { try { sessionStorage.setItem(SD_KEY, JSON.stringify(this.sdo)); } catch { /* bỏ qua */ } }
+  sdAll() { for (let i = 0; i < MAX; i++) if (this.shown(i)) this.sdCalc(i); }
+  // nến khung lớn của (sàn, mã, khung): giữ lại tới khi khung đó có nến mới đóng
+  htfBars(exn, sym, iv) {
+    const k = `${exn.id}|${sym}|${iv}`, ms = INTERVALS[iv], now = Date.now() + clockSkew(), e = this.htf.get(k);
+    if (e && Math.floor(e.at / ms) === Math.floor(now / ms)) return e.p;
+    const p = exn.klines(sym, iv, SD_N).catch(err => { this.htf.delete(k); throw err; });
+    this.htf.set(k, { at: now, p }); return p;
+  }
+  symInfo(exn, sym) {
+    const k = exn.id + "|" + sym;
+    if (!this.infos.has(k)) this.infos.set(k, exn.info(sym).catch(() => ({ tick: 0 })));
+    return this.infos.get(k);
+  }
+  // vùng Supply/Demand và FVG cho ô i: tải nến các khung ≥ khung ô đang bật (Tuần gộp từ nến ngày)
+  async sdCalc(i) {
+    const c = this.charts[i], tag = this.loaded[i];
+    if (!c.show.sd || !tag || tag.err || !c.bars.length) { c.setOverlays({ sd: null }); return; }
+    const [sym, iv] = this.st.cells[i], ms = INTERVALS[iv], exn = this.ex(), o = this.sdo;
+    const need = SD_TFS.filter(x => x.ms >= ms && (o.tf[x.name] || (o.fvg && o.fvgTf[x.name])));
+    const srcs = [...new Set(need.map(x => x.src))].filter(s => s !== iv);
+    try {
+      const [got, info] = await Promise.all([Promise.all(srcs.map(s => this.htfBars(exn, sym, s))), this.symInfo(exn, sym)]);
+      if (this.loaded[i] !== tag) return;
+      const by = { [iv]: c.bars }, tf = {};
+      srcs.forEach((s, k) => { by[s] = got[k]; });
+      for (const x of need) tf[x.name] = x.name === "W" ? weekly(by["1d"]) : by[x.src];
+      const pip = o.pip > 0 ? o.pip : autoPip(sym, info.tick, c.bars[c.bars.length - 1].c);
+      c.setOverlays({ sd: supplyDemand({ chart: c.bars, chartMs: ms, tf, now: Date.now() + clockSkew() }, o, pip) });
+    } catch { if (this.loaded[i] === tag) c.setOverlays({ sd: null }); }
   }
   price(i) {
     const b = this.charts[i].bars, el = document.getElementById(IDS[i]).querySelector(".mcpx");
@@ -184,7 +287,7 @@ export class MultiChart {
   push(i, fresh) {
     const c = this.charts[i], n0 = c.bars.length;
     mergeBars(c.bars, fresh); c.refresh(); this.price(i);
-    if (c.bars.length !== n0) this.radar(i); // có nến mới đóng thì tính lại Radar
+    if (c.bars.length !== n0) { this.radar(i); this.sdCalc(i); } // có nến mới đóng thì tính lại Radar và vùng cung cầu
   }
   // sàn có WebSocket nến (Binance): mọi ô dùng chung một kết nối, cập nhật ngay từng lệnh khớp;
   // sàn khác: hỏi lại 2 nến cuối của mọi ô cùng lúc mỗi POLL ms

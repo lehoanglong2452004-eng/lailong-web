@@ -5,16 +5,17 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610260704";
-import { cvd as cvdOf } from "./analytics.js?v=202610260704";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610260704";
-import { GROUPS } from "./flowtools.js?v=202610260704";
-import { WALL_KIND } from "./walls.js?v=202610260704";
-import { T, alpha, watermark } from "./theme.js?v=202610260704";
-import { drawConfl, conflTip } from "./levels.js?v=202610260704";
-import { drawShapes } from "./drawings.js?v=202610260704";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610260704";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610260704";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610300405";
+import { cvd as cvdOf } from "./analytics.js?v=202610300405";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610300405";
+import { GROUPS } from "./flowtools.js?v=202610300405";
+import { WALL_KIND } from "./walls.js?v=202610300405";
+import { T, alpha, watermark } from "./theme.js?v=202610300405";
+import { drawConfl, conflTip } from "./levels.js?v=202610300405";
+import { drawSD, sdTip } from "./supdem.js?v=202610300405";
+import { drawShapes } from "./drawings.js?v=202610300405";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610300405";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610300405";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -85,9 +86,9 @@ export class FlowChart {
     this.S = fitCanvas(canvas, () => { this.dirty = true; }); this.ctx = this.S.ctx;
     this.bars = []; this.info = {}; this.step = 1; this.type = "candle"; this.rowMult = "auto";
     this.spacing = { candle: 8, box: 72 }; this.offset = 6; this.yZoom = 1;
-    this.show = { radar: false, profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true, stats: true, auction: true, diverg: true, confl: true };
+    this.show = { radar: false, profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, sd: false, algo: true, spoof: true, score: true, imb: true, stats: true, auction: true, diverg: true, confl: true };
     this.fpMode = "bidask"; this.fpColor = "volume";
-    this.radar = []; this.levels = []; this.zones = []; this.confl = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
+    this.radar = []; this.sd = null; this.levels = []; this.zones = []; this.confl = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
     this.absorb = []; this.prints = null; this.bigQ = Infinity; this.clusters = []; this.ranges = []; this.pane = "deltaCvd";
     this.vpinVals = null; this.vpinHi = null; this.groupVals = null; this.algoRuns = []; this.spoofs = []; this.scores = []; this.scoreMin = 60;
     this.selecting = false; this.sel = null;
@@ -120,6 +121,14 @@ export class FlowChart {
   xOf(i) { return this._L.pw - (this.bars.length - 1 - i + this.offset) * this.sp - this.sp / 2; }
   fAt(x) { return this.bars.length - 1 + this.offset - (this._L.pw - x - this.sp / 2) / this.sp; }
   iAt(x) { return Math.round(this.fAt(x)); }
+  // thời điểm -> x (mép trái nến chứa thời điểm đó); trước nến đầu thì ngoại suy theo khung nến
+  xOfT(t) {
+    const b = this.bars, ms = this.info.intervalMs || 60e3;
+    if (!b.length || t <= b[0].t) return this.xOf(b.length ? (t - b[0].t) / ms : 0) - this.sp / 2;
+    let lo = 0, hi = b.length - 1;
+    while (lo < hi) { const m = (lo + hi + 1) >> 1; if (b[m].t <= t) lo = m; else hi = m - 1; }
+    return this.xOf(lo + (t - b[lo].t) / ms) - this.sp / 2;
+  }
   yOf(p) { return 6 + (this._pmax - p) / (this._pmax - this._pmin) * this._ph; }
   pAt(y) { return this._pmax - (y - 6) / this._ph * (this._pmax - this._pmin); }
 
@@ -156,6 +165,7 @@ export class FlowChart {
     if (this.show.dayProfile) this._dayProfiles(first, last, L);
     this._ranges(first, last, L);
     if (this.show.zones) this._zones(first, L);
+    if (this.show.sd && this.sd) drawSD(ctx, this.sd, { xOfT: t => this.xOfT(t), yOf: p => this.yOf(p), right: this.xOf(this.bars.length - 1) + this.sp / 2, font: `10px ${MONO}` });
     if (this.show.confl) drawConfl(ctx, this.confl, p => this.yOf(p), L.pw, L.priceH, `10px ${MONO}`);
     if (this.show.levels) this._levels(L);
     if (this.fp && this.show.imb) this._stacked(first, last, rowStep, L);
@@ -895,6 +905,7 @@ export class FlowChart {
     if (this.show.levels) for (const lv of this.levels) if (Math.abs(y - this.yOf(lv.price)) < 4) return `${lv.kind === "support" ? "Hỗ trợ" : "Kháng cự"} ${lv.price.toFixed(dec)}: chạm ${lv.touches} lần, bị test ${lv.tests} lần, độ mạnh ${Math.round(lv.strength)}/100${lv.flipped ? ", đã đảo vai" : lv.broken ? ", đã bị phá (nét đứt)" : ", còn giữ"}.`;
     if (this.show.confl) { const c = conflTip(this.confl, y, p => this.yOf(p), dec); if (c) return c; }
     if (this.show.zones) for (const z of this.zones) if (y >= this.yOf(z.high) && y <= this.yOf(z.low) && b.t >= z.t) return `Vùng khối lượng bất thường ${z.low.toFixed(dec)} – ${z.high.toFixed(dec)}: khối lượng cao hơn bình thường ${z.z.toFixed(1)} độ lệch chuẩn, phe ${z.side === "buy" ? "mua" : "bán"} chủ động chiếm ưu thế.`;
+    if (this.show.sd) { const t = sdTip(this.sd, y, p => this.yOf(p), dec); if (t) return t; }
     const d = b.d != null ? b.d : (typeof b.bv === "number" ? 2 * b.bv - b.v : null), chg = b.o ? (b.c / b.o - 1) * 100 : 0;
     const candle = `Nến ${fmtTime(b.t)} (${this.info.interval || ""}): mở ${b.o.toFixed(dec)} · cao ${b.h.toFixed(dec)} · thấp ${b.l.toFixed(dec)} · đóng ${b.c.toFixed(dec)} (${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%). ` +
       `${b.c >= b.o ? "Nến xanh: giá đóng cửa cao hơn giá mở cửa." : "Nến đỏ: giá đóng cửa thấp hơn giá mở cửa."} Thân nến là đoạn mở → đóng, râu là giá cao nhất/thấp nhất. ` +
