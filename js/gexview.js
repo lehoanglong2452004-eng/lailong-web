@@ -5,14 +5,14 @@
 // Nút "Gửi Telegram" gửi tin danh sách 11 tài sản kèm hàng nút; bấm mã nào dưới tin thì Desk đang mở gửi bản tin đầy đủ
 // của mã đó (optbrief.js, tgbot.js). Mỗi sáng từ 7:31, ngay sau La bàn sáng, tự gửi bản BTC (bật ở menu Cảnh báo).
 // Ngày đã gửi lưu trên máy này.
-import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202611022122";
-import { briefState, optBriefHtml, optBriefText, optListHtml, optKeyboard } from "./optbrief.js?v=202611022122";
-import { dayKey } from "./compass.js?v=202611022122";
-import { setFresh } from "./fresh.js?v=202611022122";
-import { initOptPro } from "./optview.js?v=202611022122";
-import { initChain } from "./chainview.js?v=202611022122";
-import { refOf } from "./chain.js?v=202611022122";
-import { fromDeribit, pick, levels, smile, atmIv, ivSurface, greeksByStrike, addGexPoint } from "./gex.js?v=202611022122";
+import { getJson, fitCanvas, fmtUsd, fmtTime, MONO } from "./util.js?v=202611022129";
+import { briefState, optBriefHtml, optBriefText, optListHtml, optKeyboard } from "./optbrief.js?v=202611022129";
+import { dayKey } from "./compass.js?v=202611022129";
+import { setFresh } from "./fresh.js?v=202611022129";
+import { initOptPro } from "./optview.js?v=202611022129";
+import { initChain } from "./chainview.js?v=202611022129";
+import { refOf } from "./chain.js?v=202611022129";
+import { fromDeribit, pick, levels, smile, atmIv, ivSurface, greeksByStrike, addGexPoint } from "./gex.js?v=202611022129";
 
 export const ASSETS = [
   { id: "BTC", src: "deribit", name: "Bitcoin (Deribit)" }, { id: "ETH", src: "deribit", name: "Ethereum (Deribit)" },

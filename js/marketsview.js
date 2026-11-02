@@ -3,9 +3,9 @@
 // crypto top 10, công ty và quỹ ETF nắm giữ BTC/ETH, cá voi dùng đòn bẩy trên Hyperliquid, thanh lý lớn trực tiếp.
 // Bản web đọc data/markets.json và data/whales.json do GitHub Actions cập nhật mỗi 30 phút;
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/markets.py).
-import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202611022122";
-import { setFresh } from "./fresh.js?v=202611022122";
-import { layoutGroups, heatColor, cryptoTiles, HEAT_COLORS } from "./treemap.js?v=202611022122";
+import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202611022129";
+import { setFresh } from "./fresh.js?v=202611022129";
+import { layoutGroups, heatColor, cryptoTiles, HEAT_COLORS } from "./treemap.js?v=202611022129";
 
 const HL = "https://api.hyperliquid.xyz/info";
 const LIQ_WS = "wss://fstream.binance.com/market/ws/!forceOrder@arr";
@@ -43,6 +43,7 @@ export function chgOver(x, days) {
 export function heatItems(cls, mk, cryptoTickers, days = 1) {
   if (cls === "crypto") return (cryptoTickers ? cryptoTiles(cryptoTickers) : []).map(t => ({ ...t, href: `?ex=BINANCE&s=${t.symbol}&v=terminal` }));
   if (cls === "comm") return ((mk && mk.commodities) || []).map(c => ({ sym: c.name, sub: c.code, group: c.group || "Khác", v: (c.price || 0) * (c.volume || 0) * (c.mult || 1), chg: chgOver(c, days) }));
+  if (cls === "stocks") return ((mk && mk.stocks) || []).map(x => ({ sym: x.code, group: x.sector || "Khác", v: x.value || 0, chg: chgOver(x, days) }));
   if (cls === "fx") return ((mk && mk.fx) || []).map(f => ({ sym: f.code, sub: f.name, group: FX_REGION[f.code] || "Khác", v: FX_SHARE[f.code] || 1, chg: fxStrength({ ...f, chg: chgOver(f, days) }) }));
   return [];
 }
@@ -271,7 +272,7 @@ export function initMarkets({ $, esc }) {
     if (hmCls === "crypto") await loadTickers();
     const items = heatItems(hmCls, mk, tickers, hmDays), W = box.clientWidth || 1000, H = box.clientHeight || 520;
     if (!items.length) { box.innerHTML = `<div class="empty">${hmCls === "crypto" ? "Chưa tải được bảng giá Binance." : "Chưa tải được dữ liệu."}</div>`; return; }
-    const scale = hmCls === "crypto" ? 6 : hmCls === "fx" ? 0.8 * Math.sqrt(hmDays) : 3 * Math.sqrt(hmDays);
+    const scale = hmCls === "crypto" ? 6 : hmCls === "fx" ? 0.8 * Math.sqrt(hmDays) : hmCls === "stocks" ? 2.5 * Math.sqrt(hmDays) : 3 * Math.sqrt(hmDays);
     const { groups, tiles } = layoutGroups(items, W, H), pct = (a, b) => (a / b * 100).toFixed(3) + "%";
     box.innerHTML = tiles.map(t => {
       const m = Math.min(t.w, t.h), fs = m > 140 ? 26 : m > 90 ? 19 : m > 56 ? 14 : m > 34 ? 11 : 0;
@@ -282,7 +283,7 @@ export function initMarkets({ $, esc }) {
     }).join("") + groups.map(g => `<span class="hmgroup" style="left:${pct(g.x, W)};top:${pct(g.y, H)}">${esc(g.name)}</span>`).join("");
     const th = [-0.6, -0.3, -0.06, 0, 0.06, 0.3, 0.6];
     $("hmLegend").innerHTML = HEAT_COLORS.map((c, i) => `<span style="background:${c}">${i === 3 ? "0" : (th[i] > 0 ? "+" : "−") + Math.abs(th[i] * scale).toFixed(hmCls === "fx" ? 2 : 1) + "%"}</span>`).join("") +
-      `<small class="muted">${hmCls === "crypto" ? "Cỡ ô: giá trị giao dịch 24 giờ (Binance Futures, trực tiếp). Màu: % thay đổi 24 giờ" : hmCls === "comm" ? "Cỡ ô: giá trị giao dịch. Màu: % thay đổi" : "Cỡ ô: tỷ trọng giao dịch ngoại hối toàn cầu. Màu: đồng tiền mạnh lên (xanh) hay yếu đi (đỏ) so với USD; USD là DXY"}</small>`;
+      `<small class="muted">${hmCls === "crypto" ? "Cỡ ô: giá trị giao dịch 24 giờ (Binance Futures, trực tiếp). Màu: % thay đổi 24 giờ" : hmCls === "comm" ? "Cỡ ô: giá trị giao dịch. Màu: % thay đổi" : hmCls === "stocks" ? "48 cổ phiếu Mỹ lớn, Yahoo Finance chậm khoảng 15 phút (cập nhật mỗi 30 phút). Cỡ ô: giá trị giao dịch phiên gần nhất. Màu: % thay đổi" : "Cỡ ô: tỷ trọng giao dịch ngoại hối toàn cầu. Màu: đồng tiền mạnh lên (xanh) hay yếu đi (đỏ) so với USD; USD là DXY"}</small>`;
   }
   function render() {
     renderHeat();

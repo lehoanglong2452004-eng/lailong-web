@@ -1,7 +1,7 @@
 """Danh sách thị trường cho Lai Long: hàng hoá, forex và lãi suất điều hành, crypto (tổ chức, ETF, cá voi).
 
 Chỉ dùng thư viện chuẩn. Nguồn miễn phí, chấp nhận chậm:
-  - Yahoo Finance: giá hợp đồng tương lai theo từng kỳ hạn, tỷ giá, DXY (chậm 10 đến 30 phút);
+  - Yahoo Finance: giá hợp đồng tương lai theo từng kỳ hạn, tỷ giá, DXY, cổ phiếu Mỹ lớn (chậm 10 đến 30 phút);
   - BIS: lãi suất điều hành của ngân hàng trung ương;
   - CoinGecko: top 10 crypto theo vốn hoá, các công ty nắm giữ BTC và ETH;
   - Farside: dòng tiền ETF BTC và ETH theo ngày;
@@ -68,6 +68,18 @@ CURRENCIES = [
     ("CHF", "Franc Thuỵ Sĩ", "CH", "CHF=X", "SNB"),
     ("HKD", "Đô la Hồng Kông", "HK", "HKD=X", "HKMA"),
     ("SGD", "Đô la Singapore", "SG", "SGD=X", "MAS"),
+]
+
+
+# cổ phiếu Mỹ lớn cho bản đồ nhiệt (mã Yahoo, nhóm ngành); cỡ ô theo giá trị giao dịch phiên gần nhất
+STOCKS = [
+    *[(s, "Công nghệ") for s in ("AAPL", "MSFT", "NVDA", "AVGO", "ORCL", "AMD", "CRM", "ADBE", "CSCO", "INTC", "QCOM", "MU", "PLTR")],
+    *[(s, "Truyền thông") for s in ("GOOGL", "META", "NFLX", "DIS", "TMUS")],
+    *[(s, "Tiêu dùng") for s in ("AMZN", "TSLA", "HD", "MCD", "NKE", "WMT", "COST", "KO", "PEP")],
+    *[(s, "Tài chính") for s in ("BRK-B", "JPM", "V", "MA", "BAC", "GS", "MS", "COIN")],
+    *[(s, "Y tế") for s in ("LLY", "UNH", "JNJ", "ABBV", "MRK", "PFE")],
+    *[(s, "Năng lượng") for s in ("XOM", "CVX", "COP")],
+    *[(s, "Công nghiệp") for s in ("CAT", "GE", "BA", "UBER")],
 ]
 
 
@@ -243,6 +255,27 @@ def fetch_fx() -> list[dict]:
             row.update(price=q["price"], chg=q["chg"], closes=q["closes"])
         out.append(row)
     return out if not err else [*out, {"error": err}]
+
+
+def fetch_stocks() -> list[dict]:
+    """Cổ phiếu Mỹ lớn từ Yahoo Finance (chậm khoảng 15 phút): giá, % thay đổi, giá trị giao dịch, giá đóng cửa 1 tháng."""
+    syms = [s for s, _ in STOCKS]
+    with ThreadPoolExecutor(6) as ex:
+        quotes = dict(zip(syms, ex.map(_yahoo_daily, syms), strict=False))
+    out = []
+    for sym, sector in STOCKS:
+        q = quotes.get(sym)
+        if not q:
+            continue
+        out.append({
+            "code": sym.replace("-", "."),
+            "sector": sector,
+            "price": q["price"],
+            "chg": q["chg"],
+            "value": round((q["price"] or 0) * (q["volume"] or 0)),
+            "closes": q["closes"],
+        })
+    return out
 
 
 STABLE_OR_WRAPPED = re.compile(
@@ -484,7 +517,7 @@ def build(outdir: Path) -> dict:
     started = time.time()
     errors = []
     res = {"updated": int(now.timestamp() * 1000)}
-    for key, fn in (("commodities", fetch_commodities), ("fx", fetch_fx), ("crypto", fetch_crypto)):
+    for key, fn in (("commodities", fetch_commodities), ("fx", fetch_fx), ("crypto", fetch_crypto), ("stocks", fetch_stocks)):
         try:
             res[key] = fn()
         except Exception as exc:
