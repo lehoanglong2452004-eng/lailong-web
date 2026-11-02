@@ -5,16 +5,16 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202611022129";
-import { cvd as cvdOf } from "./analytics.js?v=202611022129";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202611022129";
-import { GROUPS } from "./flowtools.js?v=202611022129";
-import { WALL_KIND } from "./walls.js?v=202611022129";
-import { T, alpha, watermark } from "./theme.js?v=202611022129";
-import { drawConfl, conflTip } from "./levels.js?v=202611022129";
-import { drawShapes } from "./drawings.js?v=202611022129";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202611022129";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202611022129";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202611022145";
+import { cvd as cvdOf } from "./analytics.js?v=202611022145";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202611022145";
+import { GROUPS } from "./flowtools.js?v=202611022145";
+import { WALL_KIND } from "./walls.js?v=202611022145";
+import { T, alpha, watermark } from "./theme.js?v=202611022145";
+import { drawConfl, conflTip } from "./levels.js?v=202611022145";
+import { drawShapes } from "./drawings.js?v=202611022145";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202611022145";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202611022145";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -34,8 +34,10 @@ const STAT_ROWS = [
   { name: "Số lệnh", get: s => s.n, fmt: v => fmtVol(v), col: "#c678dd", tip: "Số lệnh khớp (Binance gộp các lệnh khớp cùng giá cùng lúc). Nhiều lệnh nhỏ là nhỏ lẻ; ít lệnh mà khối lượng lớn là lệnh to" },
 ];
 // footprint thu nhỏ: nến hẹp hơn 40 px thì ô chỉ còn màu (không số, như ATAS); hẹp hơn COMPACT px mới vẽ nến thường,
-// ghi số long/short dưới nến khi nến rộng từ LS_TXT px, thêm ô Long/Short cao LS_H
-const LS_H = 58, COMPACT = 12, LS_TXT = 24;
+// bên dưới thêm ô Mua / Bán / Delta cao LS_H: ba hàng màu cao LS_ROW và ba dòng số cộng theo cụm nến
+const LS_ROW = 14, LS_NUM = 44, LS_H = 3 * LS_ROW + LS_NUM + 2, COMPACT = 12, LS_TXT = 24, STAT_TXT = 34;
+// số nến mỗi cụm để dòng số dưới nến rộng ít nhất ~48 px
+export function lsGroup(sp) { for (const n of [3, 6, 12, 24, 48]) if (n * sp >= 48) return n; return 96; }
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
 
@@ -115,7 +117,7 @@ export class FlowChart {
     const pane = this.pane, wantDelta = this.show.delta && (pane === "deltaCvd" || pane === "delta"), wantCvd = (this.show.cvd || hasOi) && pane !== "delta";
     const deltaH = wantDelta ? Math.round(ph * (pane === "delta" ? 0.18 : 0.1)) : 0;
     const cvdH = wantCvd ? Math.round(ph * (pane === "deltaCvd" ? 0.14 : 0.22)) : 0;
-    const statsH = this.fp && this.show.stats ? STAT_ROWS.length * STAT_H + 3 : this.compact ? LS_H : 0;
+    const statsH = this.fp && this.show.stats ? STAT_ROWS.length * STAT_H + 3 + (this.sp < STAT_TXT ? LS_NUM : 0) : this.compact ? LS_H : 0;
     const priceH = ph - deltaH - cvdH - statsH;
     return { w, h, pw, ph, priceH, deltaTop: priceH, deltaH, cvdTop: priceH + deltaH, cvdH, statsTop: priceH + deltaH + cvdH, statsH, hasOi };
   }
@@ -336,7 +338,7 @@ export class FlowChart {
     for (let i = first; i <= last; i++) stats.push(barStats(this.bars[i]));
     ctx.fillStyle = T.panel; ctx.fillRect(0, top, L.w, L.statsH);
     ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.stroke();
-    const showText = this.sp >= 34; ctx.textBaseline = "middle"; ctx.textAlign = "center";
+    const showText = this.sp >= STAT_TXT; ctx.textBaseline = "middle"; ctx.textAlign = "center";
     STAT_ROWS.forEach((row, ri) => {
       const y = top + 2 + ri * STAT_H; let mx = 0;
       const base = row.col === "up" ? T.up : row.col === "down" ? T.down : row.col || "#2f8cff";
@@ -352,6 +354,29 @@ export class FlowChart {
       ctx.font = `10px ${MONO}`; ctx.fillStyle = row.col === "up" ? T.up : row.col === "down" ? T.down : row.col === DELTA_BLUE ? DELTA_BLUE : C.axis;
       ctx.textAlign = "left"; ctx.fillText(row.name, L.pw + 4, y + STAT_H / 2); ctx.textAlign = "center";
     });
+    if (!showText) this._groupNums(first, last, L, top + 2 + STAT_ROWS.length * STAT_H + 2, stats.map(st => st.v ? { buy: (st.v + st.d) / 2, sell: (st.v - st.d) / 2 } : null));
+    else this._lsGroup = null;
+  }
+
+  // dòng số Mua / Bán / Delta cộng theo cụm nến khi nến quá hẹp để ghi số từng nến; xs[j] ứng với nến first + j
+  _groupNums(first, last, L, ny, xs) {
+    const ctx = this.ctx, n = lsGroup(this.sp);
+    ctx.font = `10px ${MONO}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (let g = first - (first % n); g <= last; g += n) {
+      let gb = 0, gs = 0, any = false;
+      for (let i = Math.max(g, first); i < g + n && i <= last; i++) { const s = xs[i - first]; if (s) { gb += s.buy; gs += s.sell; any = true; } }
+      const x0 = this.xOf(g) - this.sp / 2, x1 = this.xOf(g + n - 1) + this.sp / 2;
+      if (x1 < 0 || x0 > L.pw) continue;
+      ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(x0 + 1, ny + 0.5); ctx.lineTo(x1 - 1, ny + 0.5); ctx.stroke();
+      if (!any) continue;
+      const cx = Math.min(L.pw - 24, Math.max(24, (x0 + x1) / 2));
+      ctx.font = `10px ${MONO}`; ctx.fillStyle = C.up; ctx.fillText(fmtVol(gb), cx, ny + 3);
+      ctx.fillStyle = C.down; ctx.fillText(fmtVol(gs), cx, ny + 15);
+      ctx.font = `bold 10px ${MONO}`; ctx.fillStyle = DELTA_BLUE; ctx.fillText(sgn(gb - gs), cx, ny + 27);
+    }
+    ctx.font = `10px ${MONO}`; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillStyle = C.axis;
+    ctx.fillText(`Cụm ${n} nến`, L.pw + 4, ny + 20);
+    this._lsGroup = n; this._lsNumTop = ny;
   }
 
   // footprint thu nhỏ: số long (xanh) và short (đỏ) ngay dưới râu nến
@@ -367,25 +392,33 @@ export class FlowChart {
     }
   }
 
-  // footprint thu nhỏ: mỗi nến một thanh mua chủ động (long, xanh, lên) và bán chủ động (short, đỏ, xuống), kèm tổng vùng đang xem
+  // footprint thu nhỏ: dưới mỗi nến ba ô màu Mua (xanh lá), Bán (đỏ), Delta (xanh dương), càng đậm càng nhiều;
+  // số ghi theo cụm nến (3 / 6 / 12 / 24 nến tuỳ độ rộng) để luôn đọc được; rê chuột lên ô để xem số từng nến
   _longShort(first, last, L) {
-    const ctx = this.ctx, top = L.statsTop, H = L.statsH, mid = top + H / 2, bw = Math.max(1, Math.min(this.sp * 0.7, this.sp - 2)), xs = [];
-    let mx = 0, buy = 0, sell = 0;
-    for (let i = first; i <= last; i++) { const s = longShort(this.bars[i]); xs.push(s); if (s) { mx = Math.max(mx, s.buy, s.sell); buy += s.buy; sell += s.sell; } }
-    ctx.fillStyle = T.panel; ctx.fillRect(0, top, L.w, H);
-    ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.moveTo(0, mid + 0.5); ctx.lineTo(L.pw, mid + 0.5); ctx.stroke();
-    if (mx) xs.forEach((s, j) => {
-      if (!s) return; const x = Math.round(this.xOf(first + j) - bw / 2), hb = s.buy / mx * (H / 2 - 4), hs = s.sell / mx * (H / 2 - 4);
-      ctx.fillStyle = alpha(T.up, s.buy >= s.sell ? 0.9 : 0.45); ctx.fillRect(x, mid - hb, Math.round(bw), Math.max(1, hb));
-      ctx.fillStyle = alpha(T.down, s.sell > s.buy ? 0.9 : 0.45); ctx.fillRect(x, mid + 1, Math.round(bw), Math.max(1, hs));
+    const ctx = this.ctx, top = L.statsTop, n = lsGroup(this.sp), cw = Math.max(1, this.sp - 1), xs = [];
+    let mb = 0, ms = 0, md = 0, buy = 0, sell = 0;
+    for (let i = first; i <= last; i++) {
+      const s = longShort(this.bars[i]); xs.push(s);
+      if (s) { mb = Math.max(mb, s.buy); ms = Math.max(ms, s.sell); md = Math.max(md, Math.abs(s.buy - s.sell)); buy += s.buy; sell += s.sell; }
+    }
+    ctx.fillStyle = T.panel; ctx.fillRect(0, top, L.w, L.statsH);
+    ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.stroke();
+    const rows = [[s => s.buy, mb, T.up], [s => s.sell, ms, T.down], [s => s.buy - s.sell, md, DELTA_BLUE]];
+    rows.forEach(([get, mx, col], r) => {
+      const y = top + 2 + r * LS_ROW;
+      xs.forEach((s, j) => {
+        if (!s || !mx) return;
+        ctx.fillStyle = alpha(col, (0.12 + 0.75 * Math.abs(get(s)) / mx).toFixed(3));
+        ctx.fillRect(Math.round(this.xOf(first + j) - cw / 2), y, Math.max(1, Math.round(cw)), LS_ROW - 1);
+      });
     });
+    this._groupNums(first, last, L, top + 3 * LS_ROW + 4, xs);
     const tot = buy + sell, pct = tot ? Math.round(buy / tot * 100) : 50;
     ctx.font = `10px ${MONO}`; ctx.textBaseline = "middle"; ctx.textAlign = "left";
-    ctx.fillStyle = C.up; ctx.fillText(`Long ${pct}%`, L.pw + 4, top + H / 4);
-    ctx.fillStyle = C.down; ctx.fillText(`Short ${100 - pct}%`, L.pw + 4, top + H * 3 / 4);
-    ctx.fillStyle = C.axis; ctx.textBaseline = "top"; ctx.fillText("Long / Short (mua · bán chủ động)", 6, top + 3);
-    const hint = this.sp >= LS_TXT ? "số dưới nến: xanh long, đỏ short" : "phóng to thêm để thấy số long/short dưới nến";
-    this._lsSum = tot ? `Đã thu nhỏ: hiện nến · ${last - first + 1} nến đang xem: Long ${fmtVol(buy)} (${pct}%) · Short ${fmtVol(sell)} (${100 - pct}%) · chênh ${sgn(buy - sell)} · ${hint}` : `Đã thu nhỏ: hiện nến · ${hint}`;
+    ctx.fillStyle = C.up; ctx.fillText("Mua", L.pw + 4, top + 2 + LS_ROW / 2);
+    ctx.fillStyle = C.down; ctx.fillText("Bán", L.pw + 4, top + 2 + LS_ROW * 1.5);
+    ctx.fillStyle = DELTA_BLUE; ctx.fillText("Delta", L.pw + 4, top + 2 + LS_ROW * 2.5);
+    this._lsSum = tot ? `Đã thu nhỏ: hiện nến · ${last - first + 1} nến đang xem: Mua ${fmtVol(buy)} (${pct}%) · Bán ${fmtVol(sell)} (${100 - pct}%) · Delta ${sgn(buy - sell)} · số dưới nến cộng theo cụm ${n} nến, rê chuột lên ô màu để xem từng nến` : "Đã thu nhỏ: hiện nến";
   }
 
   _stacked(first, last, rowStep, L) {
@@ -862,14 +895,22 @@ export class FlowChart {
     else if (this.type === "box") { ctx.fillStyle = C.axis; ctx.fillText(`Tầng giá ${this._rowStepUsed.toFixed(decimalsFor(this._rowStepUsed))} · viền liền: từ từng lệnh khớp thật · viền nét đứt: ước tính từ nến nhỏ hơn${this.fpProgress ? " · " + this.fpProgress : ""}`, 8, 28); }
   }
 
+  _groupTip(i) {
+    const n = this._lsGroup || 3, g = i - (i % n);
+    let gb = 0, gs = 0; for (let k = g; k < g + n && k < this.bars.length; k++) { const s = longShort(this.bars[k]); if (s) { gb += s.buy; gs += s.sell; } }
+    return `Cụm ${n} nến từ ${fmtTime(this.bars[g].t)}: mua chủ động ${fmtVol(gb)} · bán chủ động ${fmtVol(gs)} · delta ${sgn(gb - gs)}${gb + gs ? ` (${Math.round(gb / (gb + gs) * 100)}% mua)` : ""}.`;
+  }
+
   // Chú thích cho đối tượng dưới con trỏ (mức giá, vùng, thanh lý, lệnh backtest)
   hitTest(x, y) {
     const L = this._L; if (!L || !this.bars.length || x > L.pw) return null;
     const dec = decimalsFor(this.info.tick || this.step), i = Math.min(this.bars.length - 1, Math.max(0, this.iAt(x))), b = this.bars[i];
     if (L.statsH && y >= L.statsTop && this.compact) {
+      if (y >= L.statsTop + 3 * LS_ROW + 2) return this._groupTip(i); // dòng số: tổng của cả cụm
       const s = longShort(b); if (!s) return `Nến ${fmtTime(b.t)}: chưa có khối lượng mua/bán chủ động.`;
-      return `Long / Short nến ${fmtTime(b.t)}: mua chủ động (long) ${fmtVol(s.buy)} · bán chủ động (short) ${fmtVol(s.sell)} · chênh ${sgn(s.buy - s.sell)} (${Math.round(s.buy / (s.buy + s.sell) * 100)}% long). Thanh xanh lên là long, thanh đỏ xuống là short; phóng to để xem lại footprint.`;
+      return `Nến ${fmtTime(b.t)}: mua chủ động ${fmtVol(s.buy)} · bán chủ động ${fmtVol(s.sell)} · delta ${sgn(s.buy - s.sell)} (${Math.round(s.buy / (s.buy + s.sell) * 100)}% mua). Ô càng đậm, khối lượng càng lớn so với các nến đang xem; phóng to để xem lại footprint.`;
     }
+    if (L.statsH && y >= L.statsTop && this._lsGroup && y >= this._lsNumTop) return this._groupTip(i);
     if (L.statsH && y >= L.statsTop) {
       const row = STAT_ROWS[Math.floor((y - L.statsTop - 2) / STAT_H)]; if (!row) return null;
       const st = barStats(b), v = row.get(st);
