@@ -5,16 +5,16 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202610260704";
-import { cvd as cvdOf } from "./analytics.js?v=202610260704";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202610260704";
-import { GROUPS } from "./flowtools.js?v=202610260704";
-import { WALL_KIND } from "./walls.js?v=202610260704";
-import { T, alpha, watermark } from "./theme.js?v=202610260704";
-import { drawConfl, conflTip } from "./levels.js?v=202610260704";
-import { drawShapes } from "./drawings.js?v=202610260704";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202610260704";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202610260704";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202611022110";
+import { cvd as cvdOf } from "./analytics.js?v=202611022110";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202611022110";
+import { GROUPS } from "./flowtools.js?v=202611022110";
+import { WALL_KIND } from "./walls.js?v=202611022110";
+import { T, alpha, watermark } from "./theme.js?v=202611022110";
+import { drawConfl, conflTip } from "./levels.js?v=202611022110";
+import { drawShapes } from "./drawings.js?v=202611022110";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202611022110";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202611022110";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -23,17 +23,19 @@ function radarText(e, dec, ms) {
 }
 
 const STAT_H = 14, sgn = v => (v > 0 ? "+" : "") + fmtVol(v);
+// bảng dưới nến kiểu Quantower: mua xanh lá, bán đỏ, delta (mua − bán) xanh dương; col "up"/"down" lấy màu theo giao diện
+const DELTA_BLUE = "#3b82f6", FP_BLUE = "#2f6fe0";
 const STAT_ROWS = [
-  { name: "Khối lượng", get: s => s.v, fmt: fmtVol, tip: "Tổng khối lượng khớp trong nến" },
-  { name: "Delta", get: s => s.d, fmt: sgn, signed: true, tip: "Mua chủ động trừ bán chủ động" },
-  { name: "Delta %", get: s => s.v ? s.dPct * 100 : null, fmt: v => (v > 0 ? "+" : "") + v.toFixed(0) + "%", signed: true, tip: "Delta chia khối lượng: trên ±20% là một phe áp đảo rõ" },
-  { name: "Δ cao nhất", get: s => s.dMax, fmt: sgn, signed: true, tip: "Delta cao nhất lúc nến đang chạy. Delta đóng nến thấp hơn nhiều là phe mua đã bị đẩy lùi" },
-  { name: "Δ thấp nhất", get: s => s.dMin, fmt: sgn, signed: true, tip: "Delta thấp nhất lúc nến đang chạy. Delta đóng nến cao hơn nhiều là phe bán đã bị đẩy lùi" },
+  { name: "Khối lượng", get: s => s.v, fmt: fmtVol, col: "#9aa3ad", tip: "Tổng khối lượng khớp trong nến" },
+  { name: "Mua", get: s => s.v ? (s.v + s.d) / 2 : null, fmt: fmtVol, col: "up", tip: "Khối lượng mua chủ động (khớp vào giá chào bán)" },
+  { name: "Bán", get: s => s.v ? (s.v - s.d) / 2 : null, fmt: fmtVol, col: "down", tip: "Khối lượng bán chủ động (khớp vào giá chào mua)" },
+  { name: "Delta", get: s => s.d, fmt: sgn, col: DELTA_BLUE, bold: true, tip: "Mua chủ động trừ bán chủ động. Ô càng đậm, chênh lệch càng lớn; dấu + là mua áp đảo, − là bán áp đảo" },
+  { name: "Delta %", get: s => s.v ? s.dPct * 100 : null, fmt: v => (v > 0 ? "+" : "") + v.toFixed(0) + "%", col: DELTA_BLUE, tip: "Delta chia khối lượng: trên ±20% là một phe áp đảo rõ" },
   { name: "Số lệnh", get: s => s.n, fmt: v => fmtVol(v), col: "#c678dd", tip: "Số lệnh khớp (Binance gộp các lệnh khớp cùng giá cùng lúc). Nhiều lệnh nhỏ là nhỏ lẻ; ít lệnh mà khối lượng lớn là lệnh to" },
-  { name: "KL/lệnh", get: s => s.n ? s.v / s.n : null, fmt: v => fmtVol(v), col: "#f5c542", tip: "Khối lượng trung bình mỗi lệnh khớp: tăng đột biến là có lệnh lớn tham gia" },
 ];
-// footprint thu nhỏ: nến hẹp hơn COMPACT px thì vẽ nến thường, ghi số long/short dưới nến khi nến rộng từ LS_TXT px, thêm ô Long/Short cao LS_H
-const LS_H = 58, COMPACT = 40, LS_TXT = 24;
+// footprint thu nhỏ: nến hẹp hơn 40 px thì ô chỉ còn màu (không số, như ATAS); hẹp hơn COMPACT px mới vẽ nến thường,
+// ghi số long/short dưới nến khi nến rộng từ LS_TXT px, thêm ô Long/Short cao LS_H
+const LS_H = 58, COMPACT = 12, LS_TXT = 24;
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
 
@@ -241,7 +243,8 @@ export class FlowChart {
         else if (colorBy === "delta") { col = dd >= 0 ? T.up : T.down; a = ex.maxAbsD ? 0.06 + 0.6 * Math.abs(dd) / ex.maxAbsD : 0.05; }
         else if (colorBy === "imbalance") { col = bI ? T.up : sI ? T.down : T.muted; a = bI || sI ? 0.5 : 0.05; }
         else if (colorBy === "candle") { col = up ? T.up : T.down; a = ex.maxTot ? 0.06 + 0.5 * tot / ex.maxTot : 0.05; }
-        else { col = r[1] >= r[0] ? T.up : T.down; a = ex.maxTot ? 0.08 + 0.55 * tot / ex.maxTot : 0.05; }
+        else { col = FP_BLUE; a = ex.maxTot ? 0.1 + 0.7 * Math.pow(tot / ex.maxTot, 0.75) : 0.05; } // kiểu Quantower: ô xanh dương, càng đậm càng nhiều khối lượng
+        if (k === pocK && mode !== "histo" && mode !== "profile") { col = C.poc; a = 0.3; }
         ctx.fillStyle = alpha(col, (a * dim).toFixed(3)); ctx.fillRect(cx0, yTop + 0.5, cw, hgt);
         if (mode === "histo") { // thanh bán bên trái, mua bên phải, từ giữa ô ra
           const half = cw / 2 - 2, sw = ex.maxSide ? r[0] / ex.maxSide * half : 0, bw = ex.maxSide ? r[1] / ex.maxSide * half : 0;
@@ -277,7 +280,15 @@ export class FlowChart {
       const col = up ? C.up : C.down, yo = this.yOf(Math.max(b.o, b.c)), yc = this.yOf(Math.min(b.o, b.c));
       ctx.fillStyle = col; ctx.fillRect(x0, yo, strip, Math.max(1, yc - yo));
       ctx.strokeStyle = col; ctx.lineWidth = 1; if (b.fpApprox) ctx.setLineDash([3, 3]); // nét đứt: footprint ước tính
-      ctx.strokeRect(x0 + 0.5, this.yOf((kHi + 1) * rowStep) + 0.5, w - 1, this.yOf(kLo * rowStep) - this.yOf((kHi + 1) * rowStep) - 1); ctx.setLineDash([]);
+      const yHi = this.yOf((kHi + 1) * rowStep);
+      ctx.strokeRect(x0 + 0.5, yHi + 0.5, w - 1, this.yOf(kLo * rowStep) - yHi - 1); ctx.setLineDash([]);
+      if (showText && yHi > 30) { // khối lượng và delta của cả nến ghi trên đỉnh, như Quantower
+        let v = 0, d = 0; for (const r of rows.values()) { v += r[0] + r[1]; d += r[1] - r[0]; }
+        ctx.font = `10px ${MONO}`; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = C.axis; ctx.fillText(`V ${fmtVol(v)}`, x0, yHi - 15);
+        ctx.fillStyle = DELTA_BLUE; ctx.fillText(`Δ ${d > 0 ? "+" : ""}${fmtVol(d)}`, x0, yHi - 4);
+        ctx.font = `${fs}px ${MONO}`; ctx.textBaseline = "middle";
+      }
     }
   }
 
@@ -325,18 +336,21 @@ export class FlowChart {
     for (let i = first; i <= last; i++) stats.push(barStats(this.bars[i]));
     ctx.fillStyle = T.panel; ctx.fillRect(0, top, L.w, L.statsH);
     ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(L.w, top + 0.5); ctx.stroke();
-    const showText = this.sp >= 34; ctx.font = `10px ${MONO}`; ctx.textBaseline = "middle"; ctx.textAlign = "center";
+    const showText = this.sp >= 34; ctx.textBaseline = "middle"; ctx.textAlign = "center";
     STAT_ROWS.forEach((row, ri) => {
       const y = top + 2 + ri * STAT_H; let mx = 0;
+      const base = row.col === "up" ? T.up : row.col === "down" ? T.down : row.col || "#2f8cff";
       for (const st of stats) { const v = row.get(st); if (v != null && isFinite(v)) mx = Math.max(mx, Math.abs(v)); }
+      ctx.font = `${row.bold ? "bold " : ""}10px ${MONO}`;
       stats.forEach((st, j) => {
         const v = row.get(st), x = this.xOf(first + j); if (v == null || !isFinite(v)) return;
-        const signed = row.signed, a = mx ? 0.08 + 0.55 * Math.abs(v) / mx : 0.05;
-        ctx.fillStyle = alpha(signed ? (v >= 0 ? T.up : T.down) : row.col || "#2f8cff", a.toFixed(3));
+        const a = mx ? 0.1 + 0.6 * Math.abs(v) / mx : 0.05;
+        ctx.fillStyle = alpha(base, a.toFixed(3));
         ctx.fillRect(Math.round(x - cw / 2), y, Math.round(cw), STAT_H - 1);
         if (showText) { ctx.fillStyle = C.text; ctx.fillText(row.fmt(v), x, y + STAT_H / 2); }
       });
-      ctx.fillStyle = C.axis; ctx.textAlign = "left"; ctx.fillText(row.name, L.pw + 4, y + STAT_H / 2); ctx.textAlign = "center";
+      ctx.font = `10px ${MONO}`; ctx.fillStyle = row.col === "up" ? T.up : row.col === "down" ? T.down : row.col === DELTA_BLUE ? DELTA_BLUE : C.axis;
+      ctx.textAlign = "left"; ctx.fillText(row.name, L.pw + 4, y + STAT_H / 2); ctx.textAlign = "center";
     });
   }
 

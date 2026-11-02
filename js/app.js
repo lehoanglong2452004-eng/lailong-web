@@ -1,53 +1,52 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202610260704";
-import { MarketState, Book } from "./market.js?v=202610260704";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202610260704";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202610260704";
-import { FlowChart } from "./flowchart.js?v=202610260704";
-import { TpoChart } from "./tpo.js?v=202610260704";
-import { Dom } from "./dom.js?v=202610260704";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202610260704";
-import { initBacktest } from "./backtestview.js?v=202610260704";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202610260704";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202610260704";
-import { Tape } from "./tape.js?v=202610260704";
-import { LiqMap } from "./liqmap.js?v=202610260704";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202610260704";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202610260704";
-import { Alerts } from "./alerts.js?v=202610260704";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202610260704";
-import { initNews } from "./newsview.js?v=202610260704";
-import { initMarkets } from "./marketsview.js?v=202610260704";
-import { initGex } from "./gexview.js?v=202610260704";
-import { initTgBot } from "./tgbot.js?v=202610260704";
-import { initInst } from "./instview.js?v=202610260704";
-import { setFresh, tickFresh } from "./fresh.js?v=202610260704";
-import { initRadar } from "./radarview.js?v=202610260704";
-import { Drawings } from "./drawings.js?v=202610260704";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202610260704";
-import { PaperBroker } from "./paper.js?v=202610260704";
-import { OrderLines } from "./orderlines.js?v=202610260704";
-import { MultiChart } from "./multichart.js?v=202610260704";
-import { DOM_COLS } from "./dom.js?v=202610260704";
-import { initFractal } from "./fractalview.js?v=202610260704";
-import { initJournal } from "./journalview.js?v=202610260704";
-import { installHealth, clockSkew } from "./health.js?v=202610260704";
-import { initHealth } from "./healthview.js?v=202610260704";
-import { initFlows } from "./flowsview.js?v=202610260704";
-import { initPerf } from "./perfview.js?v=202610260704";
-import { initShock } from "./shockview.js?v=202610260704";
-import { initCompass } from "./compassview.js?v=202610260704";
-import { initConsensus } from "./consensusview.js?v=202610260704";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202610260704";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202610260704";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202610260704";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202610260704";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202610260704";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202610260704";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202610260704";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202610260704";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611022110";
+import { MarketState, Book } from "./market.js?v=202611022110";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611022110";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611022110";
+import { FlowChart } from "./flowchart.js?v=202611022110";
+import { Dom } from "./dom.js?v=202611022110";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox } from "./analytics.js?v=202611022110";
+import { initBacktest } from "./backtestview.js?v=202611022110";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611022110";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202611022110";
+import { Tape } from "./tape.js?v=202611022110";
+import { LiqMap } from "./liqmap.js?v=202611022110";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611022110";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611022110";
+import { Alerts } from "./alerts.js?v=202611022110";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202611022110";
+import { initNews } from "./newsview.js?v=202611022110";
+import { initMarkets } from "./marketsview.js?v=202611022110";
+import { initGex } from "./gexview.js?v=202611022110";
+import { initTgBot } from "./tgbot.js?v=202611022110";
+import { initInst } from "./instview.js?v=202611022110";
+import { setFresh, tickFresh } from "./fresh.js?v=202611022110";
+import { initRadar } from "./radarview.js?v=202611022110";
+import { Drawings } from "./drawings.js?v=202611022110";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611022110";
+import { PaperBroker } from "./paper.js?v=202611022110";
+import { OrderLines } from "./orderlines.js?v=202611022110";
+import { MultiChart } from "./multichart.js?v=202611022110";
+import { DOM_COLS } from "./dom.js?v=202611022110";
+import { initFractal } from "./fractalview.js?v=202611022110";
+import { initJournal } from "./journalview.js?v=202611022110";
+import { installHealth, clockSkew } from "./health.js?v=202611022110";
+import { initHealth } from "./healthview.js?v=202611022110";
+import { initFlows } from "./flowsview.js?v=202611022110";
+import { initPerf } from "./perfview.js?v=202611022110";
+import { initShock } from "./shockview.js?v=202611022110";
+import { initCompass } from "./compassview.js?v=202611022110";
+import { initConsensus } from "./consensusview.js?v=202611022110";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202611022110";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611022110";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611022110";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611022110";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611022110";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202611022110";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611022110";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO } from "./util.js?v=202611022110";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
@@ -97,32 +96,6 @@ function toast(text, err) { const el = $("toast"); el.textContent = text; el.cla
 let peers = null;
 const heat = new Heatmap($("heat"), market, { exchangeName: () => peers && peers.names().length ? [ex().name, ...peers.names()].join(" + ") : ex().name });
 const flow = new FlowChart($("flow"));
-const tpo = new TpoChart($("tpo"));
-let tpoTimer = null;
-{ // phiên TPO và khung "Đọc phiên"
-  let ts = {}; try { ts = JSON.parse(sessionStorage.getItem("lailong.tpo") || "{}"); } catch { /* bỏ qua */ }
-  if (ts.sess) { $("tpoSess").value = ts.sess; tpo.sessKind = ts.sess; }
-  const saveTs = () => { try { sessionStorage.setItem("lailong.tpo", JSON.stringify({ sess: $("tpoSess").value, open: !$("tpoReadList").hidden })); } catch { /* bỏ qua */ } };
-  if (ts.open === false) $("tpoReadList").hidden = true;
-  $("tpoSess").onchange = () => { tpo.setSession($("tpoSess").value); saveTs(); };
-  $("tpoReadBtn").onclick = () => { $("tpoReadList").hidden = !$("tpoReadList").hidden; saveTs(); };
-  tpo.onRead = lines => { $("tpoReadList").innerHTML = lines.length ? lines.map(l => `<li>${esc(l)}</li>`).join("") : "<li>Chưa đủ dữ liệu để đọc phiên.</li>"; };
-}
-// TPO dựng từ nến 5 phút của 30 ngày gần nhất (đủ để thống kê kiểu ngày), cập nhật nến mới mỗi 20 giây
-async function loadTpo() {
-  const token = loadToken, sym = S.symbol;
-  tpo.setBars([], market.tick);
-  try {
-    const bars = await ex().klines(sym, "5m", 288 * 30);
-    if (token !== loadToken || S.mode !== "tpo") return;
-    tpo.setBars(bars, market.tick);
-  } catch (e) { log(`Không tải được nến 5 phút cho TPO: ${e.message}`); }
-  clearInterval(tpoTimer);
-  tpoTimer = setInterval(async () => {
-    if (S.mode !== "tpo" || token !== loadToken) return clearInterval(tpoTimer);
-    try { for (const b of await ex().klines(sym, "5m", 2)) tpo.update(b); } catch { /* lần sau thử lại */ }
-  }, 20e3);
-}
 const dom = new Dom($("dom"), market);
 const tape = new Tape($("tape"), market);
 const walls = new WallTracker(); dom.walls = walls;
@@ -181,7 +154,6 @@ async function load() {
     recompute();
     log(`Đã tải ${bars.length} nến ${S.interval} ${S.symbol} từ ${ex().name}`);
     if (S.mode === "box") startFootprint();
-    if (S.mode === "tpo") loadTpo();
     seedDayVolume(token);
   } catch (e) {
     log(`Không tải được nến: ${e.message}`); toast(`Không tải được dữ liệu từ ${ex().name}: ${e.message}`, true);
@@ -718,7 +690,7 @@ document.addEventListener("dblclick", e => {
   el.dispatchEvent(new Event("change", { bubbles: true }));
   el.classList.add("reset"); setTimeout(() => el.classList.remove("reset"), 500);
 });
-const CANVAS_TIP = { heat, flow, tpo, dom, tape, lmap, btChart, ...fractal.tips, ...backtest.tips, ...multiChart.tips };
+const CANVAS_TIP = { heat, flow, dom, tape, lmap, btChart, ...fractal.tips, ...backtest.tips, ...multiChart.tips };
 let tipFrame = 0, lastMove = null;
 function showTip(html, x, y) {
   tipEl.innerHTML = html; tipEl.hidden = false;
@@ -877,17 +849,15 @@ function setView(v) {
 function setMode(m) {
   S.mode = m; persist();
   for (const b of $("chartMode").children) b.classList.toggle("on", b.dataset.mode === m);
-  $("heat").hidden = m !== "heat"; $("flow").hidden = m !== "box"; $("tpo").hidden = m !== "tpo";
-  $("tpoSessBox").hidden = $("tpoRead").hidden = m !== "tpo";
+  $("heat").hidden = m !== "heat"; $("flow").hidden = m !== "box";
   $("contrastBox").hidden = m !== "heat"; $("rowBox").hidden = $("fpModeBox").hidden = $("fpColorBox").hidden = m !== "box";
   $("chartHint").textContent = noHover ? (m === "heat" ? "Kéo: di chuyển · Chụm/mở hai ngón: phóng thời gian (ngang) và giá (dọc) · Chạm đúp: theo dõi · Giữ ngón tay: xem ý nghĩa" : "Kéo: di chuyển · Chụm/mở hai ngón: phóng nến · Chạm đúp: về hiện tại · Giữ ngón tay lên nến: xem ý nghĩa") : m === "heat" ? "Lăn chuột: phóng thời gian · Ctrl + lăn: phóng giá · Kéo: di chuyển · Bấm đúp: theo dõi · Rê chuột để xem ý nghĩa" : "Lăn chuột: phóng to · Kéo: di chuyển · Kéo trục giá: giãn giá · Bấm đúp: về hiện tại · Rê chuột lên nến để xem ý nghĩa";
   if (m === "box") { flow.setType("box"); startFootprint(); }
-  if (m === "tpo") { loadTpo(); $("chartHint").textContent = noHover ? "Kéo: di chuyển · Chạm đúp: về hiện tại · Giữ ngón tay: xem ý nghĩa" : "Lăn chuột: đổi độ cao tầng giá · Ctrl + lăn: giãn dòng · Kéo: di chuyển · Bấm đúp: về hiện tại · Rê chuột để xem ý nghĩa"; }
-  else clearInterval(tpoTimer);
   for (const el of document.querySelectorAll(".flowOnly")) el.hidden = m !== "box";
   for (const el of document.querySelectorAll(".heatOnly")) el.hidden = m !== "heat";
   $("selBtn").hidden = m !== "box";
-  heat.dirty = flow.dirty = tpo.dirty = true;
+  heat.dirty = flow.dirty = true;
+  renderRail();
 }
 
 $("exchange").innerHTML = Object.values(EXCHANGES).map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join("");
@@ -994,10 +964,59 @@ $("multiBook").onchange = () => {
   }
 }
 document.addEventListener("click", e => { if (!e.target.closest(".dropdown")) document.querySelectorAll(".dropdown.open").forEach(d => d.classList.remove("open")); });
+// lớp hiển thị: lớp phân tích mặc định tắt hết; thanh công cụ bên trái biểu đồ bật lớp mà công cụ đó cần.
+// Phần lõi (bong bóng, Mua/Bán/Delta dưới nến, ô Delta) bật sẵn và không tính vào số lớp đang bật.
+const CORE_LAYERS = new Set(["bubbles", "stats", "delta"]);
+// [lớp, tên công cụ, chỉ hiện ở chế độ nào ("" là cả hai), nét vẽ biểu tượng 24×24]
+const RAIL = [
+  ["levels", "Hỗ trợ / kháng cự đã test", "", "M3 8h4M10 8h4M17 8h4M3 16h18"],
+  ["confl", "Vùng hợp lưu", "", "M4 6h16v5H4zM4 15h16M4 19h16"],
+  ["zones", "Vùng khối lượng bất thường", "", "M4 9h16v6H4zM8 9V5M16 15v4"],
+  ["liq", "Lệnh thanh lý thật", "", "M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"],
+  ["liqMap", "Bản đồ thanh lý ước tính", "", "M3 6h18M3 12h18M3 18h18M9 3v18M15 3v18"],
+  ["ice", "Băng chìm / nạp lại", "heat", "M12 3l7 9-7 9-7-9zM5 12h14"],
+  ["bigOnly", "Chỉ hiện lệnh lớn", "heat", "M12 5a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z"],
+  ["imb", "Mất cân bằng xếp chồng", "box", "M4 5h6v14H4zM14 5h6v14h-6zM10 9h4M10 15h4"],
+  ["absorb", "Hấp thụ", "box", "M3 12h11M10 7l5 5-5 5M19 4v16"],
+  ["big", "Lệnh lớn (Big Trades)", "box", "M12 5a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM12 11.5v1"],
+  ["auction", "Đấu giá chưa xong, kiệt sức", "box", "M5 6h14M5 6v5M19 6v5M9 17h6"],
+  ["spoof", "Tường giả bị rút", "box", "M4 7h9M4 12h9M4 17h9M16 9l5 5M21 9l-5 5"],
+  ["algo", "Dấu vết lệnh chia đều", "box", "M4 17l4-4 4 4 4-4 4 4M4 10l4-4 4 4 4-4 4 4"],
+  ["diverg", "Phân kỳ delta", "box", "M4 18L20 8M4 8l16 10"],
+  ["score", "Điểm tín hiệu ≥ 60", "box", "M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4l-5.3 3 1.2-6-4.5-4.1 6-.7z"],
+  ["profile", "Hồ sơ khối lượng vùng đang xem", "box", "M4 4v16M4 7h8M4 10h13M4 13h16M4 16h9"],
+  ["cvd", "CVD + open interest", "box", "M3 17l5-6 4 3 4-7 5 4"],
+];
+const LAYER_BOX = {};
+function renderRail() {
+  const box = k => LAYER_BOX[k] && LAYER_BOX[k].checked;
+  $("toolRail").innerHTML = RAIL.filter(t => !t[2] || t[2] === S.mode).map(([k, name, , d]) => {
+    const on = box(k);
+    return `<button class="rt${on ? " on" : ""}" data-rl="${k}" aria-pressed="${on}" aria-label="${esc(name)}" data-tip="${esc(name)} · ${on ? "đang bật, bấm để tắt" : "bấm để bật"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg></button>`;
+  }).join("");
+  const n = Object.keys(LAYER_BOX).filter(k => !CORE_LAYERS.has(k) && box(k)).length;
+  $("layerCount").textContent = n; $("layerCount").classList.toggle("on", n > 0);
+}
+function railToast(text) {
+  const el = $("railToast"); el.textContent = text; el.hidden = false;
+  clearTimeout(railToast._t); railToast._t = setTimeout(() => { el.hidden = true; }, 2600);
+}
 for (const cb of document.querySelectorAll("[data-layer]")) {
-  cb.onchange = () => { const k = cb.dataset.layer; if (k in heat.show) heat.show[k] = cb.checked; if (k in flow.show) flow.show[k] = cb.checked; heat.dirty = flow.dirty = true; };
+  LAYER_BOX[cb.dataset.layer] = cb;
+  cb.onchange = () => {
+    const k = cb.dataset.layer; if (k in heat.show) heat.show[k] = cb.checked; if (k in flow.show) flow.show[k] = cb.checked;
+    if (k === "cvd") flow.show.oi = cb.checked; // ô CVD + open interest đi cùng nhau, tắt lớp thì ẩn cả ô
+    heat.dirty = flow.dirty = true; renderRail();
+  };
   cb.onchange();
 }
+$("toolRail").onclick = e => {
+  const b = e.target.closest("[data-rl]"); if (!b) return;
+  const k = b.dataset.rl, cb = LAYER_BOX[k], name = RAIL.find(t => t[0] === k)[1];
+  cb.checked = !cb.checked; cb.onchange();
+  railToast((cb.checked ? "Đã tự bật lớp: " : "Đã tắt lớp: ") + name);
+};
+$("layersOff").onclick = () => { for (const [k, cb] of Object.entries(LAYER_BOX)) if (!CORE_LAYERS.has(k) && cb.checked) { cb.checked = false; cb.onchange(); } };
 $("contrast").oninput = () => { heat.contrast = lmap.contrast = +$("contrast").value; heat.dirty = lmap.dirty = true; };
 $("rowSize").onchange = () => { flow.rowMult = $("rowSize").value; flow.dirty = true; };
 { // chế độ ô và cách tô màu của footprint, nhớ trong phiên
@@ -1093,9 +1112,10 @@ renderPaper();
 let tiles = null;
 tiles = new Layout(ws, ["mainPanel", "lmapPanel", "domPanel", "tapePanel", "wallPanel", "orderPanel"], {
   legacy: { lmapW: layout.lmapW, rightW: layout.rightW, tapeW: layout.tapeW },
-  // mặc định như bản cũ; nhật ký tường và khung Lệnh giả lập (thu nhỏ sẵn) nằm dưới Smart Tape
-  tree: legacy => { const t = defaultTree(legacy); t.kids[3] = { dir: "col", flex: 0, kids: ["tapePanel", "wallPanel", "orderPanel"], size: [0, 300, 380] }; return t; },
-  hiddenDefault: ["orderPanel"],
+  // mặc định: biểu đồ chiếm phần lớn bề ngang; sổ lệnh và Smart Tape xếp dọc trong một cột bên phải.
+  // Bản đồ thanh khoản, nhật ký tường và lệnh giả lập thu nhỏ sẵn ở thanh dưới, bấm để mở lại.
+  tree: () => ({ dir: "row", flex: 0, kids: ["mainPanel", "lmapPanel", { dir: "col", flex: 0, kids: ["domPanel", "tapePanel", "wallPanel", "orderPanel"], size: [0, 300, 260, 380] }], size: [0, 230, 400] }),
+  hiddenDefault: ["lmapPanel", "wallPanel", "orderPanel"],
   onChange: () => {
     if (!tiles) return;
     const off = tiles.isMin("lmapPanel");

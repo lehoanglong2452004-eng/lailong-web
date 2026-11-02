@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202610260704">
-<link rel="stylesheet" href="css/app.css?v=202610260704">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611022110">
+<link rel="stylesheet" href="css/app.css?v=202611022110">
 </head>
 <body>
 <header class="menubar">
@@ -92,33 +92,37 @@
       <div class="seg" id="chartMode">
         <button data-mode="heat" class="on" data-g="bookmap">Bookmap</button>
         <button data-mode="box" data-g="footprint">Footprint</button>
-        <button data-mode="tpo" data-g="tpo">TPO</button>
       </div>
       <div class="dropdown">
-        <button id="layerBtn" data-tip="Bật/tắt các lớp dữ liệu vẽ trên biểu đồ">Lớp hiển thị ▾</button>
-        <div class="menu" id="layerMenu">
-          <label data-g="sr-level"><input type="checkbox" data-layer="levels" checked> Hỗ trợ / kháng cự đã test</label>
-          <label data-g="abnormal-volume"><input type="checkbox" data-layer="zones" checked> Vùng khối lượng bất thường</label>
-          <label data-g="confluence"><input type="checkbox" data-layer="confl" checked> Vùng hợp lưu (từ 3 điểm)</label>
-          <label data-g="liquidation"><input type="checkbox" data-layer="liq" checked> Lệnh thanh lý thật</label>
-          <label data-g="dom-liqmap"><input type="checkbox" id="lmapShow" checked> Khung bản đồ thanh khoản (cạnh sổ lệnh)</label>
-          <label data-g="liq-map"><input type="checkbox" data-layer="liqMap" checked> Bản đồ thanh lý ước tính</label>
-          <label data-g="trade-bubble"><input type="checkbox" data-layer="bubbles" checked> Bong bóng khớp lệnh (Bookmap)</label>
+        <button id="layerBtn" data-tip="Bật/tắt các lớp dữ liệu vẽ trên biểu đồ. Mặc định tắt hết; chọn công cụ ở thanh bên trái thì lớp cần cho công cụ đó tự bật">Lớp hiển thị <b class="lcount" id="layerCount">0</b> ▾</button>
+        <div class="menu layermenu" id="layerMenu">
+          <p class="note">Mặc định tắt hết. Bấm một công cụ ở thanh bên trái biểu đồ, lớp mà công cụ đó cần sẽ tự bật.</p>
+          <h4>Lớp phân tích</h4>
+          <label data-g="sr-level"><input type="checkbox" data-layer="levels"> Hỗ trợ / kháng cự đã test</label>
+          <label data-g="abnormal-volume"><input type="checkbox" data-layer="zones"> Vùng khối lượng bất thường</label>
+          <label data-g="confluence"><input type="checkbox" data-layer="confl"> Vùng hợp lưu (từ 3 điểm)</label>
+          <label data-g="liquidation"><input type="checkbox" data-layer="liq"> Lệnh thanh lý thật</label>
+          <label data-g="liq-map"><input type="checkbox" data-layer="liqMap"> Bản đồ thanh lý ước tính</label>
           <label data-g="big-trade"><input type="checkbox" data-layer="bigOnly"> Chỉ hiện lệnh lớn (Bookmap)</label>
-          <label data-g="iceberg"><input type="checkbox" data-layer="ice" checked> Lệnh băng chìm / nạp lại (Bookmap)</label>
-          <label data-g="stacked-imbalance"><input type="checkbox" data-layer="imb" checked> Mất cân bằng xếp chồng (footprint)</label>
-          <label data-g="fp-stats"><input type="checkbox" data-layer="stats" checked> Bảng thống kê cụm (footprint)</label>
-          <label data-g="fp-auction"><input type="checkbox" data-layer="auction" checked> Đấu giá chưa xong, kiệt sức (footprint)</label>
-          <label data-g="fp-diverg"><input type="checkbox" data-layer="diverg" checked> Phân kỳ delta</label>
-          <label data-g="absorption"><input type="checkbox" data-layer="absorb" checked> Chỉ báo hấp thụ (footprint)</label>
-          <label data-g="big-trades"><input type="checkbox" data-layer="big" checked> Big Trades (footprint)</label>
-          <label data-g="signal-score"><input type="checkbox" data-layer="score" checked> Điểm tín hiệu ≥ 60 (footprint)</label>
-          <label data-g="algo-twap"><input type="checkbox" data-layer="algo" checked> Dấu vết lệnh chia đều (footprint)</label>
-          <label data-g="spoofing"><input type="checkbox" data-layer="spoof" checked> Tường giả bị rút (footprint)</label>
-          <label data-g="volume-profile"><input type="checkbox" data-layer="profile" checked> Hồ sơ khối lượng vùng đang xem</label>
+          <label data-g="iceberg"><input type="checkbox" data-layer="ice"> Lệnh băng chìm / nạp lại (Bookmap)</label>
+          <label data-g="stacked-imbalance"><input type="checkbox" data-layer="imb"> Mất cân bằng xếp chồng (footprint)</label>
+          <label data-g="fp-auction"><input type="checkbox" data-layer="auction"> Đấu giá chưa xong, kiệt sức (footprint)</label>
+          <label data-g="fp-diverg"><input type="checkbox" data-layer="diverg"> Phân kỳ delta</label>
+          <label data-g="absorption"><input type="checkbox" data-layer="absorb"> Chỉ báo hấp thụ (footprint)</label>
+          <label data-g="big-trades"><input type="checkbox" data-layer="big"> Big Trades (footprint)</label>
+          <label data-g="signal-score"><input type="checkbox" data-layer="score"> Điểm tín hiệu ≥ 60 (footprint)</label>
+          <label data-g="algo-twap"><input type="checkbox" data-layer="algo"> Dấu vết lệnh chia đều (footprint)</label>
+          <label data-g="spoofing"><input type="checkbox" data-layer="spoof"> Tường giả bị rút (footprint)</label>
+          <label data-g="volume-profile"><input type="checkbox" data-layer="profile"> Hồ sơ khối lượng vùng đang xem</label>
           <label data-g="range-profile"><input type="checkbox" data-layer="dayProfile"> Hồ sơ khối lượng từng ngày</label>
-          <label data-g="delta"><input type="checkbox" data-layer="delta" checked> Delta (footprint)</label>
-          <label data-g="cvd-oi-combo"><input type="checkbox" data-layer="cvd" checked> CVD + open interest (footprint)</label>
+          <label data-g="cvd-oi-combo"><input type="checkbox" data-layer="cvd"> CVD + open interest (footprint)</label>
+          <h4>Phần lõi của biểu đồ</h4>
+          <label data-g="trade-bubble"><input type="checkbox" data-layer="bubbles" checked> Bong bóng khớp lệnh (Bookmap)</label>
+          <label data-g="fp-stats"><input type="checkbox" data-layer="stats" checked> Mua / Bán / Delta dưới mỗi nến (footprint)</label>
+          <label data-g="delta"><input type="checkbox" data-layer="delta" checked> Ô Delta (footprint)</label>
+          <h4>Khung phụ</h4>
+          <label data-g="dom-liqmap"><input type="checkbox" id="lmapShow"> Khung bản đồ thanh khoản (cạnh sổ lệnh)</label>
+          <div class="li"><button class="tool" id="layersOff">Tắt hết lớp phân tích</button></div>
         </div>
       </div>
       <div class="dropdown heatOnly">
@@ -192,9 +196,6 @@
         </div>
       </div>
       <label class="field small" id="contrastBox" data-g="contrast">Tương phản <input type="range" id="contrast" min="0.3" max="4" step="0.1" value="1"></label>
-      <label class="field small" id="tpoSessBox" hidden data-g="tpo-read">Phiên
-        <select id="tpoSess"><option value="vn">Ngày Việt Nam</option><option value="utc">Ngày UTC</option><option value="us">Phiên Mỹ</option></select>
-      </label>
       <label class="field small" id="fpModeBox" hidden data-g="fp-modes">Ô
         <select id="fpMode"><option value="bidask">Mua × Bán</option><option value="bavol">Mua × Bán + tổng</option><option value="delta">Delta</option><option value="volume">Khối lượng</option><option value="histo">Thanh mua/bán</option><option value="profile">Hồ sơ trong nến</option><option value="ratio">Tỷ lệ chéo</option></select>
       </label>
@@ -208,7 +209,10 @@
       <button class="icon minb" data-min="mainPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng (bấm vào tên khung ở đó để mở lại)">—</button>
       <button class="icon max" data-max="mainPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">⤢</button>
     </div>
-    <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas><canvas id="tpo" hidden></canvas><div class="tporead" id="tpoRead" hidden><button class="tool" id="tpoReadBtn" data-g="tpo-read">Đọc phiên ▾</button><ul id="tpoReadList"></ul></div></div>
+    <div class="chart-body">
+      <div class="toolrail" id="toolRail" role="toolbar" aria-label="Công cụ phân tích" aria-orientation="vertical"></div>
+      <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas><div class="railtoast" id="railToast" role="status" hidden></div></div>
+    </div>
     <div class="signalbar" id="signalbar"></div>
     <div class="dom-hint" id="chartHint"></div>
   </section>
@@ -793,6 +797,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202610260704"></script>
+<script type="module" src="js/app.js?v=202611022110"></script>
 </body>
 </html>

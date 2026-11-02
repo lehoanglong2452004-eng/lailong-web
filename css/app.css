@@ -580,10 +580,22 @@ body.dragging-panel, body.dragging-panel * { cursor: grabbing !important; }
 
 /* TPO: khung đọc phiên */
 .chart-wrap { position: relative; }
-.tporead { position: absolute; left: 8px; top: 40px; max-width: min(520px, calc(100% - 100px)); z-index: 3; font-size: 12px; line-height: 1.45; }
-.tporead > button { opacity: .9; }
-.tporead ul { margin: 4px 0 0; padding: 8px 10px 8px 24px; background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--line); border-radius: 6px; max-height: 46vh; overflow: auto; }
-.tporead li { margin: 2px 0; }
+/* ---- thanh công cụ dọc bên trái biểu đồ: mỗi nút bật/tắt một lớp phân tích ---- */
+.chart-body { display: flex; flex: 1; min-height: 0; }
+.chart-body > .chart-wrap { flex: 1; min-width: 0; }
+.toolrail { flex: 0 0 40px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; border-right: 1px solid var(--line); background: var(--bg); overflow-y: auto; scrollbar-width: none; }
+.toolrail .rt { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--muted); flex: 0 0 auto; }
+.toolrail .rt:hover { color: var(--ink); border-color: var(--line); }
+.toolrail .rt.on { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.toolrail .rt svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.railtoast { position: absolute; left: 10px; top: 10px; z-index: 4; padding: 4px 12px; border-radius: 14px; font-size: 12px; color: #ffcf8a; background: rgba(28,19,6,.92); border: 1px solid #5c3a08; pointer-events: none; }
+.lcount { display: inline-block; min-width: 18px; padding: 0 5px; margin: 0 2px; border-radius: 9px; font: 700 11px/16px var(--mono); text-align: center; color: var(--muted); background: var(--panel-2); }
+.lcount.on { color: #000; background: var(--accent); }
+.layermenu { min-width: 320px; max-height: 70vh; overflow: auto; }
+.layermenu h4 { margin: 8px 6px 2px; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+.layermenu .note { margin: 2px 6px 4px; font-size: 12px; color: var(--muted); line-height: 1.4; }
+.layermenu .li { padding: 6px; }
+@media (max-width: 900px) { .toolrail { flex-basis: 34px; } .toolrail .rt { width: 28px; height: 28px; } }
 
 /* nhãn độ tươi của dữ liệu: trực tiếp / trễ / cuối ngày; đỏ khi quá cũ */
 .fresh { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 10px; border: 1px solid currentColor; white-space: nowrap; vertical-align: middle; letter-spacing: 0; text-transform: none; }
