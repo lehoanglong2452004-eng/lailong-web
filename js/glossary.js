@@ -736,8 +736,8 @@ export const GLOSSARY = [
   },
   {
     id: "dom-chart", group: "Order flow nâng cao", term: "Depth Of Market trên biểu đồ",
-    short: "Sổ lệnh vẽ thẳng lên mép phải biểu đồ nến và footprint: thanh đỏ là lệnh chờ bán, xanh là lệnh chờ mua, dải tối phía sau là tổng cộng dồn.",
-    body: "<p>Như chỉ báo Depth Of Market của ATAS. Mỗi dòng là một mức giá (tự gộp nhiều bước giá khi thu nhỏ để dòng không thấp hơn 11 điểm ảnh), thanh càng dài lệnh chờ càng lớn, số ở mép phải là khối lượng.</p><ul><li><b>Thanh sáng:</b> lệnh chờ tại mức đó.</li><li><b>Dải tối phía sau:</b> lệnh chờ cộng dồn từ giá tốt nhất tới mức đó, cho biết giá phải ăn qua bao nhiêu để tới đây.</li><li><b>Góc dưới phải:</b> tổng chờ mua và chờ bán trong khung nhìn.</li></ul><p>Bật/tắt trong <b>Lớp hiển thị</b> hoặc nút trên thanh công cụ bên trái khi xem Footprint.</p>"
+    short: "Sổ lệnh vẽ thẳng lên mép phải biểu đồ nến và footprint: thanh đỏ là lệnh chờ bán, xanh là lệnh chờ mua, đường chấm mảnh là tổng cộng dồn.",
+    body: "<p>Như chỉ báo Depth Of Market của ATAS. Mỗi dòng là một mức giá (tự gộp nhiều bước giá khi thu nhỏ để dòng không thấp hơn 11 điểm ảnh), thanh càng dài lệnh chờ càng lớn, số ở mép phải là khối lượng.</p><ul><li><b>Thanh sáng:</b> lệnh chờ tại mức đó.</li><li><b>Đường chấm mảnh:</b> lệnh chờ cộng dồn từ giá tốt nhất tới mức đó, cho biết giá phải ăn qua bao nhiêu để tới đây.</li><li><b>Góc dưới phải:</b> tổng chờ mua và chờ bán trong khung nhìn.</li></ul><p>Bật/tắt trong <b>Lớp hiển thị</b> hoặc nút trên thanh công cụ bên trái khi xem Footprint.</p>"
   },
   {
     id: "dom-liqmap", group: "Order flow nâng cao", term: "Bản đồ thanh khoản (khung cạnh sổ lệnh)",
