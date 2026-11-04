@@ -92,6 +92,20 @@ FEEDS = [
     ("Financial Times", "https://www.ft.com/world?format=rss", "geo"),
     ("Bloomberg", "https://feeds.bloomberg.com/politics/news.rss", "geo"),
     ("Google News", GN + "site:reuters.com+world+when:1d", "geo"),
+    # Trung Quốc, bản tiếng Anh (Caixin, SCMP, Yicai, China Daily, CGTN, Global Times)
+    ("SCMP", "https://www.scmp.com/rss/92/feed", "fin"),
+    ("SCMP", "https://www.scmp.com/rss/4/feed", "geo"),
+    ("China Daily", "https://www.chinadaily.com.cn/rss/bizchina_rss.xml", "econ"),
+    ("CGTN", "https://www.cgtn.com/subscribe/rss/section/business.xml", "econ"),
+    ("Global Times", "https://www.globaltimes.cn/rss/outbrain.xml", "geo"),
+    ("Google News", GN + "site:caixinglobal.com+when:2d", "econ"),
+    ("Google News", GN + "site:yicaiglobal.com+when:2d", "fin"),
+    ("Google News", GN + "site:scmp.com+(economy+OR+markets+OR+yuan+OR+PBOC)+when:1d", "econ"),
+    (
+        "Google News",
+        GN + "China+(PBOC+OR+yuan+OR+%22property%22+OR+stimulus+OR+exports)+when:1d",
+        "econ",
+    ),
 ]
 
 # Không bao giờ dùng tin của tác giả, báo hay tổ chức Việt Nam, kể cả tin tiếng Việt. Tin bị bỏ khi tên nguồn hay tên miền
@@ -680,14 +694,293 @@ def _one_feed(feed) -> tuple[list[dict], str | None]:
     return items, None
 
 
-def fetch_news(per_cat: int = 80) -> dict:
+# ---------- tin nhanh Trung Quốc (7x24) mà trader, nhà phân tích bên đó theo dõi ----------
+# Kim Thập (Jin10), Tài Liên Xã (Cailian), Hoa Nhĩ Nhai Kiến Văn (Wallstreetcn), Sina 7x24, Eastmoney 7x24.
+# Đều là API JSON công khai mà chính trang web của họ gọi. Tiêu đề tiếng Trung được dịch sang tiếng Anh
+# (Google Translate, bản miễn phí) để xếp mục theo từ khoá như mọi tin khác; bản gốc giữ ở "orig".
+# Dịch lỗi thì giữ tiếng Trung và xếp mục theo từ khoá tiếng Trung (CN_CAT_WORDS).
+CN_TZ = 8 * 3600  # giờ Bắc Kinh
+CN_PER_SOURCE = 50
+JIN10 = {"x-app-id": "bVBF4FyRTn5NJF5n", "x-version": "1.0.0", "Referer": "https://www.jin10.com/"}
+CN_CAT_WORDS = [
+    ("metal", "黄金|白银|金价|银价|铜价|铂|钯|贵金属|锂|镍"),
+    ("energy", "原油|石油|布伦特|欧佩克|OPEC|天然气|LNG|汽油|柴油|炼油|能源"),
+    (
+        "geo",
+        "战争|军事|导弹|空袭|制裁|伊朗|以色列|加沙|乌克兰|俄罗斯|台湾|北约|停火|霍尔木兹|胡塞|朝鲜|地缘|入侵",
+    ),
+    (
+        "econ",
+        "通胀|CPI|PPI|PCE|GDP|非农|失业|零售销售|PMI|美联储|FOMC|欧洲央行|日本央行|英国央行|央行|人民银行|"
+        "利率|降息|加息|降准|LPR|MLF|逆回购|经济|关税|衰退",
+    ),
+    ("crypto", "比特币|以太坊|加密货币|数字货币|BTC|ETH|稳定币"),
+    (
+        "fin",
+        "股|A股|港股|美股|恒指|恒生|沪指|深成指|创业板|债|收益率|国债|银行|财报|IPO|美元|人民币|汇率|日元|欧元",
+    ),
+]
+_CN_CAT_RE = [(c, re.compile(w)) for c, w in CN_CAT_WORDS]
+CN_HOT = re.compile(
+    "美联储|降息|加息|降准|关税|制裁|特朗普|鲍威尔|暴跌|暴涨|熔断|创历史新高|突发|紧急"
+)
+_CN_CHARS = re.compile("[\u4e00-\u9fff]")
+_TAGS = re.compile(r"<[^>]+>")
+
+
+def _cn_text(content: str, title: str = "", limit: int = 160) -> str:
+    """Tiêu đề ngắn từ một tin nhanh: lấy phần 【…】 nếu có, không thì câu đầu, cắt ở `limit` chữ."""
+    content = _TAGS.sub("", content or "").replace("&nbsp;", " ").strip()
+    title = _TAGS.sub("", title or "").strip()
+    m = re.match(r"^\s*【([^】]{4,})】", content)
+    text = title or (m.group(1) if m else content)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+def _cn_time(s: str) -> int:
+    """'2026-11-04 18:49:00' giờ Bắc Kinh → mili giây UTC."""
+    dt = datetime.strptime(s.strip()[:19], "%Y-%m-%d %H:%M:%S")
+    return int((dt.replace(tzinfo=UTC).timestamp() - CN_TZ) * 1000)
+
+
+def _get_json(url: str, headers: dict | None = None, timeout: float = 8):
+    req = urllib.request.Request(url, headers={**BROWSER, **(headers or {})})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read())
+
+
+def parse_jin10(raw: dict) -> list[dict]:
+    out = []
+    for x in raw.get("data") or []:
+        d = x.get("data") or {}
+        text = _cn_text(d.get("content") or "", d.get("title") or "")
+        if text and x.get("time"):
+            link = d.get("link") or f"https://flash.jin10.com/detail/{x.get('id')}"
+            out.append(
+                {
+                    "t": _cn_time(x["time"]),
+                    "orig": text,
+                    "link": link,
+                    "imp": bool(x.get("important")),
+                }
+            )
+    return out
+
+
+def parse_cls(raw: dict) -> list[dict]:
+    out = []
+    for x in (raw.get("data") or {}).get("roll_data") or []:
+        text = _cn_text(x.get("content") or x.get("brief") or "", x.get("title") or "")
+        if text and x.get("ctime"):
+            out.append(
+                {
+                    "t": int(x["ctime"]) * 1000,
+                    "orig": text,
+                    "link": f"https://www.cls.cn/detail/{x.get('id')}",
+                    "imp": x.get("level") in ("A", "B"),
+                }
+            )
+    return out
+
+
+def parse_wscn(raw: dict) -> list[dict]:
+    out = []
+    for x in (raw.get("data") or {}).get("items") or []:
+        text = _cn_text(x.get("content_text") or x.get("content") or "", x.get("title") or "")
+        if text and x.get("display_time"):
+            link = x.get("uri") or f"https://wallstreetcn.com/livenews/{x.get('id')}"
+            out.append(
+                {
+                    "t": int(x["display_time"]) * 1000,
+                    "orig": text,
+                    "link": link,
+                    "imp": (x.get("score") or 0) >= 2,
+                }
+            )
+    return out
+
+
+def parse_sina(raw: dict) -> list[dict]:
+    feed = (((raw.get("result") or {}).get("data") or {}).get("feed") or {}).get("list") or []
+    out = []
+    for x in feed:
+        text = _cn_text(x.get("rich_text") or "")
+        if text and x.get("create_time"):
+            link = (
+                x.get("docurl")
+                or f"https://finance.sina.com.cn/7x24/notification.shtml?id={x.get('id')}"
+            )
+            tags = " ".join(t.get("name", "") for t in x.get("tag") or [] if isinstance(t, dict))
+            out.append(
+                {"t": _cn_time(x["create_time"]), "orig": text, "link": link, "imp": "焦点" in tags}
+            )
+    return out
+
+
+def parse_eastmoney(raw: dict) -> list[dict]:
+    out = []
+    for x in (raw.get("data") or {}).get("fastNewsList") or []:
+        text = _cn_text(x.get("summary") or "", x.get("title") or "")
+        if text and x.get("showTime"):
+            link = f"https://finance.eastmoney.com/a/{x.get('code')}.html"
+            out.append({"t": _cn_time(x["showTime"]), "orig": text, "link": link, "imp": False})
+    return out
+
+
+# (nguồn, đường dẫn, header riêng, hàm đọc, mục mặc định)
+CN_FEEDS = [
+    (
+        "Jin10",
+        "https://flash-api.jin10.com/get_flash_list?channel=-8200&vip=1",
+        JIN10,
+        parse_jin10,
+        "econ",
+    ),
+    (
+        "Cailian",
+        f"https://www.cls.cn/nodeapi/updateTelegraphList?app=CailianpressWeb&os=web&rn={CN_PER_SOURCE}",
+        {"Referer": "https://www.cls.cn/telegraph"},
+        parse_cls,
+        "fin",
+    ),
+    (
+        "Wallstreetcn",
+        f"https://api-one-wscn.awtmt.com/apiv1/content/lives?channel=global-channel&limit={CN_PER_SOURCE}",
+        {"Referer": "https://wallstreetcn.com/"},
+        parse_wscn,
+        "econ",
+    ),
+    (
+        "Sina 7x24",
+        f"https://zhibo.sina.com.cn/api/zhibo/feed?page=1&page_size={CN_PER_SOURCE}&zhibo_id=152",
+        {"Referer": "https://finance.sina.com.cn/7x24/"},
+        parse_sina,
+        "econ",
+    ),
+    (
+        "Eastmoney",
+        "https://np-weblist.eastmoney.com/comm/web/getFastNewsList?client=web&biz=web_724"
+        f"&fastColumn=102&sortEnd=&pageSize={CN_PER_SOURCE}&req_trace=lailong",
+        {"Referer": "https://kuaixun.eastmoney.com/"},
+        parse_eastmoney,
+        "fin",
+    ),
+]
+TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t"
+
+
+def translate_zh(texts: list[str], chunk: int = 3000) -> list[str | None]:
+    """Dịch nhiều câu tiếng Trung sang tiếng Anh, gộp thành từng gói ~3000 chữ, mỗi câu một dòng.
+    Gói nào lỗi hay số dòng trả về không khớp thì các câu trong gói đó là None."""
+    out: list[str | None] = [None] * len(texts)
+    batches, cur, size = [], [], 0
+    for i, t in enumerate(texts):
+        if cur and size + len(t) > chunk:
+            batches.append(cur)
+            cur, size = [], 0
+        cur.append(i)
+        size += len(t) + 1
+
+    if cur:
+        batches.append(cur)
+
+    def one(idx: list[int]) -> None:
+        body = urllib.parse.urlencode(
+            {"q": "\n".join(texts[i].replace("\n", " ") for i in idx)}
+        ).encode()
+        req = urllib.request.Request(TRANSLATE_URL, data=body, headers=BROWSER)
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                raw = json.loads(r.read())
+            lines = "".join(seg[0] for seg in raw[0] if seg and seg[0]).split("\n")
+        except Exception:
+            return
+        if len(lines) == len(idx):
+            for i, line in zip(idx, lines, strict=True):
+                out[i] = line.strip() or None
+
+    with ThreadPoolExecutor(4) as ex:
+        list(ex.map(one, batches))
+    return out
+
+
+def _cn_classify(text: str, default: str) -> str:
+    for cat, rx in _CN_CAT_RE:
+        if rx.search(text):
+            return cat
+    return default
+
+
+def _one_cn(feed) -> tuple[list[dict], str | None]:
+    source, url, headers, parse, default = feed
+    try:
+        rows = parse(_get_json(url, headers))
+    except Exception as exc:
+        return [], f"{source}: {exc}"
+    return [{**r, "source": source, "default": default} for r in rows[:CN_PER_SOURCE]], None
+
+
+def fetch_cn(translate: bool = True) -> tuple[list[dict], list[str]]:
+    """Tin nhanh của các nguồn Trung Quốc, đã dịch và xếp mục. Trả về (tin, lỗi)."""
+    rows, errors = [], []
+    with ThreadPoolExecutor(len(CN_FEEDS)) as ex:
+        for got, err in ex.map(_one_cn, CN_FEEDS):
+            rows += got
+            if err:
+                errors.append(err)
+    # cùng một tin thường ra ở vài nguồn: gộp theo 24 chữ Hán đầu, giữ bản ra sớm nhất
+    seen, uniq = set(), []
+    for r in sorted(rows, key=lambda r: r["t"]):
+        key = "".join(_CN_CHARS.findall(r["orig"]))[:24] or r["orig"][:40]
+        if key in seen:
+            continue
+        seen.add(key)
+        uniq.append(r)
+    en = translate_zh([r["orig"] for r in uniq]) if translate and uniq else [None] * len(uniq)
+    if uniq and translate and not any(en):
+        errors.append("Dịch tin Trung Quốc lỗi: giữ tiêu đề tiếng Trung")
+    items = []
+    for r, title in zip(uniq, en, strict=True):
+        if title:
+            cat, topics = classify(title, r["default"])
+            if cat == r["default"]:
+                cat = _cn_classify(r["orig"], r["default"])
+        else:
+            title, cat, topics = r["orig"], _cn_classify(r["orig"], r["default"]), []
+        hot = r["imp"] or bool(HOT.search(title)) or bool(CN_HOT.search(r["orig"]))
+        coins = (
+            [c for c in COINS if re.search(COIN_WORDS[c], title, re.I)] if cat == "crypto" else []
+        )
+        items.append(
+            {
+                "t": r["t"],
+                "title": title,
+                "orig": r["orig"],
+                "link": r["link"],
+                "source": r["source"],
+                "cn": True,
+                "cat": cat,
+                "topics": topics,
+                "hot": hot,
+                "coins": coins,
+            }
+        )
+    return items, errors
+
+
+def fetch_news(per_cat: int = 150) -> dict:
     """Lấy mọi nguồn cùng lúc (16 luồng): nguồn chậm hay bị chặn không làm chậm nguồn khác."""
     items, errors = [], []
     with ThreadPoolExecutor(16) as ex:
+        cn = ex.submit(fetch_cn)
         for got, err in ex.map(_one_feed, FEEDS):
             items += got
             if err:
                 errors.append(err)
+        got, errs = cn.result()
+        items += got
+        errors += errs
     now = int(time.time() * 1000)
     # bỏ tin ghi giờ tương lai và mọi tin của Việt Nam
     items = [x for x in items if x["t"] <= now + 3_600_000 and not is_vietnamese(x)]

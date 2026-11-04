@@ -4,9 +4,9 @@
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/news.py).
 // Không dùng tin của báo, tác giả, tổ chức Việt Nam hay tin tiếng Việt. Tin nóng được gom thành bản tin Telegram
 // tối đa mỗi 30 phút (xem newsdigest.js); các tin đã gửi lưu trên máy này để không gửi lại.
-import { setFresh } from "./fresh.js?v=202611022145";
-import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202611022145";
-import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202611022145";
+import { setFresh } from "./fresh.js?v=202611041854";
+import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202611041854";
+import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202611041854";
 
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],
   [/FOMC|Federal Funds|Fed Chair|Powell/i, "Fed"], [/Retail Sales/i, "doanh số bán lẻ"], [/GDP/i, "GDP"], [/PCE/i, "chi tiêu PCE (Fed hay dùng)"],
@@ -77,7 +77,7 @@ export function avgReaction(events, assets) {
 }
 
 export function initNews({ $, esc, alerts, coin }) {
-  let cal = null, news = null, react = null, onlyCoin = false, cat = "", sel = null, dg = { at: 0, sent: [] }; const firedEv = new Set();
+  let cal = null, news = null, react = null, onlyCoin = false, onlyCN = false, cat = "", sel = null, dg = { at: 0, sent: [] }; const firedEv = new Set();
   try { cat = sessionStorage.getItem("lailong.newscat") || ""; } catch { /* bỏ qua */ }
   try { dg = { ...dg, ...JSON.parse(localStorage.getItem(DIGEST) || "{}") }; } catch { /* chế độ riêng tư */ }
   if (!Array.isArray(dg.sent)) dg.sent = [];
@@ -110,7 +110,7 @@ export function initNews({ $, esc, alerts, coin }) {
     if (alerts.cfg.newsEv && min <= 15 && min >= 0 && !firedEv.has(next.t + next.title) && firedEv.add(next.t + next.title)) alerts.fire("ev" + next.t + next.title, `Còn ${min} phút nữa ra tin ${FLAG[next.country] ? FLAG[next.country] + " " : ""}${next.country} ${next.title}${viName(next.title) ? ` (${viName(next.title)})` : ""}. Cân nhắc đứng ngoài.`, "price");
   }
 
-  const newsRow = x => `<a class="newsit${x.hot ? " hot" : ""}" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer"><span class="nt">${fmtTime(x.t, true).slice(0, 11)} · ${esc(x.source)}${x.cat && !cat ? " · " + esc((CATS.find(c => c.id === x.cat) || {}).name || "") : ""}${x.coins && x.coins.length ? " · " + esc(x.coins.join(", ")) : ""}</span>${x.hot ? "🔥 " : ""}${esc(x.title)}</a>`;
+  const newsRow = x => `<a class="newsit${x.hot ? " hot" : ""}" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer"${x.orig ? ` title="${esc(x.orig)}"` : ""}><span class="nt">${fmtTime(x.t, true).slice(0, 11)} · ${x.cn ? "🇨🇳 " : ""}${esc(x.source)}${x.cat && !cat ? " · " + esc((CATS.find(c => c.id === x.cat) || {}).name || "") : ""}${x.coins && x.coins.length ? " · " + esc(x.coins.join(", ")) : ""}</span>${x.hot ? "🔥 " : ""}${esc(x.title)}</a>`;
 
   function renderCal() {
     const cb = $("calBody"); if (!cb) return;
@@ -129,9 +129,10 @@ export function initNews({ $, esc, alerts, coin }) {
     $("newsTabs").innerHTML = [{ id: "", name: "Tất cả", icon: "" }, ...CATS].map(k => `<button class="${k.id === cat ? "on" : ""}" data-cat="${k.id}">${k.icon ? k.icon + " " : ""}${k.name}${k.id && counts[k.id] ? ` <small>${counts[k.id]}</small>` : ""}</button>`).join("");
     $("newsOnly").hidden = cat !== "crypto";
     $("newsOnly").textContent = onlyCoin ? `Chỉ tin về ${c}` : "Mọi coin";
-    const items = news ? news.items.filter(x => (!cat || (x.cat || "crypto") === cat) && (cat !== "crypto" || !onlyCoin || (x.coins || []).includes(c))) : [];
-    nb.innerHTML = !news ? `<div class="empty">Chưa tải được tin.</div>` : !items.length ? `<div class="empty">Không có tin nào trong mục này.</div>` : items.slice(0, 60).map(newsRow).join("");
-    setFresh($("newsUpd"), "delay", news ? news.updated : cal ? cal.updated : null, { label: "Tin và lịch: làm mới mỗi 30 phút", expect: 2 * 3600e3, note: `51 nguồn RSS quốc tế (không dùng nguồn Việt Nam), bản web do máy chủ GitHub gom mỗi 30 phút, bản laptop gom mỗi 10 phút.${cal ? ` Lịch cập nhật ${fmtTime(cal.updated)}.` : ""} Tin mới nhất có thể trễ tới 30 phút so với nguồn` });
+    $("newsCN").classList.toggle("on", onlyCN);
+    const items = news ? news.items.filter(x => (!cat || (x.cat || "crypto") === cat) && (cat !== "crypto" || !onlyCoin || (x.coins || []).includes(c)) && (!onlyCN || x.cn)) : [];
+    nb.innerHTML = !news ? `<div class="empty">Chưa tải được tin.</div>` : !items.length ? `<div class="empty">Không có tin nào trong mục này.</div>` : items.slice(0, 200).map(newsRow).join("");
+    setFresh($("newsUpd"), "delay", news ? news.updated : cal ? cal.updated : null, { label: "Tin và lịch: làm mới mỗi 30 phút", expect: 2 * 3600e3, note: `65 nguồn quốc tế (không dùng nguồn Việt Nam): 60 RSS và 5 kênh tin nhanh Trung Quốc (Jin10, Cailian, Wallstreetcn, Sina 7x24, Eastmoney) đã dịch sang tiếng Anh, rê chuột vào tin để xem bản gốc; bản web do máy chủ GitHub gom mỗi 30 phút, bản laptop gom mỗi 10 phút.${cal ? ` Lịch cập nhật ${fmtTime(cal.updated)}.` : ""} Tin mới nhất có thể trễ tới 30 phút so với nguồn` });
   }
 
   // bản đồ tác động: mỗi ô là một chủ đề, ô càng đỏ càng nóng, ô to là 3 chủ đề nóng nhất
@@ -213,6 +214,7 @@ export function initNews({ $, esc, alerts, coin }) {
   }
   $("newsTabs").onclick = e => { const b = e.target.closest("[data-cat]"); if (!b) return; cat = b.dataset.cat; try { sessionStorage.setItem("lailong.newscat", cat); } catch { /* bỏ qua */ } renderNews(); };
   $("newsOnly").onclick = () => { onlyCoin = !onlyCoin; renderNews(); };
+  $("newsCN").onclick = () => { onlyCN = !onlyCN; renderNews(); };
   load(); setInterval(load, 5 * 60e3); setInterval(tick, 30e3);
   return { render, load, events: () => cal ? cal.events : [], reactions: () => react };
 }
