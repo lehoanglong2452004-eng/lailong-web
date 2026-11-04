@@ -5,14 +5,15 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202611022145";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202611022145";
-import { T, alpha, watermark } from "./theme.js?v=202611022145";
-import { drawConfl, conflTip } from "./levels.js?v=202611022145";
-import { drawShapes } from "./drawings.js?v=202611022145";
-import { bookImb } from "./walls.js?v=202611022145";
+import { COL_MS } from "./market.js?v=202611041847";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202611041847";
+import { T, alpha, watermark } from "./theme.js?v=202611041847";
+import { drawConfl, conflTip } from "./levels.js?v=202611041847";
+import { drawShapes } from "./drawings.js?v=202611041847";
+import { bookImb } from "./walls.js?v=202611041847";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
+const MS_MIN = 15, MS_MAX = 300000; // giới hạn phóng thời gian: 15 ms đến 5 phút mỗi điểm ảnh (khoảng 3 ngày trên màn hình)
 
 // Cài đặt mặc định của Bookmap (bấm đúp vào ô trong bảng cài đặt để về mặc định)
 export const HM_DEFAULTS = {
@@ -108,6 +109,7 @@ export class Heatmap {
     this.off = document.createElement("canvas"); this.offCtx = this.off.getContext("2d");
     this.msPerPx = 120; this.follow = true; this.tEnd = Date.now(); this.rightPad = 70;
     this.pCenter = null; this.pxPerPrice = null; this.contrast = 1; this.cfg = { ...HM_DEFAULTS };
+    this.overview = false; this.onOverview = null; // Toàn cảnh: tự thu cả lịch sử và biên độ giá vào màn hình
     this.show = { bubbles: true, liq: true, levels: true, zones: true, liqMap: true, bigOnly: false, ice: true, confl: true };
     this.levels = []; this.zones = []; this.confl = []; this.liqMap = null; this.orders = []; this.position = null;
     this.mouse = null; this.drag = null; this.dirty = true; this._lastDraw = 0;
@@ -120,7 +122,31 @@ export class Heatmap {
     requestAnimationFrame(loop);
   }
 
-  resetView() { this.pCenter = null; this.pxPerPrice = null; this.follow = true; this.dirty = true; }
+  resetView() { this.pCenter = null; this.pxPerPrice = null; this.follow = true; this._fitKey = null; this.dirty = true; } // giữ Toàn cảnh khi đổi mã
+  setOverview(on) {
+    on = !!on; if (on === this.overview) return;
+    this.overview = on; this._fitKey = null;
+    if (on) this.follow = true;
+    this.dirty = true; if (this.onOverview) this.onOverview(on);
+  }
+  // Toàn cảnh: trục thời gian từ cột đầu tiên tới bây giờ, trục giá theo đỉnh/đáy giá khớp (hoặc giá mua/bán) cộng 10% mỗi bên
+  _fit(L) {
+    const cols = this.m.cols; if (!cols.length) return;
+    const now = Date.now(), first = cols[0].t;
+    this.msPerPx = Math.min(MS_MAX, Math.max(MS_MIN, (now - first) / Math.max(50, L.pw - this.rightPad - 10)));
+    const key = `${cols.length}:${first}:${L.ph}`;
+    if (this._fitKey !== key) {
+      this._fitKey = key; let hi = -Infinity, lo = Infinity;
+      for (const c of cols) {
+        if (c.hi > -Infinity) { hi = Math.max(hi, c.hi); lo = Math.min(lo, c.lo); }
+        else if (c.bb != null && c.ba != null) { hi = Math.max(hi, c.ba); lo = Math.min(lo, c.bb); }
+      }
+      if (!(hi > lo)) { const mid = this.m.book.mid(); if (mid == null) return; hi = mid * 1.001; lo = mid * 0.999; }
+      const span = Math.max(hi - lo, (hi + lo) / 2 * 0.002);
+      this._fitP = (hi + lo) / 2; this._fitPpp = L.ph / (span * 1.25);
+    }
+    this.pCenter = this._fitP; this.pxPerPrice = this._fitPpp;
+  }
   setOverlays(o) { Object.assign(this, o); this.dirty = true; }
 
   // Bố cục: bản đồ | các cột bên phải (COB, Volume Profile, +/-, đếm lệnh, thanh lý ước tính) | trục giá
@@ -149,6 +175,7 @@ export class Heatmap {
     if (mid == null) return false;
     if (this.pCenter === null) this.pCenter = mid;
     if (this.pxPerPrice === null) this.pxPerPrice = this._L.ph / (mid * 0.006); // ±0,3% trên màn hình
+    if (this.overview) { this.tEnd = Date.now(); this._fit(this._L); return true; }
     if (this.follow) {
       this.tEnd = Date.now();
       const rc = this.cfg.recenter, p = rc === "last" ? (this.m.last ? this.m.last.p : mid) : mid;
@@ -708,8 +735,8 @@ export class Heatmap {
       ctx.fillStyle = col; ctx.fillRect(x0 + 1, y - 9, AXIS_W - 1, 18); ctx.fillStyle = "#fff"; ctx.fillText(last.p.toFixed(dec), x0 + 6, y + 4);
     }
     // trục thời gian
-    const spanMs = L.pw * this.msPerPx, steps = [1e3, 5e3, 10e3, 15e3, 30e3, 60e3, 120e3, 300e3, 600e3, 900e3, 1800e3, 3600e3];
-    const tStep = steps.find(s => s / this.msPerPx >= 90) || 3600e3;
+    const spanMs = L.pw * this.msPerPx, steps = [1e3, 5e3, 10e3, 15e3, 30e3, 60e3, 120e3, 300e3, 600e3, 900e3, 1800e3, 3600e3, 7200e3, 10800e3, 21600e3, 43200e3, 86400e3];
+    const tStep = steps.find(s => s / this.msPerPx >= 90) || 86400e3;
     ctx.fillStyle = T.muted; ctx.textAlign = "center";
     for (let t = Math.ceil(this.tAt(0) / tStep) * tStep; t < this.tAt(L.pw); t += tStep) {
       const x = this.xOf(t); ctx.fillText(fmtTime(t), x, L.timeTop + 14);
@@ -794,11 +821,11 @@ export class Heatmap {
     cv.addEventListener("mousemove", e => {
       const p = pos(e); this.mouse = p;
       if (this.drag) {
-        if (this.drag.axis) this.pxPerPrice = Math.max(1e-9, this.drag.ppp * Math.exp(-(p.y - this.drag.y) * 0.01));
+        if (this.drag.axis) { this.setOverview(false); this.pxPerPrice = Math.max(1e-9, this.drag.ppp * Math.exp(-(p.y - this.drag.y) * 0.01)); }
         else {
+          if (Math.abs(p.x - this.drag.x) + Math.abs(p.y - this.drag.y) > 4) { this.follow = false; this.setOverview(false); }
           this.tEnd = this.drag.tEnd - (p.x - this.drag.x) * this.msPerPx;
           this.pCenter = this.drag.pc + (p.y - this.drag.y) / this.pxPerPrice;
-          if (Math.abs(p.x - this.drag.x) + Math.abs(p.y - this.drag.y) > 4) this.follow = false;
         }
       }
       this.dirty = true;
@@ -809,13 +836,14 @@ export class Heatmap {
       this.drag = { x: p.x, y: p.y, tEnd: this.tEnd, pc: this.pCenter, ppp: this.pxPerPrice, axis: p.x > this._L.pw };
     });
     window.addEventListener("mouseup", () => { this.drag = null; });
-    cv.addEventListener("dblclick", () => { this.follow = true; this.pCenter = null; this.dirty = true; });
+    cv.addEventListener("dblclick", () => { this.setOverview(false); this.follow = true; this.pCenter = null; this.dirty = true; });
     cv.addEventListener("wheel", e => {
       e.preventDefault(); const p = pos(e), k = e.deltaY < 0 ? 1 / 1.15 : 1.15;
+      this.setOverview(false);
       if (e.ctrlKey || e.shiftKey || p.x > this._L.pw) { // phóng giá quanh con trỏ
         const before = this.pAt(p.y); this.pxPerPrice /= k; this.pCenter += before - this.pAt(p.y);
       } else { // phóng thời gian quanh con trỏ
-        const before = this.tAt(p.x); this.msPerPx = Math.min(20000, Math.max(15, this.msPerPx * k));
+        const before = this.tAt(p.x); this.msPerPx = Math.min(MS_MAX, Math.max(MS_MIN, this.msPerPx * k));
         if (!this.follow) this.tEnd += before - this.tAt(p.x);
       }
       this.dirty = true;
@@ -829,10 +857,10 @@ export class Heatmap {
       const t = e.touches[0]; touch = { x: t.clientX, y: t.clientY, tEnd: this.tEnd, pc: this.pCenter };
     }, { passive: true });
     cv.addEventListener("touchmove", e => {
-      if (!touch) return; e.preventDefault();
+      if (!touch) return; e.preventDefault(); this.setOverview(false);
       if (touch.pinch) {
         if (e.touches.length < 2) return; const [dx, dy] = span(e);
-        if (touch.dx > 40 && dx > 10) this.msPerPx = Math.min(20000, Math.max(15, touch.ms * touch.dx / dx));
+        if (touch.dx > 40 && dx > 10) this.msPerPx = Math.min(MS_MAX, Math.max(MS_MIN, touch.ms * touch.dx / dx));
         if (touch.dy > 40 && dy > 10) this.pxPerPrice = touch.pp * dy / touch.dy;
         this.dirty = true; return;
       }
