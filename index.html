@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611042121">
-<link rel="stylesheet" href="css/app.css?v=202611042121">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611042139">
+<link rel="stylesheet" href="css/app.css?v=202611042139">
 </head>
 <body>
 <header class="menubar">
@@ -147,6 +147,7 @@
           <label class="row" data-g="bm-cutoff">Ngưỡng cắt trên (phân vị %) <input type="number" data-hm="upper" value="99" min="50" max="100" step="0.5"></label>
           <label class="row" data-g="bm-cutoff">Ngưỡng cắt dưới (phân vị %) <input type="number" data-hm="lower" value="30" min="0" max="60" step="0.5"></label>
           <label class="row" data-g="bm-auto">Tự chỉnh tương phản <select data-hm="auto"><option value="live" selected>Liên tục</option><option value="recenter">Khi căn giữa lại</option><option value="off">Giữ nguyên (chỉ đổi khi phóng)</option></select></label>
+          <label data-g="bm-soft"><input type="checkbox" data-hm="soft" checked> Làm mịn hiển thị (như Bookmap)</label>
           <label class="row" data-g="bm-smooth">Làm mịn dọc <select data-hm="smooth"><option value="auto" selected>Tự động</option><option value="none">Tắt</option><option value="1">Nhẹ</option><option value="2">Vừa</option><option value="3">Mạnh</option></select></label>
           <label class="row" data-g="bm-dim">Làm tối (%) <input type="number" data-hm="dim" value="0" min="0" max="90" step="5"></label>
           <label data-g="bm-aggregate"><input type="checkbox" data-hm="aggregate"> Sổ lệnh cộng dồn trên bản đồ</label>
@@ -165,7 +166,8 @@
           <label data-g="bm-bbo"><input type="checkbox" data-hm="lastLine" checked> Đường giá khớp cuối</label>
           <label data-g="bm-vwap"><input type="checkbox" data-hm="vwap" checked> VWAP phiên</label>
           <label data-g="bm-poc"><input type="checkbox" data-hm="poc" checked> Đường POC (từ cột Volume Profile)</label>
-          <label data-g="bm-candles"><input type="checkbox" data-hm="candles"> Nến của khung đang chọn</label>
+          <label class="row" data-g="bm-candles">Nến của khung đang chọn <select data-hm="candles"><option value="auto" selected>Tự hiện khi thu nhỏ</option><option value="on">Luôn hiện</option><option value="off">Tắt</option></select></label>
+          <label data-g="bm-glow"><input type="checkbox" data-hm="glow" checked> Bóng hấp thụ trên nến</label>
           <label data-g="book-imb"><input type="checkbox" data-hm="imb" checked> Mất cân bằng sổ lệnh ±0,5% ở ô dưới (cạnh CVD)</label>
           <label data-g="tape-speed"><input type="checkbox" data-hm="speed" checked> Tốc độ băng (lệnh mỗi giây) ở ô dưới</label>
           <label class="row" data-g="bm-slices">Vạch chia thời gian <select data-hm="slices"><option value="0" selected>Tắt</option><option value="10">10 giây</option><option value="15">15 giây</option><option value="30">30 giây</option><option value="60">1 phút</option><option value="120">2 phút</option><option value="300">5 phút</option><option value="600">10 phút</option><option value="900">15 phút</option><option value="1800">30 phút</option><option value="3600">60 phút</option></select></label>
@@ -836,6 +838,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611042121"></script>
+<script type="module" src="js/app.js?v=202611042139"></script>
 </body>
 </html>
