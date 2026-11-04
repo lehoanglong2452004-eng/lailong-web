@@ -129,8 +129,22 @@ export const GLOSSARY = [
     id: "bm-candles",
     group: "Bookmap",
     term: "Nến trên Bookmap",
-    short: "Vẽ nến của khung đang chọn (1m, 5m...) chồng lên bản đồ, thân rỗng để vẫn thấy thanh khoản phía sau.",
-    body: "<p>Vẽ nến của khung đang chọn (1m, 5m...) chồng lên bản đồ, thân rỗng để vẫn thấy thanh khoản phía sau.</p>"
+    short: "Vẽ nến của khung đang chọn (1m, 5m...) chồng lên bản đồ. Mặc định tự hiện khi thu nhỏ, tự ẩn khi phóng to để nhìn rõ sổ lệnh.",
+    body: "<p>Vẽ nến của khung đang chọn (1m, 5m...) chồng lên bản đồ. <b>Tự hiện khi thu nhỏ</b>: khi mỗi nến hẹp hơn khoảng 30 điểm ảnh thì nến hiện ra để thấy xu hướng; phóng to thì nến ẩn đi để nhìn rõ từng mức lệnh chờ và bong bóng khớp lệnh.</p>"
+  },
+  {
+    id: "bm-glow",
+    group: "Bookmap",
+    term: "Bóng hấp thụ trên nến",
+    short: "Quầng sáng ở đỉnh hoặc đáy nến khi giá chạm một tường lệnh chờ dày rồi bị đẩy lại. Cam là bên bán chặn ở trên, xanh là bên mua đỡ ở dưới.",
+    body: "<p>Một nến được đánh dấu khi râu dài (ít nhất 35% biên độ nến, tức giá bị đẩy lại) và ngay mức giá đó, trong lúc nến chạy, có tường lệnh chờ dày ít nhất một nửa mức màu đậm nhất của bản đồ.</p><p><b>Cam ở đỉnh</b>: phía bán đang chặn, mức đó là kháng cự. <b>Xanh ở đáy</b>: phía mua đang đỡ, mức đó là hỗ trợ. Bóng càng sáng thì tường càng dày. Rê chuột vào bóng để xem số liệu.</p>"
+  },
+  {
+    id: "bm-soft",
+    group: "Bookmap",
+    term: "Làm mịn hiển thị",
+    short: "Làm các dải thanh khoản mềm và liền như Bookmap thay vì lốm đốm từng ô. Tắt đi nếu muốn thấy từng ô sắc nét.",
+    body: "<p>Chỉ đổi cách hiển thị, không đổi số liệu. Bản đồ được nội suy nhẹ theo chiều giá và nhoè rất ít, nên mắt đọc ra các vùng thanh khoản nhanh hơn và đỡ mỏi. Khi cần đếm từng mức giá sát nhau, tắt mục này.</p>"
   },
   {
     id: "bm-slices",

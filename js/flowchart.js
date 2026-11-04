@@ -5,16 +5,16 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202611042121";
-import { cvd as cvdOf } from "./analytics.js?v=202611042121";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202611042121";
-import { GROUPS } from "./flowtools.js?v=202611042121";
-import { WALL_KIND } from "./walls.js?v=202611042121";
-import { T, alpha, watermark } from "./theme.js?v=202611042121";
-import { drawConfl, conflTip } from "./levels.js?v=202611042121";
-import { drawShapes } from "./drawings.js?v=202611042121";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202611042121";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202611042121";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202611042139";
+import { cvd as cvdOf } from "./analytics.js?v=202611042139";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202611042139";
+import { GROUPS } from "./flowtools.js?v=202611042139";
+import { WALL_KIND } from "./walls.js?v=202611042139";
+import { T, alpha, watermark } from "./theme.js?v=202611042139";
+import { drawConfl, conflTip } from "./levels.js?v=202611042139";
+import { drawShapes } from "./drawings.js?v=202611042139";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202611042139";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202611042139";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -89,7 +89,7 @@ export class FlowChart {
     this.cv = canvas; this.opts = opts;
     this.S = fitCanvas(canvas, () => { this.dirty = true; }); this.ctx = this.S.ctx;
     this.bars = []; this.info = {}; this.step = 1; this.type = "candle"; this.rowMult = "auto";
-    this.spacing = { candle: 8, box: 72 }; this.offset = 6; this.yZoom = 1;
+    this.spacing = { candle: 8, box: 72 }; this.offset = 6; this.yZoom = 1; this.pShift = 0;
     this.show = { radar: false, profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true, stats: true, auction: true, diverg: true, confl: true, depth: true };
     this.fpMode = "bidask"; this.fpColor = "volume";
     this.radar = []; this.levels = []; this.zones = []; this.confl = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
@@ -102,7 +102,7 @@ export class FlowChart {
     requestAnimationFrame(loop);
   }
 
-  setData(bars, info) { this.bars = bars; this.info = info || {}; this.step = info.step || 1; this.offset = this._defOff(); this.yZoom = 1; this._cvd = null; this.dirty = true; }
+  setData(bars, info) { this.bars = bars; this.info = info || {}; this.step = info.step || 1; this.offset = this._defOff(); this.yZoom = 1; this.pShift = 0; this._cvd = null; this.dirty = true; }
   refresh() { this._cvd = null; this.dirty = true; }
   setType(t) { if (t !== this.type) { this.type = t; this.offset = this._defOff(); } this.dirty = true; }
   _defOff() { return Math.max(0.6, 50 / this.spacing[this.type]); } // chừa khoảng 50px bên phải nến cuối
@@ -151,7 +151,7 @@ export class FlowChart {
     if (last < first) return; // khung quá hẹp hoặc đã kéo hết nến ra ngoài
     let lo = Infinity, hi = -Infinity;
     for (let i = first; i <= last; i++) { lo = Math.min(lo, this.bars[i].l); hi = Math.max(hi, this.bars[i].h); }
-    const mid = (hi + lo) / 2, half = Math.max((hi - lo) / 2, mid * 0.0005) * 1.1 * this.yZoom;
+    const mid = (hi + lo) / 2 + this.pShift, half = Math.max((hi - lo) / 2, mid * 0.0005) * 1.1 * this.yZoom;
     this._pmin = mid - half; this._pmax = mid + half; this._ph = L.priceH - 12;
     if (this.compact && this.sp >= LS_TXT) this._pmin -= (this._pmax - this._pmin) * 26 / this._ph; // chừa chỗ ghi số dưới nến thấp nhất
     const rowStep = this._rowStep(first, last); this._rowStepUsed = rowStep;
@@ -190,7 +190,18 @@ export class FlowChart {
     if (L.statsH) this.compact ? this._longShort(first, last, L) : this._statsPane(first, last, L);
     this._cross(L);
     this._legend(L);
+    this._autoBtn(L);
   }
+
+  // Nút A (tự căn): hiện khi đã kéo lệch theo giá hoặc giãn trục giá; bấm để trả về như cũ
+  _autoBtn(L) {
+    this._autoR = null; if (!this.pShift && this.yZoom === 1) return;
+    const ctx = this.ctx, w = 22, h = 18, x = L.pw + 4, y = L.priceH - h - 4;
+    ctx.fillStyle = "#ffd400"; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = "#000"; ctx.font = `bold 12px ${MONO}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("A", x + w / 2, y + h / 2 + 0.5); ctx.textBaseline = "alphabetic";
+    this._autoR = { x, y, w, h };
+  }
+  resetY() { this.pShift = 0; this.yZoom = 1; this.dirty = true; }
 
   _profileStep() {
     const target = (this._pmax - this._pmin) / 80;
@@ -1027,7 +1038,10 @@ export class FlowChart {
       if (this.sel) { this.sel.b = Math.min(this.bars.length - 1, Math.max(0, this.iAt(p.x))); this.dirty = true; return; }
       if (this.drag) {
         if (this.drag.axis) this.yZoom = Math.min(20, Math.max(0.05, this.drag.zoom * Math.exp((p.y - this.drag.y) * 0.006)));
-        else this.offset = Math.min(this._L.pw / this.sp - 3, Math.max(3 - this.bars.length, this.drag.offset - (p.x - this.drag.x) / this.sp));
+        else { // kéo tự do: ngang đổi thời gian, dọc đổi giá
+          this.offset = Math.min(this._L.pw / this.sp - 3, Math.max(3 - this.bars.length, this.drag.offset - (p.x - this.drag.x) / this.sp));
+          this.pShift = this.drag.shift + (p.y - this.drag.y) * this.drag.ppu;
+        }
       }
       this.dirty = true;
     });
@@ -1035,8 +1049,9 @@ export class FlowChart {
     cv.addEventListener("mousedown", e => {
       const p = pos(e);
       if (e.button !== 0) return;
+      const a = this._autoR; if (a && p.x >= a.x && p.x <= a.x + a.w && p.y >= a.y && p.y <= a.y + a.h) { this.resetY(); return; }
       if ((this.selecting || e.shiftKey) && p.x < this._L.pw && this.bars.length) { const i = Math.min(this.bars.length - 1, Math.max(0, this.iAt(p.x))); this.sel = { a: i, b: i }; return; }
-      this.drag = { x: p.x, y: p.y, offset: this.offset, zoom: this.yZoom, axis: p.x > this._L.pw };
+      this.drag = { x: p.x, y: p.y, offset: this.offset, zoom: this.yZoom, shift: this.pShift, ppu: (this._pmax - this._pmin) / (this._ph || 1), axis: p.x > this._L.pw };
     });
     window.addEventListener("mouseup", () => {
       this.drag = null;
@@ -1046,9 +1061,13 @@ export class FlowChart {
       const p = pos(e), i = this.iAt(p.x), k = this.ranges.findIndex(r => i >= r.from && i <= r.to);
       if (k >= 0) { e.preventDefault(); this.ranges.splice(k, 1); if (this.opts.onRange) this.opts.onRange(this.ranges); this.dirty = true; }
     });
-    cv.addEventListener("dblclick", () => { this.offset = this._defOff(); this.yZoom = 1; this.dirty = true; });
+    cv.addEventListener("dblclick", () => { this.offset = this._defOff(); this.yZoom = 1; this.pShift = 0; this.dirty = true; });
     cv.addEventListener("wheel", e => {
       e.preventDefault(); const p = pos(e), before = this.fAt(p.x), k = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      if ((e.ctrlKey || p.x > this._L.pw) && this._ph) { // Ctrl + lăn hoặc lăn trên trục giá: phóng theo giá quanh con trỏ
+        const pb = this.pAt(p.y), mid = (this._pmax + this._pmin) / 2; this.yZoom = Math.min(20, Math.max(0.05, this.yZoom / k));
+        const z = 1 / k; this.pShift += (pb - mid) * (1 - z); this.dirty = true; return;
+      }
       const [mn, mx] = this.type === "box" ? [3, 260] : [1, 60];
       this.spacing[this.type] = Math.min(mx, Math.max(mn, this.sp * k)); this.offset -= this.fAt(p.x) - before; this.dirty = true;
     }, { passive: false });
@@ -1056,7 +1075,7 @@ export class FlowChart {
     const spanX = e => Math.abs(e.touches[0].clientX - e.touches[1].clientX);
     cv.addEventListener("touchstart", e => {
       if (e.touches.length >= 2) { touch = { pinch: true, dx: spanX(e), sp: this.sp }; return; }
-      touch = { x: e.touches[0].clientX, offset: this.offset };
+      touch = { x: e.touches[0].clientX, y: e.touches[0].clientY, offset: this.offset, shift: this.pShift, ppu: (this._pmax - this._pmin) / (this._ph || 1) };
     }, { passive: true });
     cv.addEventListener("touchmove", e => {
       if (!touch) return; e.preventDefault();
@@ -1064,7 +1083,8 @@ export class FlowChart {
         if (e.touches.length < 2 || touch.dx < 30) return; const [mn, mx] = this.type === "box" ? [3, 260] : [1, 60];
         this.spacing[this.type] = Math.min(mx, Math.max(mn, touch.sp * spanX(e) / touch.dx)); this.dirty = true; return;
       }
-      this.offset = Math.max(3 - this.bars.length, touch.offset - (e.touches[0].clientX - touch.x) / this.sp); this.dirty = true; }, { passive: false });
+      this.offset = Math.max(3 - this.bars.length, touch.offset - (e.touches[0].clientX - touch.x) / this.sp);
+      this.pShift = touch.shift + (e.touches[0].clientY - touch.y) * touch.ppu; this.dirty = true; }, { passive: false });
     cv.addEventListener("touchend", e => { touch = e.touches.length ? touch : null; });
   }
 }
