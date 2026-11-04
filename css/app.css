@@ -750,3 +750,57 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 .hmlegend span { min-width: 56px; padding: 2px 6px; text-align: center; color: #fff; }
 .hmlegend small { margin-left: 10px; font-family: var(--sans); }
 @media (max-width: 700px) { .hmbox { height: 380px; } }
+
+/* ---- Terminal kiểu Bookmap: khung xám than, chữ thường, nút phẳng, bản đồ chiếm gần hết chỗ ----
+   Chỉ áp cho trang Terminal; các trang khác giữ kiểu Bloomberg. Số liệu vẫn dùng font đơn cách. */
+#view-terminal {
+  --ui: "Segoe UI", "Inter", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --pro-panel: #0c0e11; --pro-head: #191d23; --pro-line: #262b33; --pro-hover: #252b34; --pro-on: #2b3442; --pro-text: #cfd6df;
+}
+#view-terminal .panel { background: var(--pro-panel); border: 1px solid var(--pro-line); border-radius: 3px; }
+#view-terminal .panel-head {
+  background: var(--pro-head); border-bottom: 1px solid var(--pro-line); min-height: 30px; padding: 2px 6px; gap: 3px;
+  font-family: var(--ui);
+}
+#view-terminal .panel-head :is(button, select, .title, .field, label, input),
+#view-terminal .menu :is(h4, label, button, select, p),
+#view-terminal .tabs button {
+  text-transform: none; letter-spacing: 0; font-family: var(--ui);
+}
+#view-terminal .panel-head .title { color: var(--pro-text); font-size: 12.5px; font-weight: 600; padding: 0 4px; }
+#view-terminal .panel-head button, #view-terminal .panel-head .tool {
+  background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--pro-text);
+  padding: 3px 8px; font-size: 12px; font-weight: 500;
+}
+#view-terminal .panel-head button:hover { background: var(--pro-hover); border-color: transparent; color: #fff; }
+#view-terminal .panel-head :is(button.on, .tool.on) { background: var(--pro-on); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
+#view-terminal .panel-head .seg { border: 0; background: #0f1215; border-radius: 5px; padding: 2px; gap: 2px; }
+#view-terminal .panel-head .seg button { border: 0; border-radius: 4px; font-weight: 600; padding: 3px 10px; }
+#view-terminal .panel-head .seg button.on { background: var(--pro-on); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
+#view-terminal .panel-head select { background: #0f1215; border-color: var(--pro-line); border-radius: 4px; padding: 2px 6px; font-size: 12px; }
+#view-terminal .panel-head .field { color: #8b95a3; font-size: 11.5px; font-weight: 500; }
+#view-terminal .panel-head .field input[type=range] { accent-color: var(--accent); width: 90px; }
+#view-terminal .menu h4 { color: #8b95a3; font-size: 11px; font-weight: 600; }
+#view-terminal .lcount { font-family: var(--mono); }
+#view-terminal .toolrail { background: var(--pro-head); border-right-color: var(--pro-line); }
+#view-terminal .toolrail .rt.on { border-color: transparent; background: var(--pro-on); box-shadow: inset 2px 0 0 var(--accent); }
+/* các dòng hướng dẫn thao tác chiếm chỗ: ẩn đi, xem trong nút ? và chú thích khi rê chuột */
+#view-terminal .dom-hint { display: none; }
+#view-terminal .signalbar { font-family: var(--ui); font-size: 11.5px; padding: 3px 8px; min-height: 22px; background: var(--pro-head); border-top-color: var(--pro-line); }
+#view-terminal .symtabs { display: flex; gap: 1px; overflow-x: auto; scrollbar-width: none; background: #101317; border-bottom: 1px solid var(--pro-line); font-family: var(--ui); min-height: 26px; }
+#view-terminal .symtabs:empty { display: none; }
+#view-terminal .stab { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; cursor: pointer; color: #8b95a3; font-size: 12px; white-space: nowrap; border-bottom: 2px solid transparent; }
+#view-terminal .stab b { font-weight: 600; color: var(--pro-text); }
+#view-terminal .stab i { font-style: normal; font-size: 10.5px; }
+#view-terminal .stab:hover { background: var(--pro-hover); }
+#view-terminal .stab.on { background: var(--pro-panel); border-bottom-color: var(--accent); }
+#view-terminal .stab.on b { color: #fff; }
+#view-terminal .stab .x { border: 0; background: transparent; color: #6b7480; padding: 0 2px; font-size: 13px; line-height: 1; }
+#view-terminal .stab .x:hover { color: #fff; }
+#replayBtn { display: none; }
+body.haslaptop #replayBtn:not([hidden]) { display: inline-flex; }
+#view-terminal .replaybar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 8px; background: #1a1f16; border-bottom: 1px solid var(--pro-line); font-family: var(--ui); font-size: 12px; color: var(--pro-text); }
+#view-terminal .replaybar .rpl { color: var(--accent); font-weight: 600; }
+#view-terminal .replaybar :is(button, select, input) { font-family: var(--ui); font-size: 12px; text-transform: none; letter-spacing: 0; padding: 2px 8px; border-radius: 4px; background: #0f1215; border: 1px solid var(--pro-line); }
+#view-terminal .replaybar #rpSeek { flex: 1 1 180px; accent-color: var(--accent); padding: 0; border: 0; background: transparent; }
+#view-terminal .replaybar .rptime { font-family: var(--mono); color: #fff; min-width: 150px; }

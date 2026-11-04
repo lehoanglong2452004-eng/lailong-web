@@ -3,11 +3,36 @@
 export const GLOSSARY = [
   // ───────────── Bookmap ─────────────
   {
+    id: "large-lot", group: "Bookmap", term: "Lệnh chờ lớn (Large Lot Tracker)",
+    short: "Đánh dấu lệnh chờ lớn bất thường ngay trên bản đồ, suốt thời gian nó đứng, kèm khối lượng và kết cục.",
+    body: "<p>Lấy từ bộ theo dõi tường: lệnh chờ ≥ 6 lần trung vị và thuộc top 3% trong ±1% quanh giá. Vạch sáng chạy theo thời gian lệnh đứng, vòng tròn ở cuối càng to thì lệnh càng lớn, số bên cạnh là khối lượng.</p><p><b>Kết cục:</b> chấm đặc giữa vòng là <b>bị ăn</b> (có người khớp vào, tường thật); dấu × và nét đứt là <b>rút khi giá tới gần</b> (nghi tường giả); vòng rỗng là rút khi giá còn xa. Xanh là chờ mua, đỏ là chờ bán.</p>"
+  },
+  {
+    id: "bm-sweeps", group: "Bookmap", term: "Lệnh quét (Sweeps)",
+    short: "Một lệnh chủ động ăn qua từ 3 mức giá trở lên trong một lần: người vào lệnh chấp nhận trượt giá để vào ngay.",
+    body: "<p>Vạch dọc từ giá đầu tới giá cuối của lệnh, mũi tên theo hướng quét (xanh lơ: mua, hồng: bán). Chỉ hiện lệnh từ ngưỡng \"vừa\" của Smart Tape (top 5%) trở lên; lệnh cá voi có ghi khối lượng.</p><p>Nhiều lệnh quét cùng hướng liên tiếp thường đi trước một cú chạy. Lệnh quét vào thẳng tường lớn mà giá không đi tiếp là dấu hiệu hấp thụ.</p>"
+  },
+  {
+    id: "bm-absorb", group: "Bookmap", term: "Hấp thụ trên Bookmap (Absorption)",
+    short: "Phía chủ động đánh dồn dập vào một mức giá mà giá không đi qua được: phía bị động đang đỡ hoặc chặn.",
+    body: "<p>Mỗi 5 giây, cộng khối lượng mua và bán chủ động ở từng mức giá. Ô nào thuộc top 1% và gấp ít nhất 5 lần mức thường của 15 phút gần nhất mà 15 giây sau giá vẫn không vượt quá mức đó hơn 1 bước giá thì đánh dấu ô chữ <b>A</b>.</p><p><b>A đỏ:</b> mua chủ động bị phía bán chặn, kháng cự thật. <b>A xanh:</b> bán chủ động bị phía mua đỡ, hỗ trợ thật. Hấp thụ ở rìa vùng giá sau một đợt chạy hay báo trước đảo chiều.</p>"
+  },
+  {
+    id: "bm-stops", group: "Bookmap", term: "Chuỗi cắt lỗ (Stops)",
+    short: "Chuỗi lệnh cùng phía khớp liên tục đẩy giá đi xa trong vòng 1 giây: thường là cắt lỗ hoặc thanh lý dây chuyền.",
+    body: "<p>Điều kiện: trong 1 giây có ít nhất 10 lệnh cùng phía, giá đi một mạch ít nhất 6 bước giá hoặc 0,04%, và lệnh mới nhất nằm ở đầu chuỗi. Các chuỗi liền nhau được nối thành một. Vẽ đường chéo nét đứt từ đầu tới cuối chuỗi, ô chữ <b>S</b> ở cuối (vàng: mua dây chuyền, tím: bán dây chuyền).</p><p>Sau chuỗi cắt lỗ giá hay chạy quá đà rồi hồi lại, vì người buộc phải thoát đã thoát xong.</p>"
+  },
+  {
     id: "bm-overview",
     group: "Bookmap",
     term: "Toàn cảnh",
     short: "Thu cả lịch sử sổ lệnh đang có và toàn bộ biên độ giá vào một màn hình, tự giãn ra khi dữ liệu dài thêm.",
-    body: "<p>Bấm <b>⛶ Toàn cảnh</b> để xem bức tranh lớn: các tường lệnh chờ đã đứng ở đâu, giá đã đi qua chúng thế nào trong mấy giờ qua. Bản đồ tự giãn theo thời gian khi dữ liệu tích thêm, bên phải luôn là bây giờ.</p><p>Lăn chuột, kéo hoặc bấm đúp là thoát Toàn cảnh để soi chi tiết. Bấm lại nút để quay về.</p><p>Trang tự giữ khoảng <b>4 giờ</b> sổ lệnh từ lúc mở: 20 phút gần nhất chi tiết từng nửa giây, cũ hơn gộp thành cột 2 giây. Muốn mở trang lên là có ngay lịch sử cả ngày, thêm mã vào <b>Máy ghi 24/7</b> trong ⚙ Cài đặt. Mỗi cột chụp toàn bộ sổ lệnh trong ±1% quanh giá.</p>"
+    body: "<p>Bấm <b>⛶ Toàn cảnh</b> để xem bức tranh lớn: các tường lệnh chờ đã đứng ở đâu, giá đã đi qua chúng thế nào trong mấy giờ qua. Bản đồ tự giãn theo thời gian khi dữ liệu tích thêm, bên phải luôn là bây giờ.</p><p>Lăn chuột, kéo hoặc bấm đúp là thoát Toàn cảnh để soi chi tiết. Bấm lại nút để quay về.</p><p>Trang tự giữ khoảng <b>4 giờ</b> sổ lệnh từ lúc mở: 5 phút gần nhất chi tiết từng 0,1 giây (đúng nhịp sàn gửi sổ lệnh), tới 20 phút gộp thành cột 0,5 giây, cũ hơn gộp thành cột 2 giây. Muốn mở trang lên là có ngay lịch sử cả ngày, thêm mã vào <b>Máy ghi 24/7</b> trong ⚙ Cài đặt. Mỗi cột chụp toàn bộ sổ lệnh trong ±1% quanh giá.</p>"
+  },
+  {
+    id: "bm-replay", group: "Bookmap", term: "Phát lại phiên (Replay)",
+    short: "Xem lại sổ lệnh và lệnh khớp của một khoảng thời gian đã ghi, như đang diễn ra, với tốc độ x1 tới x60.",
+    body: "<p>Cần <b>Máy ghi 24/7</b> chạy trên laptop (⚙ Cài đặt). Bấm <b>▶ Phát lại</b>, chọn thời điểm bắt đầu và độ dài rồi bấm Tải. Bản đồ chuyển sang dữ liệu đã ghi, chạy theo đồng hồ ảo: bấm ▶/⏸ hoặc phím cách để phát hay dừng, kéo thanh thời gian để tua, chọn tốc độ.</p><p>Dữ liệu ghi mỗi 2 giây một cột, trong ±1% quanh giá. Bấm ✕ hoặc đổi mã để quay về thị trường trực tiếp; kết nối trực tiếp vẫn chạy ngầm trong lúc phát lại.</p>"
   },
   {
     id: "bm-settings",
