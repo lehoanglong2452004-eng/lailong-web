@@ -4,7 +4,7 @@
 // Dữ liệu là các dòng 2 giây của máy ghi. Phát lại dựng một MarketState riêng: các cột được thêm dần theo
 // đồng hồ ảo (tốc độ x1 tới x60), sổ lệnh COB dựng lại từ dòng mới nhất. Bản đồ chỉ cần đổi nguồn sang
 // thị trường phát lại và dùng đồng hồ ảo; kết nối trực tiếp vẫn chạy ngầm.
-import { MarketState } from "./market.js?v=202611042114";
+import { MarketState } from "./market.js?v=202611042121";
 
 export class Replay {
   // rows: dòng của máy ghi (đã sắp theo thời gian); tick: bước giá của mã
