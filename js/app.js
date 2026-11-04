@@ -1,52 +1,54 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611041847";
-import { MarketState, Book } from "./market.js?v=202611041847";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611041847";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611041847";
-import { FlowChart } from "./flowchart.js?v=202611041847";
-import { Dom } from "./dom.js?v=202611041847";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, biasSummary } from "./analytics.js?v=202611041847";
-import { initBacktest } from "./backtestview.js?v=202611041847";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611041847";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202611041847";
-import { Tape } from "./tape.js?v=202611041847";
-import { LiqMap } from "./liqmap.js?v=202611041847";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611041847";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611041847";
-import { Alerts } from "./alerts.js?v=202611041847";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202611041847";
-import { initNews } from "./newsview.js?v=202611041847";
-import { initMarkets } from "./marketsview.js?v=202611041847";
-import { initGex } from "./gexview.js?v=202611041847";
-import { initTgBot } from "./tgbot.js?v=202611041847";
-import { initInst } from "./instview.js?v=202611041847";
-import { setFresh, tickFresh } from "./fresh.js?v=202611041847";
-import { initRadar } from "./radarview.js?v=202611041847";
-import { Drawings } from "./drawings.js?v=202611041847";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611041847";
-import { PaperBroker } from "./paper.js?v=202611041847";
-import { OrderLines } from "./orderlines.js?v=202611041847";
-import { MultiChart } from "./multichart.js?v=202611041847";
-import { DOM_COLS } from "./dom.js?v=202611041847";
-import { initFractal } from "./fractalview.js?v=202611041847";
-import { initJournal } from "./journalview.js?v=202611041847";
-import { installHealth, clockSkew } from "./health.js?v=202611041847";
-import { initHealth } from "./healthview.js?v=202611041847";
-import { initFlows } from "./flowsview.js?v=202611041847";
-import { initPerf } from "./perfview.js?v=202611041847";
-import { initShock } from "./shockview.js?v=202611041847";
-import { initCompass } from "./compassview.js?v=202611041847";
-import { initConsensus } from "./consensusview.js?v=202611041847";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202611041847";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611041847";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611041847";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611041847";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611041847";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202611041847";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611041847";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611041847";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611041932";
+import { MarketState, Book } from "./market.js?v=202611041932";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611041932";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611041932";
+import { FlowChart } from "./flowchart.js?v=202611041932";
+import { Dom } from "./dom.js?v=202611041932";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, biasSummary } from "./analytics.js?v=202611041932";
+import { initBacktest } from "./backtestview.js?v=202611041932";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611041932";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202611041932";
+import { Tape } from "./tape.js?v=202611041932";
+import { LiqMap } from "./liqmap.js?v=202611041932";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611041932";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611041932";
+import { FlowMarks } from "./bmind.js?v=202611041932";
+import { Replay } from "./replay.js?v=202611041932";
+import { Alerts } from "./alerts.js?v=202611041932";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202611041932";
+import { initNews } from "./newsview.js?v=202611041932";
+import { initMarkets } from "./marketsview.js?v=202611041932";
+import { initGex } from "./gexview.js?v=202611041932";
+import { initTgBot } from "./tgbot.js?v=202611041932";
+import { initInst } from "./instview.js?v=202611041932";
+import { setFresh, tickFresh } from "./fresh.js?v=202611041932";
+import { initRadar } from "./radarview.js?v=202611041932";
+import { Drawings } from "./drawings.js?v=202611041932";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611041932";
+import { PaperBroker } from "./paper.js?v=202611041932";
+import { OrderLines } from "./orderlines.js?v=202611041932";
+import { MultiChart } from "./multichart.js?v=202611041932";
+import { DOM_COLS } from "./dom.js?v=202611041932";
+import { initFractal } from "./fractalview.js?v=202611041932";
+import { initJournal } from "./journalview.js?v=202611041932";
+import { installHealth, clockSkew } from "./health.js?v=202611041932";
+import { initHealth } from "./healthview.js?v=202611041932";
+import { initFlows } from "./flowsview.js?v=202611041932";
+import { initPerf } from "./perfview.js?v=202611041932";
+import { initShock } from "./shockview.js?v=202611041932";
+import { initCompass } from "./compassview.js?v=202611041932";
+import { initConsensus } from "./consensusview.js?v=202611041932";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202611041932";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611041932";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611041932";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611041932";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611041932";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202611041932";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611041932";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611041932";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
@@ -99,19 +101,37 @@ const flow = new FlowChart($("flow"));
 const dom = new Dom($("dom"), market);
 const tape = new Tape($("tape"), market);
 const walls = new WallTracker(); dom.walls = walls;
+const flowMarks = new FlowMarks(); heat.walls = walls; heat.flowMarks = flowMarks; // chỉ báo kiểu Bookmap trả phí trên bản đồ
 const lmap = new LiqMap($("lmap"), market, dom); lmap.walls = walls;
 flow.prints = () => [market.histPrints, market.prints];
 flow.opts.onRange = () => {};
 
 // ---------- tải dữ liệu một mã ----------
 let conn = null, loadToken = 0, analysis = null, fpState = null;
+// thẻ các mã đã mở gần đây, như hàng thẻ mã của Bookmap (nhớ trong phiên)
+const TABS_KEY = "lailong.symtabs";
+let symTabs = (() => { try { return JSON.parse(sessionStorage.getItem(TABS_KEY) || "[]"); } catch { return []; } })();
+function renderTabs() {
+  $("symTabs").innerHTML = symTabs.map(t => { const on = t.ex === S.ex && t.s === S.symbol; return `<span class="stab${on ? " on" : ""}" data-ex="${esc(t.ex)}" data-s="${esc(t.s)}"><b>${esc(t.s)}</b><i>${esc(EXCHANGES[t.ex] ? EXCHANGES[t.ex].name : t.ex)}</i>${on ? "" : `<button class="x" data-tip="Đóng thẻ này">×</button>`}</span>`; }).join("");
+}
+function rememberTab() {
+  symTabs = [{ ex: S.ex, s: S.symbol }, ...symTabs.filter(t => !(t.ex === S.ex && t.s === S.symbol))].slice(0, 10);
+  try { sessionStorage.setItem(TABS_KEY, JSON.stringify(symTabs)); } catch { /* bỏ qua */ }
+  renderTabs();
+}
+$("symTabs").onclick = e => {
+  const tab = e.target.closest(".stab"); if (!tab) return;
+  if (e.target.closest(".x")) { symTabs = symTabs.filter(t => !(t.ex === tab.dataset.ex && t.s === tab.dataset.s)); try { sessionStorage.setItem(TABS_KEY, JSON.stringify(symTabs)); } catch { /* bỏ qua */ } renderTabs(); return; }
+  if (tab.dataset.ex === S.ex && tab.dataset.s === S.symbol) return;
+  const exChanged = S.ex !== tab.dataset.ex; S.ex = tab.dataset.ex; S.symbol = tab.dataset.s; $("exchange").value = S.ex; $("symbol").value = S.symbol; if (exChanged) loadSymbols(); load();
+};
 async function load() {
-  const token = ++loadToken; persist();
+  const token = ++loadToken; persist(); rememberTab(); if (replay) exitReplay();
   if (conn) { conn.close(); conn = null; }
   market.reset({ symbol: S.symbol, exchange: S.ex, interval: S.interval });
   draw.sym = S.symbol;
   alPrevP = null; heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
-  heat.resetView(); dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; scores = null; algo = []; walls.reset(); conflZones = []; heat.setOverlays({ confl: [] }); flow.setOverlays({ confl: [], spoofs: walls.events, algoRuns: [], scores: [], vpinVals: null, groupVals: null }); tape.reset(); renderSignals(); renderTab();
+  heat.resetView(); dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; scores = null; algo = []; walls.reset(); flowMarks.reset(); conflZones = []; heat.setOverlays({ confl: [] }); flow.setOverlays({ confl: [], spoofs: walls.events, algoRuns: [], scores: [], vpinVals: null, groupVals: null }); tape.reset(); renderSignals(); renderTab();
   setConn("Đang tải dữ liệu", null);
   let info = { tick: 0, ctVal: 1 };
   try { info = await ex().info(S.symbol); } catch (e) { log(`Không lấy được thông tin mã: ${e.message}`); }
@@ -270,6 +290,7 @@ setInterval(() => { if (S.mode !== "heat" || S.tab === "algo") recomputePrints()
 setInterval(() => {
   const cols = market.cols; let col = null; for (let i = cols.length - 1; i >= Math.max(0, cols.length - 4); i--) if (cols[i].keys) { col = cols[i]; break; }
   const done = walls.step(Date.now(), col, market.book.mid(), market.grid, market.tradedGrid);
+  flowMarks.step(market.trades, market.tick, Date.now());
   for (const e of done) { const ev = canLog() && fromWall(e, S.symbol, S.ex); if (ev) logEvent(ev); }
   logIce();
   for (const e of done) if (e.kind === "spoof" && alerts.cfg.spoof && gate("wall.pulled")) alerts.fire("spoof", `${S.symbol}: tường ${e.side === "bid" ? "chờ mua" : "chờ bán"} ${fmtVol(e.q)} tại ${e.price.toFixed(decimalsFor(market.tick))} bị rút khi giá tới gần (nghi tường giả)`, e.side === "bid" ? "down" : "up");
@@ -911,7 +932,7 @@ let laptop = null;
 const recHours = () => { const v = +sessionStorage.getItem("lailong.recHours"); return isFinite(v) && sessionStorage.getItem("lailong.recHours") != null ? v : 6; };
 async function checkLaptop() {
   try { laptop = await getJson("/api/record/info"); } catch { laptop = null; }
-  $("recWrap").hidden = !laptop; if (!laptop) return;
+  $("recWrap").hidden = !laptop; document.body.classList.toggle("haslaptop", !!laptop); if (!laptop) return;
   const syms = Object.entries(laptop.symbols || {});
   $("recStatus").innerHTML = laptop.running ? `<b class="pos">Đang ghi</b>: ${syms.map(([k, v]) => `${esc(k)} (${fmtVol(v.lines)} dòng, ${esc(v.status)})`).join(", ") || "chưa có mã"}` : `<b class="neg">Máy ghi chưa chạy.</b> Bấm đúp "Ghi du lieu 24-7.bat" trong thư mục Lai Long.`;
   if (document.activeElement !== $("recSyms")) $("recSyms").value = (laptop.config.symbols || []).join(", ");
@@ -938,6 +959,55 @@ async function loadRecorded(token) {
   } catch (e) { log(`Không nạp được lịch sử máy ghi: ${e.message}`); }
 }
 checkLaptop().then(() => { if (laptop) loadRecorded(loadToken); }); setInterval(checkLaptop, 30e3);
+
+// ---------- phát lại sổ lệnh đã ghi (chỉ khi chạy trên laptop có máy ghi 24/7) ----------
+var replay = null; let rpRaf = 0, rpLast = 0; // var: load() ở trên đã dùng tới replay
+const localInput = t => { const d = new Date(t - new Date(t).getTimezoneOffset() * 6e4); return d.toISOString().slice(0, 16); };
+const rpUi = () => {
+  const on = !!(replay && replay.ready);
+  $("rpPlay").disabled = $("rpSeek").disabled = !on;
+  $("rpPlay").textContent = on && replay.playing ? "❚❚" : "▶";
+  if (!on) { $("rpTime").textContent = ""; return; }
+  $("rpSeek").value = String(Math.round((replay.vt - replay.t0) / Math.max(1, replay.t1 - replay.t0) * 1000));
+  $("rpTime").textContent = `${fmtTime(replay.vt, true)} · x${replay.speed}`;
+};
+function exitReplay() {
+  cancelAnimationFrame(rpRaf); replay = null;
+  heat.m = market; heat.clock = null; heat.resetView();
+  $("replayBar").hidden = true; $("replayBtn").classList.remove("on"); rpUi();
+}
+const rpLoop = ts => {
+  if (!replay) return;
+  const dt = rpLast ? Math.min(250, ts - rpLast) : 0; rpLast = ts;
+  if (replay.advance(dt)) { heat.dirty = true; rpUi(); }
+  rpRaf = requestAnimationFrame(rpLoop);
+};
+$("replayBtn").onclick = () => {
+  if (!$("replayBar").hidden) { exitReplay(); return; }
+  $("replayBar").hidden = false; $("replayBtn").classList.add("on");
+  if (!$("rpFrom").value) $("rpFrom").value = localInput(Date.now() - 3600e3);
+};
+$("rpExit").onclick = exitReplay;
+$("rpLoad").onclick = async () => {
+  if (S.ex !== "BINANCE") { toast("Phát lại dùng dữ liệu máy ghi 24/7, chỉ có cho Binance Futures.", true); return; }
+  const start = new Date($("rpFrom").value).getTime(); if (!isFinite(start)) { toast("Chọn thời điểm bắt đầu.", true); return; }
+  const end = start + +$("rpDur").value;
+  $("rpLoad").disabled = true; $("rpTime").textContent = "Đang tải...";
+  try {
+    const rows = await getJson(`/api/record/range?symbol=${encodeURIComponent(S.symbol)}&start=${start}&end=${end}`);
+    if (!rows.length) { toast(`Máy ghi không có dữ liệu ${S.symbol} trong khoảng này. Thêm mã vào Máy ghi 24/7 trong ⚙ Cài đặt để lần sau có.`, true); $("rpTime").textContent = ""; return; }
+    cancelAnimationFrame(rpRaf);
+    replay = new Replay(rows, { symbol: S.symbol, tick: market.tick }); replay.speed = +$("rpSpeed").value;
+    heat.m = replay.m; heat.clock = () => replay.now(); heat.resetView();
+    replay.seek(replay.t0 + 60e3); replay.playing = true; rpLast = 0; rpRaf = requestAnimationFrame(rpLoop); rpUi();
+    toast(`Đang phát lại ${S.symbol}: ${((replay.t1 - replay.t0) / 36e5).toFixed(1)} giờ sổ lệnh đã ghi.`);
+  } catch (e) { toast(`Không tải được dữ liệu phát lại: ${e.message}`, true); $("rpTime").textContent = ""; }
+  finally { $("rpLoad").disabled = false; }
+};
+$("rpPlay").onclick = () => { if (!replay) return; if (!replay.playing && replay.vt >= replay.t1) replay.seek(replay.t0); replay.playing = !replay.playing; rpUi(); };
+$("rpSpeed").onchange = () => { if (replay) { replay.speed = +$("rpSpeed").value; rpUi(); } };
+$("rpSeek").oninput = () => { if (!replay) return; replay.seek(replay.t0 + +$("rpSeek").value / 1000 * (replay.t1 - replay.t0)); heat.dirty = true; rpUi(); };
+document.addEventListener("keydown", e => { if (replay && e.code === "Space" && !e.target.closest("input, select, textarea")) { e.preventDefault(); $("rpPlay").click(); } });
 
 // ---------- vẽ đường / vùng giá ----------
 const draw = new Drawings(); draw.sym = S.symbol; heat.drawings = flow.drawings = draw;
@@ -1008,6 +1078,10 @@ const RAIL = [
   ["liq", "Lệnh thanh lý thật", "", "M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"],
   ["liqMap", "Bản đồ thanh lý ước tính", "", "M3 6h18M3 12h18M3 18h18M9 3v18M15 3v18"],
   ["ice", "Băng chìm / nạp lại", "heat", "M12 3l7 9-7 9-7-9zM5 12h14"],
+  ["lots", "Lệnh chờ lớn (Large Lot Tracker)", "heat", "M3 12h12M18 12a3 3 0 1 0 0.01 0M3 7h6M3 17h6"],
+  ["sweeps", "Lệnh quét nhiều mức giá (Sweeps)", "heat", "M12 20V5M7 10l5-5 5 5M8 20h8"],
+  ["hAbsorb", "Hấp thụ trên Bookmap", "heat", "M5 19L12 4l7 15M8 13h8"],
+  ["stops", "Chuỗi cắt lỗ (Stops)", "heat", "M4 18l6-6 3 3 7-9M15 6h5v5"],
   ["bigOnly", "Chỉ hiện lệnh lớn", "heat", "M12 5a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z"],
   ["imb", "Mất cân bằng xếp chồng", "box", "M4 5h6v14H4zM14 5h6v14h-6zM10 9h4M10 15h4"],
   ["absorb", "Hấp thụ", "box", "M3 12h11M10 7l5 5-5 5M19 4v16"],

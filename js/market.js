@@ -6,20 +6,21 @@
 //   kèm khối lượng mua/bán chủ động khớp trong cột đó.
 // - Bars: nến của khung đang xem, nến cuối được cập nhật theo từng lệnh khớp, kèm footprint.
 
-import { niceStep, INTERVALS } from "./util.js?v=202611041847";
-import { TapeAggregator, quantile } from "./orderflow.js?v=202611041847";
-import { IcebergTracker } from "./iceberg.js?v=202611041847";
+import { niceStep, INTERVALS } from "./util.js?v=202611041932";
+import { TapeAggregator, quantile } from "./orderflow.js?v=202611041932";
+import { IcebergTracker } from "./iceberg.js?v=202611041932";
 
-export const COL_MS = 500;
-// Lịch sử trong trang khoảng 4 giờ: 20 phút gần nhất mỗi cột 0,5 giây, cũ hơn thì gộp 4 cột thành 1 cột 2 giây
-// (như máy ghi 24/7) cho nhẹ bộ nhớ. Máy ghi trên laptop giữ lâu hơn.
-const THIN_COLS = 2400;      // số cột 0,5 giây giữ nguyên (20 phút; dài hơn khung bản đồ thanh khoản 15 phút)
-export const THIN_MS = 2000; // độ dài một cột đã gộp
-const MAX_COLS = THIN_COLS + (4 * 3600e3 - THIN_COLS * COL_MS) / THIN_MS;
+export const COL_MS = 100;    // chụp sổ lệnh mỗi 0,1 giây: đúng nhịp Binance gửi thay đổi sổ lệnh, mịn như Bookmap
+// Lịch sử trong trang khoảng 4 giờ, gộp dần cho nhẹ bộ nhớ: 5 phút gần nhất mỗi cột 0,1 giây; từ 5 tới 20 phút
+// gộp thành cột 0,5 giây; cũ hơn gộp thành cột 2 giây (như máy ghi 24/7). Máy ghi trên laptop giữ lâu hơn.
+// Mỗi bậc: [số cột giữ trước ranh giới, độ dài cột sau khi gộp]
+export const THIN_STAGES = [[3000, 500], [1800, 2000]];
+export const THIN_MS = 2000;  // độ dài cột cũ nhất
+const MAX_COLS = 3000 + 1800 + (4 * 3600e3 - 20 * 60e3) / THIN_MS;
 const BAND = 0.01;           // chụp toàn bộ sổ lệnh trong ±1% quanh giá giữa (như máy ghi 24/7)
 const MAX_CELLS = 400;       // mỗi phía tối đa bấy nhiêu ô lưới (±1% thường chỉ khoảng 250 ô)
 const FINE_LEVELS = 400;      // mỗi phía: số mức giá giữ nguyên bước giá gốc (cho khung Thanh khoản và khi phóng to)
-const FINE_COLS = 1900;       // giữ bản chi tiết ~16 phút gần nhất cho đỡ tốn bộ nhớ
+const FINE_COLS = 3000;       // giữ bản chi tiết 5 phút gần nhất cho đỡ tốn bộ nhớ
 
 export class Book {
   constructor() { this.bids = new Map(); this.asks = new Map(); this.ts = 0; this._sorted = null; }
@@ -199,20 +200,20 @@ export class MarketState {
       col = { t, bv: 0, sv: 0, bpv: 0, spv: 0, hi: -Infinity, lo: Infinity, keys: null, sizes: null, bb: null, ba: null };
       this.cols.push(col); this._col = col;
       const old = this.cols[this.cols.length - 1 - FINE_COLS]; if (old && old.fk) { old.fk = old.fq = null; }
-      this._thin(this.cols.length - 1 - THIN_COLS);
+      let back = 0; THIN_STAGES.forEach(([n, ms], s) => { back += n; this._thin(this.cols.length - 1 - back, ms, s + 1); });
       if (this.cols.length > this.maxCols) this.cols.splice(0, this.cols.length - this.maxCols);
     }
     if (this.grid && this.book.ts !== col.bookTs) this._snapshot(col);
     return col;
   }
 
-  // Cột đã qua 20 phút: cột đầu mỗi 2 giây được giữ lại và dài ra, các cột sau trong cùng 2 giây gộp vào nó
-  // (cộng khối lượng khớp, giữ ảnh chụp sổ lệnh cuối cùng). Cột nạp từ máy ghi đã là 2 giây nên để nguyên.
-  _thin(i) {
+  // Cột vừa qua ranh giới của bậc gộp lv: cột đầu mỗi khoảng ms được giữ lại và dài ra, các cột sau trong cùng
+  // khoảng gộp vào nó (cộng khối lượng khớp, giữ ảnh chụp sổ lệnh cuối cùng). Cột nạp từ máy ghi để nguyên.
+  _thin(i, ms, lv) {
     const c = this.cols[i], p = this.cols[i - 1];
-    if (!c || c.rec || c.thin || c === this._col) return;
+    if (!c || c.rec || (c.lv || 0) !== lv - 1 || c === this._col) return;
     c.fk = c.fq = null;
-    if (!p || !p.thin || Math.floor(p.t / THIN_MS) !== Math.floor(c.t / THIN_MS)) { c.thin = true; return; }
+    if (!p || p.lv !== lv || Math.floor(p.t / ms) !== Math.floor(c.t / ms)) { c.lv = lv; c.thin = lv === THIN_STAGES.length; return; }
     p.span = c.t + (c.span || COL_MS) - p.t;
     p.bv += c.bv; p.sv += c.sv; p.bpv += c.bpv; p.spv += c.spv; p.tn = (p.tn || 0) + (c.tn || 0);
     p.hi = Math.max(p.hi, c.hi); p.lo = Math.min(p.lo, c.lo);
