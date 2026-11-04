@@ -5,13 +5,13 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202611042114";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202611042114";
-import { T, alpha, watermark } from "./theme.js?v=202611042114";
-import { drawConfl, conflTip } from "./levels.js?v=202611042114";
-import { drawShapes } from "./drawings.js?v=202611042114";
-import { bookImb } from "./walls.js?v=202611042114";
-import { largeLots, sweeps } from "./bmind.js?v=202611042114";
+import { COL_MS } from "./market.js?v=202611042121";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202611042121";
+import { T, alpha, watermark } from "./theme.js?v=202611042121";
+import { drawConfl, conflTip } from "./levels.js?v=202611042121";
+import { drawShapes } from "./drawings.js?v=202611042121";
+import { bookImb } from "./walls.js?v=202611042121";
+import { largeLots, sweeps } from "./bmind.js?v=202611042121";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
 const MS_MIN = 15, MS_MAX = 300000; // giới hạn phóng thời gian: 15 ms đến 5 phút mỗi điểm ảnh (khoảng 3 ngày trên màn hình)
@@ -67,12 +67,15 @@ export function heatIndex(q, ref, contrast = 1) {
   if (x < 0.01) return -1;
   return Math.min(255, (Math.pow(Math.min(1, x), 0.6) * 235 + 20) | 0);
 }
-// Như trên nhưng theo hai ngưỡng cắt: lo trở xuống là nền, hi trở lên là màu đậm nhất
+// Như trên nhưng theo hai ngưỡng cắt: lo trở xuống là nền, hi trở lên là màu đậm nhất. Thang logarit: lệnh chờ
+// trải từ vài chục tới vài nghìn lần nhau, thang thẳng làm sổ dày đều sáng rực cả bản đồ. Với thang log, mức thường
+// gặp nằm ở xanh tối, gấp 3 lần mới lên xanh nhạt / vàng, chỉ tường thật mới cam, đỏ (như Bookmap).
 export function heatIndexCut(q, lo, hi, contrast = 1) {
   if (!(q > lo)) return -1;
-  const x = (q - lo) / Math.max(1e-12, hi - lo) * contrast;
-  return Math.min(255, (Math.pow(Math.min(1, x), 0.6) * 235 + 20) | 0);
+  const x = Math.min(1, Math.log(q / lo) / Math.log(Math.max(1.000001, hi / lo)) * contrast);
+  return Math.min(255, (x ** 1.5 * 235 + 20) | 0); // mũ 1,5: thanh khoản thường chìm xanh đậm, chỉ tường mới sáng
 }
+export const HOT_X = 8; // màu đậm nhất không bao giờ thấp hơn bấy nhiêu lần trung vị, để sổ dày đều không sáng rực
 export { LUT as HEAT_LUT };
 
 const BUY = [47, 191, 106], SELL = [224, 71, 58];
@@ -289,7 +292,8 @@ export class Heatmap {
     // ngưỡng cắt theo phân vị; tự chỉnh liên tục, chỉ khi căn giữa lại / đổi độ phóng, hoặc giữ nguyên
     const zoomKey = `${this.pxPerPrice.toFixed(5)}:${fine}:${agg}:${sm}`;
     const key = cfg.auto === "recenter" ? `${Math.round(this.pCenter / (step || 1))}:${zoomKey}` : cfg.auto === "off" ? zoomKey : null;
-    let hi = pct(cfg.upper / 100) || 1, lo = pct(cfg.lower / 100) || 0;
+    const med = pct(0.5);
+    let lo = Math.max(pct(cfg.lower / 100) || 0, med * 0.2) || 1e-9, hi = Math.max(pct(cfg.upper / 100) || 1, HOT_X * med);
     if (key !== null && this._cut && this._cut.key === key && this._cut.fine === fine) { hi = this._cut.hi; lo = this._cut.lo; } else this._cut = { key, hi, lo, fine };
     if (hi <= lo) hi = lo + 1e-9;
     const ref = hi, LUTc = LUTS[cfg.palette] || LUT, dimK = 1 - Math.min(0.9, (cfg.dim || 0) / 100);

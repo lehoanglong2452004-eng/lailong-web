@@ -53,7 +53,7 @@ export const GLOSSARY = [
     group: "Bookmap",
     term: "Ngưỡng cắt trên / dưới",
     short: "Lệnh chờ từ phân vị cắt trên trở lên tô màu đậm nhất; dưới phân vị cắt dưới để nền tối.",
-    body: "<p>Các mức lệnh chờ đang thấy được xếp từ nhỏ tới lớn. <b>Cắt trên 99%</b> nghĩa là 1% mức dày nhất cùng tô màu đỏ đậm nhất, phần còn lại trải đều trên bảng màu. <b>Cắt dưới 2%</b> nghĩa là 2% mức mỏng nhất để nền tối, đỡ rối mắt.</p><p>Hạ cắt trên (ví dụ 95%) thì nhiều tường hiện đỏ hơn; tăng cắt dưới (ví dụ 20%) thì chỉ còn chỗ dày nổi lên.</p>"
+    body: "<p>Các mức lệnh chờ đang thấy được xếp từ nhỏ tới lớn. <b>Cắt trên 99%</b> nghĩa là 1% mức dày nhất cùng tô màu đỏ đậm nhất, phần còn lại trải theo thang log nên thanh khoản bình thường chìm màu xanh đậm. Màu đậm nhất luôn cần dày ít nhất 8 lần mức trung vị, nên sổ lệnh dày đều không bị sáng rực cả bản đồ. <b>Cắt dưới 30%</b> nghĩa là 30% mức mỏng nhất để nền tối, đỡ rối mắt.</p><p>Hạ cắt trên (ví dụ 95%) thì nhiều tường hiện đỏ hơn; tăng cắt dưới (ví dụ 20%) thì chỉ còn chỗ dày nổi lên.</p>"
   },
   {
     id: "bm-auto",
