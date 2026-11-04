@@ -279,6 +279,36 @@ input[type=number], input:not([type]) { cursor: text !important; }
 
 .mnav, .mob { display: none; }
 
+/* ---- thanh trên cùng kiểu Bookmap: dải xám than mỏng, chữ thường, thẻ phẳng gạch chân màu nhấn ----
+   Đặt trước các luật cho màn hình nhỏ để chúng vẫn ghi đè được cỡ và khoảng cách. */
+.menubar {
+  --ui: "Segoe UI", "Inter", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --pro-line: #262b33; --pro-hover: #252b34; --pro-on: #2b3442; --pro-text: #cfd6df;
+  background: #15181d; border-bottom: 1px solid var(--pro-line); min-height: 36px; padding: 3px 8px; gap: 4px 8px;
+  font-family: var(--ui); box-shadow: 0 1px 0 #000;
+}
+.menubar .brand { font: 700 15px/1 var(--ui); letter-spacing: .1em; text-shadow: none; padding: 2px 12px 2px 4px; border-right-color: var(--pro-line); }
+.menubar .brand span { color: #8b95a3; font-weight: 600; }
+.menubar :is(button, .field, select, input, .pill) { text-transform: none; letter-spacing: 0; font-family: var(--ui); }
+.menubar .views { border: 0; gap: 1px; align-self: stretch; }
+.menubar .views button {
+  background: transparent; border: 0; border-radius: 0; color: #9aa4b1; font-size: 13px; font-weight: 500; padding: 0 11px; white-space: nowrap;
+}
+.menubar .views button:hover { background: var(--pro-hover); color: #fff; }
+.menubar .views button.on { background: #1d222a; color: #fff; font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }
+.menubar .field { color: #8b95a3; font-size: 12px; font-weight: 500; gap: 5px; }
+.menubar .field :is(select, input) { background: #0f1215; border-color: var(--pro-line); border-radius: 4px; padding: 3px 7px; font-size: 12.5px; }
+.menubar #symbol { font-family: var(--mono); }
+.menubar #intervals { border: 0; background: #0f1215; border-radius: 5px; padding: 2px; gap: 2px; }
+.menubar #intervals button { border: 0; border-radius: 4px; background: transparent; color: var(--pro-text); font-weight: 600; font-size: 12px; padding: 3px 8px; }
+.menubar #intervals button:hover { background: var(--pro-hover); }
+.menubar #intervals button.on { background: var(--pro-on); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
+.menubar .tool { background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--pro-text); font-weight: 500; font-size: 12.5px; padding: 4px 9px; }
+.menubar .tool:hover { background: var(--pro-hover); color: #fff; border-color: transparent; }
+.menubar .tool.on { background: var(--pro-on); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
+.menubar .pill { border-color: var(--pro-line); border-radius: 10px; background: #0f1215; font-size: 11.5px; }
+.menubar .cdterm { font-family: var(--mono); color: #8b95a3; }
+
 @media (max-width: 1750px) { .menubar .lbl { display: none; } .menubar .mob { display: inline; } }
 /* ---- điện thoại: mỗi lần một khung, chuyển bằng thanh dưới cùng như ứng dụng ---- */
 @media (max-width: 900px) {
@@ -293,6 +323,8 @@ input[type=number], input:not([type]) { cursor: text !important; }
   .menubar .field { font-size: 0; gap: 0; }
   .menubar .field select, .menubar .field input { font-size: 13px; }
   .menubar .seg button, .menubar .tool { padding: 3px 7px; font-size: 12px; }
+  .menubar .views { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .menubar .views button { padding: 6px 9px; }
   #symbol { width: 96px; }
   #connPill span, #fullscreenBtn { display: none; }
   #connPill { padding: 3px 6px; }
