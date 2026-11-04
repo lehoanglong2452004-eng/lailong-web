@@ -5,13 +5,13 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202611041956";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202611041956";
-import { T, alpha, watermark } from "./theme.js?v=202611041956";
-import { drawConfl, conflTip } from "./levels.js?v=202611041956";
-import { drawShapes } from "./drawings.js?v=202611041956";
-import { bookImb } from "./walls.js?v=202611041956";
-import { largeLots, sweeps } from "./bmind.js?v=202611041956";
+import { COL_MS } from "./market.js?v=202611042012";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202611042012";
+import { T, alpha, watermark } from "./theme.js?v=202611042012";
+import { drawConfl, conflTip } from "./levels.js?v=202611042012";
+import { drawShapes } from "./drawings.js?v=202611042012";
+import { bookImb } from "./walls.js?v=202611042012";
+import { largeLots, sweeps } from "./bmind.js?v=202611042012";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
 const MS_MIN = 15, MS_MAX = 300000; // giới hạn phóng thời gian: 15 ms đến 5 phút mỗi điểm ảnh (khoảng 3 ngày trên màn hình)
@@ -46,6 +46,7 @@ const PALETTES = {
   gray: [[0, 18, 18, 18], [0.5, 120, 120, 120], [1, 255, 255, 255]],
 };
 export const HEAT_BG = "#05080c";
+const HOLD_MS = 30000; // giữ cột tới cột kế tiếp tối đa bấy nhiêu; lâu hơn là mất dữ liệu, để trống
 const makeLut = stops => {
   const lut = new Uint8ClampedArray(256 * 3);
   for (let i = 0; i < 256; i++) {
@@ -242,25 +243,39 @@ export class Heatmap {
     if (!g || i1 < 0) { this.offCtx.putImageData(img, 0, 0); this.ctx.drawImage(this.off, 0, 0, L.pw, L.ph); return; }
     // phóng to đủ lớn thì dùng bản chi tiết theo bước giá gốc (mỗi mức giá một dòng như Bookmap)
     const fine = tk > 0 && tk < g && tk * this.pxPerPrice >= 2;
-    const step = fine ? tk : g, gpx = step * this.pxPerPrice, half = Math.max(0.5, gpx / 2), gap = gpx >= 5 ? 1 : 0;
+    const step = fine ? tk : g, gpx = step * this.pxPerPrice;
     const cfg = this.cfg, agg = cfg.aggregate;
     // làm mịn dọc: tự động khi thu nhỏ (nhiều mức giá trong một điểm ảnh), hoặc theo mức chọn
     const sm = cfg.smooth === "none" ? 0 : cfg.smooth === "auto" ? (gpx < 0.5 ? 2 : gpx < 1 ? 1 : 0) : +cfg.smooth;
     if (!this._row2 || this._row2.length !== H) this._row2 = new Float32Array(H);
+    // Dựng một cột thành dải điểm ảnh. row[y] = -1: không có dữ liệu (nền); 0: sàn đã quan sát nhưng trống
+    // (tô màu sàn của bảng màu, như Bookmap); > 0: khối lượng chờ. Ô liền nhau, không chừa vạch đen giữa các ô.
     const build = c => {
-      const ks = fine && c.fk ? c.fk : c.keys, qs = fine && c.fk ? c.fq : c.sizes, st = fine && c.fk ? tk : g;
-      row.fill(0); let any = false, run = 0;
-      const nb = fine && c.fk ? c.fnb : c.knb;
+      const useF = fine && c.fk, ks = useF ? c.fk : c.keys, qs = useF ? c.fq : c.sizes, st = useF ? tk : g;
+      // cột cũ chỉ còn ô lưới thô: chia đều cho số bước giá trong ô để màu ngang với phần chi tiết
+      const scale = fine && !useF ? tk / g : 1, cpx = st * this.pxPerPrice, half = Math.max(0.5, cpx / 2);
+      row.fill(-1); let any = false, run = 0, ymin = H, ymax = -1;
+      const nb = useF ? c.fnb : c.knb;
       for (let j = 0; j < ks.length; j++) {
         // các mức giá được lưu: phía mua từ cao xuống thấp rồi phía bán từ thấp lên cao; cộng dồn thì bắt đầu lại khi sang phía bán
         if (agg && j === nb) run = 0;
-        const q = agg ? (run += qs[j]) : qs[j];
+        const q = (agg ? (run += qs[j]) : qs[j]) * scale;
         const yc = this.yOf(ks[j] * st);
-        let ya = Math.floor(yc - half), yb = Math.ceil(yc + half) - gap; if (yb <= 0 || ya >= H) continue;
+        let ya = Math.floor(yc - half), yb = Math.ceil(yc + half); if (yb <= 0 || ya >= H) continue;
         ya = Math.max(0, ya); yb = Math.min(H, yb); any = true;
-        for (let y = ya; y < yb; y++) row[y] = gpx < 1 && !agg ? row[y] + q : Math.max(row[y], q);
+        if (ya < ymin) ymin = ya; if (yb > ymax) ymax = yb;
+        for (let y = ya; y < yb; y++) row[y] = row[y] < 0 ? q : cpx < 1 && !agg ? row[y] + q : Math.max(row[y], q);
       }
-      if (sm && any) { const r2 = this._row2; for (let y = 0; y < H; y++) { let a = 0, n = 0; for (let d = -sm; d <= sm; d++) { const yy = y + d; if (yy >= 0 && yy < H) { a += row[yy]; n++; } } r2[y] = a / n; } row.set(r2); }
+      for (let y = ymin; y < ymax; y++) if (row[y] < 0) row[y] = 0;
+      if (sm && any) {
+        const r2 = this._row2;
+        for (let y = 0; y < H; y++) {
+          if (row[y] < 0) { r2[y] = -1; continue; }
+          let a = 0, n = 0; for (let d = -sm; d <= sm; d++) { const yy = y + d; if (yy >= 0 && yy < H && row[yy] >= 0) { a += row[yy]; n++; } }
+          r2[y] = a / n;
+        }
+        row.set(r2);
+      }
       return any;
     };
     // lượt 1: lấy mẫu các điểm ảnh để tìm mức tham chiếu (phân vị 99%)
@@ -278,18 +293,24 @@ export class Heatmap {
     if (key !== null && this._cut && this._cut.key === key && this._cut.fine === fine) { hi = this._cut.hi; lo = this._cut.lo; } else this._cut = { key, hi, lo, fine };
     if (hi <= lo) hi = lo + 1e-9;
     const ref = hi, LUTc = LUTS[cfg.palette] || LUT, dimK = 1 - Math.min(0.9, (cfg.dim || 0) / 100);
-    // lượt 2: tô màu
+    // lượt 2: tô màu. Mỗi cột giữ nguyên tới cột kế tiếp (sổ lệnh không đổi thì vẫn đứng đó), như Bookmap;
+    // chỉ để trống khi mất dữ liệu quá HOLD_MS. Cột cuối kéo tới bây giờ.
+    const floor = 10, now = this.now(); // màu sàn: xanh đen rất tối, phân biệt với nền không có dữ liệu
     let x = Math.max(0, Math.floor(this.xOf(cols[Math.max(0, i0)].t))), lastC = null;
     for (let i = Math.max(0, i0); i <= i1; i++) {
-      const c = carry(cols, i), xa = Math.max(0, Math.floor(this.xOf(cols[i].t)));
-      const xb = Math.min(W, Math.floor(this.xOf(cols[i].t + (cols[i].span || COL_MS))));
+      const c = carry(cols, i), ci = cols[i], nx = cols[i + 1], xa = Math.max(0, Math.floor(this.xOf(ci.t)));
+      const span = ci.span || COL_MS;
+      const tEnd = nx ? (nx.t - ci.t <= Math.max(HOLD_MS, span) ? nx.t : ci.t + span) : Math.max(ci.t + span, Math.min(now, ci.t + HOLD_MS));
+      const xb = Math.min(W, Math.floor(this.xOf(tEnd)));
       if (!c || xb <= xa || xb <= x) continue;
       if (c !== lastC) { build(c); lastC = c; }
+      const x0 = Math.max(x, xa);
       for (let y = 0; y < H; y++) {
-        const li = heatIndexCut(row[y], lo, hi, this.contrast); if (li < 0) continue;
+        const v = row[y]; if (v < 0) continue;
+        let li = heatIndexCut(v, lo, hi, this.contrast); if (li < 0) li = floor;
         const r = LUTc[li * 3] * dimK, gg = LUTc[li * 3 + 1] * dimK, b = LUTc[li * 3 + 2] * dimK;
-        let p = (y * W + Math.max(x, xa)) * 4;
-        for (let xx = Math.max(x, xa); xx < xb; xx++, p += 4) { data[p] = r; data[p + 1] = gg; data[p + 2] = b; }
+        let p = (y * W + x0) * 4;
+        for (let xx = x0; xx < xb; xx++, p += 4) { data[p] = r; data[p + 1] = gg; data[p + 2] = b; }
       }
       x = xb;
     }
