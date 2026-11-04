@@ -735,6 +735,11 @@ export const GLOSSARY = [
     body: "<p>So sánh lệnh chờ hiện tại với 5 giây trước ở từng mức giá.</p><p><b>Cách đọc:</b></p><ul><li>Số <b>+</b> lớn ở phía mua dưới giá: có người đang đặt thêm lệnh đỡ giá.</li><li>Số <b>−</b> lớn mà cột Bán/Mua không tăng tương ứng: lệnh bị <b>rút</b>, không phải bị khớp. Thường là tường giả (spoofing).</li><li>Số <b>−</b> đi kèm khối lượng khớp lớn: tường đang bị ăn thật.</li></ul>"
   },
   {
+    id: "dom-chart", group: "Order flow nâng cao", term: "Depth Of Market trên biểu đồ",
+    short: "Sổ lệnh vẽ thẳng lên mép phải biểu đồ nến và footprint: thanh đỏ là lệnh chờ bán, xanh là lệnh chờ mua, dải tối phía sau là tổng cộng dồn.",
+    body: "<p>Như chỉ báo Depth Of Market của ATAS. Mỗi dòng là một mức giá (tự gộp nhiều bước giá khi thu nhỏ để dòng không thấp hơn 11 điểm ảnh), thanh càng dài lệnh chờ càng lớn, số ở mép phải là khối lượng.</p><ul><li><b>Thanh sáng:</b> lệnh chờ tại mức đó.</li><li><b>Dải tối phía sau:</b> lệnh chờ cộng dồn từ giá tốt nhất tới mức đó, cho biết giá phải ăn qua bao nhiêu để tới đây.</li><li><b>Góc dưới phải:</b> tổng chờ mua và chờ bán trong khung nhìn.</li></ul><p>Bật/tắt trong <b>Lớp hiển thị</b> hoặc nút trên thanh công cụ bên trái khi xem Footprint.</p>"
+  },
+  {
     id: "dom-liqmap", group: "Order flow nâng cao", term: "Bản đồ thanh khoản (khung cạnh sổ lệnh)",
     short: "Bookmap thu nhỏ đặt giữa biểu đồ giá và sổ lệnh: mỗi dòng trùng một dòng giá của DOM, màu sáng là lệnh chờ dày, đường trắng là dấu vết giá.",
     body: "<p>Khung <b>Bản đồ thanh khoản</b> vẽ lịch sử sổ lệnh 30 giây đến 15 phút gần nhất (chọn ở đầu khung), bên phải là bây giờ. Mỗi dòng trùng đúng một dòng giá của Smart DOM bên cạnh nên đọc ngang là thấy giá.</p><ul><li>Dải sáng kéo dài: tường thanh khoản đứng yên lâu, đáng tin hơn. Khung vàng là tường đang đứng.</li><li>Dải sáng biến mất khi giá tới gần: lệnh bị rút; dấu × cam là nghi tường giả.</li><li><b>Dấu vết</b> (đường trắng): giá giữa; đường xanh/đỏ mảnh là giá mua/bán tốt nhất.</li><li>Bong bóng xanh/đỏ: lệnh gốc mua/bán chủ động; viền trắng là lệnh lớn.</li></ul><p>Kéo đường chia bên trái để đổi độ rộng, bấm ✕ để ẩn (bật lại trong <b>Lớp hiển thị</b>). Lăn chuột trên khung để cuộn giá cùng sổ lệnh.</p>"
