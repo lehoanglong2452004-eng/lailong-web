@@ -5,16 +5,16 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202611042100";
-import { cvd as cvdOf } from "./analytics.js?v=202611042100";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202611042100";
-import { GROUPS } from "./flowtools.js?v=202611042100";
-import { WALL_KIND } from "./walls.js?v=202611042100";
-import { T, alpha, watermark } from "./theme.js?v=202611042100";
-import { drawConfl, conflTip } from "./levels.js?v=202611042100";
-import { drawShapes } from "./drawings.js?v=202611042100";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202611042100";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202611042100";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202611042114";
+import { cvd as cvdOf } from "./analytics.js?v=202611042114";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202611042114";
+import { GROUPS } from "./flowtools.js?v=202611042114";
+import { WALL_KIND } from "./walls.js?v=202611042114";
+import { T, alpha, watermark } from "./theme.js?v=202611042114";
+import { drawConfl, conflTip } from "./levels.js?v=202611042114";
+import { drawShapes } from "./drawings.js?v=202611042114";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202611042114";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202611042114";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -532,7 +532,7 @@ export class FlowChart {
   }
 
   // Depth Of Market trên biểu đồ (như chỉ báo DOM của ATAS): lệnh chờ ở mỗi mức giá thành thanh ngang mọc từ mép
-  // phải vào trong, đỏ = chờ bán, xanh = chờ mua, số khối lượng ở mép phải. Dải tối phía sau là lệnh chờ cộng dồn từ
+  // phải vào trong, đỏ = chờ bán, xanh = chờ mua, số khối lượng ở mép phải. Đường chấm mảnh là lệnh chờ cộng dồn từ
   // giá tốt nhất ra xa (chế độ Cumulative). Mỗi dòng gộp đủ bước giá để cao ít nhất DEPTH_ROW_PX điểm ảnh.
   _depth(L) {
     const { bids, asks } = this.book.sorted(); if (!bids.length && !asks.length) return;
@@ -558,10 +558,17 @@ export class FlowChart {
       const yc = this.yOf(k * rs), y = yc - rh / 2, h = Math.max(1, rh - 1);
       if (y > L.priceH || y + rh < 0) continue;
       const ask = e.a >= e.b, q = ask ? e.a : e.b, c = ask ? e.ca : e.cb;
-      if (maxC && c) { ctx.fillStyle = ask ? "rgba(155,43,66,0.42)" : "rgba(6,114,96,0.42)"; const wc = c / maxC * maxW; ctx.fillRect(x1 - wc, y, wc, h); }
       const wq = Math.max(1, q / maxQ * maxW);
       ctx.fillStyle = ask ? "#f2385a" : "#089981"; ctx.fillRect(x1 - wq, y, wq, h);
       if (label) { ctx.fillStyle = "#ffffff"; ctx.fillText(fmtVol(q), x1 - 3, yc); }
+    }
+    // lệnh chờ cộng dồn: đường bậc thang mảnh (không tô kín để khỏi lấn các thanh chính)
+    if (maxC) for (const side of ["a", "b"]) {
+      const ks = [...rows.keys()].filter(k => rows.get(k)["c" + side]).sort((p, q) => side === "a" ? p - q : q - p);
+      if (!ks.length) continue;
+      ctx.strokeStyle = side === "a" ? "rgba(242,56,90,0.55)" : "rgba(8,153,129,0.6)"; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath();
+      ks.forEach((k, i) => { const x = x1 - rows.get(k)["c" + side] / maxC * maxW, yc = this.yOf(k * rs); i ? ctx.lineTo(x, yc) : ctx.moveTo(x, yc); });
+      ctx.stroke(); ctx.setLineDash([]);
     }
     // tổng lệnh chờ trong khung nhìn: bán (đỏ) và mua (xanh)
     ctx.font = `10px ${MONO}`; ctx.textBaseline = "alphabetic";

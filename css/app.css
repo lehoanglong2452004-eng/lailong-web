@@ -286,6 +286,7 @@ input[type=number], input:not([type]) { cursor: text !important; }
   --pro-line: #262b33; --pro-hover: #252b34; --pro-on: #2b3442; --pro-text: #cfd6df;
   background: #15181d; border-bottom: 1px solid var(--pro-line); min-height: 36px; padding: 3px 8px; gap: 4px 8px;
   font-family: var(--ui); box-shadow: 0 1px 0 #000;
+  position: relative; z-index: 40; /* nằm trên khung đang phóng to (bóng che nền của khung đó không phủ lên menu) */
 }
 .menubar .brand { font: 700 15px/1 var(--ui); letter-spacing: .1em; text-shadow: none; padding: 2px 12px 2px 4px; border-right-color: var(--pro-line); }
 .menubar .brand span { color: #8b95a3; font-weight: 600; }
@@ -309,7 +310,27 @@ input[type=number], input:not([type]) { cursor: text !important; }
 .menubar .pill { border-color: var(--pro-line); border-radius: 10px; background: #0f1215; font-size: 11.5px; }
 .menubar .cdterm { font-family: var(--mono); color: #8b95a3; }
 
-@media (max-width: 1750px) { .menubar .lbl { display: none; } .menubar .mob { display: inline; } }
+@media (max-width: 2200px) { .menubar .lbl { display: none; } .menubar .mob { display: inline; } }
+/* màn hình laptop: thu gọn để thanh menu nằm trên một dòng (đèn kết nối chỉ còn chấm màu, rê chuột để xem) */
+@media (max-width: 1600px) {
+  .menubar .views button { padding: 0 8px; }
+  .menubar #connPill span { display: none; }
+  .menubar #connPill { padding: 3px 6px; }
+  .menubar #exchange { max-width: 120px; }
+  .menubar #symbol { width: 96px; }
+}
+@media (max-width: 1440px) {
+  .menubar .brand { font-size: 13px; letter-spacing: .06em; padding-right: 8px; }
+  .menubar .views button { padding: 0 6px; font-size: 12.5px; }
+  .menubar .field { font-size: 0; gap: 0; }
+  .menubar .field :is(select, input) { font-size: 12.5px; }
+  .menubar #intervals button { padding: 3px 6px; }
+  .menubar { gap: 4px 5px; }
+  .menubar #exchange { max-width: 100px; }
+  .menubar #symbol { width: 84px; }
+  .menubar #fullscreenBtn { display: none; } /* vẫn bấm F11 được */
+  .menubar .tool { padding: 4px 6px; }
+}
 /* ---- điện thoại: mỗi lần một khung, chuyển bằng thanh dưới cùng như ứng dụng ---- */
 @media (max-width: 900px) {
   body { height: 100dvh; min-height: 0; padding-top: env(safe-area-inset-top); }
