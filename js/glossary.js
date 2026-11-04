@@ -3,6 +3,13 @@
 export const GLOSSARY = [
   // ───────────── Bookmap ─────────────
   {
+    id: "bm-overview",
+    group: "Bookmap",
+    term: "Toàn cảnh",
+    short: "Thu cả lịch sử sổ lệnh đang có và toàn bộ biên độ giá vào một màn hình, tự giãn ra khi dữ liệu dài thêm.",
+    body: "<p>Bấm <b>⛶ Toàn cảnh</b> để xem bức tranh lớn: các tường lệnh chờ đã đứng ở đâu, giá đã đi qua chúng thế nào trong mấy giờ qua. Bản đồ tự giãn theo thời gian khi dữ liệu tích thêm, bên phải luôn là bây giờ.</p><p>Lăn chuột, kéo hoặc bấm đúp là thoát Toàn cảnh để soi chi tiết. Bấm lại nút để quay về.</p><p>Trang tự giữ khoảng <b>4 giờ</b> sổ lệnh từ lúc mở: 20 phút gần nhất chi tiết từng nửa giây, cũ hơn gộp thành cột 2 giây. Muốn mở trang lên là có ngay lịch sử cả ngày, thêm mã vào <b>Máy ghi 24/7</b> trong ⚙ Cài đặt. Mỗi cột chụp toàn bộ sổ lệnh trong ±1% quanh giá.</p>"
+  },
+  {
     id: "bm-settings",
     group: "Bookmap",
     term: "Cài đặt Bookmap",
