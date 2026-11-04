@@ -4,9 +4,9 @@
 // bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/news.py).
 // Không dùng tin của báo, tác giả, tổ chức Việt Nam hay tin tiếng Việt. Tin nóng được gom thành bản tin Telegram
 // tối đa mỗi 30 phút (xem newsdigest.js); các tin đã gửi lưu trên máy này để không gửi lại.
-import { setFresh } from "./fresh.js?v=202611041854";
-import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202611041854";
-import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202611041854";
+import { setFresh } from "./fresh.js?v=202611041901";
+import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202611041901";
+import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202611041901";
 
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],
   [/FOMC|Federal Funds|Fed Chair|Powell/i, "Fed"], [/Retail Sales/i, "doanh số bán lẻ"], [/GDP/i, "GDP"], [/PCE/i, "chi tiêu PCE (Fed hay dùng)"],
@@ -190,7 +190,25 @@ export function initNews({ $, esc, alerts, coin }) {
       avg.sort((a, b) => (b.avg.DXY || 0) - (a.avg.DXY || 0)).map(x => `<tr><td class="t">${FLAG[x.country] || esc(x.country)} ${esc(x.title)}</td><td>${x.n}</td>${react.assets.map(a => `<td>${x.avg[a] == null ? "–" : (a.startsWith("Lợi suất") ? x.avg[a].toFixed(1) + "bp" : x.avg[a].toFixed(2) + "%")}</td>`).join("")}</tr>`).join("") + `</tbody></table></div>` : "");
   }
 
-  function render() { renderCal(); renderNews(); renderMap(); renderReact(); }
+  // Đông ↔ Tây: báo Trung Quốc nói về phương Tây, báo phương Tây nói về Trung Quốc (24 giờ qua)
+  function renderEW() {
+    const eb = $("ewBody"); if (!eb) return;
+    if (!news || !news.eastwest) { eb.innerHTML = `<div class="empty">Chưa có dữ liệu Đông ↔ Tây.</div>`; return; }
+    const toneTxt = v => v <= -40 ? "căng thẳng" : v < -10 ? "hơi căng" : v <= 10 ? "trung tính" : v < 40 ? "hơi dịu" : "hoà dịu";
+    const col = (k, head) => {
+      const s = news.eastwest[k] || { n: 0, tense: 0, ease: 0, tone: 0, sources: [] };
+      const rows = news.items.filter(x => x.ew === k).slice(0, 40);
+      return `<div class="ewcol"><div class="ewh">${head}</div>
+        <div class="ewst">${s.n} tin trong 24 giờ · ${s.tense} tin giọng căng, ${s.ease} tin giọng dịu → <b>${toneTxt(s.tone)}</b> (${s.tone > 0 ? "+" : ""}${s.tone})</div>
+        <div class="ewtone" data-tip="Trái: căng (cấm vận, thuế, cảnh báo). Phải: dịu (đàm phán, thoả thuận, hợp tác). Đếm theo từ khoá trong tiêu đề."><i style="left:${50 + s.tone / 2}%"></i></div>
+        <div class="ewst">Nguồn nhiều nhất: ${s.sources.length ? s.sources.map(([n, c]) => `${esc(n)} ${c}`).join(", ") : "-"}</div>
+        <div class="newsbox">${rows.length ? rows.map(newsRow).join("") : `<div class="empty">Chưa có tin.</div>`}</div></div>`;
+    };
+    eb.innerHTML = col("e2w", "🇨🇳 Trung Quốc nói về phương Tây") + col("w2e", "🌐 Phương Tây nói về Trung Quốc");
+    $("ewUpd").textContent = `24 giờ qua · cập nhật ${fmtTime(news.updated)}`;
+  }
+
+  function render() { renderCal(); renderNews(); renderMap(); renderEW(); renderReact(); }
 
   // xem nhanh khi rê chuột lên ô
   const pop = document.createElement("div"); pop.className = "impop"; pop.hidden = true; document.body.appendChild(pop);

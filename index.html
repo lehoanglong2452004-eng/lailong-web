@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611041854">
-<link rel="stylesheet" href="css/app.css?v=202611041854">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611041901">
+<link rel="stylesheet" href="css/app.css?v=202611041901">
 </head>
 <body>
 <header class="menubar">
@@ -405,6 +405,10 @@
       <h3>Bản đồ tác động tin tức <button class="q" data-g="impact-map">?</button> <small id="impactUpd"></small></h3>
       <div id="impactMap" class="impactmap"></div>
       <div id="impactDetail" class="impactdetail"></div>
+    </section>
+    <section class="card wide" data-at="overview news">
+      <h3>Đông ↔ Tây: hai bên đang nói gì về nhau <button class="q" data-g="east-west">?</button> <small id="ewUpd"></small></h3>
+      <div id="ewBody" class="ewgrid"></div>
     </section>
     <section class="card" data-at="news">
       <h3>Lịch kinh tế tuần này <button class="q" data-g="econ-calendar">?</button></h3>
@@ -819,6 +823,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611041854"></script>
+<script type="module" src="js/app.js?v=202611041901"></script>
 </body>
 </html>

@@ -969,6 +969,78 @@ def fetch_cn(translate: bool = True) -> tuple[list[dict], list[str]]:
     return items, errors
 
 
+# ---------- Đông ↔ Tây: báo Trung Quốc nói gì về phương Tây và ngược lại ----------
+# Bên Đông: tin nhanh Trung Quốc (cn) và báo Trung Quốc, Hồng Kông viết tiếng Anh. Còn lại là bên Tây.
+# Tin bên Đông nhắc tới Mỹ, châu Âu là "Đông nói về Tây"; tin bên Tây nhắc tới Trung Quốc là "Tây nói về Đông".
+# Giọng căng hay dịu chỉ đếm từ khoá trong tiêu đề, là chỉ báo thô chứ không phải phân tích ngữ nghĩa.
+EAST_SOURCES = {
+    "scmp", "south china morning post", "china daily", "cgtn", "global times", "caixin global", "caixin",
+    "yicai global", "yicai", "xinhua", "people's daily", "chinadaily.com.cn", "the standard",
+}  # fmt: skip
+WEST_EN = re.compile(
+    r"\b(U\.?S\.?|USA|America\w*|Washington|White House|Trump|Biden|Fed|Powell|Treasury|Congress|"
+    r"Pentagon|EU|European|Europe|Brussels|NATO|Britain|UK|Germany|France|G7|West\w*)\b"
+)
+WEST_ZH = re.compile(
+    "美国|美方|美联储|特朗普|白宫|华盛顿|美债|美财长|五角大楼|国会|欧盟|欧洲|英国|德国|法国|北约|七国集团|西方"
+)
+EAST_EN = re.compile(
+    r"\b(China|Chinese|Beijing|Xi|PBOC|PBoC|yuan|renminbi|Hong Kong|Shanghai|Shenzhen|Taiwan\w*|CCP|"
+    r"Huawei|Alibaba|Tencent|BYD|Sino\w*)\b"
+)
+TENSE = re.compile(
+    r"\b(sanction\w*|tariff\w*|ban(s|ned)?|curb\w*|restrict\w*|blacklist\w*|export controls?|threat\w*|"
+    r"warn\w*|retaliat\w*|condemn\w*|tension\w*|probe|accus\w*|crackdown|decoupl\w*|spy\w*|"
+    r"military|drills?|escalat\w*|trade war)\b|制裁|关税|禁令|限制|出口管制|威胁|警告|反制|报复|谴责|紧张|调查|指责|打压|脱钩|军演|升级|贸易战",
+    re.I,
+)
+EASE = re.compile(
+    r"\b(talks?|deal|agree\w*|truce|cooperat\w*|dialogue|meet(s|ing)?|summit|eas(e|es|ing)|"
+    r"exempt\w*|thaw|visit\w*|resum\w*|purchase\w*|lift\w*|pause\w*|extend\w*)\b|会谈|会晤|协议|达成|休战|合作|对话|峰会|缓和|豁免|访问|恢复|采购|取消|暂停|延长",
+    re.I,
+)
+
+
+def side_of(item: dict) -> str:
+    src = (item.get("source") or "").strip().lower()
+    return "east" if item.get("cn") or src in EAST_SOURCES else "west"
+
+
+def tag_east_west(item: dict) -> str | None:
+    """'e2w' nếu bên Đông nói về phương Tây, 'w2e' nếu bên Tây nói về Trung Quốc, không thì None."""
+    title, orig = item.get("title") or "", item.get("orig") or ""
+    if side_of(item) == "east":
+        return "e2w" if WEST_EN.search(title) or WEST_ZH.search(orig) else None
+    return "w2e" if EAST_EN.search(title) else None
+
+
+def east_west(items: list[dict], now: int | None = None, hours: int = 24) -> dict:
+    """Tổng hợp 24 giờ: mỗi chiều bao nhiêu tin, chủ đề nào, giọng căng (−) hay dịu (+), vài tin mới nhất."""
+    now = now or int(time.time() * 1000)
+    out = {}
+    for k in ("e2w", "w2e"):
+        rows = [x for x in items if x.get("ew") == k and now - x["t"] <= hours * 3_600_000]
+        tense = sum(1 for x in rows if TENSE.search(x["title"] + " " + (x.get("orig") or "")))
+        ease = sum(1 for x in rows if EASE.search(x["title"] + " " + (x.get("orig") or "")))
+        topics: dict[str, int] = {}
+        for x in rows:
+            for t in x.get("topics") or []:
+                topics[t] = topics.get(t, 0) + 1
+        srcs: dict[str, int] = {}
+        for x in rows:
+            srcs[x["source"]] = srcs.get(x["source"], 0) + 1
+        out[k] = {
+            "n": len(rows),
+            "tense": tense,
+            "ease": ease,
+            # −100 (toàn tin căng) .. +100 (toàn tin dịu)
+            "tone": round(100 * (ease - tense) / max(tense + ease, 1)),
+            "topics": sorted(topics.items(), key=lambda kv: -kv[1])[:6],
+            "sources": sorted(srcs.items(), key=lambda kv: -kv[1])[:6],
+        }
+    return out
+
+
 def fetch_news(per_cat: int = 150) -> dict:
     """Lấy mọi nguồn cùng lúc (16 luồng): nguồn chậm hay bị chặn không làm chậm nguồn khác."""
     items, errors = [], []
@@ -992,8 +1064,18 @@ def fetch_news(per_cat: int = 150) -> dict:
         seen.add(key)
         per[it["cat"]] += 1
         out.append(it)
+    for it in out:
+        ew = tag_east_west(it)
+        if ew:
+            it["ew"] = ew
     topics = [{"id": t[0], "name": t[1], "icon": t[2], "cat": t[3], "assets": t[5]} for t in TOPICS]
-    return {"updated": int(time.time() * 1000), "items": out, "topics": topics, "errors": errors}
+    return {
+        "updated": int(time.time() * 1000),
+        "items": out,
+        "topics": topics,
+        "eastwest": east_west(out, now),
+        "errors": errors,
+    }
 
 
 # ---------- phản ứng giá sau tin (Yahoo Finance, nến 5 phút, chậm khoảng 15 phút) ----------

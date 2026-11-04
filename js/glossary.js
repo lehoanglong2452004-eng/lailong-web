@@ -908,6 +908,11 @@ export const GLOSSARY = [
     body: "<p>Tốc độ băng tăng vọt nghĩa là nhiều người cùng lao vào một lúc: thường là lúc bắt đầu một cú chạy, lúc quét cắt lỗ, hoặc lúc ra tin. Tốc độ cao mà giá không đi được là dấu hiệu hấp thụ.</p><p>Mức \"thường\" là trung vị của vùng đang xem trên màn hình.</p>"
   },
   {
+    id: "east-west", group: "Công cụ", term: "Đông ↔ Tây",
+    short: "Hai cột: báo Trung Quốc đang nói gì về Mỹ, châu Âu và báo phương Tây đang nói gì về Trung Quốc trong 24 giờ qua, kèm giọng căng hay dịu.",
+    body: "<p><b>Bên Đông</b>: tin nhanh 7x24 của Jin10, Cailian, Wallstreetcn, Sina, Eastmoney (đã dịch, rê chuột xem bản gốc) và báo Trung Quốc, Hồng Kông viết tiếng Anh (SCMP, China Daily, CGTN, Global Times, Caixin, Yicai). <b>Bên Tây</b>: mọi nguồn còn lại (Reuters, Bloomberg, CNBC, WSJ, FT, BBC…).</p><p>Tin bên Đông nhắc tới Mỹ, Fed, Trump, EU, NATO… vào cột trái; tin bên Tây nhắc tới Trung Quốc, Bắc Kinh, nhân dân tệ, Đài Loan, Huawei… vào cột phải.</p><p><b>Giọng</b> đếm từ khoá trong tiêu đề: căng (cấm vận, thuế quan, hạn chế xuất khẩu, cảnh báo, trả đũa, tập trận) và dịu (đàm phán, thoả thuận, hợp tác, gặp gỡ, miễn trừ, gia hạn). Điểm từ −100 (toàn tin căng) đến +100 (toàn tin dịu). Đây là chỉ báo thô để thấy hướng gió, không phải phân tích ngữ nghĩa. Hai cột lệch nhau (ví dụ báo Tây rất căng mà báo Trung Quốc dịu) thường đáng đọc kỹ.</p><p>Chỉ dùng nguồn công khai, miễn phí. Bản web cập nhật mỗi 30 phút, bản laptop mỗi 10 phút.</p>"
+  },
+  {
     id: "impact-map", group: "Công cụ", term: "Bản đồ tác động tin tức",
     short: "Mỗi ô là một chủ đề đang được nói tới trong 24 giờ qua. Ô càng đỏ càng nóng; 3 ô to nhất là 3 chủ đề nóng nhất. Rê chuột để xem nhanh, bấm để xem đầy đủ.",
     body: "<p>Độ nóng = số tin về chủ đề đó, tin có 🔥 tính gấp đôi, tin càng cũ càng nhẹ (giảm một nửa sau khoảng 8 giờ).</p><p>Bấm vào một ô để xem: các tài sản hay bị ảnh hưởng, cách đọc thường thấy (ví dụ lạm phát cao hơn dự báo thì USD tăng, vàng giảm), giá đã phản ứng thế nào sau các tin cùng loại gần đây, và toàn bộ tin của chủ đề.</p><p><b>Lưu ý:</b> \"cách đọc\" là phản ứng hay gặp, không phải quy luật. Thị trường có lúc phản ứng ngược khi tin đã được tính trước vào giá.</p>"
