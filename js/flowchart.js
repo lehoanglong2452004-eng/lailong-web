@@ -5,16 +5,16 @@
 //           liqL, liqS (khối lượng long/short bị thanh lý), oi}
 // Không có chỉ báo kỹ thuật truyền thống: chỉ có dữ liệu dòng lệnh và các mức giá tính ra từ dữ liệu.
 
-import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202611042019";
-import { cvd as cvdOf } from "./analytics.js?v=202611042019";
-import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202611042019";
-import { GROUPS } from "./flowtools.js?v=202611042019";
-import { WALL_KIND } from "./walls.js?v=202611042019";
-import { T, alpha, watermark } from "./theme.js?v=202611042019";
-import { drawConfl, conflTip } from "./levels.js?v=202611042019";
-import { drawShapes } from "./drawings.js?v=202611042019";
-import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202611042019";
-import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202611042019";
+import { fmtVol, fmtUsd, fmtTime, decimalsFor, pad2, MONO, fitCanvas } from "./util.js?v=202611042100";
+import { cvd as cvdOf } from "./analytics.js?v=202611042100";
+import { cvdCandles, rangeProfile, daySessions } from "./orderflow.js?v=202611042100";
+import { GROUPS } from "./flowtools.js?v=202611042100";
+import { WALL_KIND } from "./walls.js?v=202611042100";
+import { T, alpha, watermark } from "./theme.js?v=202611042100";
+import { drawConfl, conflTip } from "./levels.js?v=202611042100";
+import { drawShapes } from "./drawings.js?v=202611042100";
+import { fpRows, rowExtremes, diagRatio, barStats, auction, unfinishedLevels, deltaDivergence, FP_MODES } from "./footprint.js?v=202611042100";
+import { TYPES as RADAR_TYPES, STATUS as RADAR_STATUS, REGIMES as RADAR_REGIMES, fmtDur } from "./radar.js?v=202611042100";
 
 const RADAR_MARK = { wake: "Đ", climax: "C", spike: "K", absorb: "H", vacuum: "T", paradox: "N", drought: "Cạn" };
 function radarText(e, dec, ms) {
@@ -38,6 +38,7 @@ const STAT_ROWS = [
 const LS_ROW = 14, LS_NUM = 44, LS_H = 3 * LS_ROW + LS_NUM + 2, COMPACT = 12, LS_TXT = 24, STAT_TXT = 34;
 // số nến mỗi cụm để dòng số dưới nến rộng ít nhất ~48 px
 export function lsGroup(sp) { for (const n of [3, 6, 12, 24, 48]) if (n * sp >= 48) return n; return 96; }
+const DEPTH_ROW_PX = 11; // Depth Of Market: dòng thấp nhất bấy nhiêu điểm ảnh
 const AXIS_W = 74, TIME_H = 22, MULTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const C = { get bg() { return T.bg; }, get grid() { return T.grid; }, get axis() { return T.muted; }, get text() { return T.text; }, get up() { return T.up; }, get down() { return T.down; }, poc: "#f5d524" };
 
@@ -89,7 +90,7 @@ export class FlowChart {
     this.S = fitCanvas(canvas, () => { this.dirty = true; }); this.ctx = this.S.ctx;
     this.bars = []; this.info = {}; this.step = 1; this.type = "candle"; this.rowMult = "auto";
     this.spacing = { candle: 8, box: 72 }; this.offset = 6; this.yZoom = 1;
-    this.show = { radar: false, profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true, stats: true, auction: true, diverg: true, confl: true };
+    this.show = { radar: false, profile: true, levels: true, zones: true, liq: true, liqMap: true, delta: true, cvd: true, oi: true, absorb: true, big: true, cluster: true, dayProfile: false, algo: true, spoof: true, score: true, imb: true, stats: true, auction: true, diverg: true, confl: true, depth: true };
     this.fpMode = "bidask"; this.fpColor = "volume";
     this.radar = []; this.levels = []; this.zones = []; this.confl = []; this.liqMap = null; this.markers = []; this.lines = []; this.orders = []; this.position = null;
     this.absorb = []; this.prints = null; this.bigQ = Infinity; this.clusters = []; this.ranges = []; this.pane = "deltaCvd";
@@ -178,6 +179,7 @@ export class FlowChart {
     if (this.compact && this.sp >= LS_TXT) this._lsLabels(first, last); // số nằm trên các dấu khác cho dễ đọc
     this._selBand(L);
     if (this.show.liqMap && this.liqMap) this._liqMap(L);
+    if (this.show.depth && this.book) this._depth(L);
     this._markers(first, last);
     this._ownLines(L);
     if (this.drawings) drawShapes(ctx, this.drawings.list(), this.drawings.preview, { yOf: p => this.yOf(p), pw: L.pw, ph: L.priceH, dec: decimalsFor(this.info.tick || this.step) });
@@ -527,6 +529,46 @@ export class FlowChart {
       ctx.fillStyle = e.l >= e.s ? `rgba(255,61,242,${a.toFixed(2)})` : `rgba(255,212,0,${a.toFixed(2)})`;
       ctx.fillRect(L.pw - wpx, k * rowPx, wpx, rowPx - 0.5);
     }
+  }
+
+  // Depth Of Market trên biểu đồ (như chỉ báo DOM của ATAS): lệnh chờ ở mỗi mức giá thành thanh ngang mọc từ mép
+  // phải vào trong, đỏ = chờ bán, xanh = chờ mua, số khối lượng ở mép phải. Dải tối phía sau là lệnh chờ cộng dồn từ
+  // giá tốt nhất ra xa (chế độ Cumulative). Mỗi dòng gộp đủ bước giá để cao ít nhất DEPTH_ROW_PX điểm ảnh.
+  _depth(L) {
+    const { bids, asks } = this.book.sorted(); if (!bids.length && !asks.length) return;
+    const tick = this.info.tick || this.step, ppp = this._ph / (this._pmax - this._pmin); if (!(tick > 0) || !(ppp > 0)) return;
+    let rs = tick; for (const m of MULTS) { rs = tick * m; if (rs * ppp >= DEPTH_ROW_PX) break; }
+    const lo = this._pmin - rs, hi = this._pmax + rs, rows = new Map();
+    for (const [side, list] of [["b", bids], ["a", asks]]) {
+      let cum = 0;
+      for (const [p, q] of list) {
+        cum += q;
+        if (side === "b" ? p > hi : p < lo) continue;
+        if (side === "b" ? p < lo : p > hi) break;
+        const k = Math.round(p / rs), e = rows.get(k) || { b: 0, a: 0, cb: 0, ca: 0 };
+        e[side] += q; e["c" + side] = cum; rows.set(k, e);
+      }
+    }
+    let maxQ = 0, maxC = 0, tb = 0, ta = 0;
+    for (const e of rows.values()) { maxQ = Math.max(maxQ, e.b, e.a); maxC = Math.max(maxC, e.cb, e.ca); tb += e.b; ta += e.a; }
+    if (!maxQ) return;
+    const ctx = this.ctx, maxW = Math.min(L.pw * 0.3, 340), rh = rs * ppp, x1 = L.pw, label = rh >= 9;
+    ctx.font = `${Math.min(11, Math.max(9, rh - 2)).toFixed(0)}px ${MONO}`; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (const [k, e] of rows) {
+      const yc = this.yOf(k * rs), y = yc - rh / 2, h = Math.max(1, rh - 1);
+      if (y > L.priceH || y + rh < 0) continue;
+      const ask = e.a >= e.b, q = ask ? e.a : e.b, c = ask ? e.ca : e.cb;
+      if (maxC && c) { ctx.fillStyle = ask ? "rgba(155,43,66,0.42)" : "rgba(6,114,96,0.42)"; const wc = c / maxC * maxW; ctx.fillRect(x1 - wc, y, wc, h); }
+      const wq = Math.max(1, q / maxQ * maxW);
+      ctx.fillStyle = ask ? "#f2385a" : "#089981"; ctx.fillRect(x1 - wq, y, wq, h);
+      if (label) { ctx.fillStyle = "#ffffff"; ctx.fillText(fmtVol(q), x1 - 3, yc); }
+    }
+    // tổng lệnh chờ trong khung nhìn: bán (đỏ) và mua (xanh)
+    ctx.font = `10px ${MONO}`; ctx.textBaseline = "alphabetic";
+    const tB = `Σ chờ mua ${fmtVol(tb)}`, wB = ctx.measureText(tB).width;
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(x1 - wB - ctx.measureText(`Σ chờ bán ${fmtVol(ta)}`).width - 18, L.priceH - 16, wB + ctx.measureText(`Σ chờ bán ${fmtVol(ta)}`).width + 18, 15);
+    ctx.fillStyle = "#3fd0a8"; ctx.fillText(tB, x1 - 4, L.priceH - 5);
+    ctx.fillStyle = "#ff6b85"; ctx.fillText(`Σ chờ bán ${fmtVol(ta)}`, x1 - wB - 12, L.priceH - 5);
   }
 
   // đường giá phụ (ví dụ VWAP trong backtest): [{values, color, name}]
