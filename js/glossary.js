@@ -342,6 +342,34 @@ export const GLOSSARY = [
     body: "<p>Đây là <b>ước tính</b>, không phải dữ liệu thật. Ứng dụng xem OI tăng ở mức giá nào (có người mở vị thế ở đó), rồi giả định họ dùng đòn bẩy phổ biến 5x, 10x, 25x, 50x, 100x để tính ra giá thanh lý của họ.</p><p><b>Cách đọc:</b> Cụm càng sáng = càng nhiều vị thế có thể bị thanh lý ở mức giá đó. Giá hay bị “hút” về các cụm lớn vì ở đó có nhiều thanh khoản (lệnh cưỡng bức) cho người lớn khớp lệnh.</p><p><b>Ví dụ:</b> Nhiều long mở ở 62.000 với 25x → giá thanh lý khoảng 62.000 × (1 − 1/25) ≈ 59.520. Bản đồ sẽ có cụm sáng quanh 59.500.</p><p><b>Lưu ý:</b> Không ai biết chính xác người khác dùng đòn bẩy bao nhiêu; hãy coi đây là bản đồ tham khảo.</p>"
   },
   {
+    id: "liq-heat",
+    group: "Thanh lý",
+    term: "Thẻ Thanh lý (bản đồ nhiệt thanh lý theo thời gian)",
+    short: "Mức giá nào đang dồn nhiều vị thế có thể bị thanh lý, sinh ra lúc nào và bị giá quét lúc nào. Đây là ƯỚC TÍNH từ OI.",
+    body: "<p>Thẻ này vẽ bản đồ thanh lý <b>ước tính</b> theo thời gian, kiểu Liquidation Heatmap. Trục ngang là thời gian, trục dọc là giá. Mỗi khi OI tăng, ứng dụng coi như có vị thế mới mở ở giá điển hình của nến đó, chia theo các bậc đòn bẩy phổ biến để ra giá thanh lý: long bị thanh lý ở dưới, short ở trên. Phần mở long hay short lấy theo tỷ lệ mua chủ động của nến. OI giảm thì mọi mức co lại theo tỷ lệ; giá chạm mức nào thì mức đó coi như đã bị thanh lý và tắt.</p><p><b>Cách đọc:</b></p><ul><li>Dải ngang càng sáng (tím than → xanh dương → xanh lơ → xanh lá → vàng) thì càng nhiều tiền ước tính sẽ bị thanh lý ở mức giá đó. Dải kéo dài từ trái sang là mức đã tích tụ lâu mà giá chưa quét.</li><li>Dải tắt ngay chỗ nến chạm vào là lúc các vị thế đó bị quét.</li><li><b>Cột bên phải</b>: ảnh chụp lúc này. Thanh đỏ là long đang chờ dưới giá, thanh xanh lá là short đang chờ trên giá; đường cong là tổng cộng dồn tính từ giá hiện tại ra xa.</li><li>Rê chuột (hoặc chạm) vào một ô để xem số tiền ước tính và khoảng cách tới giá hiện tại.</li></ul><p><b>Ví dụ:</b> BTC ở 80.600, có dải vàng ở 82.100 kéo dài hai ngày và cột bên phải báo short chờ 40 triệu USD ở đó. Giá hay bị hút về những cụm như vậy vì ở đó có sẵn lệnh mua cưỡng bức cho tay to khớp.</p><p><b>Lưu ý:</b> Không ai biết chính xác người khác dùng đòn bẩy bao nhiêu và vào lệnh ở đâu. Đây là bản đồ tham khảo tính từ OI và nến, không phải dữ liệu thanh lý thật của sàn. Lệnh thanh lý thật đã xảy ra xem ở lớp “Lệnh thanh lý thật”.</p>"
+  },
+  {
+    id: "liq-range",
+    group: "Thanh lý",
+    term: "Khoảng thời gian của bản đồ thanh lý",
+    short: "24 giờ (nến 5 phút), 3 ngày (15 phút), 7 ngày (1 giờ) hoặc 30 ngày (4 giờ).",
+    body: "<p>Khoảng ngắn cho thấy chi tiết các mức vừa sinh ra; khoảng dài cho thấy những cụm đã tích tụ lâu mà giá chưa quét tới. Sàn chỉ giữ lịch sử OI khoảng 30 ngày nên khoảng dài nhất là 30 ngày. Với 24 giờ, 3 ngày và 7 ngày, ứng dụng tính thêm một đoạn trước đó để các mức cũ kịp hiện ra từ mép trái.</p>"
+  },
+  {
+    id: "liq-model",
+    group: "Thanh lý",
+    term: "Mô hình đòn bẩy",
+    short: "Giả định người mở vị thế dùng đòn bẩy bao nhiêu: đủ bậc 5x–100x, chỉ đòn bẩy cao hoặc chỉ đòn bẩy thấp.",
+    body: "<p>Mặc định chia vị thế mới theo 5x (10%), 10x (25%), 25x (30%), 50x (20%) và 100x (15%). Đòn bẩy càng cao thì giá thanh lý càng gần giá vào lệnh: 100x chỉ cách khoảng 0,5%, 5x cách khoảng 19,5%.</p><p><b>Cách dùng:</b> Chọn “Đòn bẩy cao” để xem các mức gần giá mà thị trường hay quét nhanh; chọn “Đòn bẩy thấp” để xem các mức xa hơn khi có biến động lớn.</p>"
+  },
+  {
+    id: "liq-thr",
+    group: "Thanh lý",
+    term: "Ngưỡng màu",
+    short: "Ô nhỏ hơn ngưỡng này (so với mốc sáng nhất) thì không tô, để chỉ còn các cụm đáng chú ý.",
+    body: "<p>Mốc sáng nhất là phân vị 99,5% của mọi ô trong khoảng đang xem (con số ghi ở đầu thang màu bên trái). Kéo ngưỡng sang phải để giấu các mức nhỏ và chỉ còn những cụm lớn; kéo sang trái để thấy cả các mức mỏng.</p>"
+  },
+  {
     id: "liq-windows",
     group: "Thanh lý",
     term: "Bảng thanh lý theo khung thời gian",
