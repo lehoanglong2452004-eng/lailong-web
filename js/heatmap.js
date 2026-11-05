@@ -5,13 +5,13 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202611042139";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202611042139";
-import { T, alpha, watermark } from "./theme.js?v=202611042139";
-import { drawConfl, conflTip } from "./levels.js?v=202611042139";
-import { drawShapes } from "./drawings.js?v=202611042139";
-import { bookImb } from "./walls.js?v=202611042139";
-import { largeLots, sweeps } from "./bmind.js?v=202611042139";
+import { COL_MS } from "./market.js?v=202611052205";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202611052205";
+import { T, alpha, watermark } from "./theme.js?v=202611052205";
+import { drawConfl, conflTip } from "./levels.js?v=202611052205";
+import { drawShapes } from "./drawings.js?v=202611052205";
+import { bookImb } from "./walls.js?v=202611052205";
+import { largeLots, sweeps } from "./bmind.js?v=202611052205";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
 const MS_MIN = 15, MS_MAX = 300000; // giới hạn phóng thời gian: 15 ms đến 5 phút mỗi điểm ảnh (khoảng 3 ngày trên màn hình)
@@ -36,8 +36,11 @@ export const HM_DEFAULTS = {
   slices: 0,            // vạch chia thời gian (giây), 0 = tự động
   recenter: "bbo",      // tự căn giữa theo bbo, last (giá khớp) hoặc none
   candles: "auto",      // nến chồng lên bản đồ: auto (tự hiện khi thu nhỏ), on, off
+  candleVol: true,      // số mua / bán chủ động dưới mỗi nến tự đổi khung
   glow: true,           // bóng hấp thụ trên nến: râu nến chạm tường lệnh chờ rồi bị đẩy lại
   soft: true,           // làm mịn hiển thị như Bookmap: dải thanh khoản mềm, không lốm đốm
+  lines: true,          // phóng to: mỗi mức giá là một vệt sáng ở giữa, mờ dần ra hai mép (như Bookmap), không phải khối đặc
+  persist: 3,           // giây: làm mượt theo thời gian, lệnh chờ chớp tắt không thành khối vụn; 0 = tắt
   imb: true,            // đường mất cân bằng sổ lệnh ±0,5% quanh giá ở ô dưới
   speed: true,          // đường tốc độ băng (số lệnh khớp mỗi giây) ở ô dưới
 };
@@ -78,7 +81,30 @@ export function heatIndexCut(q, lo, hi, contrast = 1) {
   return Math.min(255, (x ** 1.5 * 235 + 20) | 0); // mũ 1,5: thanh khoản thường chìm xanh đậm, chỉ tường mới sáng
 }
 const SOFT_K = 2.2, SOFT_BLUR = 1.3; // làm mịn hiển thị: hệ số thu chiều cao và độ nhoè (điểm ảnh)
-const CANDLE_AUTO_PX = 30;          // nến tự hiện khi mỗi nến hẹp hơn bấy nhiêu điểm ảnh (đang thu nhỏ)
+const LINE_PX = 5, LINE_K = -1.6; // dòng giá cao từ LINE_PX điểm ảnh thì vẽ thành vệt sáng; mép còn e^LINE_K ≈ 20% khối lượng
+const CANDLE_AUTO_MS = 2000;        // nến tự hiện khi thu nhỏ tới mức mỗi điểm ảnh từ bấy nhiêu ms (nến 1m hẹp còn 30 điểm ảnh)
+const TF_MIN_PX = 18;               // nến tự đổi khung: chọn khung nhỏ nhất mà mỗi nến rộng ít nhất bấy nhiêu điểm ảnh
+// số khối lượng gọn cho nhãn dưới nến: 0.85, 12.3, 456, 1.2K, 34K, 1.5M
+export const volShort = v => v >= 1e6 ? (v / 1e6).toFixed(v >= 1e7 ? 0 : 1) + "M" : v >= 1e3 ? (v / 1e3).toFixed(v >= 1e4 ? 0 : 1) + "K" : v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2);
+export const AUTO_TFS = [60e3, 3e5, 9e5, 18e5, 36e5, 144e5, 864e5];
+export const autoTf = msPerPx => AUTO_TFS.find(tf => tf / msPerPx >= TF_MIN_PX) || AUTO_TFS[AUTO_TFS.length - 1];
+export const tfName = ms => ms >= 864e5 ? `${ms / 864e5}d` : ms >= 36e5 ? `${ms / 36e5}h` : `${ms / 6e4}m`;
+
+// Gộp các cột sổ lệnh / khớp lệnh thành nến khung tf: mở = giá khớp đầu tiên, đóng = giá khớp cuối, cao / thấp,
+// khối lượng mua / bán chủ động và tổng giá × khối lượng (để tính giá khớp trung bình cho bong bóng).
+export function aggCandles(cols, i0, i1, tf) {
+  const out = []; let b = null;
+  for (let i = Math.max(0, i0); i <= i1 && i < cols.length; i++) {
+    const c = cols[i], bt = Math.floor(c.t / tf) * tf;
+    if (!b || b.t !== bt) { if (b && b.o != null) out.push(b); b = { t: bt, o: null, h: -Infinity, l: Infinity, c: null, bv: 0, sv: 0, pv: 0 }; }
+    if (c.lp != null) { if (b.o == null) b.o = c.lp; b.c = c.lp; }
+    if (isFinite(c.hi)) b.h = Math.max(b.h, c.hi); if (isFinite(c.lo)) b.l = Math.min(b.l, c.lo);
+    b.bv += c.bv || 0; b.sv += c.sv || 0; b.pv += (c.bpv || 0) + (c.spv || 0);
+  }
+  if (b && b.o != null) out.push(b);
+  for (const x of out) { x.h = Math.max(x.h, x.o, x.c); x.l = Math.min(x.l, x.o, x.c); }
+  return out;
+}
 const WICK_MIN = 0.35, WALL_K = 0.5; // râu tối thiểu (phần của biên độ nến) và tường tối thiểu (phần của mức màu đậm nhất)
 
 // Hấp thụ ở đỉnh / đáy nến b. cols: các cột sổ lệnh; hot: khối lượng ứng với màu đậm nhất của bản đồ.
@@ -245,7 +271,7 @@ export class Heatmap {
     this._bbo(cols, i0, i1, L);
     this._axisTags = [];
     if (this.show.levels) { this._levels(L); this._marks(L); }
-    if (this.show.bubbles) this._bubbles(cols, i0, i1, L);
+    if (this.show.bubbles && !(this.cfg.candles === "auto" && this.candlesOn())) this._bubbles(cols, i0, i1, L); // nến tự đổi khung thì bong bóng gộp theo nến
     if (this.show.liq) this._liqs(cols, i0, i1);
     if (this.show.ice) this._icebergs(L);
     this._pro(L);
@@ -283,6 +309,7 @@ export class Heatmap {
     if (!this._row2 || this._row2.length !== H) this._row2 = new Float32Array(H);
     // Dựng một cột thành dải điểm ảnh. row[y] = -1: không có dữ liệu (nền); 0: sàn đã quan sát nhưng trống
     // (tô màu sàn của bảng màu, như Bookmap); > 0: khối lượng chờ. Ô liền nhau, không chừa vạch đen giữa các ô.
+    const glow = cfg.lines && !agg;
     const build = c => {
       const useF = fine && c.fk, ks = useF ? c.fk : c.keys, qs = useF ? c.fq : c.sizes, st = useF ? tk : g;
       // cột cũ chỉ còn ô lưới thô: chia đều cho số bước giá trong ô để màu ngang với phần chi tiết
@@ -297,7 +324,10 @@ export class Heatmap {
         let ya = Math.floor(yc - half), yb = Math.ceil(yc + half); if (yb <= 0 || ya >= H) continue;
         ya = Math.max(0, ya); yb = Math.min(H, yb); any = true;
         if (ya < ymin) ymin = ya; if (yb > ymax) ymax = yb;
-        for (let y = ya; y < yb; y++) row[y] = row[y] < 0 ? q : cpx < 1 && !agg ? row[y] + q : Math.max(row[y], q);
+        if (glow && cpx >= LINE_PX) { // vệt sáng: giữa dòng đủ khối lượng, ra mép còn LINE_EDGE
+          const inv = 2 / cpx;
+          for (let y = ya; y < yb; y++) { const u = (y + 0.5 - yc) * inv, qq = q * Math.exp(LINE_K * u * u); row[y] = row[y] < 0 ? qq : Math.max(row[y], qq); }
+        } else for (let y = ya; y < yb; y++) row[y] = row[y] < 0 ? q : cpx < 1 && !agg ? row[y] + q : Math.max(row[y], q);
       }
       for (let y = ymin; y < ymax; y++) if (row[y] < 0) row[y] = 0;
       if (sm && any) {
@@ -331,6 +361,10 @@ export class Heatmap {
     // chỉ để trống khi mất dữ liệu quá HOLD_MS. Cột cuối kéo tới bây giờ.
     const floor = 10, now = this.now(); // màu sàn: xanh đen rất tối, phân biệt với nền không có dữ liệu
     let x = Math.max(0, Math.floor(this.xOf(cols[Math.max(0, i0)].t))), lastC = null;
+    // làm mượt theo thời gian: mỗi điểm ảnh dọc giữ trung bình trượt (hằng số thời gian persist giây), nên lệnh chờ
+    // chớp tắt vài trăm mili giây chỉ để lại vệt mờ, còn tường đứng lâu vẫn sáng đều thành đường dài
+    const tau = (+cfg.persist || 0) * 1000, ema = tau > 0 ? (this._ema && this._ema.length === H ? this._ema : (this._ema = new Float32Array(H))) : null;
+    let emaT = null;
     for (let i = Math.max(0, i0); i <= i1; i++) {
       const c = carry(cols, i), ci = cols[i], nx = cols[i + 1], xa = Math.max(0, Math.floor(this.xOf(ci.t)));
       const span = ci.span || COL_MS;
@@ -339,8 +373,14 @@ export class Heatmap {
       if (!c || xb <= xa || xb <= x) continue;
       if (c !== lastC) { build(c); lastC = c; }
       const x0 = Math.max(x, xa);
+      let src = row;
+      if (ema) { // cột liền trước còn trong HOLD_MS thì trộn, không thì bắt đầu lại
+        const a = emaT === null || ci.t - emaT > HOLD_MS ? 1 : 1 - Math.exp(-(ci.t - emaT) / tau);
+        for (let y = 0; y < H; y++) { const r0 = row[y]; ema[y] = r0 < 0 ? -1 : a >= 1 || ema[y] < 0 ? r0 : ema[y] + a * (r0 - ema[y]); }
+        emaT = ci.t; src = ema;
+      }
       for (let y = 0; y < H; y++) {
-        const v = row[y]; if (v < 0) continue;
+        const v = src[y]; if (v < 0) continue;
         let li = heatIndexCut(v, lo, hi, this.contrast); if (li < 0) li = floor;
         const r = LUTc[li * 3] * dimK, gg = LUTc[li * 3 + 1] * dimK, b = LUTc[li * 3 + 2] * dimK;
         let p = (y * W + x0) * 4;
@@ -371,6 +411,7 @@ export class Heatmap {
       if (on) { ctx.lineTo(xNow, py); ctx.stroke(); if (dash) { ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(xNow, py); ctx.lineTo(L.pw, py); } }
       ctx.stroke(); ctx.setLineDash([]);
     };
+    if (this.candlesOn()) return; // đang hiện nến: nến đã cho thấy giá, bỏ các đường giá cho đỡ rối
     if (!this._bboHidden) { step("ba", "#ff3b30", 2, true); step("bb", "#22d36b", 2, true); }
     if (this.cfg.lastLine || this._bboHidden) step("lp", "rgba(235,240,245,0.85)", this._bboHidden ? 1.6 : 1, this._bboHidden);
     ctx.lineWidth = 1;
@@ -415,20 +456,41 @@ export class Heatmap {
 
   // Nến có hiện không: bật, tắt, hoặc tự hiện khi thu nhỏ tới mức mỗi nến chỉ còn vài chục điểm ảnh
   candlesOn() {
-    const c = this.cfg.candles, ms = this.m.intervalMs;
-    if (c === true || c === "on") return true;
-    if (c !== "auto" || !ms) return false;
-    return ms / this.msPerPx <= CANDLE_AUTO_PX;
+    const c = this.cfg.candles;
+    if (c === true || c === "on") return !!this.m.intervalMs;
+    return c === "auto" && this.msPerPx >= CANDLE_AUTO_MS;
+  }
+  // nến tự đổi khung (auto): gộp từ chính lịch sử sổ lệnh / khớp lệnh, khung lớn dần khi thu nhỏ để mỗi nến
+  // luôn rộng khoảng TF_MIN_PX trở lên. Bật hẳn (on): dùng nến của khung đang chọn.
+  _candleSet(L) {
+    if (this.cfg.candles !== "auto") return { bars: this.m.bars, ms: this.m.intervalMs, auto: false };
+    const ms = autoTf(this.msPerPx), cols = this.m.cols, t0 = this.tAt(0) - ms, t1 = this.tAt(L.pw);
+    const i0 = Math.max(0, lowerBound(cols, Math.floor(t0 / ms) * ms)), i1 = Math.min(cols.length - 1, lowerBound(cols, t1 + ms));
+    const bars = aggCandles(cols, i0, i1, ms), first = cols.length ? Math.floor(cols[0].t / ms) * ms : Infinity;
+    // phần trước khi bản đồ có dữ liệu: gộp từ nến của khung đang chọn (nếu khung đó chia hết khung tự đổi)
+    const bi = this.m.intervalMs, src = this.m.bars || [];
+    if (bi && bi <= ms && ms % bi === 0 && src.length && src[0].t < first) {
+      const old = []; let b = null;
+      for (const x of src) {
+        if (x.t + bi <= t0 || x.t >= first) { if (x.t >= first) break; continue; }
+        const bt = Math.floor(x.t / ms) * ms, v = x.v || 0, bv = x.bv != null ? x.bv : v / 2;
+        if (!b || b.t !== bt) { b = { t: bt, o: x.o, h: x.h, l: x.l, c: x.c, bv: 0, sv: 0, pv: 0 }; old.push(b); }
+        b.h = Math.max(b.h, x.h); b.l = Math.min(b.l, x.l); b.c = x.c; b.bv += bv; b.sv += v - bv; b.pv += v * (x.h + x.l + x.c) / 3;
+      }
+      return { bars: old.concat(bars), ms, auto: true };
+    }
+    return { bars, ms, auto: true };
   }
 
   _candles(L) {
-    const ctx = this.ctx, bars = this.m.bars, ms = this.m.intervalMs; if (!bars.length || !ms) return;
+    const ctx = this.ctx, set = this._candleSet(L), bars = set.bars, ms = set.ms; if (!bars.length || !ms) return;
+    this._tfLabel = set.auto ? tfName(ms) : null;
     const t0 = this.tAt(0), t1 = this.tAt(L.pw), glows = [], bodies = [];
     const vis = this._candleVis = [], dec = decimalsFor(this.m.tick || this.m.grid);
     for (let i = bars.length - 1; i >= 0; i--) {
       const b = bars[i]; if (b.t + ms < t0) break; if (b.t > t1) continue;
       const xa = this.xOf(b.t), xb = this.xOf(b.t + ms), w = xb - xa, xm = (xa + xb) / 2;
-      if (this.cfg.glow) for (const a of this._absorbOf(b, i === bars.length - 1)) glows.push({ ...a, xm, w });
+      if (this.cfg.glow) for (const a of this._absorbOf(b, ms, i === bars.length - 1)) glows.push({ ...a, xm, w });
       bodies.push({ b, xm, w });
     }
     // bóng hấp thụ vẽ trước để nến nằm trên: cam = phía bán chặn ở đỉnh, xanh = phía mua đỡ ở đáy
@@ -439,21 +501,53 @@ export class Heatmap {
       ctx.fillStyle = gr; ctx.fillRect(g.xm - r, y - r, r * 2, r * 2);
       vis.push({ x: g.xm, y, r: Math.max(8, r * 0.5), tip: `Hấp thụ ở ${g.top ? "ĐỈNH" : "ĐÁY"} nến: giá chạm ${g.p.toFixed(dec)}, nơi đang có tường lệnh chờ ${g.top ? "BÁN" : "MUA"} ${fmtVol(g.q)}, rồi bị đẩy ${g.top ? "xuống" : "lên"} lại (râu dài ${Math.round(g.wick * 100)}% thân nến). ${g.top ? "Phía bán đang chặn: kháng cự." : "Phía mua đang đỡ: hỗ trợ."} Bóng càng sáng thì tường càng dày.` });
     }
+    // bong bóng gộp theo nến (vẽ dưới thân nến để vẫn thấy nến): mỗi nến một quả tại giá khớp trung bình, to theo tổng khối lượng (thể tích ∝ khối lượng)
+    this._bub = null;
+    if (set.auto && this.show.bubbles) {
+      let maxV = 0; for (const { b } of bodies) maxV = Math.max(maxV, b.bv + b.sv);
+      if (maxV > 0) {
+        const cfg = this.cfg, opt = { d3: cfg.dots !== "2d", style: cfg.dotStyle, alpha: cfg.dotAlpha / 100 }; this._bub = [];
+        for (const { b, xm, w } of bodies) {
+          const v = b.bv + b.sv; if (!v || (cfg.dotMin > 0 && v < cfg.dotMin)) continue;
+          const rMax = Math.min(26, L.ph * 0.05, Math.max(8, w * 0.6)) * cfg.dotSize, r = Math.max(2.5, Math.cbrt(v / maxV) * rMax), p = b.pv / v;
+          if (r < 4 && v < maxV * 0.05) continue; // nến khớp rất ít: bỏ quả li ti cho đỡ rối
+          drawBubble(ctx, xm, this.yOf(p), r, b.bv / v, opt);
+          this._bub.push({ x: xm, y: this.yOf(p), r, bv: b.bv, sv: b.sv, p, v, big: [] });
+        }
+      }
+    }
     for (const { b, xm, w } of bodies) {
       const up = b.c >= b.o, col = up ? "#22d36b" : "#ff3b30", bw = Math.max(1, Math.min(w * 0.62, 40));
       ctx.strokeStyle = col; ctx.lineWidth = w >= 4 ? 1.2 : 1; ctx.beginPath(); ctx.moveTo(xm, this.yOf(b.h)); ctx.lineTo(xm, this.yOf(b.l)); ctx.stroke();
       const yo = this.yOf(b.o), yc = this.yOf(b.c);
       ctx.fillStyle = alpha(col, 0.85); ctx.fillRect(xm - bw / 2, Math.min(yo, yc), bw, Math.max(1.5, Math.abs(yc - yo)));
     }
+    // số khối lượng dưới mỗi nến: mua chủ động (xanh) ở trên, bán chủ động (đỏ) ở dưới
+    if (set.auto && this.cfg.candleVol) {
+      const fs = Math.max(8, Math.min(11, Math.floor(bodies.length ? bodies[0].w / 3.2 : 10)));
+      ctx.font = `${fs}px ${MONO}`; ctx.textAlign = "center"; ctx.lineJoin = "round"; ctx.lineWidth = 3; ctx.strokeStyle = "rgba(4,6,9,0.9)";
+      for (const { b, xm, w } of bodies) {
+        if (b.bv + b.sv <= 0) continue;
+        const a = volShort(b.bv), z = volShort(b.sv); if (Math.max(ctx.measureText(a).width, ctx.measureText(z).width) > w * 1.05) continue;
+        const y = this.yOf(b.l) + fs + 3;
+        ctx.strokeText(a, xm, y); ctx.fillStyle = "#22d36b"; ctx.fillText(a, xm, y);
+        ctx.strokeText(z, xm, y + fs + 1); ctx.fillStyle = "#ff4d4d"; ctx.fillText(z, xm, y + fs + 1);
+      }
+      ctx.lineWidth = 1;
+    }
+    if (this._tfLabel) {
+      ctx.font = `11px ${MONO}`; ctx.textAlign = "left"; const t = `Nến ${this._tfLabel} · tự đổi khung theo độ thu nhỏ`, tw = ctx.measureText(t).width;
+      ctx.fillStyle = "rgba(6,9,13,0.75)"; ctx.fillRect(6, L.ph - 22, tw + 12, 17); ctx.fillStyle = "#cfd6df"; ctx.fillText(t, 12, L.ph - 9);
+    }
   }
 
   // Tìm hấp thụ ở đỉnh/đáy một nến: râu dài (giá bị đẩy lại) và ngay mức đó có tường lệnh chờ dày trong lúc nến chạy.
   // Nến đã đóng thì nhớ kết quả; nến đang chạy tính lại mỗi lần.
-  _absorbOf(b, live) {
+  _absorbOf(b, ms, live) {
     if (this._absCols !== this.m.cols) { this._absCols = this.m.cols; this._absCache = new Map(); } // đổi mã / nạp lại: bỏ kết quả cũ
-    const cache = this._absCache, key = `${b.t}:${this.m.grid}:${Math.round(Math.log2(this._hot || 1) * 2)}`;
+    const cache = this._absCache, key = `${b.t}:${ms}:${this.m.grid}:${Math.round(Math.log2(this._hot || 1) * 2)}`;
     if (!live && cache.has(key)) return cache.get(key);
-    const out = absorbOf(b, this.m.cols, this.m.intervalMs, this.m.grid, this._hot);
+    const out = absorbOf(b, this.m.cols, ms, this.m.grid, this._hot);
     if (!live && this._hot) { cache.set(key, out); if (cache.size > 3000) cache.delete(cache.keys().next().value); }
     return out;
   }

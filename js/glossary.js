@@ -129,8 +129,15 @@ export const GLOSSARY = [
     id: "bm-candles",
     group: "Bookmap",
     term: "Nến trên Bookmap",
-    short: "Vẽ nến của khung đang chọn (1m, 5m...) chồng lên bản đồ. Mặc định tự hiện khi thu nhỏ, tự ẩn khi phóng to để nhìn rõ sổ lệnh.",
-    body: "<p>Vẽ nến của khung đang chọn (1m, 5m...) chồng lên bản đồ. <b>Tự hiện khi thu nhỏ</b>: khi mỗi nến hẹp hơn khoảng 30 điểm ảnh thì nến hiện ra để thấy xu hướng; phóng to thì nến ẩn đi để nhìn rõ từng mức lệnh chờ và bong bóng khớp lệnh.</p>"
+    short: "Nến chồng lên bản đồ. Mặc định tự hiện khi thu nhỏ và tự đổi khung (1m, 5m, 15m, 30m, 1h, 4h, 1d) theo độ thu nhỏ; phóng to thì ẩn để nhìn rõ sổ lệnh.",
+    body: "<p><b>Tự đổi khung khi thu nhỏ</b>: thu nhỏ tới mức nến 1 phút hẹp còn khoảng 30 điểm ảnh thì nến hiện ra. Thu nhỏ tiếp, khung tự lên 5m, 15m, 30m, 1h, 4h, 1d sao cho mỗi nến rộng ít nhất 10 điểm ảnh; góc dưới bên trái ghi khung đang xem. Nến được gộp từ chính dữ liệu sổ lệnh và khớp lệnh của bản đồ, không phụ thuộc khung đang chọn trên thanh menu.</p><p>Lúc này bong bóng cũng gộp theo nến: mỗi nến một quả tại giá khớp trung bình, to theo tổng khối lượng, phần xanh / đỏ là tỷ lệ mua / bán chủ động. Đường giá được ẩn vì nến đã cho thấy giá.</p><p><b>Luôn hiện</b>: dùng nến của khung đang chọn trên thanh menu, ở mọi độ phóng.</p>"
+  },
+  {
+    id: "bm-candlevol",
+    group: "Bookmap",
+    term: "Số mua / bán dưới nến",
+    short: "Dưới mỗi nến tự đổi khung ghi hai số: trên (xanh) là khối lượng mua chủ động, dưới (đỏ) là bán chủ động trong nến đó.",
+    body: "<p>Mua chủ động là lệnh khớp ngay vào giá bán (người mua sốt ruột), bán chủ động thì ngược lại. Nến tăng mà số đỏ lớn hơn số xanh: giá lên nhưng bên bán đang xả vào, cẩn thận. Nến giảm mà số xanh lớn: có người đang gom. Số chỉ hiện khi nến đủ rộng để ghi; thu nhỏ quá thì ẩn.</p>"
   },
   {
     id: "bm-glow",
@@ -138,6 +145,20 @@ export const GLOSSARY = [
     term: "Bóng hấp thụ trên nến",
     short: "Quầng sáng ở đỉnh hoặc đáy nến khi giá chạm một tường lệnh chờ dày rồi bị đẩy lại. Cam là bên bán chặn ở trên, xanh là bên mua đỡ ở dưới.",
     body: "<p>Một nến được đánh dấu khi râu dài (ít nhất 35% biên độ nến, tức giá bị đẩy lại) và ngay mức giá đó, trong lúc nến chạy, có tường lệnh chờ dày ít nhất một nửa mức màu đậm nhất của bản đồ.</p><p><b>Cam ở đỉnh</b>: phía bán đang chặn, mức đó là kháng cự. <b>Xanh ở đáy</b>: phía mua đang đỡ, mức đó là hỗ trợ. Bóng càng sáng thì tường càng dày. Rê chuột vào bóng để xem số liệu.</p>"
+  },
+  {
+    id: "bm-lines",
+    group: "Bookmap",
+    term: "Mức giá thành vệt sáng",
+    short: "Khi phóng to, mỗi mức giá vẽ thành một vệt sáng ở giữa và mờ dần ra hai mép, giữa các mức có khe tối như Bookmap, thay vì một khối màu đặc.",
+    body: "<p>Phần giữa vệt mang đúng màu của khối lượng chờ, ra mép còn khoảng 20%. Nhờ vậy các mức giá sát nhau vẫn tách bạch, tường dày hiện thành một đường sáng rõ. Chỉ áp dụng khi mỗi mức giá cao từ 5 điểm ảnh trở lên; thu nhỏ thì vẽ như cũ.</p>"
+  },
+  {
+    id: "bm-persist",
+    group: "Bookmap",
+    term: "Làm mượt theo thời gian",
+    short: "Lấy trung bình trượt vài giây cho mỗi mức giá, để lệnh chờ chớp tắt không làm bản đồ vỡ thành khối vụn.",
+    body: "<p>Nhiều lệnh chờ chỉ đứng vài trăm mili giây rồi rút (thường là thuật toán). Không làm mượt thì mỗi lần chớp tắt là một khối màu, bản đồ rất rối. Với 3 giây, tường đứng lâu vẫn sáng đều thành đường dài, còn lệnh chớp tắt chỉ để lại chấm mờ.</p><p>Đổi lại, tường mới xuất hiện cần khoảng 3 giây để sáng hết màu. Chọn Tắt nếu muốn thấy từng thay đổi ngay lập tức.</p>"
   },
   {
     id: "bm-soft",
