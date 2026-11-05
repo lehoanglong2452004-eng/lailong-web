@@ -1,9 +1,9 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: tab Quyền chọn, phần "Nguồn dữ liệu" (mỗi thành phần lấy từ đâu, trực tiếp hay trễ)
 // và bảng chuỗi quyền chọn (depth view): call bên trái, put bên phải theo strike cho một hạn.
-import { fmtUsd, fmtVol } from "./util.js?v=202611052232";
-import { freshTag } from "./fresh.js?v=202611052232";
-import { chainTable, refOf } from "./chain.js?v=202611052232";
+import { fmtUsd, fmtVol } from "./util.js?v=202611052247";
+import { freshTag } from "./fresh.js?v=202611052247";
+import { chainTable, refOf } from "./chain.js?v=202611052247";
 
 const DAY = 864e5;
 const dstr = t => { const d = new Date(t); return `${d.getUTCDate()}/${d.getUTCMonth() + 1}`; };

@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611052232">
-<link rel="stylesheet" href="css/app.css?v=202611052232">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611052247">
+<link rel="stylesheet" href="css/app.css?v=202611052247">
 </head>
 <body>
 <header class="menubar">
@@ -90,8 +90,9 @@
       <div class="seg" id="chartMode">
         <button data-mode="heat" class="on" data-g="bookmap">Bookmap</button>
         <button data-mode="box" data-g="footprint">Footprint</button>
+        <button data-mode="liq" data-g="liq-heat">Thanh lý</button>
       </div>
-      <div class="dropdown">
+      <div class="dropdown noLiq">
         <button id="layerBtn" data-tip="Bật/tắt các lớp dữ liệu vẽ trên biểu đồ. Mặc định tắt hết; chọn công cụ ở thanh bên trái thì lớp cần cho công cụ đó tự bật">Lớp hiển thị <b class="lcount" id="layerCount">0</b> ▾</button>
         <div class="menu layermenu" id="layerMenu">
           <p class="note">Mặc định tắt hết. Bấm một công cụ ở thanh bên trái biểu đồ, lớp mà công cụ đó cần sẽ tự bật.</p>
@@ -188,7 +189,7 @@
       <label class="field small flowOnly" data-g="cvd-pro">Ô dưới
         <select id="paneMode"><option value="deltaCvd">Delta + CVD</option><option value="delta">Delta</option><option value="cvd">CVD</option><option value="cvdpro">CVD Pro</option><option value="ofi">OFI (áp lực sổ lệnh)</option><option value="vpin">VPIN (dòng lệnh độc)</option><option value="groups">Delta theo nhóm người chơi</option></select>
       </label>
-      <div class="seg" id="drawTools">
+      <div class="seg noLiq" id="drawTools">
         <button data-draw="line" data-g="drawing">─ Đường</button>
         <button data-draw="zone" data-g="drawing">▤ Vùng</button>
         <button data-draw="clear" data-tip="Xoá mọi đường và vùng đã vẽ của mã này">✕</button>
@@ -196,7 +197,7 @@
       <button id="overviewBtn" class="tool heatOnly" data-g="bm-overview">⛶ Toàn cảnh</button>
       <button id="replayBtn" class="tool heatOnly" data-g="bm-replay">▶ Phát lại</button>
       <button id="selBtn" class="tool" data-g="range-profile">▭ Chọn vùng</button>
-      <div class="dropdown">
+      <div class="dropdown noLiq">
         <button id="clusterBtn" data-g="cluster-search">Tìm cụm ▾</button>
         <div class="menu" id="clusterMenu">
           <label><input type="checkbox" id="clOn"> Bật tìm cụm khối lượng</label>
@@ -205,6 +206,13 @@
           <label class="row">Hoặc tối thiểu <input type="number" id="clMin" min="0" step="any" placeholder="tự động" style="width:90px"></label>
         </div>
       </div>
+      <label class="field small liqOnly" hidden data-g="liq-range">Khoảng
+        <select id="liqRange"><option value="24h">24 giờ</option><option value="3d" selected>3 ngày</option><option value="7d">7 ngày</option><option value="30d">30 ngày</option></select>
+      </label>
+      <label class="field small liqOnly" hidden data-g="liq-model">Mô hình
+        <select id="liqModel"><option value="all" selected>Đòn bẩy 5x–100x</option><option value="high">Đòn bẩy cao 25x–100x</option><option value="low">Đòn bẩy thấp 5x–25x</option></select>
+      </label>
+      <label class="field small liqOnly" hidden data-g="liq-thr">Ngưỡng màu <input type="range" id="liqThr" min="0.02" max="0.7" step="0.02" value="0.22"></label>
       <label class="field small" id="contrastBox" data-g="contrast">Tương phản <input type="range" id="contrast" min="0.3" max="4" step="0.1" value="1"></label>
       <label class="field small" id="fpModeBox" hidden data-g="fp-modes">Ô
         <select id="fpMode"><option value="bidask">Mua × Bán</option><option value="bavol">Mua × Bán + tổng</option><option value="delta">Delta</option><option value="volume">Khối lượng</option><option value="histo">Thanh mua/bán</option><option value="profile">Hồ sơ trong nến</option><option value="ratio">Tỷ lệ chéo</option></select>
@@ -234,7 +242,7 @@
     </div>
     <div class="chart-body">
       <div class="toolrail" id="toolRail" role="toolbar" aria-label="Công cụ phân tích" aria-orientation="vertical"></div>
-      <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas><div class="railtoast" id="railToast" role="status" hidden></div></div>
+      <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas><canvas id="liq" hidden></canvas><div class="railtoast" id="railToast" role="status" hidden></div></div>
     </div>
     <div class="signalbar" id="signalbar"></div>
     <div class="dom-hint" id="chartHint"></div>
@@ -841,6 +849,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611052232"></script>
+<script type="module" src="js/app.js?v=202611052247"></script>
 </body>
 </html>

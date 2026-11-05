@@ -1,54 +1,56 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611052232";
-import { MarketState, Book } from "./market.js?v=202611052232";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611052232";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611052232";
-import { FlowChart } from "./flowchart.js?v=202611052232";
-import { Dom } from "./dom.js?v=202611052232";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, biasSummary } from "./analytics.js?v=202611052232";
-import { initBacktest } from "./backtestview.js?v=202611052232";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611052232";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202611052232";
-import { Tape } from "./tape.js?v=202611052232";
-import { LiqMap } from "./liqmap.js?v=202611052232";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611052232";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611052232";
-import { FlowMarks } from "./bmind.js?v=202611052232";
-import { Replay } from "./replay.js?v=202611052232";
-import { Alerts } from "./alerts.js?v=202611052232";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202611052232";
-import { initNews } from "./newsview.js?v=202611052232";
-import { initMarkets } from "./marketsview.js?v=202611052232";
-import { initGex } from "./gexview.js?v=202611052232";
-import { initTgBot } from "./tgbot.js?v=202611052232";
-import { initInst } from "./instview.js?v=202611052232";
-import { setFresh, tickFresh } from "./fresh.js?v=202611052232";
-import { initRadar } from "./radarview.js?v=202611052232";
-import { Drawings } from "./drawings.js?v=202611052232";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611052232";
-import { PaperBroker } from "./paper.js?v=202611052232";
-import { OrderLines } from "./orderlines.js?v=202611052232";
-import { MultiChart } from "./multichart.js?v=202611052232";
-import { DOM_COLS } from "./dom.js?v=202611052232";
-import { initFractal } from "./fractalview.js?v=202611052232";
-import { initJournal } from "./journalview.js?v=202611052232";
-import { installHealth, clockSkew } from "./health.js?v=202611052232";
-import { initHealth } from "./healthview.js?v=202611052232";
-import { initFlows } from "./flowsview.js?v=202611052232";
-import { initPerf } from "./perfview.js?v=202611052232";
-import { initShock } from "./shockview.js?v=202611052232";
-import { initCompass } from "./compassview.js?v=202611052232";
-import { initConsensus } from "./consensusview.js?v=202611052232";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202611052232";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611052232";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611052232";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611052232";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611052232";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202611052232";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611052232";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611052232";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611052247";
+import { MarketState, Book } from "./market.js?v=202611052247";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611052247";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611052247";
+import { FlowChart } from "./flowchart.js?v=202611052247";
+import { LiqHeatChart } from "./liqchart.js?v=202611052247";
+import { liqHeat, LIQ_MODELS, LIQ_RANGES } from "./liqheat.js?v=202611052247";
+import { Dom } from "./dom.js?v=202611052247";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, biasSummary } from "./analytics.js?v=202611052247";
+import { initBacktest } from "./backtestview.js?v=202611052247";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611052247";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202611052247";
+import { Tape } from "./tape.js?v=202611052247";
+import { LiqMap } from "./liqmap.js?v=202611052247";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611052247";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611052247";
+import { FlowMarks } from "./bmind.js?v=202611052247";
+import { Replay } from "./replay.js?v=202611052247";
+import { Alerts } from "./alerts.js?v=202611052247";
+import { binanceDerivs, deribitOptions } from "./derivs.js?v=202611052247";
+import { initNews } from "./newsview.js?v=202611052247";
+import { initMarkets } from "./marketsview.js?v=202611052247";
+import { initGex } from "./gexview.js?v=202611052247";
+import { initTgBot } from "./tgbot.js?v=202611052247";
+import { initInst } from "./instview.js?v=202611052247";
+import { setFresh, tickFresh } from "./fresh.js?v=202611052247";
+import { initRadar } from "./radarview.js?v=202611052247";
+import { Drawings } from "./drawings.js?v=202611052247";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611052247";
+import { PaperBroker } from "./paper.js?v=202611052247";
+import { OrderLines } from "./orderlines.js?v=202611052247";
+import { MultiChart } from "./multichart.js?v=202611052247";
+import { DOM_COLS } from "./dom.js?v=202611052247";
+import { initFractal } from "./fractalview.js?v=202611052247";
+import { initJournal } from "./journalview.js?v=202611052247";
+import { installHealth, clockSkew } from "./health.js?v=202611052247";
+import { initHealth } from "./healthview.js?v=202611052247";
+import { initFlows } from "./flowsview.js?v=202611052247";
+import { initPerf } from "./perfview.js?v=202611052247";
+import { initShock } from "./shockview.js?v=202611052247";
+import { initCompass } from "./compassview.js?v=202611052247";
+import { initConsensus } from "./consensusview.js?v=202611052247";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202611052247";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611052247";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611052247";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611052247";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611052247";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202611052247";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611052247";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611052247";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
@@ -68,7 +70,7 @@ const S = {
   symbol: (qs.get("s") || saved.symbol || "BTCUSDT").toUpperCase(),
   interval: qs.get("i") || saved.interval || "1m",
   view: qs.get("v") || saved.view || "terminal",
-  mode: saved.mode === "box" ? "box" : "heat", // trang Nến đã bỏ: chỉ còn Bookmap và Footprint
+  mode: ["box", "liq"].includes(saved.mode) ? saved.mode : "heat", // Bookmap, Footprint, Thanh lý
   tab: "clusters",
   multi: !!saved.multi, // Multibook: gộp sổ lệnh nhiều sàn
 };
@@ -98,6 +100,7 @@ function toast(text, err) { const el = $("toast"); el.textContent = text; el.cla
 let peers = null;
 const heat = new Heatmap($("heat"), market, { exchangeName: () => peers && peers.names().length ? [ex().name, ...peers.names()].join(" + ") : ex().name });
 const flow = new FlowChart($("flow"));
+const liqChart = new LiqHeatChart($("liq"), { livePrice: () => (market.last ? market.last.p : null) });
 Object.defineProperty(flow, "book", { get: () => market.book }); // Depth Of Market: sổ lệnh lên biểu đồ nến / footprint (sổ đổi khi đổi mã)
 // sổ lệnh đổi liên tục: vẽ lại biểu đồ 4 lần mỗi giây khi đang xem nến / footprint và bật Depth Of Market
 setInterval(() => { if (S.mode === "box" && flow.show.depth && !document.hidden) flow.dirty = true; }, 250);
@@ -177,6 +180,7 @@ async function load() {
     recompute();
     log(`Đã tải ${bars.length} nến ${S.interval} ${S.symbol} từ ${ex().name}`);
     if (S.mode === "box") startFootprint();
+    if (S.mode === "liq") loadLiq();
     seedDayVolume(token);
   } catch (e) {
     log(`Không tải được nến: ${e.message}`); toast(`Không tải được dữ liệu từ ${ex().name}: ${e.message}`, true);
@@ -898,13 +902,54 @@ function setView(v) {
   if (v === "radar") radarView.show(); else radarView.hide();
   if (v === "multi") multiChart.show(); else multiChart.hide();
 }
+// ---------- thẻ Thanh lý: bản đồ nhiệt thanh lý ước tính từ OI ----------
+const liqCache = new Map();
+let liqToken = 0, liqBusy = null;
+async function loadLiq(force = false) {
+  const rk = $("liqRange").value, R = LIQ_RANGES[rk] || LIQ_RANGES["3d"], model = LIQ_MODELS[$("liqModel").value] || LIQ_MODELS.all;
+  const ck = `${S.ex}:${S.symbol}:${rk}`, token = ++liqToken, e = ex(), sym = S.symbol;
+  const build = c => {
+    const from = Math.max(0, c.bars.length - R.n), keep = liqChart._for === ck;
+    liqChart.setData(c.bars, liqHeat(c.bars, { tiers: model.tiers }), { from, symbol: sym, tick: market.tick, keepView: keep });
+    liqChart._for = ck;
+  };
+  if (!e.hasOi) { liqChart._for = null; liqChart.setData([], null); liqChart.setMessage(`${e.name} không có lịch sử open interest. Chọn Binance, OKX hoặc Bybit để xem bản đồ thanh lý`); return; }
+  const c = liqCache.get(ck);
+  if (c && !force && Date.now() - c.at < 60e3) return build(c);
+  if (liqBusy === ck && !force) return;
+  if (!c) { liqChart._for = null; liqChart.setData([], null); liqChart.setMessage(`Đang tải nến và open interest ${R.name}...`); }
+  liqBusy = ck;
+  try {
+    const bars = await e.klines(sym, R.interval, R.n + R.warm);
+    if (!bars.length) throw new Error("sàn không trả nến");
+    attachOi(bars, await e.oiHistory(sym, R.interval, bars[0].t), INTERVALS[R.interval]);
+    if (token !== liqToken || sym !== S.symbol) return;
+    if (!bars.some(b => b.oi != null)) { liqChart.setMessage(`${e.name} không trả open interest cho ${sym} trong ${R.name} qua`); return; }
+    const nc = { bars, at: Date.now() }; liqCache.set(ck, nc); build(nc);
+  } catch (err) {
+    if (token !== liqToken) return;
+    log(`Không tải được dữ liệu thanh lý: ${err.message}`); if (!c) liqChart.setMessage(`Không tải được dữ liệu: ${err.message}`);
+  } finally { if (liqBusy === ck) liqBusy = null; }
+}
+$("liqRange").onchange = () => loadLiq();
+$("liqModel").onchange = () => { liqChart._for = null; loadLiq(); };
+$("liqThr").oninput = () => liqChart.setThreshold(+$("liqThr").value);
+// làm mới mỗi phút khi đang xem thẻ Thanh lý
+setInterval(() => { if (S.mode === "liq" && S.view === "terminal" && !document.hidden) loadLiq(true); }, 60e3);
+setInterval(() => { if (S.mode === "liq" && market.last) liqChart.dirty = true; }, 1000);
+
 function setMode(m) {
   S.mode = m; persist();
   for (const b of $("chartMode").children) b.classList.toggle("on", b.dataset.mode === m);
-  $("heat").hidden = m !== "heat"; $("flow").hidden = m !== "box";
+  $("heat").hidden = m !== "heat"; $("flow").hidden = m !== "box"; $("liq").hidden = m !== "liq";
+  $("toolRail").style.display = m === "liq" ? "none" : "";
   $("contrastBox").hidden = m !== "heat"; $("rowBox").hidden = $("fpModeBox").hidden = $("fpColorBox").hidden = m !== "box";
   $("chartHint").textContent = noHover ? (m === "heat" ? "Kéo: di chuyển · Chụm/mở hai ngón: phóng thời gian (ngang) và giá (dọc) · Chạm đúp: theo dõi · Giữ ngón tay: xem ý nghĩa" : "Kéo: di chuyển · Chụm/mở hai ngón: phóng nến · Chạm đúp: về hiện tại · Giữ ngón tay lên nến: xem ý nghĩa") : m === "heat" ? "Lăn chuột: phóng thời gian · Ctrl + lăn: phóng giá · Kéo: di chuyển · Bấm đúp: theo dõi · Rê chuột để xem ý nghĩa" : "Lăn chuột: phóng to · Kéo: di chuyển · Kéo trục giá: giãn giá · Bấm đúp: về hiện tại · Rê chuột lên nến để xem ý nghĩa";
+  if (m === "liq") $("chartHint").textContent = noHover ? "Kéo lên/xuống: di chuyển giá · Chụm/mở hai ngón: phóng giá · Chạm đúp: về mặc định · Chạm vào ô: xem số tiền ước tính" : "Lăn chuột: phóng giá · Kéo lên/xuống: di chuyển giá · Bấm đúp: về mặc định · Rê chuột lên ô để xem số tiền ước tính";
   if (m === "box") { flow.setType("box"); startFootprint(); }
+  if (m === "liq") { liqChart.dirty = true; loadLiq(); }
+  for (const el of document.querySelectorAll(".liqOnly")) el.hidden = m !== "liq";
+  for (const el of document.querySelectorAll(".noLiq")) el.style.display = m === "liq" ? "none" : "";
   for (const el of document.querySelectorAll(".flowOnly")) el.hidden = m !== "box";
   for (const el of document.querySelectorAll(".heatOnly")) el.hidden = m !== "heat";
   $("selBtn").hidden = m !== "box";
