@@ -492,6 +492,23 @@ def _bsky(handle: str) -> list[tuple[str, str, int]]:
     return out
 
 
+def _via_google_news(feed_url: str) -> list[tuple[str, str, int, str]]:
+    """Dự phòng khi trang chặn máy chủ đám mây (Substack, Cloudflare): lấy tiêu đề qua Google News.
+
+    Chỉ có tiêu đề và đường dẫn, không có tóm tắt.
+    """
+    host = urllib.parse.urlparse(feed_url).hostname or ""
+    raw = _get(news.GN + urllib.parse.quote(f"site:{host.removeprefix('www.')}"))
+    out = []
+    for title, link, pub in news.parse_feed(raw):
+        if " - " in title:
+            title = title.rsplit(" - ", 1)[0]
+        out.append((title, link, news._when(pub), ""))
+    if not out:
+        raise RuntimeError("Google News không có bài")
+    return sorted(out, key=lambda r: -r[2])
+
+
 def fetch_source(src) -> tuple[list[dict], dict]:
     sid, name, role, group, tier, plat, addr, mk = src
     info = {
@@ -517,7 +534,13 @@ def fetch_source(src) -> tuple[list[dict], dict]:
                 if plat == "yt"
                 else addr
             )
-            rows = [(t, link, news._when(pub), summ) for t, link, pub, summ in _rss(_get(url))]
+            try:
+                rows = [(t, link, news._when(pub), summ) for t, link, pub, summ in _rss(_get(url))]
+            except Exception:
+                if plat != "rss":
+                    raise
+                rows = _via_google_news(addr)
+                info["via"] = "Google News"
         for title, link, when, summ in rows[:20]:
             if plat == "bsky":
                 text, head = title, ""
