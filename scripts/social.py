@@ -40,6 +40,7 @@ GROUPS = {
     "crypto": "Crypto",
     "cb": "Ngân hàng trung ương",
     "media": "Phỏng vấn, kênh tài chính",
+    "quoted": "Nhân vật lớn (báo trích dẫn)",
 }
 # (id, tên, vai trò, nhóm, bậc, nền tảng, địa chỉ, thị trường hay nói tới)
 # nền tảng: bsky (địa chỉ là handle), rss (địa chỉ là link feed), yt (địa chỉ là channel id)
@@ -322,6 +323,317 @@ SOURCES = [
         "stocks macro",
     ),
 ]
+# Thêm theo đề xuất bro đã duyệt. "news" là tìm tên người đó trên Google News 7 ngày qua:
+# lấy được cả người không có blog hay mạng xã hội miễn phí (Buffett, Dalio, Dimon...),
+# xem báo trích họ nói gì. Danh sách cố ý dài: ai ngừng đăng thì bị đánh dấu im lặng,
+# trang vẫn đầy bài nhờ những người khác.
+SOURCES += [
+    (
+        "ritholtz",
+        "Barry Ritholtz",
+        "The Big Picture, Ritholtz Wealth",
+        "fund",
+        "B",
+        "rss",
+        "https://ritholtz.com/feed/",
+        "stocks macro",
+    ),
+    (
+        "wolfstreet",
+        "Wolf Richter",
+        "Wolf Street: tín dụng, nhà đất, Fed",
+        "macro",
+        "B",
+        "rss",
+        "https://wolfstreet.com/feed/",
+        "macro bonds",
+    ),
+    (
+        "marctomarket",
+        "Marc Chandler",
+        "Marc to Market: chiến lược forex",
+        "trader",
+        "B",
+        "rss",
+        "https://www.marctomarket.com/feeds/posts/default",
+        "fx",
+    ),
+    (
+        "econbrowser",
+        "Econbrowser",
+        "Menzie Chinn, James Hamilton: dầu, vĩ mô",
+        "macro",
+        "B",
+        "rss",
+        "https://econbrowser.com/feed",
+        "macro energy",
+    ),
+    (
+        "marginalrev",
+        "Tyler Cowen",
+        "Marginal Revolution",
+        "macro",
+        "B",
+        "rss",
+        "https://marginalrevolution.com/feed",
+        "macro",
+    ),
+    (
+        "nyfed",
+        "NY Fed Liberty Street",
+        "Nghiên cứu của Fed New York",
+        "cb",
+        "A",
+        "rss",
+        "https://libertystreeteconomics.newyorkfed.org/feed/",
+        "macro bonds",
+    ),
+    (
+        "yardeni",
+        "Ed Yardeni",
+        "Yardeni Research: chứng khoán Mỹ",
+        "fund",
+        "B",
+        "rss",
+        "https://yardeniquicktakes.com/feed/",
+        "stocks macro",
+    ),
+    (
+        "commoditycontext",
+        "Rory Johnston",
+        "Commodity Context: thị trường dầu",
+        "trader",
+        "B",
+        "rss",
+        "https://www.commoditycontext.com/feed",
+        "energy",
+    ),
+    (
+        "vitalik",
+        "Vitalik Buterin",
+        "Đồng sáng lập Ethereum",
+        "crypto",
+        "B",
+        "rss",
+        "https://vitalik.eth.limo/feed.xml",
+        "crypto",
+    ),
+    (
+        "elerian",
+        "Mohamed El-Erian",
+        "Cựu CEO PIMCO, cố vấn Allianz",
+        "quoted",
+        "B",
+        "news",
+        "Mohamed El-Erian",
+        "macro bonds",
+    ),
+    (
+        "sonders",
+        "Liz Ann Sonders",
+        "Chiến lược gia trưởng, Charles Schwab",
+        "quoted",
+        "B",
+        "news",
+        "Liz Ann Sonders",
+        "stocks",
+    ),
+    (
+        "kathyjones",
+        "Kathy Jones",
+        "Chiến lược gia trái phiếu, Charles Schwab",
+        "quoted",
+        "B",
+        "news",
+        "Kathy Jones Schwab",
+        "bonds",
+    ),
+    (
+        "donnelly",
+        "Brent Donnelly",
+        "Spectra Markets: forex",
+        "quoted",
+        "B",
+        "news",
+        "Brent Donnelly",
+        "fx",
+    ),
+    (
+        "blas",
+        "Javier Blas",
+        "Bình luận hàng hoá, Bloomberg Opinion",
+        "quoted",
+        "B",
+        "news",
+        "Javier Blas",
+        "energy commodities",
+    ),
+    (
+        "woo",
+        "Willy Woo",
+        "Phân tích on-chain bitcoin",
+        "quoted",
+        "C",
+        "news",
+        "Willy Woo",
+        "crypto",
+    ),
+    (
+        "buffett",
+        "Warren Buffett",
+        "Berkshire Hathaway",
+        "quoted",
+        "B",
+        "news",
+        "Warren Buffett",
+        "stocks",
+    ),
+    ("dalio", "Ray Dalio", "Nhà sáng lập Bridgewater", "quoted", "B", "news", "Ray Dalio", "macro"),
+    ("dimon", "Jamie Dimon", "CEO JPMorgan", "quoted", "B", "news", "Jamie Dimon", "macro stocks"),
+    (
+        "druckenmiller",
+        "Stanley Druckenmiller",
+        "Duquesne Family Office",
+        "quoted",
+        "B",
+        "news",
+        "Druckenmiller",
+        "macro",
+    ),
+    ("ackman", "Bill Ackman", "Pershing Square", "quoted", "B", "news", "Bill Ackman", "stocks"),
+    (
+        "burry",
+        "Michael Burry",
+        "Scion Asset Management",
+        "quoted",
+        "B",
+        "news",
+        "Michael Burry",
+        "stocks",
+    ),
+    (
+        "cathiewood",
+        "Cathie Wood",
+        "ARK Invest",
+        "quoted",
+        "B",
+        "news",
+        "Cathie Wood",
+        "stocks crypto",
+    ),
+    ("tomlee", "Tom Lee", "Fundstrat", "quoted", "C", "news", "Fundstrat Tom Lee", "stocks crypto"),
+    (
+        "siegel",
+        "Jeremy Siegel",
+        "Giáo sư Wharton",
+        "quoted",
+        "B",
+        "news",
+        "Jeremy Siegel",
+        "stocks",
+    ),
+    (
+        "rosenberg",
+        "David Rosenberg",
+        "Rosenberg Research",
+        "quoted",
+        "B",
+        "news",
+        "David Rosenberg",
+        "macro bonds",
+    ),
+    (
+        "summers",
+        "Larry Summers",
+        "Cựu Bộ trưởng Tài chính Mỹ",
+        "quoted",
+        "B",
+        "news",
+        "Larry Summers",
+        "macro",
+    ),
+    (
+        "roubini",
+        "Nouriel Roubini",
+        "Giáo sư NYU, Roubini Macro",
+        "quoted",
+        "B",
+        "news",
+        "Nouriel Roubini",
+        "macro gold",
+    ),
+    (
+        "gundlach",
+        "Jeffrey Gundlach",
+        "DoubleLine Capital",
+        "quoted",
+        "B",
+        "news",
+        "Jeffrey Gundlach",
+        "bonds macro",
+    ),
+    ("fink", "Larry Fink", "CEO BlackRock", "quoted", "B", "news", "Larry Fink", "stocks crypto"),
+    (
+        "hatzius",
+        "Jan Hatzius",
+        "Kinh tế trưởng Goldman Sachs",
+        "quoted",
+        "A",
+        "news",
+        "Jan Hatzius",
+        "macro",
+    ),
+    (
+        "mikewilson",
+        "Mike Wilson",
+        "Chiến lược gia Morgan Stanley",
+        "quoted",
+        "A",
+        "news",
+        "Morgan Stanley Mike Wilson",
+        "stocks",
+    ),
+    (
+        "saylor",
+        "Michael Saylor",
+        "Strategy (MicroStrategy)",
+        "quoted",
+        "C",
+        "news",
+        "Michael Saylor",
+        "crypto",
+    ),
+    (
+        "schiff",
+        "Peter Schiff",
+        "Euro Pacific, người ủng hộ vàng",
+        "quoted",
+        "C",
+        "news",
+        "Peter Schiff",
+        "gold",
+    ),
+    (
+        "brandt",
+        "Peter Brandt",
+        "Trader hàng hoá kỳ cựu",
+        "quoted",
+        "C",
+        "news",
+        "Peter Brandt",
+        "commodities crypto",
+    ),
+    (
+        "raoulpal",
+        "Raoul Pal",
+        "Real Vision, Global Macro Investor",
+        "quoted",
+        "C",
+        "news",
+        "Raoul Pal",
+        "macro crypto",
+    ),
+]
 TIERS = {
     "A": "Tổ chức chính thức",
     "B": "Chuyên gia đã xác minh",
@@ -509,6 +821,20 @@ def _via_google_news(feed_url: str) -> list[tuple[str, str, int, str]]:
     return sorted(out, key=lambda r: -r[2])
 
 
+def _quoted(name: str) -> list[tuple[str, str, int, str]]:
+    """Tin 7 ngày qua có nhắc tên người đó (Google News). Bỏ báo Việt Nam; tóm tắt là tên báo."""
+    raw = _get(news.GN + urllib.parse.quote(f'"{name}" when:7d'))
+    out = []
+    for title, link, pub in news.parse_feed(raw):
+        paper = ""
+        if " - " in title:
+            title, paper = title.rsplit(" - ", 1)
+        if news.is_vietnamese({"source": paper, "title": title, "link": link}):
+            continue
+        out.append((title, link, news._when(pub), paper))
+    return sorted(out, key=lambda r: -r[2])
+
+
 def fetch_source(src) -> tuple[list[dict], dict]:
     sid, name, role, group, tier, plat, addr, mk = src
     info = {
@@ -528,6 +854,8 @@ def fetch_source(src) -> tuple[list[dict], dict]:
     try:
         if plat == "bsky":
             rows = [(t, link, when, "") for t, link, when in _bsky(addr)]
+        elif plat == "news":
+            rows = _quoted(addr)
         else:
             url = (
                 f"https://www.youtube.com/feeds/videos.xml?channel_id={addr}"
@@ -541,9 +869,11 @@ def fetch_source(src) -> tuple[list[dict], dict]:
                     raise
                 rows = _via_google_news(addr)
                 info["via"] = "Google News"
-        for title, link, when, summ in rows[:20]:
+        for title, link, when, summ in rows[: 6 if plat == "news" else 20]:
             if plat == "bsky":
                 text, head = title, ""
+            elif plat == "news":  # báo trích dẫn: tóm tắt là tên báo
+                head, text = title, ""
             else:
                 head, text = title, summ[:600]
             item = {
@@ -554,6 +884,8 @@ def fetch_source(src) -> tuple[list[dict], dict]:
                 "link": link,
                 "platform": plat,
             }
+            if plat == "news" and summ:
+                item["paper"] = summ
             if news.is_vietnamese({"source": name, "title": f"{head} {text}", "link": link}):
                 continue
             item["lean"] = lean(f"{head} {text}")
@@ -640,7 +972,7 @@ def fetch_social(now_ms: int | None = None) -> dict:
         "tiers": TIERS,
         "markets": MARKETS,
         "sources": infos,
-        "posts": posts[:400],
+        "posts": posts[:700],
         "tally": tally(posts, now_ms),
         "trending": trending(posts, now_ms),
         "gauges": g,
