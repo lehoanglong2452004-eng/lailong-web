@@ -64,6 +64,7 @@ class Translator:
         self.engines = engines or [("Google", _gtx), ("MyMemory", _mymemory)]
         self._down: dict[str, float] = {}  # nguồn lỗi thì nghỉ 10 phút
         self.dirty = False  # có câu mới chưa ghi ra file
+        self.pause = 1.0
         if path and path.exists():
             try:
                 self.cache = json.loads(path.read_text(encoding="utf-8"))
@@ -94,7 +95,9 @@ class Translator:
             if t not in self.cache
         ][:budget]
         done = 0
-        for chunk in batches(todo):
+        for n, chunk in enumerate(batches(todo)):
+            if n:
+                time.sleep(self.pause)  # nghỉ giữa các lượt để Google không chặn (429)
             got = self._one_batch(chunk)
             if got is None:
                 break
