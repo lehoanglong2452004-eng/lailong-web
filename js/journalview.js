@@ -5,14 +5,15 @@
 // notify(kind, text, html, toast) gửi cảnh báo ra ngoài (tiếng, Telegram); events() là lịch kinh tế.
 // Bối cảnh lúc vào lệnh: lệnh mới ghi trong vòng 60 phút được chụp lại 4 lớp đồng thuận, phiên, xu hướng, tín hiệu
 // vừa xuất hiện và gamma; ctx.macro() là dữ liệu La bàn, ctx.flip(sym) là điểm lật gamma (BTC, ETH).
-import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202611062057";
-import { buildCtx, ctxLines, ctxStats, alignOf, CTX_LABEL, CTX_CSV } from "./tradectx.js?v=202611062057";
-import { liveEvents } from "./eventlog.js?v=202611062057";
-import { entryChecks, nearLock, daySummary, gateHtml, nearHtml, lockHtml, GATE } from "./discipline.js?v=202611062057";
-import { atrSeries } from "./radar.js?v=202611062057";
-import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202611062057";
-import { EquityChart } from "./fractalview.js?v=202611062057";
-import { fmtVol, fmtDate, decimalsFor, getJson } from "./util.js?v=202611062057";
+import { venueBars, venueName } from "./venue.js?v=202611062129";
+import { MISTAKES, SETTINGS_DEF, sizeFor, result, guard, riskLock, journalStats, toCsv } from "./journal.js?v=202611062129";
+import { buildCtx, ctxLines, ctxStats, alignOf, CTX_LABEL, CTX_CSV } from "./tradectx.js?v=202611062129";
+import { liveEvents } from "./eventlog.js?v=202611062129";
+import { entryChecks, nearLock, daySummary, gateHtml, nearHtml, lockHtml, GATE } from "./discipline.js?v=202611062129";
+import { atrSeries } from "./radar.js?v=202611062129";
+import { STRATEGIES, STRATEGY_ORDER } from "./strategies.js?v=202611062129";
+import { EquityChart } from "./fractalview.js?v=202611062129";
+import { fmtVol, fmtDate, decimalsFor } from "./util.js?v=202611062129";
 
 const STORE = "lailong.journal.v1";
 const WD = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -74,20 +75,19 @@ export function initJournal({ $, S, esc, table, market, toast, onLock, notify, e
   const coinOf = s => String(s || "").toUpperCase().replace(/USDT$|USD$|USDC$/, "") || "coin";
   for (const id of ["szEntry", "szStop", "szTarget", "szLev", "szSym"]) $(id).oninput = calc;
   $("szNow").onclick = () => { if (market.last) { $("szEntry").value = market.last.p; $("szSym").value = S.symbol; calc(); } else toast("Chưa có giá trực tiếp, mở Terminal trước", true); };
-  // cắt lỗ theo ATR: lấy 100 nến Binance của mã đang tính, ATR 14 của nến đã đóng gần nhất
+  // cắt lỗ theo ATR: lấy 100 nến của sàn đang chọn cho mã đang tính, ATR 14 của nến đã đóng gần nhất
   $("szAtrBtn").onclick = async () => {
     const sym = ($("szSym").value || S.symbol).toUpperCase().trim(), tf = $("szAtrTf").value, entry = num("szEntry");
     if (!(entry > 0)) return toast("Nhập giá vào trước (hoặc bấm Giá hiện tại)", true);
     $("szAtrOut").textContent = "đang tải nến…";
     try {
-      const k = await getJson(`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(sym)}&interval=${tf}&limit=100`);
-      const bars = k.map(x => ({ h: +x[2], l: +x[3], c: +x[4] })), atr = atrSeries(bars)[bars.length - 2];
+      const bars = await venueBars(sym, tf, 100), atr = atrSeries(bars)[bars.length - 2];
       if (!(atr > 0)) throw new Error("không đủ nến");
       const dir = $("szSide").value === "short" ? 1 : -1, stop = entry + dir * db.cfg.atrMult * atr, dec = decimalsFor(market.tick || 0.01);
       $("szStop").value = +stop.toFixed(Math.max(dec, 2));
       $("szAtrOut").textContent = `ATR 14 nến ${tf} = ${atr.toPrecision(5)} (${(atr / entry * 100).toFixed(2)}%) · cắt lỗ cách ${db.cfg.atrMult} ATR`;
       calc();
-    } catch (e) { $("szAtrOut").textContent = `Không lấy được ATR ${sym}: ${e.message}. Mã phải là hợp đồng Binance Futures, ví dụ BTCUSDT.`; }
+    } catch (e) { $("szAtrOut").textContent = `Không lấy được ATR ${sym}: ${e.message}. Mã phải là hợp đồng có trên ${venueName()}, ví dụ BTCUSDT.`; }
   };
 
   $("szToJournal").onclick = () => {
@@ -148,9 +148,8 @@ export function initJournal({ $, S, esc, table, market, toast, onLock, notify, e
   async function capture(t) {
     let bars = null;
     try {
-      const k = await getJson(`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(t.sym)}&interval=1h&limit=200`);
-      bars = k.map(r => ({ t: r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4], v: +r[5], bv: +r[9] }));
-    } catch { /* mã không có trên Binance Futures */ }
+      bars = await venueBars(t.sym, "1h", 200);
+    } catch { /* mã không có trên sàn đang chọn */ }
     const [live, flip] = await Promise.all([
       liveEvents(t.sym, 1).catch(() => []),
       Promise.resolve(ctxSrc.flip ? ctxSrc.flip(t.sym) : null).catch(() => null),

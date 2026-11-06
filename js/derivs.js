@@ -4,7 +4,7 @@
 //                    funding hiện tại, open interest.
 //   Deribit:         quyền chọn BTC/ETH: tỷ lệ put/call theo OI và khối lượng, điểm "max pain", các giá
 //                    thực hiện có OI lớn nhất (thường thành nam châm hút giá gần ngày đáo hạn).
-import { getJson } from "./util.js?v=202611062057";
+import { getJson } from "./util.js?v=202611062129";
 
 const FAPI = "https://fapi.binance.com";
 const DERIBIT = "https://www.deribit.com/api/v2/public";
@@ -32,6 +32,66 @@ export async function binanceDerivs(symbol, period = "1h", limit = 48) {
     nextFunding: prem && !prem.err ? num(prem.nextFundingTime) : null,
     errors: [acc, top, taker, oi, prem].filter(r => r && r.err).map(r => r.err),
   };
+}
+
+// cùng bộ số liệu cho sàn đang chọn; số nào sàn không công bố thì để null (không lấy tạm Binance)
+// trả thêm: venue, fundingH (số giờ mỗi kỳ funding), missing: [tên số liệu sàn không công bố]
+const OKX = "https://www.okx.com", BYBIT = "https://api.bybit.com", HL = "https://api.hyperliquid.xyz/info";
+const okxInst = s => s.replace(/USDT$/, "") + "-USDT-SWAP", base = s => s.replace(/USDT$/, "");
+const longOf = r => (r > 0 ? r / (1 + r) : null);
+export async function venueDerivs(venue, symbol) {
+  if (venue === "BINANCE" || !venue) return { venue: "BINANCE", fundingH: 8, missing: [], ...(await binanceDerivs(symbol)) };
+  const safe = p => p.catch(e => ({ err: e.message }));
+  const out = { venue, acc: null, accLong: null, top: null, topLong: null, taker: null, oi: null, funding: null, mark: null, index: null, nextFunding: null, fundingH: 8, missing: [], errors: [] };
+  const errs = rs => rs.filter(r => r && r.err).map(r => r.err);
+  if (venue === "BYBIT") {
+    const q = `category=linear&symbol=${symbol}`;
+    const [acc, oi, tk] = await Promise.all([
+      safe(getJson(`${BYBIT}/v5/market/account-ratio?${q}&period=1h&limit=48`)),
+      safe(getJson(`${BYBIT}/v5/market/open-interest?${q}&intervalTime=1h&limit=48`)),
+      safe(getJson(`${BYBIT}/v5/market/tickers?${q}`)),
+    ]);
+    const t = tk && tk.result && tk.result.list && tk.result.list[0];
+    if (t) { out.funding = num(t.fundingRate); out.mark = num(t.markPrice); out.index = num(t.indexPrice); out.nextFunding = num(t.nextFundingTime); out.fundingH = num(t.fundingIntervalHour) || 8; }
+    const al = acc && acc.result && acc.result.list;
+    if (al && al.length) { out.acc = al.map(x => ({ t: num(x.timestamp), v: num(x.buyRatio) / num(x.sellRatio) })).filter(x => isFinite(x.v)).sort((a, b) => a.t - b.t); out.accLong = num(al[0].buyRatio); }
+    const ol = oi && oi.result && oi.result.list;
+    if (ol && ol.length && out.mark) out.oi = ol.map(x => ({ t: num(x.timestamp), v: num(x.openInterest) * out.mark })).sort((a, b) => a.t - b.t);
+    out.missing = ["top", "taker"]; out.errors = errs([acc, oi, tk]);
+    return out;
+  }
+  if (venue === "OKX") {
+    const c = base(symbol), inst = okxInst(symbol), R = `${OKX}/api/v5/rubik/stat`;
+    const [acc, top, tk, oi, fr, mk, ix] = await Promise.all([
+      safe(getJson(`${R}/contracts/long-short-account-ratio?ccy=${c}&period=1H`)),
+      safe(getJson(`${R}/contracts/long-short-account-ratio-contract-top-trader?instId=${inst}&period=1H`)),
+      safe(getJson(`${R}/taker-volume?ccy=${c}&instType=CONTRACTS&period=1H`)),
+      safe(getJson(`${R}/contracts/open-interest-volume?ccy=${c}&period=1H`)),
+      safe(getJson(`${OKX}/api/v5/public/funding-rate?instId=${inst}`)),
+      safe(getJson(`${OKX}/api/v5/public/mark-price?instType=SWAP&instId=${inst}`)),
+      safe(getJson(`${OKX}/api/v5/market/index-tickers?instId=${c}-USDT`)),
+    ]);
+    const rows = r => (r && Array.isArray(r.data) ? r.data : null), last48 = a => a.sort((x, y) => x.t - y.t).slice(-48);
+    const a = rows(acc); if (a && a.length) { out.acc = last48(a.map(x => ({ t: num(x[0]), v: num(x[1]) }))); out.accLong = longOf(out.acc.at(-1).v); }
+    const tp = rows(top); if (tp && tp.length) { out.top = last48(tp.map(x => ({ t: num(x[0]), v: num(x[1]) }))); out.topLong = longOf(out.top.at(-1).v); }
+    const k = rows(tk); if (k && k.length) out.taker = last48(k.map(x => ({ t: num(x[0]), v: num(x[1]) > 0 ? num(x[2]) / num(x[1]) : NaN })).filter(x => isFinite(x.v)));
+    const o = rows(oi); if (o && o.length) out.oi = last48(o.map(x => ({ t: num(x[0]), v: num(x[1]) })));
+    const f = rows(fr); if (f && f[0]) { out.funding = num(f[0].fundingRate); out.nextFunding = num(f[0].nextFundingTime); }
+    const m = rows(mk); if (m && m[0]) out.mark = num(m[0].markPx);
+    const i = rows(ix); if (i && i[0]) out.index = num(i[0].idxPx);
+    out.missing = [!out.top && "top"].filter(Boolean); out.errors = errs([acc, top, tk, oi, fr, mk, ix]);
+    return out;
+  }
+  if (venue === "HYPERLIQUID") {
+    const r = await safe(getJson(HL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "metaAndAssetCtxs" }) }));
+    if (r && !r.err && Array.isArray(r)) {
+      const i = r[0].universe.findIndex(u => u.name === base(symbol)), c = i >= 0 ? r[1][i] : null;
+      if (c) { out.funding = num(c.funding); out.mark = num(c.markPx); out.index = num(c.oraclePx); out.fundingH = 1; const oiNow = num(c.openInterest) * out.mark; out.oi = [{ t: Date.now(), v: oiNow }]; }
+    }
+    out.missing = ["acc", "top", "taker"]; out.errors = errs([r]);
+    return out;
+  }
+  return out;
 }
 
 // tên quyền chọn Deribit: BTC-27DEC24-60000-C

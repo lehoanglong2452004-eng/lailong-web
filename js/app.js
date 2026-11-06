@@ -1,59 +1,60 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611062057";
-import { MarketState, Book } from "./market.js?v=202611062057";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611062057";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611062057";
-import { FlowChart } from "./flowchart.js?v=202611062057";
-import { LiqHeatChart } from "./liqchart.js?v=202611062057";
-import { liqHeat, LIQ_MODELS, LIQ_RANGES } from "./liqheat.js?v=202611062057";
-import { Dom } from "./dom.js?v=202611062057";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, biasSummary } from "./analytics.js?v=202611062057";
-import { initBacktest } from "./backtestview.js?v=202611062057";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611062057";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202611062057";
-import { Tape } from "./tape.js?v=202611062057";
-import { LiqMap } from "./liqmap.js?v=202611062057";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611062057";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611062057";
-import { FlowMarks } from "./bmind.js?v=202611062057";
-import { Replay } from "./replay.js?v=202611062057";
-import { Alerts } from "./alerts.js?v=202611062057";
-import { binanceDerivs, deribitOptions } from "./derivs.js?v=202611062057";
-import { initNews } from "./newsview.js?v=202611062057";
-import { initSocial } from "./socialview.js?v=202611062057";
-import { initDepth } from "./depthview.js?v=202611062057";
-import { initMarkets } from "./marketsview.js?v=202611062057";
-import { initTgBot } from "./tgbot.js?v=202611062057";
-import { initInst } from "./instview.js?v=202611062057";
-import { setFresh, tickFresh } from "./fresh.js?v=202611062057";
-import { initRadar } from "./radarview.js?v=202611062057";
-import { Drawings } from "./drawings.js?v=202611062057";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611062057";
-import { PaperBroker } from "./paper.js?v=202611062057";
-import { OrderLines } from "./orderlines.js?v=202611062057";
-import { MultiChart } from "./multichart.js?v=202611062057";
-import { DOM_COLS } from "./dom.js?v=202611062057";
-import { initFractal } from "./fractalview.js?v=202611062057";
-import { initJournal } from "./journalview.js?v=202611062057";
-import { installHealth, clockSkew } from "./health.js?v=202611062057";
-import { initHealth } from "./healthview.js?v=202611062057";
-import { initFlows } from "./flowsview.js?v=202611062057";
-import { initPerf } from "./perfview.js?v=202611062057";
-import { initShock } from "./shockview.js?v=202611062057";
-import { initCompass } from "./compassview.js?v=202611062057";
-import { initConsensus } from "./consensusview.js?v=202611062057";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202611062057";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611062057";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611062057";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611062057";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611062057";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202611062057";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611062057";
-import { mountLang } from "./lang.js?v=202611062057";
-import { initI18n } from "./i18n.js?v=202611062057";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611062057";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611062129";
+import { MarketState, Book } from "./market.js?v=202611062129";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611062129";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611062129";
+import { FlowChart } from "./flowchart.js?v=202611062129";
+import { LiqHeatChart } from "./liqchart.js?v=202611062129";
+import { liqHeat, LIQ_MODELS, LIQ_RANGES } from "./liqheat.js?v=202611062129";
+import { Dom } from "./dom.js?v=202611062129";
+import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, biasSummary } from "./analytics.js?v=202611062129";
+import { initBacktest } from "./backtestview.js?v=202611062129";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611062129";
+import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202611062129";
+import { Tape } from "./tape.js?v=202611062129";
+import { LiqMap } from "./liqmap.js?v=202611062129";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611062129";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611062129";
+import { FlowMarks } from "./bmind.js?v=202611062129";
+import { Replay } from "./replay.js?v=202611062129";
+import { Alerts } from "./alerts.js?v=202611062129";
+import { venueDerivs, deribitOptions } from "./derivs.js?v=202611062129";
+import { setVenue, getVenue, venueName } from "./venue.js?v=202611062129";
+import { initNews } from "./newsview.js?v=202611062129";
+import { initSocial } from "./socialview.js?v=202611062129";
+import { initDepth } from "./depthview.js?v=202611062129";
+import { initMarkets } from "./marketsview.js?v=202611062129";
+import { initTgBot } from "./tgbot.js?v=202611062129";
+import { initInst } from "./instview.js?v=202611062129";
+import { setFresh, tickFresh } from "./fresh.js?v=202611062129";
+import { initRadar } from "./radarview.js?v=202611062129";
+import { Drawings } from "./drawings.js?v=202611062129";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611062129";
+import { PaperBroker } from "./paper.js?v=202611062129";
+import { OrderLines } from "./orderlines.js?v=202611062129";
+import { MultiChart } from "./multichart.js?v=202611062129";
+import { DOM_COLS } from "./dom.js?v=202611062129";
+import { initFractal } from "./fractalview.js?v=202611062129";
+import { initJournal } from "./journalview.js?v=202611062129";
+import { installHealth, clockSkew } from "./health.js?v=202611062129";
+import { initHealth } from "./healthview.js?v=202611062129";
+import { initFlows } from "./flowsview.js?v=202611062129";
+import { initPerf } from "./perfview.js?v=202611062129";
+import { initShock } from "./shockview.js?v=202611062129";
+import { initCompass } from "./compassview.js?v=202611062129";
+import { initConsensus } from "./consensusview.js?v=202611062129";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202611062129";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611062129";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611062129";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611062129";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611062129";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202611062129";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611062129";
+import { mountLang } from "./lang.js?v=202611062129";
+import { initI18n } from "./i18n.js?v=202611062129";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611062129";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
@@ -135,6 +136,7 @@ $("symTabs").onclick = e => {
   const exChanged = S.ex !== tab.dataset.ex; S.ex = tab.dataset.ex; S.symbol = tab.dataset.s; $("exchange").value = S.ex; $("symbol").value = S.symbol; if (exChanged) loadSymbols(); load();
 };
 async function load() {
+  setVenue(S.ex); // các tab crypto khác lấy theo sàn này
   const token = ++loadToken; persist(); rememberTab(); if (replay) exitReplay();
   if (conn) { conn.close(); conn = null; }
   market.reset({ symbol: S.symbol, exchange: S.ex, interval: S.interval });
@@ -418,7 +420,7 @@ const depthView = initDepth({ $, esc });
 const marketsView = initMarkets({ $, esc });
 initTgBot({ alerts, onTap: d => (d.startsWith("sig:") ? signalsView.onTap(d) : null) });
 const instView = initInst({ $, esc });
-const radarView = initRadar({ $, esc, onPick: sym => { S.ex = "BINANCE"; $("exchange").value = S.ex; S.symbol = sym; $("symbol").value = sym; load(); setView("terminal"); } });
+const radarView = initRadar({ $, esc, onPick: sym => { if (S.ex === "SIM") S.ex = "BINANCE"; $("exchange").value = S.ex; S.symbol = sym; $("symbol").value = sym; load(); setView("terminal"); } });
 const multiChart = new MultiChart($("view-multi"), { ex: () => ex() });
 
 function scheduleFlow() { if (flowTimer) return; flowTimer = setTimeout(() => { flowTimer = null; recomputeFlow(); }, 1500); }
@@ -579,24 +581,26 @@ async function renderAbsorptionCard() {
 let drvCache = null, optCache = null;
 async function renderDerivs() {
   const sym = S.symbol, c = coin(), box = $("drvStats"), ob = $("optStats");
-  setFresh($("drvInfo"), "live", Date.now(), { label: `Trực tiếp · ${sym} · Binance khung 1 giờ, 48 giờ`, expect: 10 * 60e3, note: "Long/short, mua/bán chủ động, funding, OI lấy thẳng từ Binance Futures (làm mới mỗi 2 phút); quyền chọn từ Deribit (mỗi 5 phút)" });
+  const V = getVenue(), vn = venueName(V);
+  setFresh($("drvInfo"), "live", Date.now(), { label: `Trực tiếp · ${sym} · ${vn} khung 1 giờ, 48 giờ`, expect: 10 * 60e3, note: `Long/short, mua/bán chủ động, funding, OI lấy thẳng từ ${vn} (làm mới mỗi 2 phút); quyền chọn từ Deribit (mỗi 5 phút)` });
   try {
-    if (!drvCache || drvCache.sym !== sym || Date.now() - drvCache.t > 120e3) drvCache = { sym, t: Date.now(), d: await binanceDerivs(sym) };
+    if (!drvCache || drvCache.sym !== sym || drvCache.V !== V || Date.now() - drvCache.t > 120e3) drvCache = { sym, V, t: Date.now(), d: await venueDerivs(V, sym) };
     const d = drvCache.d, lv = a => a && a.length ? a[a.length - 1].v : null, ch = a => a && a.length > 24 ? a[a.length - 1].v - a[a.length - 25].v : null;
     const f2 = (x, k = 2) => x == null || !isFinite(x) ? "-" : x.toFixed(k), sg = (x, k = 2) => x == null || !isFinite(x) ? "" : ` <small class="${x >= 0 ? "pos" : "neg"}">(${x >= 0 ? "+" : ""}${x.toFixed(k)} / 24h)</small>`;
     const accL = d.accLong, topL = d.topLong, fr = d.funding, tk = lv(d.taker), oi = lv(d.oi), oiCh = d.oi && d.oi.length > 24 ? (lv(d.oi) / d.oi[d.oi.length - 25].v - 1) * 100 : null;
     const crowd = accL == null ? "" : accL >= 0.65 ? "Đám đông nghiêng hẳn về LONG: dễ bị quét xuống trước khi đi tiếp." : accL <= 0.4 ? "Đám đông nghiêng hẳn về SHORT: dễ bị ép lên (short squeeze)." : "Đám đông khá cân bằng.";
     const smart = accL != null && topL != null ? (topL - accL >= 0.05 ? " Top trader long nhiều hơn đám đông: tiền lớn đang nghiêng về phía mua." : accL - topL >= 0.05 ? " Top trader long ít hơn đám đông: tiền lớn thận trọng hơn nhỏ lẻ." : "") : "";
-    box.innerHTML = d.errors.length >= 5 ? `<p class="note">Binance Futures không có dữ liệu phái sinh cho ${esc(sym)}: ${esc(d.errors[0])}</p>` :
-      `<div class="kv"><span data-g="ls-ratio">Tài khoản đang LONG (mọi người)</span><b>${accL == null ? "-" : (accL * 100).toFixed(1) + "%"}</b>` +
-      `<span data-g="ls-ratio">Tỷ lệ long/short mọi tài khoản</span><b>${f2(lv(d.acc))}${sg(ch(d.acc))}</b>` +
-      `<span data-g="ls-ratio">Top trader: vị thế LONG</span><b>${topL == null ? "-" : (topL * 100).toFixed(1) + "%"}</b>` +
-      `<span data-g="taker-ratio">Mua/bán chủ động (1 giờ gần nhất)</span><b class="${tk >= 1 ? "pos" : "neg"}">${f2(tk)}</b>` +
-      `<span data-g="funding">Funding hiện tại (mỗi 8 giờ)</span><b class="${fr >= 0 ? "pos" : "neg"}">${fr == null ? "-" : (fr * 100).toFixed(4) + "%"}</b>` +
+    const NA = `<small class="muted">${esc(vn)} không công bố</small>`, miss = k => d.missing.includes(k);
+    box.innerHTML = d.errors.length >= 5 && d.funding == null ? `<p class="note">${esc(vn)} không có dữ liệu phái sinh cho ${esc(sym)}: ${esc(d.errors[0])}</p>` :
+      `<div class="kv"><span data-g="ls-ratio">Tài khoản đang LONG (mọi người)</span><b>${miss("acc") ? NA : accL == null ? "-" : (accL * 100).toFixed(1) + "%"}</b>` +
+      `<span data-g="ls-ratio">Tỷ lệ long/short mọi tài khoản</span><b>${miss("acc") ? NA : f2(lv(d.acc)) + sg(ch(d.acc))}</b>` +
+      `<span data-g="ls-ratio">Top trader: vị thế LONG</span><b>${miss("top") ? NA : topL == null ? "-" : (topL * 100).toFixed(1) + "%"}</b>` +
+      `<span data-g="taker-ratio">Mua/bán chủ động (1 giờ gần nhất)</span><b class="${tk >= 1 ? "pos" : "neg"}">${miss("taker") ? NA : f2(tk)}</b>` +
+      `<span data-g="funding">Funding hiện tại (mỗi ${d.fundingH} giờ)</span><b class="${fr >= 0 ? "pos" : "neg"}">${fr == null ? "-" : (fr * 100).toFixed(4) + "%"}</b>` +
       `<span data-g="oi">Open interest</span><b>${oi == null ? "-" : fmtUsd(oi)}${oiCh == null ? "" : ` <small class="${oiCh >= 0 ? "pos" : "neg"}">(${oiCh >= 0 ? "+" : ""}${oiCh.toFixed(1)}% / 24h)</small>`}</b></div>` +
-      `<p class="note">${crowd}${smart}${fr != null && Math.abs(fr) >= 0.0005 ? ` Funding ${fr > 0 ? "dương" : "âm"} cao: phe ${fr > 0 ? "long" : "short"} đang trả phí đắt để giữ lệnh, dễ bị xả.` : ""}</p>`;
+      `<p class="note">${crowd}${smart}${fr != null && Math.abs(fr * 8 / d.fundingH) >= 0.0005 ? ` Funding ${fr > 0 ? "dương" : "âm"} cao: phe ${fr > 0 ? "long" : "short"} đang trả phí đắt để giữ lệnh, dễ bị xả.` : ""}</p>`;
     drawDerivs(d);
-  } catch (e) { box.innerHTML = `<p class="note">Không tải được dữ liệu phái sinh từ Binance: ${esc(e.message)}</p>`; }
+  } catch (e) { box.innerHTML = `<p class="note">Không tải được dữ liệu phái sinh từ ${esc(vn)}: ${esc(e.message)}</p>`; }
   if (c !== "BTC" && c !== "ETH") { ob.innerHTML = `<p class="note">Deribit chỉ có quyền chọn đủ thanh khoản cho BTC và ETH.</p>`; return; }
   try {
     if (!optCache || optCache.c !== c || Date.now() - optCache.t > 300e3) optCache = { c, t: Date.now(), o: await deribitOptions(c) };

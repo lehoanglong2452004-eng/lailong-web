@@ -1,12 +1,13 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: thẻ Kịch bản sốc ở trang Nhật ký, và cảnh báo 60 phút trước mỗi tin lớn khi đang có lệnh mở.
-// Giá hiện tại và biên độ một ngày lấy từ nến ngày Binance Futures; mã không có trên Binance thì tính từ giá vào
+// Giá hiện tại và biên độ một ngày lấy từ nến ngày của sàn đang chọn; mã không có trên sàn đó thì tính từ giá vào
 // và biên độ ước lượng theo loại tài sản. Mỗi tin chỉ báo một lần (danh sách đã báo lưu trên máy này).
-import { bigEvents, shockScenarios, shockHtml, shockText, assetClass, tone, FALLBACK, LEAD_MIN } from "./shock.js?v=202611062057";
-import { riskLock, guard } from "./journal.js?v=202611062057";
-import { avgReaction } from "./newsview.js?v=202611062057";
-import { atrSeries } from "./radar.js?v=202611062057";
-import { getJson, fmtDate, fmtVol, FLAG } from "./util.js?v=202611062057";
+import { venueBars, getVenue, venueName } from "./venue.js?v=202611062129";
+import { bigEvents, shockScenarios, shockHtml, shockText, assetClass, tone, FALLBACK, LEAD_MIN } from "./shock.js?v=202611062129";
+import { riskLock, guard } from "./journal.js?v=202611062129";
+import { avgReaction } from "./newsview.js?v=202611062129";
+import { atrSeries } from "./radar.js?v=202611062129";
+import { fmtDate, fmtVol, FLAG } from "./util.js?v=202611062129";
 
 const SENT = "lailong.shock.sent";
 const COL = { crypto: "BTC", metal: "Vàng", oil: "Dầu WTI", fx: "DXY" }; // cột phản ứng giá gần nhất với từng loại tài sản
@@ -20,12 +21,11 @@ export function initShock({ $, esc, table, alerts, journal, events, reactions })
 
   // giá hiện tại và ATR 14 ngày (%) của nến ngày đã đóng
   async function quote(sym) {
-    const c = cache[sym]; if (c && Date.now() - c.t < 5 * 60e3) return c;
+    const c = cache[sym]; if (c && c.v === getVenue() && Date.now() - c.t < 5 * 60e3) return c;
     try {
-      const k = await getJson(`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(sym)}&interval=1d&limit=20`);
-      const bars = k.map(x => ({ h: +x[2], l: +x[3], c: +x[4] })), done = bars.slice(0, -1), atr = atrSeries(done).at(-1), mark = bars.at(-1).c;
+      const bars = await venueBars(sym, "1d", 20), done = bars.slice(0, -1), atr = atrSeries(done).at(-1), mark = bars.at(-1).c;
       if (!(atr > 0) || !(mark > 0)) throw new Error("thiếu nến");
-      return (cache[sym] = { t: Date.now(), mark, atrPct: atr / done.at(-1).c * 100, est: false });
+      return (cache[sym] = { v: getVenue(), t: Date.now(), mark, atrPct: atr / done.at(-1).c * 100, est: false });
     } catch { return (cache[sym] = { t: Date.now() - 4 * 60e3, mark: null, atrPct: FALLBACK[assetClass(sym)], est: true }); }
   }
 
@@ -73,7 +73,7 @@ export function initShock({ $, esc, table, alerts, journal, events, reactions })
       const { ev, res, ctx } = last, lab = res.linked;
       body = `<p class="muted">Tính lúc ${fmtDate(last.at).slice(11)} cho tin ${FLAG[ev.country] || esc(ev.country)} ${esc(ev.titles.join(", "))}. Số là lời (+) lỗ (-) USDT so với giá lúc tính.</p><div class="tablewrap">` +
         table(["Mã", "Phía", "Khối lượng", "Giá hiện tại", "Cắt lỗ", "Mức sốc", ...(lab ? [`${ev.country} mạnh lên`, `${ev.country} yếu đi`] : []), "Giật hai chiều"],
-          res.rows.map(r => `<tr><td>${esc(r.sym)}</td><td class="${r.side === "long" ? "pos" : "neg"}">${r.side === "long" ? "LONG" : "SHORT"}</td><td>${fmtVol(r.qty)}</td><td>${r.est ? `<span data-tip="Không lấy được giá Binance, tính từ giá vào">≈ ${r.mark}</span>` : r.mark}</td><td>${r.stop}${r.stopHit ? ` <span class="tag gate" data-tip="Mức sốc vượt qua cắt lỗ: tính lỗ tới cắt lỗ cộng trượt giá">bị quét</span>` : ""}</td><td>±${r.pct.toFixed(2)}%</td>${lab ? `<td class="${cls(r.up)}">${sgn(r.up)}</td><td class="${cls(r.down)}">${sgn(r.down)}</td>` : ""}<td class="${cls(r.whip)}">${sgn(r.whip)}</td></tr>`)
+          res.rows.map(r => `<tr><td>${esc(r.sym)}</td><td class="${r.side === "long" ? "pos" : "neg"}">${r.side === "long" ? "LONG" : "SHORT"}</td><td>${fmtVol(r.qty)}</td><td>${r.est ? `<span data-tip="Không lấy được giá trên ${esc(venueName())}, tính từ giá vào">≈ ${r.mark}</span>` : r.mark}</td><td>${r.stop}${r.stopHit ? ` <span class="tag gate" data-tip="Mức sốc vượt qua cắt lỗ: tính lỗ tới cắt lỗ cộng trượt giá">bị quét</span>` : ""}</td><td>±${r.pct.toFixed(2)}%</td>${lab ? `<td class="${cls(r.up)}">${sgn(r.up)}</td><td class="${cls(r.down)}">${sgn(r.down)}</td>` : ""}<td class="${cls(r.whip)}">${sgn(r.whip)}</td></tr>`)
             .concat(`<tr class="tot"><td colspan="6"><b>Tổng</b> (rủi ro tới cắt lỗ ${fmtVol(res.risk)} USDT)</td>${lab ? `<td class="${cls(res.up)}">${tone(res.up, ctx.budget)} ${sgn(res.up)}</td><td class="${cls(res.down)}">${tone(res.down, ctx.budget)} ${sgn(res.down)}</td>` : ""}<td class="${cls(res.whip)}">${tone(res.whip, ctx.budget)} ${sgn(res.whip)}</td></tr>`), "") +
         `</div><p class="note">Hôm nay ${ctx.budget > 0 ? `còn được lỗ ${fmtVol(ctx.budget)} USDT trước khi bị khoá` : "đã hết mức được lỗ"}. 🟢 lời · 🟡 dưới nửa mức còn được lỗ · 🟠 từ nửa trở lên · 🔴 chạm mức khoá.${ctx.hist ? ` Các lần trước, 60 phút sau tin này: ${esc(ctx.hist)}.` : ""}</p>`;
     } else body = n ? `<p class="muted">Đang mở ${n} lệnh có khối lượng. Bấm Tính ngay để xem trước.</p>` : `<p class="muted">Chưa có lệnh đang mở có khối lượng trong nhật ký.</p>`;

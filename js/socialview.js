@@ -4,10 +4,10 @@
 // Nghiêng tích cực / tiêu cực chấm tự động theo từ khoá nên chỉ để xem xu hướng chung, có thể sai từng bài.
 // Không bao giờ hiện tác giả, tổ chức hay nội dung Việt Nam (lọc ở máy chủ và lọc lại ở đây bằng isVN).
 
-import { liveJson } from "./util.js?v=202611062057";
-import { setFresh } from "./fresh.js?v=202611062057";
-import { bi } from "./lang.js?v=202611062057";
-import { isVN } from "./newsdigest.js?v=202611062057";
+import { liveJson } from "./util.js?v=202611062129";
+import { setFresh } from "./fresh.js?v=202611062129";
+import { bi } from "./lang.js?v=202611062129";
+import { isVN } from "./newsdigest.js?v=202611062129";
 
 export const GROUP_ICON = { inst: "🏦", macro: "📊", fund: "💼", trader: "📈", crypto: "₿", cb: "🏛", media: "🎙", quoted: "📰" };
 export const TOPICS = [["", "Tất cả"], ["macro", "Vĩ mô"], ["stocks", "Chứng khoán"], ["fx", "Forex"], ["comm", "Hàng hoá"], ["crypto", "Crypto"], ["bonds", "Trái phiếu"]];
