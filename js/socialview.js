@@ -4,15 +4,15 @@
 // Nghiêng tích cực / tiêu cực chấm tự động theo từ khoá nên chỉ để xem xu hướng chung, có thể sai từng bài.
 // Không bao giờ hiện tác giả, tổ chức hay nội dung Việt Nam (lọc ở máy chủ và lọc lại ở đây bằng isVN).
 
-import { liveJson } from "./util.js?v=202611061957";
-import { setFresh } from "./fresh.js?v=202611061957";
-import { bi, mountLang } from "./lang.js?v=202611061957";
-import { isVN } from "./newsdigest.js?v=202611061957";
+import { liveJson } from "./util.js?v=202611062007";
+import { setFresh } from "./fresh.js?v=202611062007";
+import { bi, mountLang } from "./lang.js?v=202611062007";
+import { isVN } from "./newsdigest.js?v=202611062007";
 
-export const GROUP_ICON = { inst: "🏦", macro: "📊", fund: "💼", trader: "📈", crypto: "₿", cb: "🏛", media: "🎙" };
+export const GROUP_ICON = { inst: "🏦", macro: "📊", fund: "💼", trader: "📈", crypto: "₿", cb: "🏛", media: "🎙", quoted: "📰" };
 export const TOPICS = [["", "Tất cả"], ["macro", "Vĩ mô"], ["stocks", "Chứng khoán"], ["fx", "Forex"], ["comm", "Hàng hoá"], ["crypto", "Crypto"], ["bonds", "Trái phiếu"]];
 const TOPIC_KEYS = { comm: ["gold", "energy", "commodities"] };
-const PF = { bsky: ["Bluesky", "bs"], rss: ["Bài viết", "ss"], yt: ["YouTube", "yt"] };
+const PF = { bsky: ["Bluesky", "bs"], rss: ["Bài viết", "ss"], yt: ["YouTube", "yt"], news: ["Báo trích dẫn", "nw"] };
 export const LEAN_NAME = { stocks: "chứng khoán", fx: "USD", gold: "vàng", energy: "dầu", crypto: "crypto" };
 
 export function ago(t, now = Date.now()) {
@@ -75,7 +75,9 @@ export function initSocial({ $, esc }) {
     let h = `<div class="sochd">Người theo dõi (${srcs.length})</div>` +
       `<button class="socg${!group && !who ? " on" : ""}" data-group=""><span>Tất cả</span><small>${n("")}</small></button>` +
       groups.map(([id, nm]) => `<button class="socg${group === id && !who ? " on" : ""}" data-group="${id}"><span>${GROUP_ICON[id] || ""} ${esc(nm)}</span><small>${n(id)}</small></button>`).join("");
-    const list = srcs.filter(s => !group || s.group === group);
+    // người đang đăng lên trước, im lặng lâu hay lỗi xuống cuối: danh sách tự "đổi người" khi ai đó ngừng đăng
+    const rank = s => !s.ok ? 2 : s.stale ? 1 : 0;
+    const list = srcs.filter(s => !group || s.group === group).sort((a, b) => rank(a) - rank(b) || (b.last || 0) - (a.last || 0));
     h += `<div class="sochd">${group ? esc(data.groups[group] || "") : "Tất cả nguồn"}</div>` + list.map(s => {
       const st = !s.ok ? ["err", `Lỗi: ${s.err}`] : s.stale ? ["stale", "Im lặng quá 30 ngày, nên cân nhắc bỏ"] : ["ok", (s.last ? `Bài mới nhất ${ago(s.last)}` : "Chưa có bài") + (s.via ? `, lấy qua ${s.via} (chỉ có tiêu đề)` : "")];
       return `<button class="socp${who === s.id ? " on" : ""}" data-who="${s.id}" title="${esc(s.role)} · ${esc(st[1])}"><i class="sdot ${st[0]}"></i><span>${esc(s.name)}</span><b class="tier t${s.tier}" title="${esc((data.tiers || {})[s.tier] || "")}">${s.tier}</b></button>`;
@@ -89,10 +91,11 @@ export function initSocial({ $, esc }) {
     const head = p.head ? `<a class="sochead" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">${p.platform === "yt" ? "▶ " : ""}${bi(p.head, p.vi_head, esc)}</a>` : "";
     const short = (p.text || "").length > 320 ? p.text.slice(0, 320).replace(/\s+\S*$/, "") + "…" : p.text || "";
     const text = short ? `<div class="soctxt">${bi(short, p.vi_text, esc)}</div>` : "";
+    const paper = p.paper ? `<div class="socpaper muted">Theo ${esc(p.paper)}</div>` : "";
     const lean = leanText(p.lean).map(l => `<span class="${l.cls}">${l.text}</span>`).join("");
     const mk = (src.markets || []).map(m => `<span class="tag">${esc((data.markets || {})[m] || m)}</span>`).join("");
     return `<div class="socpost"><div class="soch"><span class="av">${esc(initials(src.name))}</span><b>${esc(src.name)}</b><span class="muted">${esc(src.role)}</span><b class="tier t${src.tier}">${src.tier}</b><span class="pf ${pc}">${pf}</span>` +
-      `<a class="muted socago" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">${ago(p.t, now)}</a></div>${head}${text}<div class="socmeta">${lean}${mk}</div></div>`;
+      `<a class="muted socago" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">${ago(p.t, now)}</a></div>${head}${text}${paper}<div class="socmeta">${lean}${mk}</div></div>`;
   }
 
   function renderFeed() {
