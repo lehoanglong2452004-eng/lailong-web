@@ -1,0 +1,42 @@
+name: Dữ liệu nhanh (lịch kinh tế, tin, biến động)
+
+# GitHub chỉ chạy lịch hẹn giờ vài tiếng một lần với repo nhỏ, nên mỗi lần chạy giữ vòng lặp gần 6 tiếng,
+# vài phút đẩy dữ liệu mới lên nhánh `live` một lần (scripts/live.py). Lịch hẹn 20 phút chỉ để xếp sẵn
+# lần chạy kế tiếp: concurrency giữ một lần đang chạy và một lần chờ, nên vòng lặp nối nhau liên tục.
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Chuẩn bị nhánh live
+        run: |
+          mkdir live && cd live
+          git init -q
+          git config user.name "lailong-bot"
+          git config user.email "lailong-bot@users.noreply.github.com"
+          git remote add origin "$(git -C .. remote get-url origin)"
+          git config http.https://github.com/.extraheader "$(git -C .. config --get http.https://github.com/.extraheader)"
+          if git fetch -q --depth 1 origin live; then
+            git checkout -q -B live FETCH_HEAD
+          else
+            git checkout -q -b live
+            cp ../data/calendar.json ../data/news.json ../data/reactions.json . 2>/dev/null || true
+          fi
+      - name: Vòng cập nhật nhanh
+        run: python scripts/live.py --out live --minutes 340 --push

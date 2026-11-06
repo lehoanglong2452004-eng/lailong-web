@@ -1,12 +1,12 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: lịch kinh tế, tin tức 6 mục, bản đồ tác động và phản ứng giá sau tin.
-// Bản web đọc data/calendar.json, data/news.json, data/reactions.json do GitHub Actions cập nhật mỗi 30 phút;
-// bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/news.py).
+// Bản web đọc calendar.json, news.json, reactions.json, movers.json từ nhánh live do GitHub Actions đẩy vài phút
+// một lần (xem util.liveJson và lailong/terminal/live.py); bản trên laptop dùng data/ do máy chủ lấy trực tiếp.
 // Không dùng tin của báo, tác giả, tổ chức Việt Nam hay tin tiếng Việt. Tin nóng được gom thành bản tin Telegram
 // tối đa mỗi 30 phút (xem newsdigest.js); các tin đã gửi lưu trên máy này để không gửi lại.
-import { setFresh } from "./fresh.js?v=202611052247";
-import { getJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202611052247";
-import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202611052247";
+import { setFresh } from "./fresh.js?v=202611061930";
+import { liveJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202611061930";
+import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202611061930";
 
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],
   [/FOMC|Federal Funds|Fed Chair|Powell/i, "Fed"], [/Retail Sales/i, "doanh số bán lẻ"], [/GDP/i, "GDP"], [/PCE/i, "chi tiêu PCE (Fed hay dùng)"],
@@ -51,6 +51,49 @@ const EV_TOPIC = [[/CPI|PPI|PCE|Inflation/i, "infl"], [/Non-Farm|Employment|Unem
 const evTopic = t => { const m = EV_TOPIC.find(([re]) => re.test(t)); return m ? m[1] : null; };
 
 const DAY = 864e5;
+
+// ---------- so sánh số thực tế với dự báo ----------
+const LOWER_BETTER = /Unemployment|Jobless|Claims|Claimant/i;
+const HOTTER = /CPI|PPI|PCE|Inflation|Earnings|Wage|Price Index|Deflator/i;
+const SCALE = { K: 1e3, M: 1e6, B: 1e9, T: 1e12 };
+export function numUnit(x) {
+  const m = String(x || "").match(/^\s*(-?[\d,]*\.?\d+)\s*([KMBT%]?)/);
+  return m ? { v: parseFloat(m[1].replace(/,/g, "")) * (SCALE[m[2]] || 1), unit: m[2] } : null;
+}
+function fmtDiff(d, unit) {
+  const v = d / (SCALE[unit] || 1), r = Math.abs(v) >= 100 ? Math.round(v) : +v.toFixed(Math.abs(v) >= 10 ? 1 : 2);
+  return `${r > 0 ? "+" : ""}${r}${unit}`;
+}
+// tốt / xấu hơn dự báo cho đồng tiền của nước ra tin; lạm phát thì ghi nóng / nguội hơn
+export function compareActual(e) {
+  const a = numUnit(e.actual), f = numUnit(e.forecast);
+  if (!a || !f) return null;
+  const d = a.v - f.v;
+  if (Math.abs(d) < 1e-9) return { cls: "eq", text: "Đúng dự báo" };
+  const diff = fmtDiff(d, f.unit || a.unit);
+  if (HOTTER.test(e.title)) return d > 0 ? { cls: "hot", text: `Nóng hơn ${diff}` } : { cls: "cool", text: `Nguội hơn ${diff}` };
+  const good = LOWER_BETTER.test(e.title) ? d < 0 : d > 0;
+  return { cls: good ? "beat" : "miss", text: `${good ? "Tốt" : "Xấu"} hơn ${diff}` };
+}
+// lọc lịch: hôm nay / tuần này / tuần sau (tuần tính từ thứ Hai, giờ máy)
+export function calRange(events, mode, now = Date.now(), hiOnly = false) {
+  const d = new Date(now), day0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const wk0 = day0 - ((d.getDay() + 6) % 7) * DAY, wk1 = wk0 + 7 * DAY;
+  const keep = mode === "today" ? e => e.t >= day0 && e.t < day0 + DAY : mode === "next" ? e => e.t >= wk1 : e => e.t >= wk0 && e.t < wk1;
+  return events.filter(e => keep(e) && (!hiOnly || e.impact === "High")).sort((a, b) => a.t - b.t);
+}
+// ba tài sản chạy mạnh nhất 15 phút sau tin (cùng giờ, cùng nước)
+export function reaction15(react, e) {
+  const r = react && react.events.find(x => x.t === e.t && x.country === e.country && Object.keys(x.moves || {}).length);
+  if (!r) return [];
+  return Object.entries(r.moves).filter(([, m]) => m["15"] != null).map(([a, m]) => ({ a, v: m["15"] })).sort((x, y) => Math.abs(y.v) - Math.abs(x.v)).slice(0, 3);
+}
+// tin liên quan tới một biến động: tiêu đề khớp từ khoá, trong 3 giờ qua
+export function relatedNews(items, words, now = Date.now()) {
+  const re = new RegExp(`\\b(${words})`, "i");
+  return items.filter(x => now - x.t < 3 * 3600e3 && re.test(x.title));
+}
+export const REGIONS = [{ id: "", name: "Mọi nơi" }, { id: "us", name: "Mỹ" }, { id: "eu", name: "Châu Âu" }, { id: "asia", name: "Châu Á" }];
 const sign = v => v > 0 ? "up" : v < 0 ? "dn" : "";
 const pct = (v, bp) => v == null ? "–" : `${v > 0 ? "+" : ""}${bp ? v.toFixed(1) + "bp" : v.toFixed(2) + "%"}`;
 
@@ -77,15 +120,35 @@ export function avgReaction(events, assets) {
 }
 
 export function initNews({ $, esc, alerts, coin }) {
-  let cal = null, news = null, react = null, onlyCoin = false, cat = "", sel = null, dg = { at: 0, sent: [] }; const firedEv = new Set();
-  try { cat = sessionStorage.getItem("lailong.newscat") || ""; } catch { /* bỏ qua */ }
+  let cal = null, news = null, react = null, movers = null, onlyCoin = false, cat = "", region = "", calMode = "today", calHi = false, sel = null, dg = { at: 0, sent: [] };
+  const firedEv = new Set(), seenAct = new Set(), firedMove = new Map();
+  try { cat = sessionStorage.getItem("lailong.newscat") || ""; region = sessionStorage.getItem("lailong.newsregion") || ""; } catch { /* bỏ qua */ }
   try { dg = { ...dg, ...JSON.parse(localStorage.getItem(DIGEST) || "{}") }; } catch { /* chế độ riêng tư */ }
   if (!Array.isArray(dg.sent)) dg.sent = [];
+  let first = true;
   async function load() {
-    const get = async u => { try { return await getJson(`${u}?t=${Math.floor(Date.now() / 60e3)}`); } catch { return null; } };
-    const [c, n, r] = await Promise.all([get("data/calendar.json"), get("data/news.json"), get("data/reactions.json")]);
-    if (c) cal = c; if (n) news = { ...n, items: n.items.filter(x => !isVN(x)) }; if (r) react = r;
+    const [c, n, r, m] = await Promise.all(["calendar.json", "news.json", "reactions.json", "movers.json"].map(f => liveJson(f).catch(() => null)));
+    if (c) cal = c; if (n) news = { ...n, items: n.items.filter(x => !isVN(x)) }; if (r) react = r; if (m) movers = m;
+    notifyActuals(); notifyMovers(); first = false;
     render(); tick(); digest();
+  }
+  // số thực tế vừa có của tin mạnh: kêu một lần (lần tải đầu chỉ ghi nhớ, không kêu)
+  function notifyActuals() {
+    if (!cal) return;
+    for (const e of cal.events) {
+      if (!e.actual) continue;
+      const k = `${e.t}|${e.country}|${e.title}`; if (seenAct.has(k)) continue; seenAct.add(k);
+      if (first || e.impact !== "High" || Date.now() - e.t > 3600e3 || !alerts.cfg.newsEv) continue;
+      const c = compareActual(e);
+      alerts.fire("act" + k, `${FLAG[e.country] ? FLAG[e.country] + " " : ""}${e.country} ${e.title}: thực tế ${e.actual}, dự báo ${e.forecast || "-"}, kỳ trước ${e.previous || "-"}${c ? ` (${c.text.toLowerCase()})` : ""}`, "price");
+    }
+  }
+  function notifyMovers() {
+    if (!movers || !alerts.cfg.newsHot) return;
+    for (const a of movers.alerts || []) {
+      if (Date.now() - (firedMove.get(a.name) || 0) < 3600e3) continue; firedMove.set(a.name, Date.now());
+      if (!first) alerts.fire("move" + a.name, `Biến động bất thường: ${a.name} ${a.chg30 > 0 ? "+" : ""}${a.chg30.toFixed(2)}% trong 30 phút`, a.chg30 > 0 ? "up" : "down");
+    }
   }
   // bản tin nóng qua Telegram: tối đa một bản mỗi 30 phút, mỗi tin chỉ gửi một lần
   function digest() {
@@ -110,16 +173,39 @@ export function initNews({ $, esc, alerts, coin }) {
     if (alerts.cfg.newsEv && min <= 15 && min >= 0 && !firedEv.has(next.t + next.title) && firedEv.add(next.t + next.title)) alerts.fire("ev" + next.t + next.title, `Còn ${min} phút nữa ra tin ${FLAG[next.country] ? FLAG[next.country] + " " : ""}${next.country} ${next.title}${viName(next.title) ? ` (${viName(next.title)})` : ""}. Cân nhắc đứng ngoài.`, "price");
   }
 
-  const newsRow = x => `<a class="newsit${x.hot ? " hot" : ""}" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer"><span class="nt">${fmtTime(x.t, true).slice(0, 11)} · ${esc(x.source)}${x.cat && !cat ? " · " + esc((CATS.find(c => c.id === x.cat) || {}).name || "") : ""}${x.coins && x.coins.length ? " · " + esc(x.coins.join(", ")) : ""}</span>${x.hot ? "🔥 " : ""}${esc(x.title)}</a>`;
+  const RG = { asia: "Châu Á", eu: "Châu Âu", us: "Mỹ" };
+  const newsRow = x => `<a class="newsit${x.hot ? " hot" : ""}" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer"><span class="nt">${Date.now() - x.t < 15 * 60e3 ? `<b class="nnew">MỚI</b> ` : ""}${x.region ? `<b class="nrg ${x.region}">${RG[x.region]}</b> ` : ""}${fmtTime(x.t, true).slice(0, 11)} · ${esc(x.source)}${x.cat && !cat ? " · " + esc((CATS.find(c => c.id === x.cat) || {}).name || "") : ""}${x.coins && x.coins.length ? " · " + esc(x.coins.join(", ")) : ""}</span>${x.hot ? "🔥 " : ""}${esc(x.title)}</a>`;
 
+  const CAL_MODES = [["today", "Hôm nay"], ["week", "Tuần này"], ["next", "Tuần sau"]];
+  const left = ms => { const m = Math.max(1, Math.round(ms / 60e3)); return `còn ${m >= 60 ? Math.floor(m / 60) + " giờ " : ""}${m % 60 ? (m % 60) + " phút" : ""}`.trim(); };
   function renderCal() {
     const cb = $("calBody"); if (!cb) return;
-    const evs = upcoming(), hasAct = evs.some(e => e.actual);
-    cb.innerHTML = !cal ? `<div class="empty">Chưa tải được lịch kinh tế.</div>` : !evs.length ? `<div class="empty">Không có sự kiện mạnh nào trong tuần này.</div>` :
-      `<table><thead><tr><th>Lúc</th><th>Sự kiện</th><th>Dự báo</th><th>Kỳ trước</th>${hasAct ? "<th>Thực tế</th>" : ""}</tr></thead><tbody>` + evs.slice(0, 60).map(e => {
-        const past = e.t < Date.now(), soon = !past && e.t - Date.now() < 3 * 3600e3;
-        return `<tr class="${past ? "muted" : ""}${soon ? " evsoon" : ""}"><td>${fmtDate(e.t).slice(0, 16)}</td><td class="t"><span class="imp ${e.impact === "High" ? "hi" : "md"}"></span>${FLAG[e.country] || esc(e.country)} ${esc(e.title)}${viName(e.title) ? ` <small class="muted">${viName(e.title)}</small>` : ""}</td><td>${esc(e.forecast || "-")}</td><td>${esc(e.previous || "-")}</td>${hasAct ? `<td>${esc(e.actual || "-")}</td>` : ""}</tr>`;
-      }).join("") + `</tbody></table>`;
+    const now = Date.now(), tabs = $("calTabs");
+    if (tabs) tabs.innerHTML = CAL_MODES.map(([id, nm]) => `<button class="${id === calMode ? "on" : ""}" data-cal="${id}">${nm}</button>`).join("") + `<button class="${calHi ? "on" : ""}" data-cal="hi">Chỉ tin mạnh</button>`;
+    const evs = cal ? calRange(cal.events, calMode, now, calHi) : [];
+    if (!cal) { cb.innerHTML = `<div class="empty">Chưa tải được lịch kinh tế.</div>`; return; }
+    if (!evs.length) { cb.innerHTML = `<div class="empty">${calMode === "today" ? "Hôm nay không có tin mạnh nào. Bấm Tuần này để xem cả tuần." : calMode === "next" ? "Lịch tuần sau chưa có (ForexFactory thường đăng vào cuối tuần)." : "Không có sự kiện nào."}</div>`; return; }
+    cb.innerHTML = `<table class="caltab"><thead><tr><th>Giờ</th><th>Nước</th><th>Mức</th><th>Tin</th><th class="r">Thực tế</th><th class="r">Dự báo</th><th class="r">Kỳ trước</th><th>So với dự báo</th><th class="r">Giá phản ứng 15 phút</th></tr></thead><tbody>` + evs.slice(0, 120).map(e => {
+      const past = e.t <= now, just = e.actual && now - e.t < 45 * 60e3, soon = !past && e.t - now < 3600e3, c = compareActual(e), rx = reaction15(react, e);
+      const act = e.actual ? `<b class="${c ? c.cls : ""}">${esc(e.actual)}</b>` : past && now - e.t < 3 * 3600e3 && (e.forecast || e.previous) ? `<span class="calwait">đang chờ số</span>` : `<span class="muted">–</span>`;
+      const cmp = c ? `<span class="cmp ${c.cls}">${esc(c.text)}</span>` : !past ? `<span class="muted">${left(e.t - now)}</span>` : "";
+      return `<tr class="${just ? "caljust" : past && !e.actual ? "" : past ? "calpast" : ""}${soon ? " evsoon" : ""}"><td>${calMode === "today" ? fmtTime(e.t).slice(0, 5) : fmtDate(e.t).slice(0, 16)}${just ? ` <span class="calnew">VỪA RA</span>` : ""}</td><td>${FLAG[e.country] || ""} ${esc(e.country)}</td><td><span class="imp3 ${e.impact === "High" ? "hi" : "md"}">${e.impact === "High" ? "●●●" : "●●○"}</span></td><td class="t">${esc(e.title)}${viName(e.title) ? ` <small class="muted">${viName(e.title)}</small>` : ""}</td><td class="r">${act}</td><td class="r">${esc(e.forecast || "–")}</td><td class="r muted">${esc(e.previous || "–")}</td><td>${cmp}</td><td class="r">${rx.length ? rx.map(x => `${esc(x.a)} <span class="${sign(x.v)}">${pct(x.v, x.a.startsWith("Lợi suất"))}</span>`).join(" · ") : `<span class="muted">–</span>`}</td></tr>`;
+    }).join("") + `</tbody></table>`;
+    setFresh($("calFresh"), "delay", cal.updated, { label: "Lịch kinh tế", expect: 15 * 60e3, note: "Lịch ForexFactory, số thực tế lấy từ Nasdaq và FXStreet. Bản web làm mới vài phút một lần, số thực tế thường có trong 2–5 phút sau giờ ra tin" });
+  }
+
+  function renderMovers() {
+    const box = $("moverAlert"), q = $("moverQuotes");
+    const al = movers ? movers.alerts || [] : [];
+    if (box) {
+      box.hidden = !al.length;
+      if (al.length) {
+        const words = al.map(a => a.words).join("|"), rel = news ? relatedNews(news.items, words) : [];
+        box.innerHTML = `<b>⚡ Biến động bất thường</b> · ${fmtTime(movers.updated).slice(0, 5)} · ${al.map(a => `<b class="${a.chg30 > 0 ? "up" : "dn"}">${esc(a.name)} ${a.chg30 > 0 ? "+" : ""}${a.chg30.toFixed(2)}%</b>`).join(" · ")} trong 30 phút <span class="muted">· tự phát hiện từ giá, không chờ báo đưa tin${rel.length ? ` · ${rel.length} tin liên quan` : " · chưa có tin liên quan"}</span>` +
+          (rel.length ? `<div class="mvrel">${rel.slice(0, 5).map(newsRow).join("")}</div>` : "");
+      }
+    }
+    if (q) q.innerHTML = !movers ? `<div class="empty">Chưa tải được giá các chỉ số.</div>` : `<table class="mvtab"><tbody>${movers.quotes.map(x => `<tr${(movers.alerts || []).some(a => a.name === x.name) ? ` class="mvhot"` : ""}><td>${esc(x.name)}</td><td class="r ${sign(x.chg30)}" title="30 phút">${pct(x.chg30)}</td><td class="r ${sign(x.chgDay)} muted" title="Từ đầu phiên">${pct(x.chgDay)}</td></tr>`).join("")}</tbody></table><p class="note">Cột đầu: 30 phút qua · cột sau: từ đầu phiên. Giá Yahoo, có mã trễ tới 15–20 phút. Báo động khi vượt ngưỡng riêng của từng mã (chỉ số 1,2–1,5%, USD 0,5%, dầu 2%, BTC 2,5%).</p>`;
   }
 
   function renderNews() {
@@ -129,9 +215,12 @@ export function initNews({ $, esc, alerts, coin }) {
     $("newsTabs").innerHTML = [{ id: "", name: "Tất cả", icon: "" }, ...CATS].map(k => `<button class="${k.id === cat ? "on" : ""}" data-cat="${k.id}">${k.icon ? k.icon + " " : ""}${k.name}${k.id && counts[k.id] ? ` <small>${counts[k.id]}</small>` : ""}</button>`).join("");
     $("newsOnly").hidden = cat !== "crypto";
     $("newsOnly").textContent = onlyCoin ? `Chỉ tin về ${c}` : "Mọi coin";
-    const items = news ? news.items.filter(x => (!cat || (x.cat || "crypto") === cat) && (cat !== "crypto" || !onlyCoin || (x.coins || []).includes(c))) : [];
-    nb.innerHTML = !news ? `<div class="empty">Chưa tải được tin.</div>` : !items.length ? `<div class="empty">Không có tin nào trong mục này.</div>` : items.slice(0, 60).map(newsRow).join("");
-    setFresh($("newsUpd"), "delay", news ? news.updated : cal ? cal.updated : null, { label: "Tin và lịch: làm mới mỗi 30 phút", expect: 2 * 3600e3, note: `51 nguồn RSS quốc tế (không dùng nguồn Việt Nam), bản web do máy chủ GitHub gom mỗi 30 phút, bản laptop gom mỗi 10 phút.${cal ? ` Lịch cập nhật ${fmtTime(cal.updated)}.` : ""} Tin mới nhất có thể trễ tới 30 phút so với nguồn` });
+    const rt = $("regionTabs");
+    if (rt) rt.innerHTML = REGIONS.map(r => `<button class="${r.id === region ? "on" : ""}" data-region="${r.id}">${r.name}</button>`).join("");
+    const items = news ? news.items.filter(x => (!cat || (x.cat || "crypto") === cat) && (!region || x.region === region) && (cat !== "crypto" || !onlyCoin || (x.coins || []).includes(c))) : [];
+    const fresh = news ? news.items.filter(x => Date.now() - x.t < 15 * 60e3).length : 0;
+    nb.innerHTML = !news ? `<div class="empty">Chưa tải được tin.</div>` : !items.length ? `<div class="empty">Không có tin nào trong mục này.</div>` : items.slice(0, 150).map(newsRow).join("");
+    setFresh($("newsUpd"), "delay", news ? news.updated : null, { label: `Tin tức${fresh ? ` · ${fresh} tin trong 15 phút qua` : ""}`, expect: 15 * 60e3, note: `Khoảng 60 nguồn quốc tế, có báo châu Á tiếng Anh (không dùng nguồn Việt Nam). Bản web làm mới 2–3 phút một lần, bản laptop 3 phút` });
   }
 
   // bản đồ tác động: mỗi ô là một chủ đề, ô càng đỏ càng nóng, ô to là 3 chủ đề nóng nhất
@@ -189,7 +278,7 @@ export function initNews({ $, esc, alerts, coin }) {
       avg.sort((a, b) => (b.avg.DXY || 0) - (a.avg.DXY || 0)).map(x => `<tr><td class="t">${FLAG[x.country] || esc(x.country)} ${esc(x.title)}</td><td>${x.n}</td>${react.assets.map(a => `<td>${x.avg[a] == null ? "–" : (a.startsWith("Lợi suất") ? x.avg[a].toFixed(1) + "bp" : x.avg[a].toFixed(2) + "%")}</td>`).join("")}</tr>`).join("") + `</tbody></table></div>` : "");
   }
 
-  function render() { renderCal(); renderNews(); renderMap(); renderReact(); }
+  function render() { renderCal(); renderNews(); renderMovers(); renderMap(); renderReact(); }
 
   // xem nhanh khi rê chuột lên ô
   const pop = document.createElement("div"); pop.className = "impop"; pop.hidden = true; document.body.appendChild(pop);
@@ -213,6 +302,10 @@ export function initNews({ $, esc, alerts, coin }) {
   }
   $("newsTabs").onclick = e => { const b = e.target.closest("[data-cat]"); if (!b) return; cat = b.dataset.cat; try { sessionStorage.setItem("lailong.newscat", cat); } catch { /* bỏ qua */ } renderNews(); };
   $("newsOnly").onclick = () => { onlyCoin = !onlyCoin; renderNews(); };
-  load(); setInterval(load, 5 * 60e3); setInterval(tick, 30e3);
+  if ($("regionTabs")) $("regionTabs").onclick = e => { const b = e.target.closest("[data-region]"); if (!b) return; region = b.dataset.region; try { sessionStorage.setItem("lailong.newsregion", region); } catch { /* bỏ qua */ } renderNews(); };
+  if ($("calTabs")) $("calTabs").onclick = e => { const b = e.target.closest("[data-cal]"); if (!b) return; if (b.dataset.cal === "hi") calHi = !calHi; else calMode = b.dataset.cal; renderCal(); };
+  // làm mới mỗi 2 phút; tab đang ẩn thì thôi, quay lại tab là tải ngay
+  load(); setInterval(() => { if (!document.hidden) load(); }, 2 * 60e3); setInterval(() => { tick(); renderCal(); }, 30e3);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
   return { render, load, events: () => cal ? cal.events : [], reactions: () => react };
 }

@@ -72,6 +72,22 @@ FEEDS = [
     ("NYT", "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml", "fin"),
     ("Investing.com", "https://www.investing.com/rss/news_1.rss", "fin"),
     ("Google News", GN + "site:reuters.com+markets+when:1d", "fin"),
+    # châu Á (báo tiếng Anh): để phiên Nhật, Hàn, Hồng Kông, Trung Quốc mở cửa có tin ngay
+    ("Nikkei Asia", "https://asia.nikkei.com/rss/feed/nar", "fin"),
+    ("Japan Times", "https://www.japantimes.co.jp/business/feed/", "fin"),
+    ("Yonhap", "https://en.yna.co.kr/RSS/economy.xml", "fin"),
+    ("Yonhap", "https://en.yna.co.kr/RSS/market.xml", "fin"),
+    ("SCMP", "https://www.scmp.com/rss/92/feed", "fin"),
+    ("Straits Times", "https://www.straitstimes.com/news/business/rss.xml", "fin"),
+    (
+        "Economic Times",
+        "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
+        "fin",
+    ),
+    ("Google News", GN + "kospi+OR+kosdaq+OR+%22korean+won%22+when:1d", "fin"),
+    ("Google News", GN + "nikkei+OR+topix+OR+%22japanese+yen%22+when:1d", "fin"),
+    ("Google News", GN + "%22hang+seng%22+OR+%22shanghai+composite%22+OR+yuan+when:1d", "fin"),
+    ("Google News", GN + "%22asian+stocks%22+OR+%22asian+markets%22+when:1d", "fin"),
     # kim loại
     ("Google News", GN + "gold+OR+silver+OR+copper+OR+platinum+price+when:2d", "metal"),
     ("Mining.com", "https://www.mining.com/feed/", "metal"),
@@ -126,6 +142,46 @@ def is_vietnamese(item: dict) -> bool:
 
 
 CATS = ["econ", "fin", "metal", "energy", "geo", "crypto"]
+
+# khu vực của tin: theo nguồn trước, rồi theo từ khoá trong tiêu đề
+ASIA_SOURCES = {
+    "Nikkei Asia",
+    "Japan Times",
+    "Yonhap",
+    "SCMP",
+    "Straits Times",
+    "Economic Times",
+    "BoJ",
+}
+EU_SOURCES = {"ECB", "BoE", "DW", "Financial Times"}
+REGION_WORDS = [
+    (
+        "asia",
+        r"\b(asia\w*|japan\w*|nikkei|topix|yen|boj|korea\w*|kospi|kosdaq|seoul|china|chinese|"
+        r"beijing|yuan|pboc|hang seng|hong kong|shanghai|taiwan\w*|india\w*|sensex|nifty|singapore|"
+        r"australia\w*|asx|rba)\b",
+    ),
+    (
+        "eu",
+        r"\b(europe\w*|euro ?zone|ecb|lagarde|germany|german|dax|france|french|cac|italy|britain|"
+        r"british|uk|boe|ftse|stoxx|swiss|snb)\b",
+    ),
+    ("us", r"\b(fed|fomc|powell|wall street|s&p|nasdaq|dow|treasur\w*|u\.s\b|america\w*)\b"),
+]
+
+
+def region_of(source: str, title: str) -> str:
+    """'asia', 'eu', 'us' hoặc '' (toàn cầu / không rõ)."""
+    if source in ASIA_SOURCES:
+        return "asia"
+    if source in EU_SOURCES:
+        return "eu"
+    for rg, pat in REGION_WORDS:
+        if re.search(pat, title, re.I):
+            return rg
+    return ""
+
+
 # thứ tự ưu tiên khi một tin khớp nhiều mục
 CAT_WORDS = [
     ("metal", r"\b(gold|silver|copper|platinum|palladium|bullion|precious metal|lithium|nickel)\b"),
@@ -365,6 +421,16 @@ def _get(url: str, timeout: float = 15) -> bytes:
 
 
 def fetch_calendar() -> dict:
+    evs, errors = fetch_calendar_raw()
+    try:  # lịch ForexFactory không có số thực tế: bù từ FXStreet, rồi Nasdaq
+        errors += fill_actuals(evs)
+    except Exception as exc:
+        errors.append(f"số thực tế: {exc}")
+    return {"updated": int(time.time() * 1000), "events": evs, "errors": errors}
+
+
+def fetch_calendar_raw() -> tuple[list[dict], list[str]]:
+    """Lịch tuần này và tuần sau của ForexFactory, chưa có số thực tế."""
     events, errors = [], []
     for url in CALENDAR_URLS:
         try:
@@ -389,12 +455,7 @@ def fetch_calendar() -> dict:
         except Exception as exc:  # tuần sau đôi khi chưa có
             errors.append(f"{url.rsplit('/', 1)[-1]}: {exc}")
     uniq = {(e["t"], e["title"], e["country"]): e for e in events}
-    evs = sorted(uniq.values(), key=lambda e: e["t"])
-    try:  # lịch ForexFactory không có số thực tế: bù từ FXStreet, rồi Nasdaq
-        errors += fill_actuals(evs)
-    except Exception as exc:
-        errors.append(f"số thực tế: {exc}")
-    return {"updated": int(time.time() * 1000), "events": evs, "errors": errors}
+    return sorted(uniq.values(), key=lambda e: e["t"]), errors
 
 
 # ---------- số thực tế của tin đã ra ----------
@@ -558,12 +619,18 @@ def match_actuals(events: list[dict], found: list[dict]) -> int:
     return n
 
 
-def fill_actuals(events: list[dict], now_ms: int | None = None) -> list[str]:
+def fill_actuals(
+    events: list[dict], now_ms: int | None = None, window_ms: int | None = None
+) -> list[str]:
+    """window_ms: chỉ tìm số cho tin ra trong khoảng này trở lại (vòng cập nhật nhanh dùng để khỏi gọi thừa)."""
     now_ms = now_ms or int(time.time() * 1000)
     need = [
         e
         for e in events
-        if not e.get("actual") and e["t"] < now_ms - 60_000 and e["impact"] in ("High", "Medium")
+        if not e.get("actual")
+        and e["t"] < now_ms - 60_000
+        and (window_ms is None or e["t"] > now_ms - window_ms)
+        and e["impact"] in ("High", "Medium")
     ]
     if not need:
         return []
@@ -669,6 +736,7 @@ def _one_feed(feed) -> tuple[list[dict], str | None]:
             {
                 "t": _when(pub),
                 "title": title,
+                "region": region_of(src if src in ASIA_SOURCES | EU_SOURCES else source, title),
                 "link": link,
                 "source": src,
                 "cat": cat,
@@ -680,7 +748,7 @@ def _one_feed(feed) -> tuple[list[dict], str | None]:
     return items, None
 
 
-def fetch_news(per_cat: int = 80) -> dict:
+def fetch_news(per_cat: int = 150) -> dict:
     """Lấy mọi nguồn cùng lúc (16 luồng): nguồn chậm hay bị chặn không làm chậm nguồn khác."""
     items, errors = [], []
     with ThreadPoolExecutor(16) as ex:
