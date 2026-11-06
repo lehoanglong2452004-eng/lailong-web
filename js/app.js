@@ -1,60 +1,60 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611062129";
-import { MarketState, Book } from "./market.js?v=202611062129";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611062129";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611062129";
-import { FlowChart } from "./flowchart.js?v=202611062129";
-import { LiqHeatChart } from "./liqchart.js?v=202611062129";
-import { liqHeat, LIQ_MODELS, LIQ_RANGES } from "./liqheat.js?v=202611062129";
-import { Dom } from "./dom.js?v=202611062129";
-import { srLevels, abnormalVolume, liquidationMap, summary, volumeProfile, isDeltaApprox, biasSummary } from "./analytics.js?v=202611062129";
-import { initBacktest } from "./backtestview.js?v=202611062129";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611062129";
-import { absorption, absorptionStats, clusterSearch } from "./orderflow.js?v=202611062129";
-import { Tape } from "./tape.js?v=202611062129";
-import { LiqMap } from "./liqmap.js?v=202611062129";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611062129";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611062129";
-import { FlowMarks } from "./bmind.js?v=202611062129";
-import { Replay } from "./replay.js?v=202611062129";
-import { Alerts } from "./alerts.js?v=202611062129";
-import { venueDerivs, deribitOptions } from "./derivs.js?v=202611062129";
-import { setVenue, getVenue, venueName } from "./venue.js?v=202611062129";
-import { initNews } from "./newsview.js?v=202611062129";
-import { initSocial } from "./socialview.js?v=202611062129";
-import { initDepth } from "./depthview.js?v=202611062129";
-import { initMarkets } from "./marketsview.js?v=202611062129";
-import { initTgBot } from "./tgbot.js?v=202611062129";
-import { initInst } from "./instview.js?v=202611062129";
-import { setFresh, tickFresh } from "./fresh.js?v=202611062129";
-import { initRadar } from "./radarview.js?v=202611062129";
-import { Drawings } from "./drawings.js?v=202611062129";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611062129";
-import { PaperBroker } from "./paper.js?v=202611062129";
-import { OrderLines } from "./orderlines.js?v=202611062129";
-import { MultiChart } from "./multichart.js?v=202611062129";
-import { DOM_COLS } from "./dom.js?v=202611062129";
-import { initFractal } from "./fractalview.js?v=202611062129";
-import { initJournal } from "./journalview.js?v=202611062129";
-import { installHealth, clockSkew } from "./health.js?v=202611062129";
-import { initHealth } from "./healthview.js?v=202611062129";
-import { initFlows } from "./flowsview.js?v=202611062129";
-import { initPerf } from "./perfview.js?v=202611062129";
-import { initShock } from "./shockview.js?v=202611062129";
-import { initCompass } from "./compassview.js?v=202611062129";
-import { initConsensus } from "./consensusview.js?v=202611062129";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202611062129";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611062129";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611062129";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611062129";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611062129";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202611062129";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611062129";
-import { mountLang } from "./lang.js?v=202611062129";
-import { initI18n } from "./i18n.js?v=202611062129";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611062129";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611062257";
+import { MarketState, Book } from "./market.js?v=202611062257";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611062257";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611062257";
+import { FlowChart } from "./flowchart.js?v=202611062257";
+import { LiqHeatChart } from "./liqchart.js?v=202611062257";
+import { liqHeat, LIQ_MODELS, LIQ_RANGES } from "./liqheat.js?v=202611062257";
+import { Dom } from "./dom.js?v=202611062257";
+import { srLevels, abnormalVolume, liquidationMap, summary, isDeltaApprox, biasSummary } from "./analytics.js?v=202611062257";
+import { initBacktest } from "./backtestview.js?v=202611062257";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611062257";
+import { absorption, clusterSearch } from "./orderflow.js?v=202611062257";
+import { Tape } from "./tape.js?v=202611062257";
+import { LiqMap } from "./liqmap.js?v=202611062257";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611062257";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611062257";
+import { FlowMarks } from "./bmind.js?v=202611062257";
+import { Replay } from "./replay.js?v=202611062257";
+import { Alerts } from "./alerts.js?v=202611062257";
+import { venueDerivs, deribitOptions } from "./derivs.js?v=202611062257";
+import { setVenue, getVenue, venueName } from "./venue.js?v=202611062257";
+import { initNews } from "./newsview.js?v=202611062257";
+import { initSocial } from "./socialview.js?v=202611062257";
+import { initDepth } from "./depthview.js?v=202611062257";
+import { initMarkets } from "./marketsview.js?v=202611062257";
+import { initTgBot } from "./tgbot.js?v=202611062257";
+import { initInst } from "./instview.js?v=202611062257";
+import { setFresh, tickFresh } from "./fresh.js?v=202611062257";
+import { initRadar } from "./radarview.js?v=202611062257";
+import { Drawings } from "./drawings.js?v=202611062257";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611062257";
+import { PaperBroker } from "./paper.js?v=202611062257";
+import { OrderLines } from "./orderlines.js?v=202611062257";
+import { MultiChart } from "./multichart.js?v=202611062257";
+import { DOM_COLS } from "./dom.js?v=202611062257";
+import { initFractal } from "./fractalview.js?v=202611062257";
+import { initJournal } from "./journalview.js?v=202611062257";
+import { installHealth, clockSkew } from "./health.js?v=202611062257";
+import { initHealth } from "./healthview.js?v=202611062257";
+import { initFlows } from "./flowsview.js?v=202611062257";
+import { initPerf } from "./perfview.js?v=202611062257";
+import { initShock } from "./shockview.js?v=202611062257";
+import { initCompass } from "./compassview.js?v=202611062257";
+import { initConsensus } from "./consensusview.js?v=202611062257";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202611062257";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611062257";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611062257";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611062257";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611062257";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202611062257";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611062257";
+import { mountLang } from "./lang.js?v=202611062257";
+import { initI18n } from "./i18n.js?v=202611062257";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611062257";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
@@ -511,18 +511,7 @@ async function renderAnalysis() {
 async function renderAnalysisNow() {
   if (!analysis) { $("mtfTable").innerHTML = `<div class="empty">Đang tải dữ liệu...</div>`; return; }
   const dec = decimalsFor(market.tick || market.fpStep), last = market.bars[market.bars.length - 1].c;
-  $("srInfo").textContent = `khung ${S.interval}, giá ${last.toFixed(dec)}`;
   setFresh($("fsMtf"), S.ex === "SIM" ? "delay" : "live", Date.now(), { label: S.ex === "SIM" ? "Dữ liệu giả lập" : `Trực tiếp (${ex().name})`, expect: 5 * 60e3, note: "Nến lấy thẳng từ sàn; các khung được tải lại tối đa mỗi 60 giây khi đang mở Phân tích" });
-  $("srTable").innerHTML = table(["Mức giá", "Loại", "Khoảng cách", ["Số lần chạm", "sr-touches"], ["Số lần test", "sr-tests"], "Test gần nhất", ["Trạng thái", "sr-status"], ["Độ mạnh", "sr-strength"]],
-    analysis.levels.slice().sort((a, b) => b.price - a.price).map(l => `<tr><td>${l.price.toFixed(dec)}</td><td class="t ${l.kind === "support" ? "pos" : "neg"}">${l.kind === "support" ? "Hỗ trợ" : "Kháng cự"}</td><td>${fmtPct(l.distancePct)}</td><td>${l.touches}</td><td>${l.tests}</td><td>${l.lastTestT ? fmtDate(l.lastTestT) : "-"}</td><td class="t">${l.flipped ? "Đã đảo vai" : l.broken ? "Đã bị phá" : "Còn giữ"}</td><td><span class="bar"><i style="left:0;width:${l.strength}%;background:var(--accent)"></i></span>${l.strength.toFixed(0)}</td></tr>`),
-    "Chưa đủ dữ liệu.");
-  $("zoneTable").innerHTML = table(["Thời gian", ["Phía", "aggressor"], "Vùng giá", ["Độ lệch", "sigma"], "Khối lượng", ["Trạng thái", "zone-status"]],
-    analysis.zonesAll.slice(-25).reverse().map(z => `<tr><td>${fmtDate(z.t)}</td><td class="t ${z.side === "buy" ? "pos" : "neg"}">${z.side === "buy" ? "Mua chủ động" : "Bán chủ động"}</td><td>${z.low.toFixed(dec)} – ${z.high.toFixed(dec)}</td><td>${z.z.toFixed(1)}σ</td><td>${fmtVol(z.volume)}</td><td class="t">${z.active ? "Còn hiệu lực" : "Đã bị xuyên qua"}</td></tr>`),
-    "Không có nến khối lượng bất thường trong dữ liệu đã tải.");
-  renderAbsorptionCard();
-  const vp = volumeProfile(market.bars.slice(-500));
-  const near = (arr, n) => arr.slice().sort((a, b) => Math.abs(a - last) - Math.abs(b - last)).slice(0, n).sort((a, b) => b - a).map(x => x.toFixed(dec)).join(", ") || "-";
-  $("vpStats").innerHTML = `<div class="kv"><span>Phạm vi</span><b>500 nến ${S.interval} gần nhất</b><span data-g="poc">POC (giá nhiều KL nhất)</span><b>${vp.poc == null ? "-" : vp.poc.toFixed(dec)}</b><span data-g="value-area">Vùng giá trị 70%</span><b>${vp.val == null ? "-" : vp.val.toFixed(dec) + " – " + vp.vah.toFixed(dec)}</b><span data-g="hvn">Nút khối lượng cao (HVN)</span><b>${near(vp.hvn, 6)}</b><span data-g="lvn">Nút khối lượng thấp (LVN)</span><b>${near(vp.lvn, 6)}</b></div><p class="note">HVN thường là vùng giá dễ bị hút về và đi ngang; LVN là vùng giá dễ chạy nhanh qua.</p>`;
   renderDvol(); renderDerivs(); newsView.render();
   const tfs = ["5m", "15m", "1h", "4h", "1d"], rows = [], sums = [];
   const got = await Promise.allSettled(tfs.map(tfBars));
@@ -549,33 +538,33 @@ function renderBias(b, dec) {
   const lv = (l, name, c) => l ? `<span class="${c}">${name} ${l.price.toFixed(dec)} · độ mạnh ${l.strength.toFixed(0)}</span>` : "";
   $("biasLv").innerHTML = lv(b.support, "HT gần", "pos") + lv(b.resistance, "KC gần", "neg");
 }
-{ // tab con của Phân tích: mỗi khối gắn data-at với các tab nó thuộc về; nhớ tab đang chọn trong phiên
-  let at = "overview"; try { at = sessionStorage.getItem("lailong.atab") || at; } catch { /* bỏ qua */ }
-  if (![...$("aTabs").children].some(b => b.dataset.at === at)) at = "overview"; // tab Tin tức đã thành trang riêng
-  const apply = () => {
-    for (const b of $("aTabs").children) b.classList.toggle("on", b.dataset.at === at);
-    for (const sec of document.querySelectorAll("#view-analysis section[data-at]")) sec.hidden = !sec.dataset.at.split(" ").includes(at);
-    $("biasCard").hidden = at !== "overview";
-    try { sessionStorage.setItem("lailong.atab", at); } catch { /* bỏ qua */ }
-  };
-  $("aTabs").onclick = e => { const b = e.target.closest("[data-at]"); if (b) { at = b.dataset.at; apply(); } };
-  apply();
+// tab con của Phân tích: mỗi khối gắn data-at với các tab nó thuộc về; nhớ tab đang chọn trong phiên.
+// Mục Thị trường (trước là trang riêng) chỉ tải dữ liệu khi đang mở.
+let aTab = "overview"; try { aTab = sessionStorage.getItem("lailong.atab") || aTab; } catch { /* bỏ qua */ }
+if (![...$("aTabs").children].some(b => b.dataset.at === aTab)) aTab = "overview"; // tab Tin tức, Mức giá đã bỏ
+function syncMarkets() { if (S.view === "analysis" && aTab === "markets") marketsView.show(); else marketsView.hide(); }
+function anTab(at) {
+  if (at) aTab = at;
+  for (const b of $("aTabs").children) b.classList.toggle("on", b.dataset.at === aTab);
+  for (const sec of document.querySelectorAll("#view-analysis section[data-at]")) sec.hidden = !sec.dataset.at.split(" ").includes(aTab);
+  $("biasCard").hidden = aTab !== "overview";
+  $("view-markets").hidden = aTab !== "markets";
+  try { sessionStorage.setItem("lailong.atab", aTab); } catch { /* bỏ qua */ }
+  if (typeof marketsView !== "undefined") syncMarkets();
 }
+// tab con của Tin tức: Tin tức (lịch kinh tế, tin, bản đồ tác động) và Mạng xã hội
+let nTabCur = "news"; try { nTabCur = sessionStorage.getItem("lailong.ntab") === "social" ? "social" : "news"; } catch { /* bỏ qua */ }
+function nTab(t) {
+  if (t) nTabCur = t;
+  for (const b of $("nTabs").children) b.classList.toggle("on", b.dataset.nt === nTabCur);
+  $("newsPane").hidden = nTabCur !== "news"; $("view-social").hidden = nTabCur !== "social";
+  try { sessionStorage.setItem("lailong.ntab", nTabCur); } catch { /* bỏ qua */ }
+  if (S.view === "news" && typeof socialView !== "undefined") { if (nTabCur === "social") socialView.render(); else newsView.render(); }
+}
+$("nTabs").onclick = e => { const b = e.target.closest("[data-nt]"); if (b) nTab(b.dataset.nt); };
+$("aTabs").onclick = e => { const b = e.target.closest("[data-at]"); if (b) anTab(b.dataset.at); };
+anTab(); nTab();
 
-const absCache = new Map();
-async function renderAbsorptionCard() {
-  const rows = [], tfs = ["5m", "15m", "1h", "4h", "1d"], got = await Promise.allSettled(tfs.map(tfBars));
-  for (const [j, tf] of tfs.entries()) {
-    let c;
-    if (tf === S.interval) c = { ev: absorb, bars: market.bars };
-    else if (got[j].status === "rejected") { rows.push(`<tr><td>${tf}</td><td colspan="7" class="t muted">Lỗi: ${esc(got[j].reason.message)}</td></tr>`); continue; }
-    else { const bars = got[j].value, ck = `${S.ex}:${S.symbol}:${tf}`, old = absCache.get(ck); c = old && old.bars === bars ? old : { ev: absorption(bars), bars }; absCache.set(ck, c); }
-    const st = absorptionStats(c.ev), last = c.ev[c.ev.length - 1], dec = decimalsFor(market.tick || 0.01), pct = g => isFinite(g.pct) ? `${g.pct.toFixed(0)}%` : "-";
-    rows.push(`<tr><td>${tf}${tf === S.interval ? " ★" : ""}</td><td>${c.bars.length}</td><td class="neg">${st.sell.n}</td><td class="pos">${pct(st.sell)}</td><td class="pos">${st.buy.n}</td><td class="pos">${pct(st.buy)}</td><td class="t">${last ? `${last.side === "sell" ? "Hấp thụ bán" : "Hấp thụ mua"} ${last.price.toFixed(dec)} lúc ${fmtDate(last.t)}` : "-"}</td></tr>`);
-  }
-  $("absInfo").textContent = `${S.symbol} · ${ex().name}`;
-  $("absTable").innerHTML = table([["Khung", "mtf"], "Số nến", ["Hấp thụ bán", "absorption"], "Đúng", ["Hấp thụ mua", "absorption"], "Đúng", "Gần nhất"], rows, "");
-}
 
 // ---------- dữ liệu phái sinh ----------
 let drvCache = null, optCache = null;
@@ -897,20 +886,21 @@ function setConn(text, ok) { const p = $("connPill"); p.className = "pill" + (ok
 // các trang đã gỡ khỏi thanh menu theo yêu cầu (Backtest, FRACTAL, Nhật ký): link cũ mở về Terminal
 const DROPPED_VIEWS = new Set(["backtest", "fractal", "journal", "radar", "signals"]); // Radar, Tín hiệu: bro bỏ khỏi menu, code vẫn giữ
 function setView(v) {
+  if (v === "markets") { anTab("markets"); v = "analysis"; } // Thị trường đã thành một mục trong tab Phân tích
+  if (v === "social") { nTab("social"); v = "news"; } // Mạng xã hội đã thành một mục trong tab Tin tức
   if (DROPPED_VIEWS.has(v) || !$("view-" + v)) v = "terminal";
   S.view = v; persist();
   for (const b of $("views").children) b.classList.toggle("on", b.dataset.view === v);
-  for (const id of ["terminal", "radar", "signals", "multi", "news", "analysis", "social", "depth", "markets", "backtest", "fractal", "journal", "health"]) $("view-" + id).hidden = id !== v;
+  for (const id of ["terminal", "radar", "signals", "multi", "news", "analysis", "depth", "backtest", "fractal", "journal", "health"]) $("view-" + id).hidden = id !== v;
   document.body.classList.toggle("not-terminal", v !== "terminal");
   heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
   if (v === "signals") signalsView.show(); else signalsView.hide();
-  if (v === "news") newsView.render();
-  if (v === "social") socialView.render();
+  if (v === "news") { if (nTabCur === "social") socialView.render(); else newsView.render(); }
   if (v === "depth") depthView.show(); else depthView.hide();
   if (v === "analysis") { renderAnalysis(); renderConfl(); instView.show(); flowsView.show(); } else { instView.hide(); flowsView.hide(); }
   if (v === "journal") { journal.show(); perfView.show(); compassView.render(); consensusView.render(); shockView.render(); }
   if (v === "health") healthView.show(); else healthView.hide();
-  if (v === "markets") marketsView.show(); else marketsView.hide();
+  syncMarkets();
   if (v === "radar") radarView.show(); else radarView.hide();
   if (v === "multi") multiChart.show(); else multiChart.hide();
 }
@@ -974,8 +964,12 @@ $("exchange").value = S.ex; $("symbol").value = S.symbol;
 $("exchange").onchange = () => { S.ex = $("exchange").value; loadSymbols(); load(); if (S.view === "signals") signalsView.show(); };
 $("symbol").addEventListener("change", () => { const v = $("symbol").value.trim().toUpperCase(); if (v && v !== S.symbol) { S.symbol = v; load(); if (S.view === "signals") signalsView.show(); } });
 $("symbol").addEventListener("keydown", e => { if (e.key === "Enter") $("symbol").blur(); });
-$("intervals").innerHTML = Object.keys(INTERVALS).map(i => `<button data-i="${i}" class="${i === S.interval ? "on" : ""}">${i}</button>`).join("");
-$("intervals").onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; S.interval = b.dataset.i; for (const x of $("intervals").children) x.classList.toggle("on", x === b); load(); };
+// khung thời gian: một ô, bấm vào thì thả danh sách các khung
+const ivPaint = () => { $("ivBtn").innerHTML = `${S.interval} <small>▾</small>`; for (const x of $("intervals").children) x.classList.toggle("on", x.dataset.i === S.interval); };
+$("intervals").innerHTML = Object.keys(INTERVALS).map(i => `<button data-i="${i}">${i}</button>`).join("");
+$("ivBtn").onclick = e => { e.stopPropagation(); $("ivBtn").parentElement.classList.toggle("open"); };
+$("intervals").onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; $("ivBtn").parentElement.classList.remove("open"); if (b.dataset.i === S.interval) return; S.interval = b.dataset.i; ivPaint(); load(); };
+ivPaint();
 // đồng hồ đếm ngược tới lúc đóng nến của khung đang xem
 setInterval(() => { const el = $("cdTerm"), cd = candleCountdown(INTERVALS[S.interval], Date.now() + clockSkew()); el.textContent = `⏱ ${cd.text}`; el.classList.toggle("warn", cd.soon); }, 1000);
 // ngân sách gọi REST Binance trong 60 giây qua; đỏ khi sàn đang tạm chặn (lúc đó trang tự ngừng gọi)

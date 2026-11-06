@@ -12,9 +12,9 @@
 // trong ±12% quanh giá cho nhẹ bộ nhớ: giữ hết 10 phút gần nhất, cũ hơn giữ mỗi phút một lần.
 // Hàng hoá có đuôi USDT (XAUUSDT, CLUSDT…) chỉ có trên sàn phái sinh; sàn nào không có mã thì bỏ qua.
 
-import { getJson, niceStep } from "./util.js?v=202611062129";
-import { getVenue, venueName, venueBars, onVenue } from "./venue.js?v=202611062129";
-import { venueDerivs } from "./derivs.js?v=202611062129";
+import { getJson, niceStep } from "./util.js?v=202611062257";
+import { getVenue, venueName, venueBars, onVenue } from "./venue.js?v=202611062257";
+import { venueDerivs } from "./derivs.js?v=202611062257";
 
 const FAPI = "https://fapi.binance.com", SAPI = "https://api.binance.com";
 export const DEPTH_COMMODITIES = [["XAU", "Vàng"], ["XAG", "Bạc"], ["XPT", "Bạch kim"], ["COPPER", "Đồng"], ["CL", "Dầu WTI"], ["BZ", "Dầu Brent"]];
