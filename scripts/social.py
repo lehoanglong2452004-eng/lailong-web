@@ -208,14 +208,14 @@ SOURCES = [
         "energy commodities",
     ),
     (
-        "kobeissi",
-        "The Kobeissi Letter",
-        "Phân tích thị trường vốn",
-        "fund",
-        "C",
+        "bitmex",
+        "BitMEX Research",
+        "Nghiên cứu của sàn BitMEX: on-chain, phái sinh crypto",
+        "crypto",
+        "A",
         "rss",
-        "https://www.thekobeissiletter.com/blog-feed.xml",
-        "stocks macro",
+        "https://blog.bitmex.com/feed/",
+        "crypto",
     ),
     # trader, phân tích độc lập
     (
@@ -248,16 +248,6 @@ SOURCES = [
         "rss",
         "https://cryptohayes.substack.com/feed",
         "crypto macro",
-    ),
-    (
-        "galaxy",
-        "Galaxy Research",
-        "Nghiên cứu của Galaxy Digital",
-        "crypto",
-        "A",
-        "rss",
-        "https://www.galaxy.com/insights/feed/",
-        "crypto",
     ),
     # ngân hàng trung ương (bài phát biểu)
     (
@@ -385,28 +375,43 @@ def lean(text: str) -> dict:
     return {a: (1 if v > 0 else -1) for a, v in score.items() if v}
 
 
-_STOP = set(
-    "the a an and or of to in on for with at by from is are was were be been it its this "
-    "that as not but we our you your they their he she his her i my will would can could "
-    "just more most than about into over after before new says said today week year years "
-    "also have has had what why how when who all some one two out up down so if no yes "
-    "there here which via amp rt".split()
-)
+# chủ đề thị trường đáng đếm (không đếm từ thường như "since", "data")
+_TERMS = {
+    "Fed": r"\bfed\b|fomc|powell",
+    "Lãi suất": r"rate (cut|hike)s?|\bcuts?\b|hikes?",
+    "Lạm phát": r"inflation|\bcpi\b|\bpce\b",
+    "Việc làm": r"payrolls?|\bnfp\b|jobs|unemployment|labor market",
+    "Suy thoái": r"recession|slowdown|hard landing|soft landing",
+    "Thuế quan": r"tariffs?|trade war",
+    "Lợi suất": r"yields?|treasur(y|ies)|bonds?\b",
+    "USD": r"\bdollar\b|\bdxy\b|\busd\b",
+    "Yên Nhật": r"\byen\b|\bboj\b|\bjpy\b",
+    "Trung Quốc": r"china|chinese|yuan|beijing",
+    "Vàng": r"\bgold\b|bullion",
+    "Dầu": r"\boil\b|crude|opec|brent",
+    "AI": r"\bai\b|nvidia|artificial intelligence",
+    "Chip": r"semiconductor|chips?\b|tsmc|sk hynix|samsung",
+    "Bitcoin": r"bitcoin|\bbtc\b",
+    "ETF": r"\betfs?\b",
+    "Ngân sách Mỹ": r"deficit|debt ceiling|fiscal",
+    "Bất động sản": r"housing|home sales|mortgage",
+    "Châu Âu": r"\becb\b|eurozone|euro area",
+    "Hàn Quốc": r"korea|kospi",
+    "Bong bóng": r"bubble|froth",
+}
+_TERM_RE = {k: re.compile(v, re.I) for k, v in _TERMS.items()}
 
 
 def trending(posts: list[dict], now_ms: int, top: int = 12) -> list[dict]:
-    """Từ / cụm được nhắc nhiều nhất trong 24 giờ, đếm mỗi người một lần."""
+    """Chủ đề được nhiều người nhắc nhất trong 24 giờ, đếm mỗi người một lần."""
     cnt: dict[str, set] = {}
     for p in posts:
         if now_ms - p["t"] > 86400_000:
             continue
-        words = re.findall(r"[A-Za-z][A-Za-z&\-]{2,}", p["text"])
-        terms = {w.lower() for w in words if w.lower() not in _STOP}
-        caps = {
-            m for m in re.findall(r"\b[A-Z]{2,6}\b", p["text"]) if m not in {"THE", "AND", "RT"}
-        }
-        for t in terms | {c.lower() for c in caps}:
-            cnt.setdefault(t, set()).add(p["who"])
+        text = f"{p.get('head', '')} {p.get('text', '')}"
+        for term, rx in _TERM_RE.items():
+            if rx.search(text):
+                cnt.setdefault(term, set()).add(p["who"])
     rows = sorted(((t, len(w)) for t, w in cnt.items() if len(w) >= 2), key=lambda x: -x[1])
     return [{"term": t, "n": n} for t, n in rows[:top]]
 
@@ -417,7 +422,14 @@ def _clean(s: str) -> str:
 
 
 def _get(url: str, timeout: float = 10) -> bytes:
-    return news._get(url, timeout=timeout)
+    # Substack và vài blog chặn tên trình lấy tin lạ: giả trình duyệt thường
+    hdr = {
+        **news.BROWSER,
+        "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8",
+    }
+    req = urllib.request.Request(url, headers=hdr)
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read()
 
 
 def _rss(raw: bytes) -> list[tuple[str, str, str, str]]:
@@ -531,8 +543,11 @@ def fetch_source(src) -> tuple[list[dict], dict]:
     return posts, info
 
 
-def _json(url: str) -> dict:
-    req = urllib.request.Request(url, headers={**news.BROWSER, "Accept": "application/json"})
+def _json(url: str, referer: str = "") -> dict:
+    hdr = {**news.BROWSER, "Accept": "application/json"}
+    if referer:  # CNN trả 418 nếu không có trang gốc
+        hdr |= {"Referer": referer, "Origin": referer.rstrip("/")}
+    req = urllib.request.Request(url, headers=hdr)
     with urllib.request.urlopen(req, timeout=10) as r:
         return json.loads(r.read())
 
@@ -540,9 +555,10 @@ def _json(url: str) -> dict:
 def gauges() -> tuple[dict, list[str]]:
     out, errors = {}, []
     try:
-        d = _json("https://production.dataviz.cnn.io/index/fearandgreed/graphdata")[
-            "fear_and_greed"
-        ]
+        d = _json(
+            "https://production.dataviz.cnn.io/index/fearandgreed/graphdata",
+            "https://edition.cnn.com/",
+        )["fear_and_greed"]
         out["stocks"] = {
             "name": "Fear & Greed CNN (chứng khoán Mỹ)",
             "value": round(d["score"]),

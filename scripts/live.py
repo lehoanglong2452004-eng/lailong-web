@@ -174,7 +174,7 @@ def step(
             )
             data["items"].sort(key=lambda x: -x["t"])
             if tr is not None:
-                translate.add_vi_news(data, tr, budget=200)
+                translate.add_vi_news(data, tr, budget=80)
                 _vi_errors(data, tr)
             if _write(out / "news.json", data, "items"):
                 changed.append("news.json")
@@ -185,7 +185,7 @@ def step(
         try:
             data = social.fetch_social(int(now * 1000))
             if tr is not None:
-                translate.add_vi_social(data, tr, budget=120)
+                translate.add_vi_social(data, tr, budget=60)
                 _vi_errors(data, tr)
             if _write(out / "social.json", data, "posts"):
                 changed.append("social.json")
