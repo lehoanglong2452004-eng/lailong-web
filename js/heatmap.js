@@ -5,13 +5,13 @@
 // vào thời điểm đó: xanh đậm = mỏng, vàng/cam/đỏ = dày (tường thanh khoản).
 // Bong bóng là lệnh khớp (xanh lá: mua chủ động, đỏ: bán chủ động), kim cương là lệnh thanh lý.
 
-import { COL_MS } from "./market.js?v=202611062007";
-import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202611062007";
-import { T, alpha, watermark } from "./theme.js?v=202611062007";
-import { drawConfl, conflTip } from "./levels.js?v=202611062007";
-import { drawShapes } from "./drawings.js?v=202611062007";
-import { bookImb } from "./walls.js?v=202611062007";
-import { largeLots, sweeps } from "./bmind.js?v=202611062007";
+import { COL_MS } from "./market.js?v=202611062023";
+import { fmtVol, fmtUsd, decimalsFor, fmtTime, MONO, fitCanvas } from "./util.js?v=202611062023";
+import { T, alpha, watermark } from "./theme.js?v=202611062023";
+import { drawConfl, conflTip } from "./levels.js?v=202611062023";
+import { drawShapes } from "./drawings.js?v=202611062023";
+import { bookImb } from "./walls.js?v=202611062023";
+import { largeLots, sweeps } from "./bmind.js?v=202611062023";
 
 const AXIS_W = 72, TIME_H = 20, PANE_H = 74;
 const MS_MIN = 15, MS_MAX = 300000; // giới hạn phóng thời gian: 15 ms đến 5 phút mỗi điểm ảnh (khoảng 3 ngày trên màn hình)
@@ -20,12 +20,13 @@ const MS_MIN = 15, MS_MAX = 300000; // giới hạn phóng thời gian: 15 ms đ
 export const HM_DEFAULTS = {
   palette: "bookmap",   // bảng màu: bookmap (xanh -> vàng -> cam -> đỏ) hoặc gray (xám)
   upper: 99,            // ngưỡng cắt trên: mức lệnh chờ từ phân vị này trở lên tô màu đậm nhất
-  lower: 30,            // ngưỡng cắt dưới: dưới phân vị này để nền tối (như Bookmap: chỉ thanh khoản đáng kể mới có màu)
+  lower: 50,            // ngưỡng cắt dưới: dưới phân vị này để nền tối (như Bookmap: chỉ thanh khoản đáng kể mới có màu)
   auto: "live",         // tự chỉnh tương phản: live (liên tục), recenter (khi căn giữa lại), off (giữ nguyên)
   smooth: "auto",       // làm mịn dọc: auto, none, 1, 2, 3
   aggregate: false,     // sổ lệnh cộng dồn từ giá hiện tại ra xa
   dim: 0,               // làm tối bản đồ (%)
-  dots: "3d", dotStyle: "pie", dotSize: 1, dotAlpha: 100,
+  bright: 100,          // độ sáng bản đồ (%), thanh trượt Độ sáng trên thanh công cụ
+  dots: "2d", dotStyle: "side", dotSize: 1, dotAlpha: 100, // như Bookmap: bong bóng một màu theo phe khớp chủ động, viền tối
   cluster: "smart", clusterSec: 1, clusterVol: 0, // gom bong bóng; clusterVol 0 = tự động
   dotMode: "total",     // total (tổng khối lượng) hoặc delta (mua − bán)
   dotMin: 0,            // ẩn bong bóng nhỏ hơn mức này
@@ -33,7 +34,7 @@ export const HM_DEFAULTS = {
   lastLine: true,       // đường giá khớp cuối
   vwap: true, poc: true,
   colCob: true, colCum: false, cobPct: false, colCvp: true, colSvp: false, colQd: false, colTc: false,
-  slices: 0,            // vạch chia thời gian (giây), 0 = tự động
+  slices: 0,            // vạch chia thời gian (giây), 0 = tự động theo nhãn trục thời gian
   recenter: "bbo",      // tự căn giữa theo bbo, last (giá khớp) hoặc none
   candles: "auto",      // nến chồng lên bản đồ: auto (tự hiện khi thu nhỏ), on, off
   candleVol: true,      // số mua / bán chủ động dưới mỗi nến tự đổi khung
@@ -41,13 +42,13 @@ export const HM_DEFAULTS = {
   soft: true,           // làm mịn hiển thị như Bookmap: dải thanh khoản mềm, không lốm đốm
   lines: true,          // phóng to: mỗi mức giá là một vệt sáng ở giữa, mờ dần ra hai mép (như Bookmap), không phải khối đặc
   persist: 3,           // giây: làm mượt theo thời gian, lệnh chờ chớp tắt không thành khối vụn; 0 = tắt
-  imb: true,            // đường mất cân bằng sổ lệnh ±0,5% quanh giá ở ô dưới
-  speed: true,          // đường tốc độ băng (số lệnh khớp mỗi giây) ở ô dưới
+  imb: false,           // đường mất cân bằng sổ lệnh ±0,5% quanh giá ở ô dưới
+  speed: false,         // đường tốc độ băng (số lệnh khớp mỗi giây) ở ô dưới
 };
 
 // bảng màu kiểu Bookmap: nền xanh đen -> xanh thép -> xanh nhạt -> vàng -> cam -> đỏ (tường dày nhất)
-const PALETTES = {
-  bookmap: [[0, 6, 14, 24], [0.16, 10, 34, 66], [0.34, 18, 86, 156], [0.5, 46, 146, 214], [0.6, 172, 216, 236], [0.7, 246, 238, 140], [0.84, 248, 150, 30], [1, 228, 36, 27]],
+export const PALETTES = {
+  bookmap: [[0, 6, 12, 20], [0.16, 9, 30, 60], [0.34, 18, 86, 156], [0.5, 46, 146, 214], [0.6, 172, 216, 236], [0.7, 246, 238, 140], [0.82, 248, 150, 30], [0.94, 228, 36, 27], [1, 255, 240, 235]],
   gray: [[0, 18, 18, 18], [0.5, 120, 120, 120], [1, 255, 255, 255]],
 };
 export const HEAT_BG = "#05080c";
@@ -143,6 +144,13 @@ export function drawBubble(ctx, x, y, r, buyFrac, o = {}) {
   const g = (c0, c1, c2) => { if (!d3) return c1; const gr = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r); gr.addColorStop(0, c0); gr.addColorStop(0.55, c1); gr.addColorStop(1, c2); return gr; };
   ctx.save(); if (o.alpha != null) ctx.globalAlpha = o.alpha;
   const sell = 1 - buyFrac;
+  if (style === "side") { // như Bookmap: một màu theo phe áp đảo, phẳng, viền tối để các bóng chồng lên nhau vẫn tách bạch
+    const buy = buyFrac >= 0.5;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = d3 ? g(buy ? "#8ff0b4" : "#ffa79c", buy ? "#2fbf6a" : "#e0473a", buy ? "#16803f" : "#9c2419") : buy ? "#34c46f" : "#e34b3d"; ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.75)"; ctx.lineWidth = r > 6 ? 1.5 : 1; ctx.stroke();
+    ctx.restore(); return;
+  }
   if (style === "gradient") {
     const c = mix(buyFrac);
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = g("rgba(255,255,255,0.75)", c, "rgba(0,0,0,0.85)");
@@ -161,6 +169,10 @@ export function drawBubble(ctx, x, y, r, buyFrac, o = {}) {
   if (r > 4) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.strokeStyle = "rgba(0,0,0,0.45)"; ctx.lineWidth = 1; ctx.stroke(); }
   ctx.restore();
 }
+
+// bước nhãn trục thời gian (và vạch dọc nét đứt): nhãn cách nhau ít nhất 90 điểm ảnh
+const TIME_STEPS = [1e3, 5e3, 10e3, 15e3, 30e3, 60e3, 120e3, 300e3, 600e3, 900e3, 1800e3, 3600e3, 7200e3, 10800e3, 21600e3, 43200e3, 86400e3];
+export const timeStep = msPerPx => TIME_STEPS.find(s => s / msPerPx >= 90) || 86400e3;
 
 export class Heatmap {
   constructor(canvas, market, opts = {}) {
@@ -356,10 +368,10 @@ export class Heatmap {
     let lo = Math.max(pct(cfg.lower / 100) || 0, med * 0.2) || 1e-9, hi = Math.max(pct(cfg.upper / 100) || 1, HOT_X * med);
     if (key !== null && this._cut && this._cut.key === key && this._cut.fine === fine) { hi = this._cut.hi; lo = this._cut.lo; } else this._cut = { key, hi, lo, fine };
     if (hi <= lo) hi = lo + 1e-9;
-    const ref = hi, LUTc = LUTS[cfg.palette] || LUT, dimK = 1 - Math.min(0.9, (cfg.dim || 0) / 100);
+    const ref = hi, LUTc = LUTS[cfg.palette] || LUT, dimK = (1 - Math.min(0.9, (cfg.dim || 0) / 100)) * Math.max(0.3, Math.min(2.5, (cfg.bright || 100) / 100));
     // lượt 2: tô màu. Mỗi cột giữ nguyên tới cột kế tiếp (sổ lệnh không đổi thì vẫn đứng đó), như Bookmap;
     // chỉ để trống khi mất dữ liệu quá HOLD_MS. Cột cuối kéo tới bây giờ.
-    const floor = 10, now = this.now(); // màu sàn: xanh đen rất tối, phân biệt với nền không có dữ liệu
+    const floor = 5, now = this.now(); // màu sàn: gần như nền, chỉ hơi xanh để phân biệt với chỗ không có dữ liệu (như Bookmap)
     let x = Math.max(0, Math.floor(this.xOf(cols[Math.max(0, i0)].t))), lastC = null;
     // làm mượt theo thời gian: mỗi điểm ảnh dọc giữ trung bình trượt (hằng số thời gian persist giây), nên lệnh chờ
     // chớp tắt vài trăm mili giây chỉ để lại vệt mờ, còn tường đứng lâu vẫn sáng đều thành đường dài
@@ -435,9 +447,9 @@ export class Heatmap {
   }
   // vạch chia thời gian (nét chấm), như Time slices của Bookmap
   _slices(L) {
-    const ms = (this.cfg.slices || 0) * 1000; if (!ms) return;
+    const ms = (this.cfg.slices || 0) * 1000 || timeStep(this.msPerPx);
     const ctx = this.ctx, t0 = this.tAt(0), t1 = this.tAt(L.pw); if ((t1 - t0) / ms > 200) return;
-    ctx.strokeStyle = "rgba(220,230,240,0.35)"; ctx.setLineDash([2, 4]); ctx.beginPath();
+    ctx.strokeStyle = "rgba(200,215,235,0.16)"; ctx.lineWidth = 1; ctx.setLineDash([3, 5]); ctx.beginPath();
     for (let t = Math.ceil(t0 / ms) * ms; t < t1; t += ms) { const x = Math.round(this.xOf(t)) + 0.5; ctx.moveTo(x, 0); ctx.lineTo(x, L.ph); }
     ctx.stroke(); ctx.setLineDash([]);
   }
@@ -783,11 +795,13 @@ export class Heatmap {
       e.b += c.bv; e.s += c.sv; e.n += c.tn || 0; groups.set(gx, e);
     }
     let maxV = 0; for (const e of groups.values()) maxV = Math.max(maxV, e.b, e.s);
-    if (maxV) for (const [gx, e] of groups) {
-      const x = gx * bucketPx, bw = Math.max(1, bucketPx - 1);
-      ctx.fillStyle = alpha(T.up, 0.7); ctx.fillRect(x, mid - e.b / maxV * (H / 2 - 2), bw, e.b / maxV * (H / 2 - 2));
-      ctx.fillStyle = alpha(T.down, 0.7); ctx.fillRect(x, mid, bw, e.s / maxV * (H / 2 - 2));
+    // cột khối lượng khớp như Bookmap: mọc từ đáy, màu theo phe khớp chủ động nhiều hơn
+    let maxT = 0; for (const e of groups.values()) maxT = Math.max(maxT, e.b + e.s);
+    if (maxT) for (const [gx, e] of groups) {
+      const x = gx * bucketPx, bw = Math.max(1, bucketPx - (bucketPx > 4 ? 1.5 : 1)), hgt = (e.b + e.s) / maxT * (H - 18);
+      ctx.fillStyle = alpha(e.b >= e.s ? T.up : T.down, 0.85); ctx.fillRect(x, top + PANE_H - 1 - hgt, bw, hgt);
     }
+    void mid; void maxV;
     // CVD trong vùng nhìn thấy
     let cum = 0, lo = 0, hi = 0; const pts = [];
     for (let i = Math.max(0, i0); i <= i1; i++) { cum += cols[i].bv - cols[i].sv; lo = Math.min(lo, cum); hi = Math.max(hi, cum); pts.push([this.xOf(cols[i].t + COL_MS), cum]); }
@@ -798,8 +812,8 @@ export class Heatmap {
     }
     ctx.fillStyle = T.muted; ctx.font = "11px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "left";
     // nhãn dòng 1 nối tiếp nhau theo độ rộng chữ thật; hết chỗ thì xuống dòng 2
-    const cvdTxt = `CVD ${cum >= 0 ? "+" : ""}${fmtVol(cum)}`, cvdX = 6 + ctx.measureText("Mua / bán chủ động").width + 12;
-    ctx.fillText("Mua / bán chủ động", 6, top + 13); ctx.fillStyle = "#f5c542"; ctx.fillText(cvdTxt, cvdX, top + 13);
+    const cvdTxt = `CVD ${cum >= 0 ? "+" : ""}${fmtVol(cum)}`, cvdX = 6 + ctx.measureText("Khối lượng khớp").width + 12;
+    ctx.fillText("Khối lượng khớp", 6, top + 13); ctx.fillStyle = "#f5c542"; ctx.fillText(cvdTxt, cvdX, top + 13);
     const nextX = cvdX + ctx.measureText(cvdTxt).width + 16;
     // mất cân bằng sổ lệnh ±0,5%: đường tím, giữa ô là cân bằng, trên là chờ mua dày hơn
     this._imbNow = null;
@@ -974,6 +988,17 @@ export class Heatmap {
     if (LW > 50) ctx.fillText("Thanh lý ƯT", x0 + LW / 2, L.ph - 4);
   }
 
+  // tối đa 6 mức lệnh chờ lớn nhất trong khung nhìn (gộp theo tầng giá), lớn ít nhất 4 lần trung vị
+  _bigLevels(L) {
+    const { bids, asks } = this.m.book.sorted(), g = this.m.grid || this.m.tick; if (!g) return [];
+    const lo = this.pAt(L.ph), hi = this.pAt(0), agg = new Map();
+    for (const list of [bids, asks]) for (const [p, q] of list) { if (p < lo || p > hi) continue; const k = Math.round(p / g); agg.set(k, (agg.get(k) || 0) + q); }
+    const all = [...agg].sort((a, b) => b[1] - a[1]); if (all.length < 8) return [];
+    const med = all[all.length >> 1][1], out = [];
+    for (const [k, q] of all) { if (out.length >= 6 || q < med * 4) break; const p = k * g; if (out.every(o => Math.abs(this.yOf(o.p) - this.yOf(p)) >= 17)) out.push({ p, q }); }
+    return out;
+  }
+
   _axes(L) {
     const ctx = this.ctx, x0 = L.axisX, dec = decimalsFor(this.m.tick || this.m.grid), AXIS_W = L.axisW;
     ctx.fillStyle = T.bg; ctx.fillRect(x0, 0, AXIS_W, L.h); ctx.fillRect(0, L.timeTop, L.w, TIME_H);
@@ -983,7 +1008,14 @@ export class Heatmap {
     ctx.font = `11px ${MONO}`; ctx.fillStyle = T.muted; ctx.textAlign = "left";
     for (let p = Math.ceil(this.pAt(L.ph) / st) * st; p <= this.pAt(0); p += st) {
       const y = this.yOf(p); ctx.fillText(p.toFixed(Math.max(dec, decimalsFor(st))), x0 + 6, y + 4);
-      ctx.fillStyle = alpha(T.text, 0.05); ctx.fillRect(0, Math.round(y), L.pw, 1); ctx.fillStyle = T.muted;
+      ctx.fillStyle = alpha(T.text, 0.025); ctx.fillRect(0, Math.round(y), L.pw, 1); ctx.fillStyle = T.muted;
+    }
+    // ô vàng trên trục giá: các mức lệnh chờ lớn nhất đang thấy (như Bookmap đánh dấu tường lớn)
+    for (const w of this._bigLevels(L)) {
+      const y = this.yOf(w.p); if (y < 8 || y > L.ph - 8) continue;
+      ctx.fillStyle = alpha(T.bg, 0.9); ctx.fillRect(x0 + 2, y - 8, AXIS_W - 4, 16);
+      ctx.strokeStyle = "#e8b72c"; ctx.lineWidth = 1; ctx.strokeRect(x0 + 2.5, y - 7.5, AXIS_W - 5, 15);
+      ctx.fillStyle = "#f2c94c"; ctx.fillText(w.p.toFixed(dec), x0 + 6, y + 4);
     }
     for (const tg of this._axisTags || []) { ctx.fillStyle = alpha(tg.col, 0.85); ctx.fillRect(x0 + 1, tg.y - 8, AXIS_W - 1, 16); ctx.fillStyle = "#fff"; ctx.fillText(tg.txt, x0 + 6, tg.y + 4); }
     const last = this.m.last;
@@ -992,14 +1024,9 @@ export class Heatmap {
       ctx.fillStyle = col; ctx.fillRect(x0 + 1, y - 9, AXIS_W - 1, 18); ctx.fillStyle = "#fff"; ctx.fillText(last.p.toFixed(dec), x0 + 6, y + 4);
     }
     // trục thời gian
-    const spanMs = L.pw * this.msPerPx, steps = [1e3, 5e3, 10e3, 15e3, 30e3, 60e3, 120e3, 300e3, 600e3, 900e3, 1800e3, 3600e3, 7200e3, 10800e3, 21600e3, 43200e3, 86400e3];
-    const tStep = steps.find(s => s / this.msPerPx >= 90) || 86400e3;
+    const tStep = timeStep(this.msPerPx); // vạch dọc nét đứt do _slices vẽ, cùng bước với nhãn
     ctx.fillStyle = T.muted; ctx.textAlign = "center";
-    for (let t = Math.ceil(this.tAt(0) / tStep) * tStep; t < this.tAt(L.pw); t += tStep) {
-      const x = this.xOf(t); ctx.fillText(fmtTime(t), x, L.timeTop + 14);
-      ctx.fillStyle = alpha(T.text, 0.05); ctx.fillRect(Math.round(x), 0, 1, L.ph); ctx.fillStyle = T.muted;
-    }
-    void spanMs;
+    for (let t = Math.ceil(this.tAt(0) / tStep) * tStep; t < this.tAt(L.pw); t += tStep) ctx.fillText(fmtTime(t), this.xOf(t), L.timeTop + 14);
   }
 
   _cross(L, cols) {

@@ -18,6 +18,7 @@ export const FP_MODES = {
   ratio: { name: "Tỷ lệ chéo", tip: "Tỷ lệ mua chủ động ở dòng này so với bán chủ động ở dòng ngay dưới (đường chéo như ATAS); số lớn là phe đó áp đảo" },
 };
 export const FP_COLORS = {
+  side: { name: "Mua/bán (ATAS)", tip: "Ô xanh khi mua chủ động nhiều hơn, đỏ khi bán nhiều hơn; càng đậm càng nhiều khối lượng. Viền trắng là POC của nến" },
   volume: { name: "Theo khối lượng", tip: "Ô càng đậm là khối lượng càng lớn; màu xanh/đỏ theo phe chiếm ưu thế" },
   delta: { name: "Theo delta", tip: "Ô càng đậm là delta của ô càng lớn; xanh là mua áp đảo, đỏ là bán áp đảo" },
   imbalance: { name: "Chỉ mất cân bằng", tip: "Chỉ tô ô có mất cân bằng chéo từ 3 lần trở lên" },

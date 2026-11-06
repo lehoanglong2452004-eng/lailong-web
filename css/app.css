@@ -954,3 +954,46 @@ body.haslaptop #replayBtn:not([hidden]) { display: inline-flex; }
   .socgrid { grid-template-columns: 1fr; }
   .socside { position: static; max-height: 220px; }
 }
+
+/* trang Market Depth (kiểu FXSSI Order Book) */
+.dptools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
+.dptools .newstabs { margin: 0; }
+.dpgrp { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.dptools select { min-width: 74px; }
+.dpgrid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 10px; align-items: start; }
+.dpmain { padding: 8px; }
+.dpcv { position: relative; height: calc(100vh - 290px); min-height: 420px; }
+.dpcv canvas { position: absolute; inset: 0; display: block; }
+.dpsnap { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; font-size: 11.5px; color: var(--muted); }
+.dpsnap input { flex: 1; accent-color: var(--accent); }
+.dpratios { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 6px 14px; margin-top: 6px; }
+.dpratios .note { grid-column: 1 / -1; margin: 4px 0 0; font-size: 11.5px; color: var(--muted); }
+.dprow { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; }
+.dpn { color: var(--muted); }
+.dpbar { display: flex; height: 20px; border-radius: 3px; overflow: hidden; background: var(--panel-2); }
+.dpbar i { display: flex; align-items: center; min-width: 0; overflow: hidden; white-space: nowrap; }
+.dpbar i:last-child { justify-content: flex-end; }
+.dpbar b { padding: 0 6px; font: 600 11px var(--mono); color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.5); }
+.dpbar.sm { height: 14px; flex: 1; }
+.dpbar.sm b { font-size: 10px; padding: 0 4px; }
+.dpside { position: sticky; top: 8px; max-height: calc(100vh - 120px); overflow: auto; }
+.dpside h4 { margin: 0 0 8px; font-size: 12px; }
+.dpside .note { font-size: 11.5px; color: var(--muted); }
+.dpq { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: 0; border-radius: 4px; padding: 4px 6px; color: inherit; text-transform: none; letter-spacing: 0; font-size: 12px; cursor: pointer; }
+.dpq > span:first-child { width: 42px; text-align: left; font-weight: 600; }
+.dpq small { width: 74px; text-align: right; font-size: 10.5px; white-space: nowrap; }
+.dpq small.up { color: var(--buy); } .dpq small.dn { color: var(--sell); }
+.dpq:hover { background: var(--panel-2); }
+.dpq.on { outline: 1px solid var(--accent); }
+.dptip { position: fixed; z-index: 50; pointer-events: none; max-width: 250px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-2); font: 11.5px/1.5 var(--mono); box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+@media (max-width: 1000px) {
+  .dpgrid { grid-template-columns: 1fr; }
+  .dpside { position: static; max-height: none; }
+}
+
+/* Bookmap: hai thanh trượt Tương phản / Độ sáng và thang màu, như thanh công cụ của Bookmap */
+.hmsliders { display: inline-flex; align-items: center; gap: 10px; }
+.hmsliders label { display: inline-flex; align-items: center; gap: 5px; }
+.hmsliders input[type=range] { width: 74px; accent-color: #4aa3ff; }
+.heatgrad { display: inline-block; width: 92px; height: 10px; border-radius: 2px; background: linear-gradient(90deg, #060c14, #091e3c 16%, #12569c 34%, #2e92d6 50%, #acd8ec 60%, #f6ee8c 70%, #f8961e 84%, #e4241b 96%, #fff); border: 1px solid var(--line); }
+@media (max-width: 900px) { .heatgrad { display: none; } .hmsliders input[type=range] { width: 56px; } }

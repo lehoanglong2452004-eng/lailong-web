@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611062007">
-<link rel="stylesheet" href="css/app.css?v=202611062007">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611062023">
+<link rel="stylesheet" href="css/app.css?v=202611062023">
 </head>
 <body>
 <header class="menubar">
@@ -28,6 +28,7 @@
     <button data-view="news" data-tip="Lịch kinh tế có số thực tế, tin tức cập nhật vài phút một lần, báo động khi chỉ số biến động bất thường">Tin tức</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
     <button data-view="social" data-tip="Chuyên gia, nhà đầu tư, trader và tổ chức lớn đang nói gì: Bluesky, Substack, YouTube, ngân hàng trung ương; có bản tiếng Việt">Mạng xã hội</button>
+    <button data-view="depth" data-tip="Market Depth: lệnh chờ trên sổ lệnh nhiều sàn crypto và vị thế ước tính theo giá vào lệnh, kiểu FXSSI Order Book">Market Depth</button>
     <button data-view="markets" data-tip="Hàng hoá phái sinh, forex và lãi suất, crypto, quỹ ETF, cá voi và thanh lý">Thị trường</button>
     <button data-view="options" data-tip="GEX, tường call/put, điểm lật gamma, max pain, bề mặt IV 3D: BTC, ETH, S&amp;P 500, Nasdaq, vàng, dầu…">Quyền chọn</button>
     <button data-view="health" data-g="data-health">Dữ liệu</button>
@@ -146,7 +147,7 @@
           <h4>Màu bản đồ</h4>
           <label class="row" data-g="bm-colors">Bảng màu <select data-hm="palette"><option value="bookmap" selected>Bookmap</option><option value="gray">Xám</option></select></label>
           <label class="row" data-g="bm-cutoff">Ngưỡng cắt trên (phân vị %) <input type="number" data-hm="upper" value="99" min="50" max="100" step="0.5"></label>
-          <label class="row" data-g="bm-cutoff">Ngưỡng cắt dưới (phân vị %) <input type="number" data-hm="lower" value="30" min="0" max="60" step="0.5"></label>
+          <label class="row" data-g="bm-cutoff">Ngưỡng cắt dưới (phân vị %) <input type="number" data-hm="lower" value="50" min="0" max="60" step="0.5"></label>
           <label class="row" data-g="bm-auto">Tự chỉnh tương phản <select data-hm="auto"><option value="live" selected>Liên tục</option><option value="recenter">Khi căn giữa lại</option><option value="off">Giữ nguyên (chỉ đổi khi phóng)</option></select></label>
           <label data-g="bm-lines"><input type="checkbox" data-hm="lines" checked> Mức giá thành vệt sáng khi phóng to</label>
           <label class="row" data-g="bm-persist">Làm mượt theo thời gian <select data-hm="persist"><option value="0">Tắt</option><option value="1">1 giây</option><option value="3" selected>3 giây</option><option value="6">6 giây</option></select></label>
@@ -155,8 +156,8 @@
           <label class="row" data-g="bm-dim">Làm tối (%) <input type="number" data-hm="dim" value="0" min="0" max="90" step="5"></label>
           <label data-g="bm-aggregate"><input type="checkbox" data-hm="aggregate"> Sổ lệnh cộng dồn trên bản đồ</label>
           <h4>Bong bóng khối lượng</h4>
-          <label class="row" data-g="trade-bubble">Dạng <select data-hm="dots"><option value="3d" selected>3D</option><option value="2d">2D</option></select></label>
-          <label class="row" data-g="trade-bubble">Kiểu tô <select data-hm="dotStyle"><option value="pie" selected>Chia miếng</option><option value="gradient">Pha màu</option><option value="solid">Hai màu đặc</option></select></label>
+          <label class="row" data-g="trade-bubble">Dạng <select data-hm="dots"><option value="2d" selected>2D</option><option value="3d">3D</option></select></label>
+          <label class="row" data-g="trade-bubble">Kiểu tô <select data-hm="dotStyle"><option value="side" selected>Một màu theo phe (Bookmap)</option><option value="pie">Chia miếng</option><option value="gradient">Pha màu</option><option value="solid">Hai màu đặc</option></select></label>
           <label class="row" data-g="bm-cluster">Gom bong bóng <select data-hm="cluster"><option value="smart" selected>Thông minh</option><option value="time">Theo thời gian</option><option value="volume">Theo khối lượng</option><option value="price">Theo giá</option></select></label>
           <label class="row" data-g="bm-cluster">Gom theo thời gian (giây) <input type="number" data-hm="clusterSec" value="1" min="0.5" max="300" step="0.5"></label>
           <label class="row" data-g="bm-cluster">Gom theo khối lượng (0 = tự động) <input type="number" data-hm="clusterVol" value="0" min="0" step="any"></label>
@@ -172,8 +173,8 @@
           <label class="row" data-g="bm-candles">Nến của khung đang chọn <select data-hm="candles"><option value="auto" selected>Tự hiện, tự đổi khung khi thu nhỏ</option><option value="on">Luôn hiện (khung đang chọn)</option><option value="off">Tắt</option></select></label>
           <label data-g="bm-candlevol"><input type="checkbox" data-hm="candleVol" checked> Số mua / bán dưới nến</label>
           <label data-g="bm-glow"><input type="checkbox" data-hm="glow" checked> Bóng hấp thụ trên nến</label>
-          <label data-g="book-imb"><input type="checkbox" data-hm="imb" checked> Mất cân bằng sổ lệnh ±0,5% ở ô dưới (cạnh CVD)</label>
-          <label data-g="tape-speed"><input type="checkbox" data-hm="speed" checked> Tốc độ băng (lệnh mỗi giây) ở ô dưới</label>
+          <label data-g="book-imb"><input type="checkbox" data-hm="imb"> Mất cân bằng sổ lệnh ±0,5% ở ô dưới (cạnh CVD)</label>
+          <label data-g="tape-speed"><input type="checkbox" data-hm="speed"> Tốc độ băng (lệnh mỗi giây) ở ô dưới</label>
           <label class="row" data-g="bm-slices">Vạch chia thời gian <select data-hm="slices"><option value="0" selected>Tắt</option><option value="10">10 giây</option><option value="15">15 giây</option><option value="30">30 giây</option><option value="60">1 phút</option><option value="120">2 phút</option><option value="300">5 phút</option><option value="600">10 phút</option><option value="900">15 phút</option><option value="1800">30 phút</option><option value="3600">60 phút</option></select></label>
           <label class="row" data-g="bm-recenter">Tự căn giữa theo <select data-hm="recenter"><option value="bbo" selected>Giá mua/bán</option><option value="last">Giá khớp cuối</option><option value="none">Tắt</option></select></label>
           <h4>Cột bên phải</h4>
@@ -213,12 +214,12 @@
         <select id="liqModel"><option value="all" selected>Đòn bẩy 5x–100x</option><option value="high">Đòn bẩy cao 25x–100x</option><option value="low">Đòn bẩy thấp 5x–25x</option></select>
       </label>
       <label class="field small liqOnly" hidden data-g="liq-thr">Ngưỡng màu <input type="range" id="liqThr" min="0.02" max="0.7" step="0.02" value="0.22"></label>
-      <label class="field small" id="contrastBox" data-g="contrast">Tương phản <input type="range" id="contrast" min="0.3" max="4" step="0.1" value="1"></label>
+      <span class="field small hmsliders" id="contrastBox"><label data-g="contrast">Tương phản <input type="range" id="contrast" min="0.3" max="4" step="0.1" value="1"></label><label data-tip="Độ sáng của bản đồ thanh khoản">Độ sáng <input type="range" id="bright" min="40" max="220" step="5" value="100"></label><i class="heatgrad" data-tip="Thang màu: xanh là lệnh chờ vừa, vàng, cam, đỏ là lớn dần, trắng là rất lớn"></i></span>
       <label class="field small" id="fpModeBox" hidden data-g="fp-modes">Ô
         <select id="fpMode"><option value="bidask">Mua × Bán</option><option value="bavol">Mua × Bán + tổng</option><option value="delta">Delta</option><option value="volume">Khối lượng</option><option value="histo">Thanh mua/bán</option><option value="profile">Hồ sơ trong nến</option><option value="ratio">Tỷ lệ chéo</option></select>
       </label>
       <label class="field small" id="fpColorBox" hidden data-g="fp-modes">Tô màu
-        <select id="fpColor"><option value="volume">Theo khối lượng</option><option value="delta">Theo delta</option><option value="imbalance">Chỉ mất cân bằng</option><option value="candle">Theo nến</option></select>
+        <select id="fpColor"><option value="side" selected>Mua/bán (ATAS)</option><option value="volume">Theo khối lượng</option><option value="delta">Theo delta</option><option value="imbalance">Chỉ mất cân bằng</option><option value="candle">Theo nến</option></select>
       </label>
       <label class="field small" id="rowBox" hidden data-tip="Gộp bao nhiêu bước giá vào một dòng của footprint">Tầng giá
         <select id="rowSize"><option value="auto" selected>Tự động</option><option>1</option><option>2</option><option>5</option><option>10</option><option>20</option><option>50</option></select>
@@ -435,6 +436,19 @@
     <section class="card socfeed" id="socFeed"></section>
     <section class="card socright" id="socRight"></section>
   </div>
+</main>
+
+<main class="view analysis" id="view-depth" hidden>
+  <div class="socbar"><h3>Market Depth · độ sâu thị trường và vị thế <button class="q" data-g="market-depth">?</button></h3><div id="depthBar" class="dptools"></div></div>
+  <div class="dpgrid">
+    <section class="card dpmain">
+      <div class="dpcv"><canvas id="depthCanvas"></canvas></div>
+      <div class="dpsnap"><input type="range" id="depthSnap" min="0" max="0" value="0" aria-label="Xem lại lần chụp sổ lệnh"><small id="depthSnapInfo"></small></div>
+      <div id="depthRatios" class="dpratios"></div>
+    </section>
+    <section class="card dpside" id="depthQuick"><h4>Tâm lý nhanh</h4><p class="note">Đang tải…</p></section>
+  </div>
+  <div id="depthTip" class="dptip" hidden></div>
 </main>
 
 <main class="view analysis" id="view-analysis" hidden>
@@ -870,6 +884,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611062007"></script>
+<script type="module" src="js/app.js?v=202611062023"></script>
 </body>
 </html>
