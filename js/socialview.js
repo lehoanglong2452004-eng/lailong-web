@@ -4,10 +4,10 @@
 // Nghiêng tích cực / tiêu cực chấm tự động theo từ khoá nên chỉ để xem xu hướng chung, có thể sai từng bài.
 // Không bao giờ hiện tác giả, tổ chức hay nội dung Việt Nam (lọc ở máy chủ và lọc lại ở đây bằng isVN).
 
-import { liveJson } from "./util.js?v=202611061950";
-import { setFresh } from "./fresh.js?v=202611061950";
-import { bi, mountLang } from "./lang.js?v=202611061950";
-import { isVN } from "./newsdigest.js?v=202611061950";
+import { liveJson } from "./util.js?v=202611061957";
+import { setFresh } from "./fresh.js?v=202611061957";
+import { bi, mountLang } from "./lang.js?v=202611061957";
+import { isVN } from "./newsdigest.js?v=202611061957";
 
 export const GROUP_ICON = { inst: "🏦", macro: "📊", fund: "💼", trader: "📈", crypto: "₿", cb: "🏛", media: "🎙" };
 export const TOPICS = [["", "Tất cả"], ["macro", "Vĩ mô"], ["stocks", "Chứng khoán"], ["fx", "Forex"], ["comm", "Hàng hoá"], ["crypto", "Crypto"], ["bonds", "Trái phiếu"]];
@@ -77,7 +77,7 @@ export function initSocial({ $, esc }) {
       groups.map(([id, nm]) => `<button class="socg${group === id && !who ? " on" : ""}" data-group="${id}"><span>${GROUP_ICON[id] || ""} ${esc(nm)}</span><small>${n(id)}</small></button>`).join("");
     const list = srcs.filter(s => !group || s.group === group);
     h += `<div class="sochd">${group ? esc(data.groups[group] || "") : "Tất cả nguồn"}</div>` + list.map(s => {
-      const st = !s.ok ? ["err", `Lỗi: ${s.err}`] : s.stale ? ["stale", "Im lặng quá 30 ngày, nên cân nhắc bỏ"] : ["ok", s.last ? `Bài mới nhất ${ago(s.last)}` : "Chưa có bài"];
+      const st = !s.ok ? ["err", `Lỗi: ${s.err}`] : s.stale ? ["stale", "Im lặng quá 30 ngày, nên cân nhắc bỏ"] : ["ok", (s.last ? `Bài mới nhất ${ago(s.last)}` : "Chưa có bài") + (s.via ? `, lấy qua ${s.via} (chỉ có tiêu đề)` : "")];
       return `<button class="socp${who === s.id ? " on" : ""}" data-who="${s.id}" title="${esc(s.role)} · ${esc(st[1])}"><i class="sdot ${st[0]}"></i><span>${esc(s.name)}</span><b class="tier t${s.tier}" title="${esc((data.tiers || {})[s.tier] || "")}">${s.tier}</b></button>`;
     }).join("");
     h += `<div class="sochd">Bậc tin cậy</div><div class="soctiers">${Object.entries(data.tiers || {}).map(([k, v]) => `<div><b class="tier t${k}">${k}</b> ${esc(v)}</div>`).join("")}</div>`;
