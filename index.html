@@ -16,17 +16,16 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611052247">
-<link rel="stylesheet" href="css/app.css?v=202611052247">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611061930">
+<link rel="stylesheet" href="css/app.css?v=202611061930">
 </head>
 <body>
 <header class="menubar">
   <div class="brand" data-tip="© 2026 Lai Long Desk. Bảo lưu mọi quyền.">LAI LONG <span>DESK</span></div>
   <nav class="seg views" id="views">
     <button data-view="terminal" class="on" data-tip="Bookmap, footprint, nến và sổ lệnh trực tiếp">Terminal</button>
-    <button data-view="radar" data-tip="Radar: khối lượng bất thường theo bối cảnh, thị trường phản ứng chính thức hay tạm thời, lịch sử lặp lại; crypto và hợp đồng tương lai">Radar</button>
     <button data-view="multi" data-tip="Nhiều biểu đồ nến cùng lúc, mỗi ô một mã và khung thời gian riêng; kéo thả, đổi cỡ, thu nhỏ từng ô">Đa biểu đồ</button>
-    <button data-view="signals" data-g="signals-book">Tín hiệu</button>
+    <button data-view="news" data-tip="Lịch kinh tế có số thực tế, tin tức cập nhật vài phút một lần, báo động khi chỉ số biến động bất thường">Tin tức</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
     <button data-view="markets" data-tip="Hàng hoá phái sinh, forex và lãi suất, crypto, quỹ ETF, cá voi và thanh lý">Thị trường</button>
     <button data-view="options" data-tip="GEX, tường call/put, điểm lật gamma, max pain, bề mặt IV 3D: BTC, ETH, S&amp;P 500, Nasdaq, vàng, dầu…">Quyền chọn</button>
@@ -398,8 +397,38 @@
 
 <main class="view mcview" id="view-multi" hidden></main>
 
+<main class="view analysis" id="view-news" hidden>
+  <div class="moveralert" id="moverAlert" hidden></div>
+  <div class="cards">
+    <section class="card wide">
+      <h3>Lịch kinh tế <button class="q" data-g="econ-calendar">?</button> <span id="calFresh"></span></h3>
+      <div id="calTabs" class="newstabs"></div>
+      <div id="calBody" class="tablewrap calbox"></div>
+    </section>
+    <section class="card newsmain">
+      <h3>Tin tức <button class="q" data-g="crypto-news">?</button> <button class="tool" id="newsOnly" hidden>Mọi coin</button> <small id="newsUpd"></small></h3>
+      <div id="newsTabs" class="newstabs"></div>
+      <div id="regionTabs" class="newstabs"></div>
+      <div id="newsBody" class="newsbox newsbig"></div>
+    </section>
+    <section class="card">
+      <h3>Chỉ số đang theo dõi để báo động <button class="q" data-g="movers">?</button></h3>
+      <div id="moverQuotes"></div>
+    </section>
+    <section class="card wide">
+      <h3>Bản đồ tác động tin tức <button class="q" data-g="impact-map">?</button> <small id="impactUpd"></small></h3>
+      <div id="impactMap" class="impactmap"></div>
+      <div id="impactDetail" class="impactdetail"></div>
+    </section>
+    <section class="card wide">
+      <h3>Giá phản ứng sau tin <button class="q" data-g="news-reaction">?</button> <small>DXY, vàng, dầu, lợi suất 10 năm, S&amp;P 500, BTC chạy bao nhiêu sau 15, 30, 60 phút (nguồn Yahoo Finance, chậm khoảng 15 phút)</small></h3>
+      <div id="reactBody"></div>
+    </section>
+  </div>
+</main>
+
 <main class="view analysis" id="view-analysis" hidden>
-  <div class="newstabs atabs" id="aTabs" role="tablist" aria-label="Mục phân tích"><button data-at="overview" class="on">Tổng quan</button><button data-at="levels">Mức giá</button><button data-at="derivs">Phái sinh</button><button data-at="macro">Vĩ mô và dòng tiền</button><button data-at="news">Tin tức và lịch</button></div>
+  <div class="newstabs atabs" id="aTabs" role="tablist" aria-label="Mục phân tích"><button data-at="overview" class="on">Tổng quan</button><button data-at="levels">Mức giá</button><button data-at="derivs">Phái sinh</button><button data-at="macro">Vĩ mô và dòng tiền</button></div>
   <section class="card biascard" id="biasCard" data-g="mtf">
     <div class="biasL"><small>Thiên hướng <span id="biasSym"></span> (gộp 5 khung)</small><div class="biasV"><b id="biasLabel">Đang tính…</b> <span id="biasScore"></span></div>
       <div class="biasbar"><i id="biasMark"></i></div><div class="biasax"><span>−100 giảm mạnh</span><span>0</span><span>+100 tăng mạnh</span></div>
@@ -430,24 +459,6 @@
       <h3>COT của CFTC: tổ chức đang long hay short <button class="q" data-g="cot">?</button> <span id="instCotFresh"></span></h3>
       <div id="instCotTabs" class="newstabs"></div>
       <div id="instCot"></div>
-    </section>
-    <section class="card wide" data-at="overview news">
-      <h3>Bản đồ tác động tin tức <button class="q" data-g="impact-map">?</button> <small id="impactUpd"></small></h3>
-      <div id="impactMap" class="impactmap"></div>
-      <div id="impactDetail" class="impactdetail"></div>
-    </section>
-    <section class="card" data-at="news">
-      <h3>Lịch kinh tế tuần này <button class="q" data-g="econ-calendar">?</button></h3>
-      <div id="calBody" class="tablewrap newsbox"></div>
-    </section>
-    <section class="card" data-at="news">
-      <h3>Tin tức <button class="q" data-g="crypto-news">?</button> <button class="tool" id="newsOnly" hidden>Mọi coin</button> <small id="newsUpd"></small></h3>
-      <div id="newsTabs" class="newstabs"></div>
-      <div id="newsBody" class="newsbox"></div>
-    </section>
-    <section class="card wide" data-at="news">
-      <h3>Giá phản ứng sau tin <button class="q" data-g="news-reaction">?</button> <small>DXY, vàng, dầu, lợi suất 10 năm, S&amp;P 500, BTC chạy bao nhiêu sau 15, 30, 60 phút (nguồn Yahoo Finance, chậm khoảng 15 phút)</small></h3>
-      <div id="reactBody"></div>
     </section>
     <section class="card wide" data-at="overview levels">
       <h3>Xu hướng, động lượng và độ biến động theo khung thời gian <button class="q" data-g="mtf">?</button> <span id="fsMtf"></span></h3>
@@ -849,6 +860,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611052247"></script>
+<script type="module" src="js/app.js?v=202611061930"></script>
 </body>
 </html>

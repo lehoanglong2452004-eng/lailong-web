@@ -13,9 +13,10 @@ export const SOURCES = [
   { id: "hyperliquid", name: "Hyperliquid", kind: "live", feeds: "Cá voi, sổ lệnh khi chọn Hyperliquid", hosts: ["api.hyperliquid.xyz"], expect: 600e3 },
   { id: "deribit", name: "Deribit", kind: "live", feeds: "Quyền chọn BTC/ETH, DVOL", hosts: ["www.deribit.com"], probe: "https://www.deribit.com/api/v2/public/get_time", expect: 300e3 },
   { id: "coinbase", name: "Coinbase", kind: "live", feeds: "Chênh giá Coinbase (Radar, chỉ số tổ chức)", hosts: ["api.exchange.coinbase.com"], probe: "https://api.exchange.coinbase.com/time", expect: 600e3 },
-  { id: "d-calendar", name: "Lịch kinh tế", kind: "delay", feeds: "ForexFactory + số thực tế Nasdaq", file: "data/calendar.json", expect: 45 * 60e3 },
-  { id: "d-news", name: "Tin tức (51 nguồn)", kind: "delay", feeds: "Tab Phân tích, bản đồ tác động tin", file: "data/news.json", expect: 45 * 60e3 },
-  { id: "d-reactions", name: "Giá phản ứng sau tin", kind: "delay", feeds: "Bản đồ tác động tin", file: "data/reactions.json", expect: 45 * 60e3 },
+  { id: "d-calendar", name: "Lịch kinh tế", kind: "delay", feeds: "ForexFactory + số thực tế Nasdaq", file: "data/calendar.json", live: true, expect: 10 * 60e3 },
+  { id: "d-news", name: "Tin tức (khoảng 60 nguồn)", kind: "delay", feeds: "Trang Tin tức, bản đồ tác động tin", file: "data/news.json", live: true, expect: 10 * 60e3 },
+  { id: "d-reactions", name: "Giá phản ứng sau tin", kind: "delay", feeds: "Trang Tin tức", file: "data/reactions.json", live: true, expect: 15 * 60e3 },
+  { id: "d-movers", name: "Biến động bất thường", kind: "delay", feeds: "Trang Tin tức (Yahoo, có mã trễ 15–20 phút)", file: "data/movers.json", live: true, expect: 10 * 60e3 },
   { id: "d-markets", name: "Hàng hoá, forex, crypto", kind: "delay", feeds: "Tab Thị trường (Yahoo, trễ 10–15 phút)", file: "data/markets.json", expect: 45 * 60e3 },
   { id: "d-whales", name: "Cá voi Hyperliquid", kind: "delay", feeds: "Tab Thị trường", file: "data/whales.json", expect: 45 * 60e3 },
   { id: "d-vol", name: "VIX và chỉ số biến động", kind: "delay", feeds: "Tab Phân tích (Yahoo)", file: "data/vol.json", expect: 45 * 60e3 },
@@ -41,6 +42,8 @@ export function sourceOf(url) {
     if (s.hosts && s.hosts.includes(u.hostname)) return s.id;
     if (s.match && s.match.test(u.pathname)) return s.id;
     if (s.file && u.pathname.endsWith("/" + s.file)) return s.id;
+    // bản nhanh ở nhánh live (raw.githubusercontent.com/<chủ>/<repo>/<commit>/calendar.json)
+    if (s.file && s.live && u.hostname === "raw.githubusercontent.com" && u.pathname.endsWith("/" + s.file.replace(/^data\//, ""))) return s.id;
   }
   return null;
 }
@@ -53,7 +56,7 @@ export function record(id, { ok, rtt, err, updated, lag }, now = Date.now()) {
   if (ok) { s.ok++; s.lastOk = now; s.err = ""; } else if (ok === false) { s.fail++; s.err = err || "lỗi"; }
   if (rtt != null) push(s.rtt, rtt);
   if (lag != null) push(s.lag, lag, 50);
-  if (updated) { s.age = updated; s.ageT = now; }
+  if (updated && !(s.age > updated)) { s.age = updated; s.ageT = now; } // giữ bản mới hơn (data/ và nhánh live)
 }
 
 // thời điểm sàn ghi trên một tin WebSocket (ms), nếu có

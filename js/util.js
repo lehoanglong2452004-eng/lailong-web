@@ -109,6 +109,34 @@ export async function getJson(url, opts) {
   return resp.json();
 }
 
+// Dữ liệu nhanh (lịch kinh tế, tin, biến động chỉ số). Trên trang công khai (github.io) đọc nhánh `live` của repo web,
+// nơi máy chủ GitHub đẩy dữ liệu mới vài phút một lần (lailong/terminal/live.py); đọc theo mã commit mới nhất để
+// không dính bộ nhớ đệm 5 phút của raw.githubusercontent.com. Lấy bản nào mới hơn giữa nhánh live và data/ của trang.
+// Trên laptop, data/ do máy chủ cục bộ lấy trực tiếp nên chỉ đọc data/.
+export function liveRepo(loc = globalThis.location) {
+  const h = loc && loc.hostname || "";
+  if (!h.endsWith(".github.io")) return null;
+  return { owner: h.split(".")[0], repo: (loc.pathname || "").split("/").filter(Boolean)[0] || h };
+}
+const LIVE = { sha: null, at: 0 };
+async function liveHead(r) {
+  if (LIVE.sha && Date.now() - LIVE.at < 90e3) return LIVE.sha;
+  try {
+    const resp = await fetch(`https://api.github.com/repos/${r.owner}/${r.repo}/commits/live`, { headers: { Accept: "application/vnd.github.sha" } });
+    if (resp.ok) { LIVE.sha = (await resp.text()).trim(); LIVE.at = Date.now(); }
+    else LIVE.at = Date.now() - 30e3; // hết lượt gọi API: dùng tên nhánh, thử lại sau 1 phút
+  } catch { /* mạng lỗi: dùng tên nhánh */ }
+  return LIVE.sha;
+}
+export function newer(a, b) { if (!a) return b || null; if (!b) return a; return (a.updated || 0) >= (b.updated || 0) ? a : b; }
+export async function liveJson(name) {
+  const local = getJson(`data/${name}?t=${Math.floor(Date.now() / 60e3)}`).catch(() => null), r = liveRepo();
+  if (!r) return local;
+  let fast = null;
+  try { fast = await getJson(`https://raw.githubusercontent.com/${r.owner}/${r.repo}/${(await liveHead(r)) || "live"}/${name}`); } catch { fast = null; }
+  return newer(fast, await local);
+}
+
 export function postJson(url, body) {
   return getJson(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 }
