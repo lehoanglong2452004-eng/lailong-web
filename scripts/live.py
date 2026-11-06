@@ -4,7 +4,7 @@ GitHub chỉ chạy lịch hẹn giờ vài tiếng một lần với repo nhỏ
 một lần chạy GitHub Actions giữ vòng lặp này gần 6 tiếng, cứ vài phút lấy lại dữ liệu và đẩy lên
 nhánh `live` (một commit duy nhất, ghi đè, để repo không phình). Trang web đọc thẳng nhánh này.
 
-    python live.py --out live --minutes 340 --push
+    python live.py --out live --minutes 340 --push --translate
 
 Chỉ dùng thư viện chuẩn. Không bao giờ lấy nguồn tin của Việt Nam (lọc trong news.py).
 """
@@ -21,6 +21,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import news  # noqa: E402
+import social  # noqa: E402
+import translate  # noqa: E402
 
 KEY = ("t", "country", "title")
 
@@ -117,11 +119,28 @@ def _push(out: Path) -> None:
     print("không đẩy được lên nhánh live", flush=True)
 
 
+def _vi_errors(data: dict, tr) -> None:
+    """Ghi lỗi dịch (nếu có) vào danh sách lỗi của file để trang Tình trạng dữ liệu thấy."""
+    if tr is not None and tr.errors:
+        data.setdefault("errors", []).extend(f"Dịch: {e}" for e in tr.errors[-3:])
+        tr.errors.clear()
+
+
 def step(
-    out: Path, state: dict, now: float, cal_every: float, news_every: float, react_every: float
+    out: Path,
+    state: dict,
+    now: float,
+    cal_every: float,
+    news_every: float,
+    react_every: float,
+    social_every: float = 300,
 ) -> list[str]:
-    """Một vòng: trả về tên các file vừa thay đổi."""
+    """Một vòng: trả về tên các file vừa thay đổi.
+
+    state["tr"] (nếu có) là bộ dịch Anh -> Việt: tin và bài mạng xã hội được thêm bản tiếng Việt.
+    """
     changed = []
+    tr = state.get("tr")
     if state.get("raw") is None or now - state.get("t_raw", 0) >= cal_every:
         try:
             raw, errs = news.fetch_calendar_raw()
@@ -149,10 +168,31 @@ def step(
     if now - state.get("t_news", -1e18) >= news_every:
         state["t_news"] = now
         try:
-            if _write(out / "news.json", news.fetch_news(), "items"):
+            data = news.fetch_news()
+            news.keep_first_seen(
+                data.get("items", []), (_read(out / "news.json") or {}).get("items", [])
+            )
+            data["items"].sort(key=lambda x: -x["t"])
+            if tr is not None:
+                translate.add_vi_news(data, tr, budget=200)
+                _vi_errors(data, tr)
+            if _write(out / "news.json", data, "items"):
                 changed.append("news.json")
         except Exception as exc:
             print("tin lỗi:", exc, flush=True)
+    if now - state.get("t_social", -1e18) >= social_every:
+        state["t_social"] = now
+        try:
+            data = social.fetch_social(int(now * 1000))
+            if tr is not None:
+                translate.add_vi_social(data, tr, budget=120)
+                _vi_errors(data, tr)
+            if _write(out / "social.json", data, "posts"):
+                changed.append("social.json")
+        except Exception as exc:
+            print("mạng xã hội lỗi:", exc, flush=True)
+    if tr is not None and tr.dirty:
+        tr.save()
     if state.get("events") and now - state.get("t_react", -1e18) >= react_every:
         state["t_react"] = now
         try:
@@ -181,15 +221,23 @@ def main(argv: list[str] | None = None) -> None:
         "--cal-every", type=float, default=900, help="giây giữa hai lần tải lại lịch ForexFactory"
     )
     ap.add_argument("--react-every", type=float, default=300)
+    ap.add_argument("--social-every", type=float, default=300)
     ap.add_argument("--push", action="store_true")
+    ap.add_argument(
+        "--translate",
+        action="store_true",
+        help="thêm bản tiếng Việt (bộ nhớ dịch: translations.json)",
+    )
     a = ap.parse_args(argv)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     state: dict = {}
+    if a.translate:
+        state["tr"] = translate.Translator(out / "translations.json")
     end = time.time() + a.minutes * 60
     while True:
         t0 = time.time()
-        changed = step(out, state, t0, a.cal_every, a.news_every, a.react_every)
+        changed = step(out, state, t0, a.cal_every, a.news_every, a.react_every, a.social_every)
         if changed:
             (out / "live.json").write_text(
                 json.dumps({"updated": int(t0 * 1000), "files": changed}), encoding="utf-8"

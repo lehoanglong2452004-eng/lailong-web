@@ -4,9 +4,10 @@
 // một lần (xem util.liveJson và lailong/terminal/live.py); bản trên laptop dùng data/ do máy chủ lấy trực tiếp.
 // Không dùng tin của báo, tác giả, tổ chức Việt Nam hay tin tiếng Việt. Tin nóng được gom thành bản tin Telegram
 // tối đa mỗi 30 phút (xem newsdigest.js); các tin đã gửi lưu trên máy này để không gửi lại.
-import { setFresh } from "./fresh.js?v=202611061930";
-import { liveJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202611061930";
-import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202611061930";
+import { setFresh } from "./fresh.js?v=202611061944";
+import { bi, mountLang } from "./lang.js?v=202611061944";
+import { liveJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202611061944";
+import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202611061944";
 
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],
   [/FOMC|Federal Funds|Fed Chair|Powell/i, "Fed"], [/Retail Sales/i, "doanh số bán lẻ"], [/GDP/i, "GDP"], [/PCE/i, "chi tiêu PCE (Fed hay dùng)"],
@@ -174,7 +175,7 @@ export function initNews({ $, esc, alerts, coin }) {
   }
 
   const RG = { asia: "Châu Á", eu: "Châu Âu", us: "Mỹ" };
-  const newsRow = x => `<a class="newsit${x.hot ? " hot" : ""}" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer"><span class="nt">${Date.now() - x.t < 15 * 60e3 ? `<b class="nnew">MỚI</b> ` : ""}${x.region ? `<b class="nrg ${x.region}">${RG[x.region]}</b> ` : ""}${fmtTime(x.t, true).slice(0, 11)} · ${esc(x.source)}${x.cat && !cat ? " · " + esc((CATS.find(c => c.id === x.cat) || {}).name || "") : ""}${x.coins && x.coins.length ? " · " + esc(x.coins.join(", ")) : ""}</span>${x.hot ? "🔥 " : ""}${esc(x.title)}</a>`;
+  const newsRow = x => `<a class="newsit${x.hot ? " hot" : ""}" href="${esc(x.link)}" target="_blank" rel="noopener noreferrer"><span class="nt">${Date.now() - x.t < 15 * 60e3 ? `<b class="nnew">MỚI</b> ` : ""}${x.region ? `<b class="nrg ${x.region}">${RG[x.region]}</b> ` : ""}${fmtTime(x.t, true).slice(0, 11)} · ${esc(x.source)}${x.cat && !cat ? " · " + esc((CATS.find(c => c.id === x.cat) || {}).name || "") : ""}${x.coins && x.coins.length ? " · " + esc(x.coins.join(", ")) : ""}</span>${x.hot ? "🔥 " : ""}${bi(x.title, x.vi, esc)}</a>`;
 
   const CAL_MODES = [["today", "Hôm nay"], ["week", "Tuần này"], ["next", "Tuần sau"]];
   const left = ms => { const m = Math.max(1, Math.round(ms / 60e3)); return `còn ${m >= 60 ? Math.floor(m / 60) + " giờ " : ""}${m % 60 ? (m % 60) + " phút" : ""}`.trim(); };
@@ -304,6 +305,8 @@ export function initNews({ $, esc, alerts, coin }) {
   $("newsOnly").onclick = () => { onlyCoin = !onlyCoin; renderNews(); };
   if ($("regionTabs")) $("regionTabs").onclick = e => { const b = e.target.closest("[data-region]"); if (!b) return; region = b.dataset.region; try { sessionStorage.setItem("lailong.newsregion", region); } catch { /* bỏ qua */ } renderNews(); };
   if ($("calTabs")) $("calTabs").onclick = e => { const b = e.target.closest("[data-cal]"); if (!b) return; if (b.dataset.cal === "hi") calHi = !calHi; else calMode = b.dataset.cal; renderCal(); };
+  mountLang($("newsLang"));
+  document.addEventListener("lailong-lang", () => render());
   // làm mới mỗi 2 phút; tab đang ẩn thì thôi, quay lại tab là tải ngay
   load(); setInterval(() => { if (!document.hidden) load(); }, 2 * 60e3); setInterval(() => { tick(); renderCal(); }, 30e3);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });

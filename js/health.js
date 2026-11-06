@@ -16,6 +16,7 @@ export const SOURCES = [
   { id: "d-calendar", name: "Lịch kinh tế", kind: "delay", feeds: "ForexFactory + số thực tế Nasdaq", file: "data/calendar.json", live: true, expect: 10 * 60e3 },
   { id: "d-news", name: "Tin tức (khoảng 60 nguồn)", kind: "delay", feeds: "Trang Tin tức, bản đồ tác động tin", file: "data/news.json", live: true, expect: 10 * 60e3 },
   { id: "d-reactions", name: "Giá phản ứng sau tin", kind: "delay", feeds: "Trang Tin tức", file: "data/reactions.json", live: true, expect: 15 * 60e3 },
+  { id: "d-social", name: "Mạng xã hội (chuyên gia)", kind: "delay", feeds: "Trang Mạng xã hội: Bluesky, Substack, YouTube, tổ chức lớn", file: "data/social.json", live: true, expect: 20 * 60e3 },
   { id: "d-movers", name: "Biến động bất thường", kind: "delay", feeds: "Trang Tin tức (Yahoo, có mã trễ 15–20 phút)", file: "data/movers.json", live: true, expect: 10 * 60e3 },
   { id: "d-markets", name: "Hàng hoá, forex, crypto", kind: "delay", feeds: "Tab Thị trường (Yahoo, trễ 10–15 phút)", file: "data/markets.json", expect: 45 * 60e3 },
   { id: "d-whales", name: "Cá voi Hyperliquid", kind: "delay", feeds: "Tab Thị trường", file: "data/whales.json", expect: 45 * 60e3 },
