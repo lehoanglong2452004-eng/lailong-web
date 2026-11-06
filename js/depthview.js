@@ -6,26 +6,42 @@
 // Phải: vị thế ƯỚC TÍNH theo giá vào lệnh, dựng từ nến 1 phút Binance futures: khối lượng mua chủ động coi như
 // long mở ở vùng giá của nến, bán chủ động coi như short. Long vào dưới giá hiện tại là đang lãi, trên là đang lỗ;
 // short ngược lại. Đây là ước tính thô (lệnh mua chủ động cũng có thể là short đóng lệnh), không phải dữ liệu vị thế thật.
-// Cứ mỗi phút khi trang đang mở thì chụp lại sổ lệnh một lần để xem lại và so Tăng–Giảm.
+// Cứ 10 giây khi trang đang mở thì chụp lại sổ lệnh (Binance Spot và Coinbase nặng nên 30 giây một lần, giữa hai lần
+// dùng lại bản trước); giá chạy theo từng giao dịch Binance Futures qua WebSocket. Lần chụp được gom sẵn theo ô nhỏ
+// trong ±12% quanh giá cho nhẹ bộ nhớ: giữ hết 10 phút gần nhất, cũ hơn giữ mỗi phút một lần.
+// Hàng hoá có đuôi USDT (XAUUSDT, CLUSDT…) chỉ có trên sàn phái sinh nên chỉ lấy Binance Futures và Bybit.
 
-import { getJson, niceStep } from "./util.js?v=202611062023";
+import { getJson, niceStep } from "./util.js?v=202611062057";
 
 const FAPI = "https://fapi.binance.com", SAPI = "https://api.binance.com";
-export const DEPTH_COINS = ["BTC", "ETH", "SOL", "XRP", "BNB", "DOGE", "ADA", "LINK", "AVAX", "SUI"];
+export const DEPTH_COMMODITIES = [["XAU", "Vàng"], ["XAG", "Bạc"], ["XPT", "Bạch kim"], ["COPPER", "Đồng"], ["CL", "Dầu WTI"], ["BZ", "Dầu Brent"]];
+export const DEPTH_COINS = ["BTC", "ETH", "SOL", "XRP", "BNB", "DOGE", "ADA", "LINK", "AVAX", "SUI", ...DEPTH_COMMODITIES.map(c => c[0])];
+export const isCommodity = c => DEPTH_COMMODITIES.some(x => x[0] === c);
 export const DEPTH_PERIODS = [[20, "20 phút"], [60, "1 giờ"], [240, "4 giờ"], [720, "12 giờ"], [1440, "24 giờ"]];
 export const DEPTH_RANGES = [1, 2, 3, 5, 10];
 export const DEPTH_VIEWS = [["all", "Tất cả"], ["net", "Ròng"], ["diff", "Tăng–Giảm"]];
-const KEEP_SNAPS = 180;
+const SNAP_MS = 10e3, KEEP_ALL_MS = 10 * 60e3, KEEP_SNAPS = 240, STORE_PCT = 12;
 
-// các nguồn sổ lệnh: mỗi hàm trả về { bids: [[giá, số coin]], asks } (số lượng đã là số coin)
+// các nguồn sổ lệnh: mỗi hàm trả về { bids: [[giá, số coin]], asks } (số lượng đã là số coin); every: lấy lại sau bao lâu
 const num = a => a.map(r => [+r[0], +r[1]]);
 export const BOOK_SOURCES = [
-  { id: "bnf", name: "Binance Futures", get: c => getJson(`${FAPI}/fapi/v1/depth?symbol=${c}USDT&limit=1000`).then(d => ({ bids: num(d.bids), asks: num(d.asks) })) },
-  { id: "bns", name: "Binance Spot", get: c => getJson(`${SAPI}/api/v3/depth?symbol=${c}USDT&limit=5000`).then(d => ({ bids: num(d.bids), asks: num(d.asks) })) },
-  { id: "okx", name: "OKX Spot", get: c => getJson(`https://www.okx.com/api/v5/market/books?instId=${c}-USDT&sz=400`).then(d => ({ bids: num(d.data[0].bids), asks: num(d.data[0].asks) })) },
-  { id: "byb", name: "Bybit Futures", get: c => getJson(`https://api.bybit.com/v5/market/orderbook?category=linear&symbol=${c}USDT&limit=500`).then(d => ({ bids: num(d.result.b), asks: num(d.result.a) })) },
-  { id: "cb", name: "Coinbase", skip: c => c === "BNB", get: c => getJson(`https://api.exchange.coinbase.com/products/${c}-USD/book?level=2`).then(d => ({ bids: num(d.bids), asks: num(d.asks) })) },
+  { id: "bnf", name: "Binance Futures", every: 10e3, get: c => getJson(`${FAPI}/fapi/v1/depth?symbol=${c}USDT&limit=1000`).then(d => ({ bids: num(d.bids), asks: num(d.asks) })) },
+  { id: "bns", name: "Binance Spot", every: 30e3, skip: isCommodity, get: c => getJson(`${SAPI}/api/v3/depth?symbol=${c}USDT&limit=5000`).then(d => ({ bids: num(d.bids), asks: num(d.asks) })) },
+  { id: "okx", name: "OKX Spot", every: 10e3, skip: isCommodity, get: c => getJson(`https://www.okx.com/api/v5/market/books?instId=${c}-USDT&sz=400`).then(d => ({ bids: num(d.data[0].bids), asks: num(d.data[0].asks) })) },
+  { id: "byb", name: "Bybit Futures", every: 10e3, get: c => getJson(`https://api.bybit.com/v5/market/orderbook?category=linear&symbol=${c}USDT&limit=500`).then(d => ({ bids: num(d.result.b), asks: num(d.result.a) })) },
+  // Hyperliquid chỉ trả 20 mức mỗi bên: lấy một bản đủ chi tiết sát giá và một bản gộp 3 chữ số cho vùng xa
+  { id: "hl", name: "Hyperliquid", every: 10e3, skip: isCommodity, get: c => Promise.all([hlBook(c, null), hlBook(c, 3)]).then(([a, b]) => hlJoin(a, b)) },
+  { id: "cb", name: "Coinbase", every: 30e3, skip: c => c === "BNB" || isCommodity(c), get: c => getJson(`https://api.exchange.coinbase.com/products/${c}-USD/book?level=2`).then(d => ({ bids: num(d.bids), asks: num(d.asks) })) },
 ];
+
+const hlBook = (coin, nSigFigs) => getJson("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "l2Book", coin, nSigFigs }) })
+  .then(d => ({ bids: d.levels[0].map(x => [+x.px, +x.sz]), asks: d.levels[1].map(x => [+x.px, +x.sz]) }));
+// ghép sổ chi tiết (sát giá) với sổ gộp (xa giá): phần gộp chỉ lấy ngoài vùng bản chi tiết đã có
+export function hlJoin(fine, wide) {
+  const bLo = fine.bids.length ? fine.bids[fine.bids.length - 1][0] : Infinity, aHi = fine.asks.length ? fine.asks[fine.asks.length - 1][0] : -Infinity;
+  return { bids: fine.bids.concat(wide.bids.filter(r => r[0] < bLo)), asks: fine.asks.concat(wide.asks.filter(r => r[0] > aHi)) };
+}
+export const SRC_ALL = "all";
 
 // bước gom giá: khoảng ±range% chia khoảng 70 dòng, làm tròn số đẹp
 export function depthStep(price, rangePct) { return niceStep(price * rangePct / 100 * 2 / 70); }
@@ -53,6 +69,54 @@ export function mergeDepth(books, step) {
   }
   const mid = bestBid > 0 && isFinite(bestAsk) ? (bestBid + bestAsk) / 2 : bestBid || null;
   return { bids, asks, mid, ok, err };
+}
+
+// Ô gom nhỏ nhất để cất lần chụp: mọi bước gom của các khoảng giá (1, 2, 2,5, 5 × 10^n) đều là bội số của nó,
+// nên gom lại từ bản cất cho đúng như gom từ sổ lệnh gốc.
+export function baseStep(price) {
+  const m = depthStep(price, Math.min(...DEPTH_RANGES));
+  return m > 0 ? 0.5 * Math.pow(10, Math.floor(Math.log10(m) + 1e-9)) : 0;
+}
+const packMap = m => { const a = new Float64Array(m.size * 2); let i = 0; for (const [k, q] of m) { a[i++] = k; a[i++] = q; } return a; };
+// gộp sổ lệnh các sàn thành một bản gọn: { base, bids: Float64Array [ô, số coin, ...], asks, bestBid, bestAsk, ok, err }
+export function compactBooks(books, price, pct = STORE_PCT) {
+  const base = baseStep(price), lo = price * (1 - pct / 100), hi = price * (1 + pct / 100), bids = new Map(), asks = new Map(), ok = [], err = [];
+  let bestBid = 0, bestAsk = Infinity;
+  const inR = a => a.filter(r => r[0] >= lo && r[0] <= hi);
+  for (const b of books) {
+    if (!b || b.error) { if (b) err.push(`${b.name}: ${b.error}`); continue; }
+    ok.push(b.name);
+    bucketize(inR(b.bids), base, bids); bucketize(inR(b.asks), base, asks);
+    if (b.bids.length) bestBid = Math.max(bestBid, b.bids[0][0]);
+    if (b.asks.length) bestAsk = Math.min(bestAsk, b.asks[0][0]);
+  }
+  return { base, bids: packMap(bids), asks: packMap(asks), bestBid, bestAsk, ok, err };
+}
+// một hay nhiều bản gọn (mỗi sàn một bản) → sổ lệnh gộp theo bước gom step, cùng dạng mergeDepth
+export function unpackDepth(list, step) {
+  const bids = new Map(), asks = new Map(), ok = [], err = [];
+  let bestBid = 0, bestAsk = Infinity;
+  for (const c of Array.isArray(list) ? list : [list]) {
+    ok.push(...c.ok); err.push(...c.err);
+    if (!c.base) continue;
+    const m = step / c.base, im = Math.round(m), exact = Math.abs(m - im) < 1e-6 && im >= 1;
+    const side = (a, out) => { for (let i = 0; i < a.length; i += 2) { const k = exact ? Math.floor(a[i] / im) : Math.floor((a[i] + 0.5) * c.base / step); out.set(k, (out.get(k) || 0) + a[i + 1]); } };
+    side(c.bids, bids); side(c.asks, asks);
+    if (c.bestBid > 0) bestBid = Math.max(bestBid, c.bestBid);
+    if (c.bestAsk > 0) bestAsk = Math.min(bestAsk, c.bestAsk);
+  }
+  const mid = bestBid > 0 && isFinite(bestAsk) ? (bestBid + bestAsk) / 2 : bestBid || null;
+  return { bids, asks, mid, ok, err };
+}
+// giữ hết các lần chụp trong 10 phút gần nhất, cũ hơn thì mỗi phút một lần, tối đa KEEP_SNAPS
+export function thinSnaps(snaps, now = Date.now(), keepAll = KEEP_ALL_MS, max = KEEP_SNAPS) {
+  const out = []; let lastMin = null;
+  for (const s of snaps) {
+    if (now - s.t <= keepAll) { out.push(s); continue; }
+    const m = Math.floor(s.t / 60e3); if (m === lastMin) continue;
+    lastMin = m; out.push(s);
+  }
+  return out.length > max ? out.slice(out.length - max) : out;
 }
 
 // vị thế ước tính theo giá vào lệnh từ nến [t, o, h, l, c, v, ..., takerBuyV (chỉ số 9)]:
@@ -108,17 +172,35 @@ const pctTxt = r => r == null ? "–" : Math.round(r * 100) + "%";
 export function initDepth({ $, esc }) {
   const cv = $("depthCanvas"); if (!cv) return { show() {}, hide() {} };
   const ctx = cv.getContext("2d");
-  const S = { coin: "BTC", period: 60, range: 3, view: "all", snaps: [], at: -1, pos: null, ls: null, timer: null, visible: false, busy: false, sent: {}, err: [] };
-  try { Object.assign(S, JSON.parse(localStorage.getItem("lailong.depth") || "{}"), { snaps: [], at: -1, pos: null, ls: null, timer: null, visible: false, busy: false, sent: {}, err: [] }); } catch { /* bỏ qua */ }
+  const S = { src: SRC_ALL, coin: "BTC", period: 60, range: 3, view: "all", snaps: [], at: -1, pos: null, ls: null, timer: null, visible: false, busy: false, sent: {}, err: [], books: {}, noSym: {}, livePx: null };
+  try { Object.assign(S, JSON.parse(localStorage.getItem("lailong.depth") || "{}"), { snaps: [], at: -1, pos: null, ls: null, timer: null, visible: false, busy: false, sent: {}, err: [], books: {}, noSym: {}, livePx: null }); } catch { /* bỏ qua */ }
   if (!DEPTH_COINS.includes(S.coin)) S.coin = "BTC";
-  const save = () => { try { localStorage.setItem("lailong.depth", JSON.stringify({ coin: S.coin, period: S.period, range: S.range, view: S.view })); } catch { /* bỏ qua */ } };
+  if (S.src !== SRC_ALL && !BOOK_SOURCES.some(b => b.id === S.src)) S.src = SRC_ALL;
+  // các sàn đang xem: tất cả, hoặc một sàn; sàn đã chọn không có mã này thì về Gộp tất cả
+  const pickCs = cs => { if (S.src === SRC_ALL) return cs; const one = cs.filter(c => c.id === S.src); return one.length ? one : cs; };
+  const save = () => { try { localStorage.setItem("lailong.depth", JSON.stringify({ src: S.src, coin: S.coin, period: S.period, range: S.range, view: S.view })); } catch { /* bỏ qua */ } };
 
+  // sổ lệnh một sàn: dùng lại bản trước nếu chưa tới lượt lấy lại; sàn không có mã này (HTTP 400/404) thì bỏ qua cả phiên
+  async function book(s, coin) {
+    const key = s.id + ":" + coin, old = S.books[key];
+    if (old && Date.now() - old.t < s.every - 500) return old.b;
+    try { const b = { ...(await s.get(coin)), name: s.name }; S.books[key] = { t: Date.now(), b }; return b; }
+    catch (e) {
+      const msg = String(e.message || e);
+      // HTTP 400/404 hoặc dữ liệu trả về không đúng dạng (sàn báo mã không có) chứ không phải mất mạng
+      if (/HTTP 40[04]|Cannot read|undefined|not iterable/.test(msg) && !/fetch|network/i.test(msg) && !(old && old.b && !old.b.error)) S.noSym[key] = true;
+      return old && Date.now() - old.t < 60e3 ? old.b : { name: s.name, error: msg.slice(0, 80) };
+    }
+  }
   async function snap() {
-    const got = await Promise.all(BOOK_SOURCES.filter(s => !(s.skip && s.skip(S.coin))).map(s => s.get(S.coin).then(b => ({ ...b, name: s.name }), e => ({ name: s.name, error: String(e.message || e).slice(0, 80) }))));
-    const ref = got.find(b => !b.error && b.bids.length);
-    if (!ref) { S.err = got.map(b => `${b.name}: ${b.error}`); return null; }
-    // giữ nguyên các mức giá gốc để đổi bước gom khi đổi khoảng giá
-    return { t: Date.now(), books: got, price: (ref.bids[0][0] + ref.asks[0][0]) / 2 };
+    const coin = S.coin, srcs = BOOK_SOURCES.filter(s => !(s.skip && s.skip(coin)) && !S.noSym[s.id + ":" + coin]);
+    const got = await Promise.all(srcs.map(s => book(s, coin)));
+    if (coin !== S.coin) return null;
+    const ref = got.find(b => !b.error && b.bids.length && b.asks.length);
+    if (!ref) { S.err = got.map(b => `${b.name}: ${b.error || "trống"}`); return null; }
+    const price = (ref.bids[0][0] + ref.asks[0][0]) / 2;
+    // mỗi sàn một bản gọn để xem riêng từng sàn hoặc gộp tất cả
+    return { t: Date.now(), price, cs: got.map((b, i) => ({ id: srcs[i].id, ...compactBooks([b], price) })) };
   }
   async function loadPos() {
     const n = Math.min(1500, S.period);
@@ -139,10 +221,9 @@ export function initDepth({ $, esc }) {
     try {
       const sn = await snap();
       if (sn) {
-        const follow = S.at < 0 || S.at === S.snaps.length - 1; // đang xem lần chụp cũ thì giữ nguyên chỗ đang xem
-        S.snaps.push(sn);
-        if (S.snaps.length > KEEP_SNAPS) { S.snaps.shift(); if (!follow) S.at = Math.max(0, S.at - 1); }
-        if (follow) S.at = S.snaps.length - 1;
+        const follow = S.at < 0 || S.at === S.snaps.length - 1, viewing = S.snaps[S.at]; // đang xem lần chụp cũ thì giữ nguyên chỗ đang xem
+        S.snaps.push(sn); S.snaps = thinSnaps(S.snaps, sn.t);
+        S.at = follow ? S.snaps.length - 1 : Math.max(0, S.snaps.findIndex(x => x.t >= viewing.t));
       }
       if (full || !S.pos || Date.now() - (S.posAt || 0) > 60e3) { await loadPos(); S.posAt = Date.now(); }
       loadQuick().then(renderSide, () => {});
@@ -152,19 +233,25 @@ export function initDepth({ $, esc }) {
 
   function data() {
     const sn = S.snaps[S.at]; if (!sn) return null;
-    const step = depthStep(sn.price, S.range), depth = mergeDepth(sn.books, step), price = depth.mid || sn.price;
+    const key = `${sn.t}|${S.src}|${S.range}|${S.view}|${S.period}|${S.posAt || 0}`;
+    if (S.memo && S.memo.key === key) return withLive(S.memo.D);
+    const step = depthStep(sn.price, S.range), depth = unpackDepth(pickCs(sn.cs), step), price = depth.mid || sn.price;
     const pos = S.pos ? entryProfile(S.pos, step) : null;
     // Tăng–Giảm: so với lần chụp cách đó khoảng một "khoảng thời gian", hoặc lần đầu nếu chưa đủ lâu
     let diff = null, base = null;
     if (S.view === "diff") {
       base = S.snaps.slice(0, S.at).reverse().find(x => sn.t - x.t >= S.period * 60e3) || S.snaps[0];
-      if (base && base !== sn) diff = depthDiff(depth, mergeDepth(base.books, step));
+      if (base && base !== sn) diff = depthDiff(depth, unpackDepth(pickCs(base.cs), step));
     }
-    return { sn, step, depth, price, pos, diff, base };
+    const D = { sn, step, depth, price, pos, diff, base };
+    S.memo = { key, D };
+    return withLive(D);
   }
+  // đang xem lần chụp mới nhất thì đường giá chạy theo giao dịch trực tiếp
+  const withLive = D => (S.livePx && S.at === S.snaps.length - 1 && Math.abs(S.livePx / D.price - 1) < 0.05 ? { ...D, price: S.livePx } : D);
 
-  function render() {
-    renderBar();
+  function render() { renderBar(); draw(); }
+  function draw() {
     const r = cv.parentElement.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, W = Math.max(320, r.width), H = Math.max(360, r.height);
     if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + "px"; cv.style.height = H + "px"; }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -218,7 +305,7 @@ export function initDepth({ $, esc }) {
     // tiêu đề hai bên và nhãn góc
     ctx.font = `bold 12px ${MONO}`; ctx.fillStyle = C("--accent") || "#ff9f1c";
     const narrow = W < 760;
-    ctx.fillText(diff ? (narrow ? "THÊM / RÚT" : `LỆNH CHỜ THÊM / RÚT so với ${new Date(D.base.t).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`) : narrow ? "LỆNH CHỜ" : S.view === "diff" ? "LỆNH CHỜ TRÊN SÀN · Tăng–Giảm cần lần chụp kế tiếp (mỗi phút)" : "LỆNH CHỜ TRÊN SÀN", cx / 2, 12);
+    ctx.fillText(diff ? (narrow ? "THÊM / RÚT" : `LỆNH CHỜ THÊM / RÚT so với ${new Date(D.base.t).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`) : narrow ? "LỆNH CHỜ" : S.view === "diff" ? "LỆNH CHỜ TRÊN SÀN · Tăng–Giảm cần lần chụp kế tiếp (10 giây)" : "LỆNH CHỜ TRÊN SÀN", cx / 2, 12);
     ctx.fillText(narrow ? "VỊ THẾ ƯỚC TÍNH" : S.view === "net" ? "VỊ THẾ ƯỚC TÍNH: LONG − SHORT" : "VỊ THẾ ƯỚC TÍNH (giá vào lệnh)", cx + cx / 2, 12);
     if (!narrow) {
       ctx.font = `11px ${MONO}`; ctx.fillStyle = muted; ctx.globalAlpha = 0.8;
@@ -233,14 +320,15 @@ export function initDepth({ $, esc }) {
   function renderBar() {
     const bar = $("depthBar"); if (!bar) return;
     const chips = (list, cur, attr) => list.map(([v, n]) => `<button class="${String(v) === String(cur) ? "on" : ""}" data-${attr}="${v}">${n}</button>`).join("");
-    bar.innerHTML = `<select id="depthCoin" class="tool">${DEPTH_COINS.map(c => `<option${c === S.coin ? " selected" : ""}>${c}</option>`).join("")}</select>` +
+    bar.innerHTML = `<select id="depthCoin" class="tool">${DEPTH_COINS.map(c => { const cm = DEPTH_COMMODITIES.find(x => x[0] === c); return `<option value="${c}"${c === S.coin ? " selected" : ""}>${cm ? `${c}USDT · ${cm[1]}` : c}</option>`; }).join("")}</select>` +
+      `<span class="dpgrp"><span class="muted">Sàn</span><span class="newstabs inl">${chips([[SRC_ALL, "Gộp tất cả"], ...BOOK_SOURCES.filter(b => !(b.skip && b.skip(S.coin)) && !S.noSym[b.id + ":" + S.coin]).map(b => [b.id, b.name])], S.src, "src")}</span></span>` +
       `<span class="dpgrp"><span class="muted">Khoảng</span><span class="newstabs inl">${chips(DEPTH_PERIODS, S.period, "period")}</span></span>` +
       `<span class="dpgrp"><span class="muted">Giá ±</span><span class="newstabs inl">${chips(DEPTH_RANGES.map(r => [r, r + "%"]), S.range, "range")}</span></span>` +
       `<span class="dpgrp"><span class="muted">Xem</span><span class="newstabs inl">${chips(DEPTH_VIEWS, S.view, "view")}</span></span>`;
     const sl = $("depthSnap"), sn = S.snaps[S.at];
     if (sl) {
       sl.max = Math.max(0, S.snaps.length - 1); sl.value = Math.max(0, S.at);
-      $("depthSnapInfo").textContent = sn ? `Lần chụp ${new Date(sn.t).toLocaleTimeString("vi-VN")} · ${S.at + 1}/${S.snaps.length} · tự chụp mỗi phút khi trang đang mở` : "";
+      $("depthSnapInfo").textContent = sn ? `Lần chụp ${new Date(sn.t).toLocaleTimeString("vi-VN")} · ${S.at + 1}/${S.snaps.length} · tự chụp mỗi 10 giây khi trang đang mở` : "";
     }
   }
 
@@ -279,19 +367,37 @@ export function initDepth({ $, esc }) {
 
   document.addEventListener("click", e => {
     if (!S.visible) return;
-    const b = e.target.closest("#depthBar [data-period], #depthBar [data-range], #depthBar [data-view], #depthQuick [data-coin]"); if (!b) return;
+    const b = e.target.closest("#depthBar [data-src], #depthBar [data-period], #depthBar [data-range], #depthBar [data-view], #depthQuick [data-coin]"); if (!b) return;
+    if (b.dataset.src) { S.src = b.dataset.src; save(); render(); return; }
     if (b.dataset.period) { S.period = +b.dataset.period; save(); tick(true); return; }
     if (b.dataset.range) { S.range = +b.dataset.range; save(); render(); return; }
     if (b.dataset.view) { S.view = b.dataset.view; save(); render(); return; }
     if (b.dataset.coin) setCoin(b.dataset.coin);
   });
   document.addEventListener("change", e => { if (e.target.id === "depthCoin") setCoin(e.target.value); });
-  function setCoin(c) { if (c === S.coin) return; S.coin = c; S.snaps = []; S.at = -1; S.pos = null; save(); render(); tick(true); renderSide(); }
+  function setCoin(c) { if (c === S.coin) return; S.coin = c; S.snaps = []; S.at = -1; S.pos = null; S.memo = null; S.livePx = null; save(); render(); tick(true); renderSide(); liveOn(); }
+  // giá trực tiếp: giao dịch Binance Futures qua WebSocket, vẽ lại tối đa 4 lần mỗi giây
+  let ws = null, wsCoin = null, wsRetry = 0, drawQ = false;
+  function liveOff() { wsCoin = null; if (ws) { const w = ws; ws = null; try { w.close(); } catch { /* bỏ qua */ } } }
+  function liveOn() {
+    if (typeof WebSocket === "undefined" || (ws && wsCoin === S.coin)) return;
+    liveOff(); wsCoin = S.coin;
+    const me = new WebSocket(`wss://fstream.binance.com/ws/${S.coin.toLowerCase()}usdt@aggTrade`); ws = me;
+    me.onopen = () => { wsRetry = 0; };
+    me.onmessage = ev => {
+      let m; try { m = JSON.parse(ev.data); } catch { return; }
+      const p = +m.p; if (!(p > 0) || wsCoin !== S.coin) return;
+      S.livePx = p;
+      if (!drawQ && S.visible && !document.hidden) { drawQ = true; setTimeout(() => { drawQ = false; if (S.visible) draw(); }, 250); }
+    };
+    me.onclose = () => { if (ws !== me) return; ws = null; if (S.visible) setTimeout(() => { if (S.visible && !ws) liveOn(); }, Math.min(15e3, 1000 * 2 ** wsRetry++)); };
+    me.onerror = () => { try { me.close(); } catch { /* bỏ qua */ } };
+  }
   const sl = $("depthSnap"); if (sl) sl.oninput = () => { S.at = +sl.value; render(); };
   new ResizeObserver(() => { if (S.visible) render(); }).observe(cv.parentElement);
 
   return {
-    show() { S.visible = true; render(); tick(!S.pos); if (!S.timer) S.timer = setInterval(() => { if (!document.hidden && S.visible) tick(false); }, 60e3); },
-    hide() { S.visible = false; if (S.timer) { clearInterval(S.timer); S.timer = null; } },
+    show() { S.visible = true; render(); tick(!S.pos); liveOn(); if (!S.timer) S.timer = setInterval(() => { if (!document.hidden && S.visible) tick(false); }, SNAP_MS); },
+    hide() { S.visible = false; liveOff(); if (S.timer) { clearInterval(S.timer); S.timer = null; } },
   };
 }

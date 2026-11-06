@@ -57,14 +57,20 @@ const SECTOR = {
   "Lớp 2": "ARB OP POL MATIC STRK MNT IMX ZK",
   "Meme": "DOGE SHIB PEPE WIF BONK FLOKI 1000PEPE 1000SHIB 1000BONK 1000FLOKI TRUMP FARTCOIN PNUT POPCAT",
   "AI": "TAO FET RENDER WLD VIRTUAL AI16Z ARKM",
+  // hợp đồng hàng hoá TradFi trên Binance Futures (vàng, bạc, bạch kim, palađi, đồng, dầu WTI, dầu Brent, khí gas)
+  "Hàng hoá": "XAU XAG XPT XPD COPPER CL BZ NATGAS",
 };
+export const COMMODITY_PERPS = SECTOR["Hàng hoá"].split(" ");
 const SECTOR_OF = new Map(Object.entries(SECTOR).flatMap(([g, s]) => s.split(" ").map(c => [c, g])));
 export const sectorOf = coin => SECTOR_OF.get(coin) || "Khác";
 
 // bảng 24 giờ của Binance Futures → các ô: chỉ hợp đồng USDT vĩnh cửu, top n theo giá trị giao dịch
+// hợp đồng hàng hoá (XAUUSDT, CLUSDT…) luôn có mặt dù không lọt top n
 export function cryptoTiles(tickers, n = 40) {
-  return tickers
+  const all = tickers
     .filter(t => /USDT$/.test(t.symbol) && !/_/.test(t.symbol) && +t.quoteVolume > 0)
     .map(t => { const coin = t.symbol.replace(/USDT$/, ""); return { sym: coin, symbol: t.symbol, group: sectorOf(coin.replace(/^1000/, "")), v: +t.quoteVolume, chg: +t.priceChangePercent, price: +t.lastPrice }; })
-    .sort((a, b) => b.v - a.v).slice(0, n);
+    .sort((a, b) => b.v - a.v);
+  const top = all.slice(0, n);
+  return top.concat(all.slice(n).filter(t => t.group === "Hàng hoá"));
 }

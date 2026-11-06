@@ -129,8 +129,11 @@ async function liveHead(r) {
   return LIVE.sha;
 }
 export function newer(a, b) { if (!a) return b || null; if (!b) return a; return (a.updated || 0) >= (b.updated || 0) ? a : b; }
+// các tệp chỉ có ở nhánh live (trang công khai không có bản trong data/): đọc data/ sẽ luôn 404 và bị tính là lỗi nguồn
+export const LIVE_ONLY = new Set(["social.json", "movers.json", "translations.json", "live.json"]);
 export async function liveJson(name) {
-  const local = getJson(`data/${name}?t=${Math.floor(Date.now() / 60e3)}`).catch(() => null), r = liveRepo();
+  const r = liveRepo();
+  const local = r && LIVE_ONLY.has(name) ? Promise.resolve(null) : getJson(`data/${name}?t=${Math.floor(Date.now() / 60e3)}`).catch(() => null);
   if (!r) return local;
   let fast = null;
   try { fast = await getJson(`https://raw.githubusercontent.com/${r.owner}/${r.repo}/${(await liveHead(r)) || "live"}/${name}`); } catch { fast = null; }

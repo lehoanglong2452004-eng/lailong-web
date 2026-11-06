@@ -1,5 +1,5 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
-// Lai Long Web: nghe nút bấm dưới tin Telegram (callback "opt:BTC"…) khi Desk đang mở.
+// Lai Long Web: nghe nút bấm dưới tin Telegram (callback "sig:BTCUSDT:1h:…") khi Desk đang mở.
 // Hỏi api.telegram.org bằng getUpdates (long polling 25 giây), chỉ nhận nút bấm từ đúng chat id đã cài.
 // Lúc bắt đầu bỏ qua các lần bấm cũ khi Desk còn tắt. Nhiều tab cùng mở thì chỉ một tab nghe (khoá trong localStorage).
 // Bot đang đặt webhook ở nơi khác thì Telegram trả lỗi 409: tab này lùi lại, thử lại sau.

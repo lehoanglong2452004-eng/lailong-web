@@ -22,7 +22,7 @@ export const SOURCES = [
   { id: "d-whales", name: "Cá voi Hyperliquid", kind: "delay", feeds: "Tab Thị trường", file: "data/whales.json", expect: 45 * 60e3 },
   { id: "d-vol", name: "VIX và chỉ số biến động", kind: "delay", feeds: "Tab Phân tích (Yahoo)", file: "data/vol.json", expect: 45 * 60e3 },
   { id: "d-cot", name: "COT của CFTC", kind: "weekly", feeds: "Tab Phân tích (công bố thứ Sáu)", file: "data/cot.json", expect: 8 * 864e5 },
-  { id: "d-gex", name: "Chuỗi quyền chọn Mỹ (CBOE)", kind: "delay", feeds: "Tab Quyền chọn: SPX, SPY, QQQ, vàng, dầu…", file: "data/gex_SPY.json", match: /data\/gex_/, expect: 45 * 60e3 },
+  { id: "d-gex", name: "Chuỗi quyền chọn Mỹ (CBOE)", kind: "delay", feeds: "Tab Phân tích: tỷ lệ put/call SPX, SPY, QQQ", file: "data/gex_SPY.json", match: /data\/gex_/, expect: 45 * 60e3 },
   { id: "d-flows", name: "Dòng tiền ETF và stablecoin", kind: "eod", feeds: "Tab Phân tích (Farside, DefiLlama)", file: "data/flows.json", expect: 26 * 36e5 },
   { id: "laptop", name: "Máy chủ laptop: nến hợp đồng tương lai", kind: "delay", feeds: "Radar vàng, dầu, ES, NQ… (Yahoo, trễ ~15 phút); chỉ có trên bản laptop", match: /\/api\/bars/, expect: 600e3 },
   { id: "hist", name: "Kho lịch sử data.binance.vision", kind: "eod", feeds: "Tab Tín hiệu: lệnh khớp, cá voi, OI, long/short, độ sâu sổ lệnh nhiều năm (tải miễn phí về laptop); chỉ có trên bản laptop", match: /\/api\/hist\//, expect: 0 },
