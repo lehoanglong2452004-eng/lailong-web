@@ -997,3 +997,6 @@ body.haslaptop #replayBtn:not([hidden]) { display: inline-flex; }
 .hmsliders input[type=range] { width: 74px; accent-color: #4aa3ff; }
 .heatgrad { display: inline-block; width: 92px; height: 10px; border-radius: 2px; background: linear-gradient(90deg, #060c14, #091e3c 16%, #12569c 34%, #2e92d6 50%, #acd8ec 60%, #f6ee8c 70%, #f8961e 84%, #e4241b 96%, #fff); border: 1px solid var(--line); }
 @media (max-width: 900px) { .heatgrad { display: none; } .hmsliders input[type=range] { width: 56px; } }
+
+/* nút VI / EN góc trên bên phải */
+.langseg button { padding: 4px 8px; font-size: 12px; }
