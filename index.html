@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611061930">
-<link rel="stylesheet" href="css/app.css?v=202611061930">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611061944">
+<link rel="stylesheet" href="css/app.css?v=202611061944">
 </head>
 <body>
 <header class="menubar">
@@ -27,6 +27,7 @@
     <button data-view="multi" data-tip="Nhiều biểu đồ nến cùng lúc, mỗi ô một mã và khung thời gian riêng; kéo thả, đổi cỡ, thu nhỏ từng ô">Đa biểu đồ</button>
     <button data-view="news" data-tip="Lịch kinh tế có số thực tế, tin tức cập nhật vài phút một lần, báo động khi chỉ số biến động bất thường">Tin tức</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
+    <button data-view="social" data-tip="Chuyên gia, nhà đầu tư, trader và tổ chức lớn đang nói gì: Bluesky, Substack, YouTube, ngân hàng trung ương; có bản tiếng Việt">Mạng xã hội</button>
     <button data-view="markets" data-tip="Hàng hoá phái sinh, forex và lãi suất, crypto, quỹ ETF, cá voi và thanh lý">Thị trường</button>
     <button data-view="options" data-tip="GEX, tường call/put, điểm lật gamma, max pain, bề mặt IV 3D: BTC, ETH, S&amp;P 500, Nasdaq, vàng, dầu…">Quyền chọn</button>
     <button data-view="health" data-g="data-health">Dữ liệu</button>
@@ -406,7 +407,7 @@
       <div id="calBody" class="tablewrap calbox"></div>
     </section>
     <section class="card newsmain">
-      <h3>Tin tức <button class="q" data-g="crypto-news">?</button> <button class="tool" id="newsOnly" hidden>Mọi coin</button> <small id="newsUpd"></small></h3>
+      <h3>Tin tức <button class="q" data-g="crypto-news">?</button> <button class="tool" id="newsOnly" hidden>Mọi coin</button> <span id="newsLang" class="newstabs inl"></span> <small id="newsUpd"></small></h3>
       <div id="newsTabs" class="newstabs"></div>
       <div id="regionTabs" class="newstabs"></div>
       <div id="newsBody" class="newsbox newsbig"></div>
@@ -424,6 +425,15 @@
       <h3>Giá phản ứng sau tin <button class="q" data-g="news-reaction">?</button> <small>DXY, vàng, dầu, lợi suất 10 năm, S&amp;P 500, BTC chạy bao nhiêu sau 15, 30, 60 phút (nguồn Yahoo Finance, chậm khoảng 15 phút)</small></h3>
       <div id="reactBody"></div>
     </section>
+  </div>
+</main>
+
+<main class="view analysis" id="view-social" hidden>
+  <div class="socbar"><h3>Mạng xã hội · chuyên gia nói gì <button class="q" data-g="social">?</button></h3><div id="socTopics" class="newstabs"></div><span class="grow"></span><span id="socLang" class="newstabs inl"></span> <small id="socFresh"></small></div>
+  <div class="socgrid">
+    <section class="card socside" id="socWho"></section>
+    <section class="card socfeed" id="socFeed"></section>
+    <section class="card socright" id="socRight"></section>
   </div>
 </main>
 
@@ -860,6 +870,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611061930"></script>
+<script type="module" src="js/app.js?v=202611061944"></script>
 </body>
 </html>

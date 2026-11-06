@@ -75,8 +75,7 @@ FEEDS = [
     # châu Á (báo tiếng Anh): để phiên Nhật, Hàn, Hồng Kông, Trung Quốc mở cửa có tin ngay
     ("Nikkei Asia", "https://asia.nikkei.com/rss/feed/nar", "fin"),
     ("Japan Times", "https://www.japantimes.co.jp/business/feed/", "fin"),
-    ("Yonhap", "https://en.yna.co.kr/RSS/economy.xml", "fin"),
-    ("Yonhap", "https://en.yna.co.kr/RSS/market.xml", "fin"),
+    ("Google News", GN + "site:en.yna.co.kr+economy+OR+market+OR+stocks+when:1d", "fin"),
     ("SCMP", "https://www.scmp.com/rss/92/feed", "fin"),
     ("Straits Times", "https://www.straitstimes.com/news/business/rss.xml", "fin"),
     (
@@ -704,7 +703,7 @@ def parse_feed(raw: bytes) -> list[tuple[str, str, str]]:
     return out
 
 
-def _when(pub: str) -> int:
+def _parse_when(pub: str) -> int | None:
     try:
         return int(parsedate_to_datetime(pub).timestamp() * 1000)
     except Exception:
@@ -712,7 +711,21 @@ def _when(pub: str) -> int:
     try:
         return int(datetime.fromisoformat(pub.replace("Z", "+00:00")).timestamp() * 1000)
     except Exception:
-        return int(time.time() * 1000)
+        return None
+
+
+def _when(pub: str) -> int:
+    """Thời điểm đăng; feed không ghi ngày (như Nikkei Asia) thì lấy lúc lấy tin."""
+    t = _parse_when(pub)
+    return int(time.time() * 1000) if t is None else t
+
+
+def keep_first_seen(items: list[dict], prev: list[dict]) -> None:
+    """Tin không có ngày đăng: giữ lúc thấy lần đầu, để vòng sau khỏi coi là tin mới."""
+    old = {x.get("link"): x["t"] for x in prev if x.get("nodate")}
+    for x in items:
+        if x.get("nodate") and x.get("link") in old:
+            x["t"] = old[x["link"]]
 
 
 def _one_feed(feed) -> tuple[list[dict], str | None]:
@@ -732,9 +745,11 @@ def _one_feed(feed) -> tuple[list[dict], str | None]:
         coins = (
             [c for c in COINS if re.search(COIN_WORDS[c], title, re.I)] if cat == "crypto" else []
         )
+        t = _parse_when(pub)
         items.append(
             {
-                "t": _when(pub),
+                "t": int(time.time() * 1000) if t is None else t,
+                **({"nodate": True} if t is None else {}),
                 "title": title,
                 "region": region_of(src if src in ASIA_SOURCES | EU_SOURCES else source, title),
                 "link": link,

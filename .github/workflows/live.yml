@@ -39,4 +39,4 @@ jobs:
             cp ../data/calendar.json ../data/news.json ../data/reactions.json . 2>/dev/null || true
           fi
       - name: Vòng cập nhật nhanh
-        run: python scripts/live.py --out live --minutes 340 --push
+        run: python scripts/live.py --out live --minutes 340 --push --translate
