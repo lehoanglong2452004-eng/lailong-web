@@ -300,8 +300,12 @@ input[type=number], input:not([type]) { cursor: text !important; }
 .menubar .field { color: #8b95a3; font-size: 12px; font-weight: 500; gap: 5px; }
 .menubar .field :is(select, input) { background: #0f1215; border-color: var(--pro-line); border-radius: 4px; padding: 3px 7px; font-size: 12.5px; }
 .menubar #symbol { font-family: var(--mono); }
-.menubar #intervals { border: 0; background: #0f1215; border-radius: 5px; padding: 2px; gap: 2px; }
-.menubar #intervals button { border: 0; border-radius: 4px; background: transparent; color: var(--pro-text); font-weight: 600; font-size: 12px; padding: 3px 8px; }
+/* khung thời gian: một ô, bấm vào thả danh sách */
+.menubar .ivbtn { font-family: var(--mono); font-weight: 700; color: #fff; min-width: 52px; justify-content: center; box-shadow: inset 0 -2px 0 var(--accent); }
+.menubar .ivbtn small { color: #8b95a3; font-size: 10px; margin-left: 2px; }
+.menubar #intervals { min-width: 0; padding: 4px; display: none; grid-template-columns: repeat(4, auto); gap: 2px; }
+.menubar .ivdd.open #intervals { display: grid; }
+.menubar #intervals button { border: 0; border-radius: 4px; background: transparent; color: var(--pro-text); font-weight: 600; font-size: 12.5px; padding: 5px 10px; font-family: var(--mono); }
 .menubar #intervals button:hover { background: var(--pro-hover); }
 .menubar #intervals button.on { background: var(--pro-on); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
 .menubar .tool { background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--pro-text); font-weight: 500; font-size: 12.5px; padding: 4px 9px; }
@@ -1000,3 +1004,6 @@ body.haslaptop #replayBtn:not([hidden]) { display: inline-flex; }
 
 /* nút VI / EN góc trên bên phải */
 .langseg button { padding: 4px 8px; font-size: 12px; }
+
+/* mục Thị trường nằm trong tab Phân tích */
+.atabmk[hidden] { display: none; }

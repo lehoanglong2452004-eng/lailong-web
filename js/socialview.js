@@ -1,13 +1,13 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
-// Trang Mạng xã hội: chuyên gia, nhà đầu tư, trader, tổ chức lớn đang nói gì về thị trường.
+// Mục Mạng xã hội trong tab Tin tức: chuyên gia, nhà đầu tư, trader, tổ chức lớn đang nói gì về thị trường.
 // Dữ liệu: social.json (lailong/terminal/social.py), trên web đọc nhánh live như tin tức, bản laptop do máy chủ lấy.
 // Nghiêng tích cực / tiêu cực chấm tự động theo từ khoá nên chỉ để xem xu hướng chung, có thể sai từng bài.
 // Không bao giờ hiện tác giả, tổ chức hay nội dung Việt Nam (lọc ở máy chủ và lọc lại ở đây bằng isVN).
 
-import { liveJson } from "./util.js?v=202611062129";
-import { setFresh } from "./fresh.js?v=202611062129";
-import { bi } from "./lang.js?v=202611062129";
-import { isVN } from "./newsdigest.js?v=202611062129";
+import { liveJson } from "./util.js?v=202611062257";
+import { setFresh } from "./fresh.js?v=202611062257";
+import { bi } from "./lang.js?v=202611062257";
+import { isVN } from "./newsdigest.js?v=202611062257";
 
 export const GROUP_ICON = { inst: "🏦", macro: "📊", fund: "💼", trader: "📈", crypto: "₿", cb: "🏛", media: "🎙", quoted: "📰" };
 export const TOPICS = [["", "Tất cả"], ["macro", "Vĩ mô"], ["stocks", "Chứng khoán"], ["fx", "Forex"], ["comm", "Hàng hoá"], ["crypto", "Crypto"], ["bonds", "Trái phiếu"]];
