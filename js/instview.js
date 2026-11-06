@@ -1,13 +1,16 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: các chỉ số mà bàn giao dịch tổ chức theo dõi, trong tab Phân tích.
-//   - Crypto (trực tiếp): OI, funding 3 sàn, long/short top trader và mọi tài khoản, mua/bán chủ động, chênh giá Coinbase,
+//   - Crypto (trực tiếp): OI, long/short top trader và mọi tài khoản, mua/bán chủ động của sàn đang chọn; funding 3 sàn,
+//     chênh giá Coinbase,
 //     put/call và DVOL của Deribit
 //   - Biến động Mỹ (trễ ~15 phút, Yahoo): VIX và cấu trúc kỳ hạn, VVIX, SKEW, MOVE, VXN, GVZ, OVX; put/call SPX, SPY, QQQ (CBOE)
 //   - COT của CFTC (hằng tuần): đầu cơ lớn và bên phòng hộ, chỉ số COT 3 năm
 // Bản web đọc data/vol.json, data/cot.json do GitHub Actions cập nhật; bản laptop lấy qua máy chủ (lailong/terminal/macro.py).
-import { getJson, fitCanvas, fmtUsd, MONO } from "./util.js?v=202611062057";
-import { setFresh } from "./fresh.js?v=202611062057";
-import { ivRank, putCall } from "./optpro.js?v=202611062057";
+import { getVenue, venueName, onVenue } from "./venue.js?v=202611062129";
+import { venueDerivs } from "./derivs.js?v=202611062129";
+import { getJson, fitCanvas, fmtUsd, MONO } from "./util.js?v=202611062129";
+import { setFresh } from "./fresh.js?v=202611062129";
+import { ivRank, putCall } from "./optpro.js?v=202611062129";
 
 const FAPI = "https://fapi.binance.com", DERIBIT = "https://www.deribit.com/api/v2/public";
 const COINS = ["BTC", "ETH", "SOL"];
@@ -49,26 +52,27 @@ export function initInst({ $, esc }) {
   const cv = { vix: fitCanvas($("instVix"), () => drawVix()) };
   const get = async u => { try { return await getJson(`${u}?t=${Math.floor(Date.now() / 60e3)}`); } catch { return null; } };
 
+  let shown = false;
+  onVenue(() => { if (shown) { crypto = null; renderCrypto(); loadCrypto().then(renderCrypto, () => {}); } });
   async function loadCrypto() {
-    const safe = p => p.catch(() => null), now = Date.now();
+    const safe = p => p.catch(() => null), now = Date.now(), V = getVenue();
+    // OI, long/short, mua/bán chủ động: của sàn đang chọn; funding thì so cả ba sàn lớn
     const rows = await Promise.all(COINS.map(async c => {
-      const s = `${c}USDT`, q = `symbol=${s}&period=1h&limit=25`;
-      const [oi, top, acc, tk, prem, by, ok, cb, bn] = await Promise.all([
-        safe(getJson(`${FAPI}/futures/data/openInterestHist?${q}`)), safe(getJson(`${FAPI}/futures/data/topLongShortPositionRatio?${q}`)),
-        safe(getJson(`${FAPI}/futures/data/globalLongShortAccountRatio?${q}`)), safe(getJson(`${FAPI}/futures/data/takerlongshortRatio?${q}`)),
+      const s = `${c}USDT`;
+      const [d, prem, by, ok, cb] = await Promise.all([
+        safe(venueDerivs(V, s)),
         safe(getJson(`${FAPI}/fapi/v1/premiumIndex?symbol=${s}`)), safe(getJson(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${s}`)),
         safe(getJson(`https://www.okx.com/api/v5/public/funding-rate?instId=${c}-USDT-SWAP`)),
-        c === "SOL" ? null : safe(getJson(`https://api.exchange.coinbase.com/products/${c}-USD/ticker`)), safe(getJson(`https://api.binance.com/api/v3/ticker/price?symbol=${s}`)),
+        c === "SOL" ? null : safe(getJson(`https://api.exchange.coinbase.com/products/${c}-USD/ticker`)),
       ]);
-      const L = a => Array.isArray(a) && a.length ? a[a.length - 1] : null, F = a => Array.isArray(a) && a.length ? a[0] : null;
-      const oiNow = L(oi) ? +L(oi).sumOpenInterestValue : null, oi24 = F(oi) ? +F(oi).sumOpenInterestValue : null;
-      const cbp = cb && +cb.price, bnp = bn && +bn.price;
+      const L = a => Array.isArray(a) && a.length ? a[a.length - 1].v : null, A = (a, n) => Array.isArray(a) && a.length > n ? a[a.length - 1 - n].v : null;
+      const oiNow = d ? L(d.oi) : null, oi24 = d ? A(d.oi, 24) : null, cbp = cb && +cb.price, ref = d && (d.index || d.mark);
       return {
-        c, oi: oiNow, oiChg: oiNow && oi24 ? (oiNow / oi24 - 1) * 100 : null,
-        fBn: prem ? +prem.lastFundingRate * 100 : null, fBy: by && by.result && by.result.list && by.result.list[0] ? +by.result.list[0].fundingRate * 100 : null,
+        c, oi: oiNow, oiChg: oiNow && oi24 ? (oiNow / oi24 - 1) * 100 : null, missing: d ? d.missing : [],
+        fBn: prem && prem.lastFundingRate != null ? +prem.lastFundingRate * 100 : null, fBy: by && by.result && by.result.list && by.result.list[0] ? +by.result.list[0].fundingRate * 100 : null,
         fOk: ok && ok.data && ok.data[0] ? +ok.data[0].fundingRate * 100 : null,
-        top: L(top) ? +L(top).longAccount : null, acc: L(acc) ? +L(acc).longAccount : null, taker: L(tk) ? +L(tk).buySellRatio : null,
-        cbPrem: cbp && bnp ? (cbp / bnp - 1) * 100 : null,
+        top: d ? d.topLong : null, acc: d ? d.accLong : null, taker: d ? L(d.taker) : null,
+        cbPrem: cbp && ref ? (cbp / ref - 1) * 100 : null,
       };
     }));
     // quyền chọn Deribit: put/call và DVOL hiện tại cho BTC, ETH
@@ -78,7 +82,7 @@ export function initInst({ $, esc }) {
       if (bk && bk.result) { let co = 0, po = 0, cvv = 0, pv = 0; for (const o of bk.result) { const p = /-P$/.test(o.instrument_name); if (p) { po += +o.open_interest || 0; pv += +o.volume || 0; } else { co += +o.open_interest || 0; cvv += +o.volume || 0; } } r.pcOi = co ? po / co : null; r.pcVol = cvv ? pv / cvv : null; }
       if (dv && dv.result && dv.result.data && dv.result.data.length) r.dvol = +dv.result.data[dv.result.data.length - 1][4];
     }));
-    crypto = { t: Date.now(), rows };
+    crypto = { t: Date.now(), rows, V };
   }
 
   async function load() {
@@ -95,20 +99,22 @@ export function initInst({ $, esc }) {
 
   function renderCrypto() {
     const el = $("instCrypto"); if (!el) return;
-    if (!crypto) { el.innerHTML = `<div class="empty">Đang tải từ Binance, Bybit, OKX, Coinbase, Deribit…</div>`; return; }
-    setFresh($("instCryptoFresh"), "live", crypto.t, { label: "Trực tiếp", expect: 6 * 60e3, note: "Lấy thẳng từ API công khai của Binance Futures, Bybit, OKX, Coinbase và Deribit, làm mới mỗi 2 phút khi đang mở Phân tích" });
+    const vn = venueName(crypto ? crypto.V : getVenue());
+    if (!crypto) { el.innerHTML = `<div class="empty">Đang tải từ ${esc(vn)}, Coinbase, Deribit…</div>`; return; }
+    setFresh($("instCryptoFresh"), "live", crypto.t, { label: "Trực tiếp", expect: 6 * 60e3, note: `OI, long/short và mua/bán chủ động của ${vn}; funding so ba sàn Binance, Bybit, OKX; Coinbase, Deribit. Làm mới mỗi 2 phút khi đang mở Phân tích` });
+    const NA = k => x => (x.missing || []).includes(k) ? `<small class="muted">không công bố</small>` : null;
     const r = crypto.rows, row = (name, tip, f) => `<tr><td class="t" data-tip="${esc(tip)}">${name}</td>${r.map(x => `<td>${f(x)}</td>`).join("")}</tr>`;
     const fund = v => v == null ? "–" : `<span class="${v > 0.03 ? "dn" : v < 0 ? "up" : ""}">${v.toFixed(4)}%</span>`;
     const lp = v => v == null ? "–" : `<span class="${v >= 0.6 ? "dn" : v <= 0.42 ? "up" : ""}">${(v * 100).toFixed(1)}%</span>`;
     el.innerHTML = `<table class="mktab insttab"><thead><tr><th></th>${r.map(x => `<th>${x.c}</th>`).join("")}</tr></thead><tbody>` +
-      row("Open interest", "Tổng giá trị hợp đồng đang mở trên Binance Futures và thay đổi 24 giờ. OI tăng cùng giá là tiền mới vào theo xu hướng; OI tăng mà giá đứng là đang dồn đòn bẩy", x => x.oi == null ? "–" : `${fmtUsd(x.oi)} <small class="${cls(x.oiChg)}">${pct(x.oiChg, 1)}</small>`) +
+      row("Open interest", `Tổng giá trị hợp đồng đang mở trên ${vn} và thay đổi 24 giờ. OI tăng cùng giá là tiền mới vào theo xu hướng; OI tăng mà giá đứng là đang dồn đòn bẩy`, x => x.oi == null ? "–" : `${fmtUsd(x.oi)} <small class="${cls(x.oiChg)}">${pct(x.oiChg, 1)}</small>`) +
       row("Funding Binance", "Phí giữ lệnh mỗi 8 giờ. Dương cao: long trả phí đắt, đám đông đang long. Âm: short đông", x => fund(x.fBn)) +
       row("Funding Bybit", "Như trên, sàn Bybit", x => fund(x.fBy)) +
       row("Funding OKX", "Như trên, sàn OKX", x => fund(x.fOk)) +
-      row("Top trader đang long", "Phần trăm vị thế của nhóm tài khoản lớn nhất Binance đang long. Đây là tiền lớn", x => lp(x.top)) +
-      row("Mọi tài khoản đang long", "Phần trăm tài khoản Binance đang long. Đây là đám đông; trên 60% là đám đông nghiêng long quá", x => lp(x.acc)) +
-      row("Mua/bán chủ động 1 giờ", "Khối lượng mua chủ động chia bán chủ động trong giờ gần nhất. Trên 1 là bên mua đang đánh", x => x.taker == null ? "–" : `<span class="${x.taker >= 1 ? "up" : "dn"}">${x.taker.toFixed(2)}</span>`) +
-      row("Chênh giá Coinbase", "Giá Coinbase (USD, nơi tổ chức Mỹ mua) so với Binance (USDT). Dương là người Mỹ đang mua mạnh hơn", x => x.cbPrem == null ? "–" : `<span class="${cls(x.cbPrem)}">${pct(x.cbPrem, 3)}</span>`) +
+      row("Top trader đang long", `Phần trăm vị thế của nhóm tài khoản lớn nhất ${vn} đang long. Đây là tiền lớn`, x => NA("top")(x) || lp(x.top)) +
+      row("Mọi tài khoản đang long", `Phần trăm tài khoản ${vn} đang long. Đây là đám đông; trên 60% là đám đông nghiêng long quá`, x => NA("acc")(x) || lp(x.acc)) +
+      row("Mua/bán chủ động 1 giờ", "Khối lượng mua chủ động chia bán chủ động trong giờ gần nhất. Trên 1 là bên mua đang đánh", x => NA("taker")(x) || (x.taker == null ? "–" : `<span class="${x.taker >= 1 ? "up" : "dn"}">${x.taker.toFixed(2)}</span>`)) +
+      row("Chênh giá Coinbase", `Giá Coinbase (USD, nơi tổ chức Mỹ mua) so với giá chỉ số của ${vn} (USDT). Dương là người Mỹ đang mua mạnh hơn`, x => x.cbPrem == null ? "–" : `<span class="${cls(x.cbPrem)}">${pct(x.cbPrem, 3)}</span>`) +
       row("Put/Call Deribit (OI · KL)", "Tỷ lệ put/call theo hợp đồng mở và theo khối lượng 24 giờ trên Deribit", x => x.pcOi == null ? "–" : `${x.pcOi.toFixed(2)} · ${x.pcVol != null ? x.pcVol.toFixed(2) : "–"}`) +
       row("DVOL", "Chỉ số biến động 30 ngày của Deribit (giống VIX cho crypto)", x => x.dvol == null ? "–" : x.dvol.toFixed(1)) +
       `</tbody></table>`;
@@ -169,7 +175,7 @@ export function initInst({ $, esc }) {
 
   $("instCotTabs").onclick = e => { const b = e.target.closest("[data-cg]"); if (b) { cotGroup = b.dataset.cg; renderCot(); } };
   return {
-    show() { load(); clearInterval(timer); timer = setInterval(load, 120e3); },
-    hide() { clearInterval(timer); timer = null; },
+    show() { shown = true; load(); clearInterval(timer); timer = setInterval(load, 120e3); },
+    hide() { shown = false; clearInterval(timer); timer = null; },
   };
 }

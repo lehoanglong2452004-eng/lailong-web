@@ -1,12 +1,14 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: tab Radar. Khối lượng bất thường theo bối cảnh, phản ứng của thị trường (chính thức / tạm thời),
 // lịch sử lặp lại của từng loại sự kiện, nhiên liệu đòn bẩy (crypto) và máy quét cho cả rổ tài sản.
-// Crypto lấy thẳng từ Binance (và Coinbase); hợp đồng tương lai lấy qua máy chủ trên laptop (/api/bars, chậm ~15 phút).
-import { setFresh } from "./fresh.js?v=202611062057";
-import { getJson, fmtPct, fmtTime, fitCanvas, MONO } from "./util.js?v=202611062057";
-import { analyze, narrate, typeStats, together, snapshot, TYPES, REGIMES, STATUS, TF, fmtLevel, fmtDur } from "./radar.js?v=202611062057";
-import { SETUPS, RULE_DEF, trades as setupTrades, setupStats } from "./setups.js?v=202611062057";
-import { alignHourly, rawSeries, readAt, COMPONENTS, HOUR } from "./lens.js?v=202611062057";
+// Crypto lấy thẳng từ sàn đang chọn ở ô Sàn (và Coinbase); hợp đồng tương lai lấy qua máy chủ trên laptop (/api/bars, chậm ~15 phút).
+import { getVenue, venueBars, onVenue } from "./venue.js?v=202611062129";
+import { EXCHANGES } from "./exchanges.js?v=202611062129";
+import { setFresh } from "./fresh.js?v=202611062129";
+import { getJson, fmtPct, fmtTime, fitCanvas, MONO } from "./util.js?v=202611062129";
+import { analyze, narrate, typeStats, together, snapshot, TYPES, REGIMES, STATUS, TF, fmtLevel, fmtDur } from "./radar.js?v=202611062129";
+import { SETUPS, RULE_DEF, trades as setupTrades, setupStats } from "./setups.js?v=202611062129";
+import { alignHourly, rawSeries, readAt, COMPONENTS, HOUR } from "./lens.js?v=202611062129";
 
 const FAPI = "https://fapi.binance.com", SAPI = "https://api.binance.com", CB = "https://api.exchange.coinbase.com";
 export const CRYPTO = ["BTC", "ETH", "SOL", "XRP", "BNB", "DOGE", "ADA", "AVAX", "LINK", "SUI", "LTC", "TRX"];
@@ -34,12 +36,23 @@ async function coinbase(base, hours) {
 export const TFS = Object.keys(TF);
 async function bars(id, tf = "1h") {
   if (FUT.has(id)) return getJson(`api/bars?s=${encodeURIComponent(id)}&iv=${tf}`);
-  return kl(await getJson(`${FAPI}/fapi/v1/klines?symbol=${id}USDT&interval=${tf}&limit=${tf === "5m" || tf === "15m" ? 1000 : 500}`));
+  const V = getVenue(), n = tf === "5m" || tf === "15m" ? 1000 : 500;
+  if (V === "BINANCE") return kl(await getJson(`${FAPI}/fapi/v1/klines?symbol=${id}USDT&interval=${tf}&limit=${n}`));
+  // sàn khác: nến của sàn đó (không tách mua chủ động nên tb để trống)
+  return (await venueBars(id + "USDT", tf, n, V)).map(b => ({ t: b.t, o: b.o, h: b.h, l: b.l, c: b.c, v: b.v, tb: b.bv }));
 }
 
 // nhiên liệu đòn bẩy cho crypto: OI, top trader, đám đông, funding, spot, Coinbase
 async function fuel(base, perp, n = 500) {
-  const sym = base + "USDT", q = `symbol=${sym}&period=1h&limit=${Math.min(500, n)}`;
+  const sym = base + "USDT", q = `symbol=${sym}&period=1h&limit=${Math.min(500, n)}`, V = getVenue();
+  if (V !== "BINANCE") {
+    // sàn khác: OI và funding của chính sàn đó; tỷ lệ top trader, đám đông và giá spot Binance để trống
+    const ex = EXCHANGES[V], from = Date.now() - n * HOUR;
+    const [oi, fund, cb] = await Promise.all([safe(ex.oiHistory(sym, "1h", from)), safe(ex.fundingHistory(sym, from)), coinbase(base, n)]);
+    const rows = alignHourly({ perp, spot: [], cb, oi: Array.isArray(oi) ? oi.map(x => ({ t: x.t, v: x.oi, long: null })) : [], top: [], acc: [], funding: Array.isArray(fund) ? fund.map(f => ({ t: f.t, v: f.rate })) : [] });
+    const raw = rawSeries(rows);
+    return { rows, raw, read: readAt(rows, raw, rows.length - 1) };
+  }
   const [spot, oi, top, acc, fund, cb] = await Promise.all([
     safe(getJson(`${SAPI}/api/v3/klines?symbol=${sym}&interval=1h&limit=${n}`)),
     safe(getJson(`${FAPI}/futures/data/openInterestHist?${q}`)),
@@ -65,6 +78,7 @@ export function initRadar({ $, esc, onPick }) {
   try { const s = JSON.parse(sessionStorage.getItem("lailong.radar") || "{}"); asset = s.asset || asset; pool = s.pool || pool; tf = TF[s.tf] ? s.tf : tf; } catch { /* bỏ qua */ }
   const save = () => { try { sessionStorage.setItem("lailong.radar", JSON.stringify({ asset, pool, tf })); } catch { /* bỏ qua */ } };
   const cv = fitCanvas($("radarChart"), () => draw());
+  onVenue(() => { cur = null; scan = []; scanAt = 0; pooled = null; if (visible) load(true); }); // đổi sàn: tải lại theo sàn mới
   const tip = $("radarTip");
 
   async function load(force = false) {

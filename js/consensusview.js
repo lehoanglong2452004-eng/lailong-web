@@ -1,12 +1,13 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: thẻ Đồng thuận 4 lớp ở trang Nhật ký, và cảnh báo khi một mã trong danh sách theo dõi có đủ 4 lớp cùng chiều.
-// Quét mỗi 5 phút bằng nến 1 giờ Binance Futures đã đóng. Một mã vào trạng thái đồng thuận thì báo một lần; hết đồng thuận
+// Quét mỗi 5 phút bằng nến 1 giờ đã đóng của sàn đang chọn. Một mã vào trạng thái đồng thuận thì báo một lần; hết đồng thuận
 // rồi quay lại thì báo lần nữa. Đang khoá giao dịch thì không báo. Danh sách mã và trạng thái lưu trên máy này.
-import { evaluate, consensusHtml, consensusText } from "./consensus.js?v=202611062057";
-import { leans, usdTrend, riskMood, etfFlow } from "./compass.js?v=202611062057";
-import { bigEvents } from "./shock.js?v=202611062057";
-import { guard } from "./journal.js?v=202611062057";
-import { getJson, fmtDate, fmtVol } from "./util.js?v=202611062057";
+import { venueBars, getVenue, venueName } from "./venue.js?v=202611062129";
+import { evaluate, consensusHtml, consensusText } from "./consensus.js?v=202611062129";
+import { leans, usdTrend, riskMood, etfFlow } from "./compass.js?v=202611062129";
+import { bigEvents } from "./shock.js?v=202611062129";
+import { guard } from "./journal.js?v=202611062129";
+import { fmtDate, fmtVol } from "./util.js?v=202611062129";
 
 const STORE = "lailong.consensus";
 const DEF_SYMS = "BTCUSDT, ETHUSDT, SOLUSDT, XAUUSDT";
@@ -21,11 +22,10 @@ export function initConsensus({ $, esc, toast, alerts, journal, events, macro })
 
   // nến 1 giờ đã đóng; mỗi giờ tải lại một lần
   async function bars(sym) {
-    const hour = Math.floor(Date.now() / H), c = cache[sym];
+    const hour = Math.floor(Date.now() / H) + ":" + getVenue(), c = cache[sym];
     if (c && c.hour === hour) return c.bars;
     try {
-      const k = await getJson(`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(sym)}&interval=1h&limit=121`);
-      const b = k.map(r => ({ t: r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4], v: +r[5], bv: +r[9] })).filter(x => x.t + H <= Date.now());
+      const b = (await venueBars(sym, "1h", 121)).filter(x => x.t + H <= Date.now());
       cache[sym] = { hour, bars: b }; return b;
     } catch { return null; }
   }
@@ -66,11 +66,11 @@ export function initConsensus({ $, esc, toast, alerts, journal, events, macro })
     const box = $("cnsBody"); if (!box) return;
     if (!at) { box.innerHTML = `<div class="muted">${busy ? "Đang quét…" : "Chưa quét. Bấm Quét ngay hoặc chờ vài giây."}</div>`; return; }
     box.innerHTML = `<div class="tablewrap"><table><thead><tr><th>Mã</th><th>Vĩ mô</th><th>COT</th><th>Cấu trúc 1h</th><th>Order flow 1h</th><th>Kết luận</th><th>Kế hoạch</th><th></th></tr></thead><tbody>` +
-      rows.map(r => r.err ? `<tr><td>${esc(r.sym)}</td><td colspan="7" class="muted">Không lấy được nến 1h Binance Futures cho mã này.</td></tr>` :
+      rows.map(r => r.err ? `<tr><td>${esc(r.sym)}</td><td colspan="7" class="muted">Không lấy được nến 1h của ${esc(venueName())} cho mã này.</td></tr>` :
         `<tr><td>${esc(r.sym)}</td>${r.layers.map(l => `<td>${pip(l)}</td>`).join("")}<td class="${r.dir > 0 ? "pos" : r.dir < 0 ? "neg" : ""}">${r.dir ? `<b>${r.dir > 0 ? "LONG" : "SHORT"} 4/4</b>` : r.lean && r.count >= 3 ? `nghiêng ${r.lean > 0 ? "LONG" : "SHORT"} ${r.count}/4` : `<span class="muted">chưa đồng thuận</span>`}</td>` +
         `<td class="t">${r.plan ? `Vào ${p(r.plan.zone[0])}–${p(r.plan.zone[1])}<br>Cắt lỗ ${p(r.plan.stop)} · mục tiêu ${p(r.plan.target)}<br>KL ${fmtVol(r.plan.qty)} (rủi ro ${fmtVol(r.plan.riskUsd)} USDT)` : ""}</td>` +
         `<td>${r.plan ? `<button class="tool" data-cfill="${esc(r.sym)}" data-tip="Điền vào ô Tính khối lượng lệnh bên trái">Đưa vào ô tính</button>` : ""}</td></tr>`).join("") +
-      `</tbody></table></div><p class="note">Quét lúc ${fmtDate(at).slice(11)} bằng nến 1 giờ Binance đã đóng, tự quét lại mỗi 5 phút. ▲ ủng hộ LONG, ▼ ủng hộ SHORT, ■ trung lập; rê chuột lên ô để xem lý do. Đủ 4/4 thì báo qua tiếng và Telegram (bật ở menu Cảnh báo).</p>`;
+      `</tbody></table></div><p class="note">Quét lúc ${fmtDate(at).slice(11)} bằng nến 1 giờ ${esc(venueName())} đã đóng, tự quét lại mỗi 5 phút. ▲ ủng hộ LONG, ▼ ủng hộ SHORT, ■ trung lập; rê chuột lên ô để xem lý do. Đủ 4/4 thì báo qua tiếng và Telegram (bật ở menu Cảnh báo).</p>`;
   }
 
   $("cnsSyms").value = st.syms;
