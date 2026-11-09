@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611090440">
-<link rel="stylesheet" href="css/app.css?v=202611090440">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611090459">
+<link rel="stylesheet" href="css/app.css?v=202611090459">
 </head>
 <body>
 <header class="menubar">
@@ -451,20 +451,32 @@
   <div class="newstabs atabs" id="aTabs" role="tablist" aria-label="Mục phân tích"><button data-at="macro" class="on">Vĩ mô và dòng tiền</button><button data-at="markets">Thị trường</button></div>
   <div class="cards">
     <section class="card wide" data-at="macro">
-      <h3>Biến động Mỹ: VIX, cấu trúc kỳ hạn, VVIX, SKEW, MOVE <button class="q" data-g="inst-vol">?</button> <span id="instVolFresh"></span></h3>
-      <div class="gexcv"><canvas id="instVix"></canvas></div>
-      <div id="instVol"></div>
+      <h3>Tâm lý thị trường <button class="q" data-g="sentiment">?</button> <small>gom VIX, dòng tiền ETF, funding, Fear &amp; Greed… thành một chiếc kim</small></h3>
+      <div class="gauges"><div class="sgbox" id="sgCrypto"></div><div class="sgbox" id="sgUs"></div></div>
+      <p class="note">5 trạng thái: <b class="dn">Bán tháo</b> 0–20 · <b class="dn">Bán</b> 20–40 · <b>Trung lập</b> 40–60 · <b class="up">Mua</b> 60–80 · <b class="up">Mua mạnh</b> 80–100. Rê chuột vào từng dòng để xem cách chấm điểm.</p>
+    </section>
+    <section class="pair" data-at="macro">
+    <div class="card">
+      <h3>Dòng tiền ETF <button class="q" data-g="flows">?</button> <span class="newstabs inl" id="etfCoin"><button data-ec="btc" class="on">Bitcoin</button><button data-ec="eth">Ethereum</button></span> <span id="etfFresh"></span></h3>
+      <div class="kpis" id="etfKpis"></div>
+      <div id="etfBody"></div>
+    </div>
+    <div class="card">
+      <h3>Stablecoin: tiền chờ vào crypto <button class="q" data-g="stablecoin">?</button> <span id="stbFresh"></span></h3>
+      <div class="kpis" id="stbKpis"></div>
+      <div id="stbBody"></div>
+    </div>
     </section>
     <section class="card wide" data-at="macro">
-      <h3>Dòng tiền ETF Bitcoin/Ethereum và stablecoin <button class="q" data-g="flows">?</button> <span id="flowsFresh"></span></h3>
-      <div class="kpis" id="flowsKpis"></div>
-      <div class="gexcv flowscv"><canvas id="flowsChart"></canvas></div>
-      <div id="flowsBody"></div>
-    </section>
-    <section class="card wide" data-at="macro">
-      <h3>COT của CFTC: tổ chức đang long hay short <button class="q" data-g="cot">?</button> <span id="instCotFresh"></span></h3>
+      <h3>COT của CFTC: tổ chức đang long hay short <button class="q" data-g="cot">?</button> <span id="instCotFresh"></span> <small id="instCotNext"></small></h3>
       <div id="instCotTabs" class="newstabs"></div>
       <div id="instCot"></div>
+      <p class="note">Chỉ số COT: 0 là ngắn nhất, 100 là dài nhất trong 3 năm. Trên 90 hoặc dưới 10 là cực đoan, dễ đảo chiều. Bấm một dòng để xem vị thế 3 năm của cả 3 nhóm (quỹ, tổ chức, nhỏ lẻ).</p>
+    </section>
+    <section class="card wide" data-at="macro">
+      <h3>Tin và thông báo từ CFTC <button class="q" data-g="cftc-news">?</button> <span class="newstabs inl" id="cftcCats"></span> <span id="cftcFresh"></span></h3>
+      <div id="cftcBody" class="cftcnews"></div>
+      <p class="note">Nguồn: trang thông cáo báo chí và phát biểu công khai, miễn phí của cftc.gov. Tiêu đề dịch máy, bản gốc tiếng Anh ở dòng dưới; bấm để mở bài trên cftc.gov.</p>
     </section>
   </div>
   <div class="atabmk" id="view-markets" data-at="markets">
@@ -767,6 +779,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611090440"></script>
+<script type="module" src="js/app.js?v=202611090459"></script>
 </body>
 </html>

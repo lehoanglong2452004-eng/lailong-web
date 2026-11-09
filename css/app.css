@@ -1003,3 +1003,55 @@ body:not([data-view="terminal"]):not([data-view="multi"]) .menubar .termmulti { 
 .ubtab a { color: var(--accent); text-decoration: none; }
 @media (max-width: 1100px) { .hm4 { grid-template-columns: 1fr 1fr; } .hm4 .hmbox { height: 300px; } }
 @media (max-width: 700px) { .hm4 { grid-template-columns: 1fr; } .hm4 .hmbox { height: 240px; } }
+
+/* Vĩ mô: kim tâm lý, ETF, stablecoin, COT, tin CFTC */
+.gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cards > .pair { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-width: 0; }
+.pair .kpis > div { flex: 1 1 96px; }
+.sgbox { display: grid; grid-template-columns: minmax(220px, 330px) 1fr; gap: 14px; align-items: center; border: 1px solid var(--line); background: var(--panel-2); padding: 10px; min-width: 0; }
+.sgbox h4 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sgsvg { width: 100%; height: auto; display: block; }
+.sgsvg .gl { fill: var(--muted); font: 9.5px var(--mono); }
+.sgsvg .gv { fill: var(--ink); font: 700 26px var(--mono); }
+.sgsvg .ge { font: 11px var(--mono); }
+.sgsvg .ge.dn { fill: var(--sell); } .sgsvg .ge.up { fill: var(--buy); }
+.sgi { min-width: 0; }
+.sgbox .fresh { white-space: normal; }
+.sgstate { font-size: 21px; font-weight: 700; margin: 2px 0; }
+.sgwhy { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; }
+.sgwhy li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--line); cursor: help; }
+.sgwhy li span { color: var(--muted); text-align: right; overflow-wrap: anywhere; }
+.sgwhy li span.up { color: var(--buy); } .sgwhy li span.dn { color: var(--sell); }
+.sghist { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+.fbarw { border-bottom: 1px solid var(--line); margin-top: 4px; }
+.fbars { width: 100%; height: 120px; display: block; }
+.fbars .ax, .cot3 .ax { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.fbars .bu { fill: var(--buy); } .fbars .bd { fill: var(--sell); }
+.fbars .cl { fill: none; stroke: var(--accent); stroke-width: 2; }
+.fbx { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); font-family: var(--mono); }
+.fbx.abs { position: relative; height: 15px; }
+.fbx.abs span { position: absolute; } .fbx.abs span.mid { transform: translateX(-50%); }
+.fundtab td, .fundtab th, .cottab td, .cottab th { font-size: 12px; }
+.cottab .cotrow { cursor: pointer; }
+.cottab .cotrow.on td { background: var(--panel-2); }
+.cottab .cotx td { background: var(--panel-2); padding: 8px; }
+.cottab .warn { color: var(--warn); }
+.cottab .cotbar { width: 90px; }
+.spark .su { stroke: var(--buy); } .spark .sd { stroke: var(--sell); }
+.cot3 svg { width: 100%; height: 200px; display: block; }
+.cot3 .gr { stroke: var(--line); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.cot3 .l1 { stroke: var(--accent); stroke-width: 2; } .cot3 .l2 { stroke: #4ea1ff; stroke-width: 1.6; } .cot3 .l3 { stroke: var(--muted); stroke-width: 1.3; }
+.cot3 .k1 { color: var(--accent); } .cot3 .k2 { color: #4ea1ff; } .cot3 .k3 { color: var(--muted); }
+.cftcnews .cfti { display: grid; grid-template-columns: 92px 84px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 12.5px; align-items: start; }
+.cftcnews .cfti:hover { background: var(--panel-2); }
+.cftcnews .cfti small { display: block; color: var(--muted); font-weight: 400; }
+.cftc { font-size: 10.5px; padding: 1px 6px; border: 1px solid var(--line); text-align: center; }
+.cftc.enforce { color: var(--sell); border-color: var(--sell); } .cftc.report { color: var(--accent); border-color: var(--accent); }
+@media (max-width: 1100px) { .gauges, .cards > .pair { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .sgbox { grid-template-columns: 1fr; }
+  .sgbox .sgsvg { max-width: 300px; margin: 0 auto; }
+  .cftcnews .cfti { grid-template-columns: 64px 1fr; }
+  .cftcnews .cfti .cftc { grid-column: 2; justify-self: start; }
+  .cftcnews .cfti > span:last-child { grid-column: 1 / -1; }
+}
