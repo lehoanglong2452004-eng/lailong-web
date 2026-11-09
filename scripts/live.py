@@ -20,6 +20,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import markets  # noqa: E402
 import news  # noqa: E402
 import social  # noqa: E402
 import translate  # noqa: E402
@@ -134,6 +135,7 @@ def step(
     news_every: float,
     react_every: float,
     social_every: float = 300,
+    markets_every: float = 600,
 ) -> list[str]:
     """Một vòng: trả về tên các file vừa thay đổi.
 
@@ -201,6 +203,21 @@ def step(
                 changed.append("reactions.json")
         except Exception as exc:
             print("phản ứng lỗi:", exc, flush=True)
+    # hàng hoá, forex, cổ phiếu Mỹ (Yahoo, chậm 10 đến 15 phút): giá mỗi 10 phút;
+    # kỳ hạn hàng hoá, lãi suất điều hành, crypto mỗi giờ
+    if now - state.get("t_mk", -1e18) >= markets_every:
+        state["t_mk"] = now
+        try:
+            prev = state.get("mk") or _read(out / "markets.json") or {}
+            full = now - state.get("t_mk_full", -1e18) >= 3600
+            data = markets.snapshot(prev, full)
+            if full:
+                state["t_mk_full"] = now
+            state["mk"] = data
+            if _write(out / "markets.json", data, "sig"):
+                changed.append("markets.json")
+        except Exception as exc:
+            print("thị trường lỗi:", exc, flush=True)
     if now - state.get("t_move", -1e18) >= 180:
         state["t_move"] = now
         try:
@@ -222,6 +239,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     ap.add_argument("--react-every", type=float, default=300)
     ap.add_argument("--social-every", type=float, default=300)
+    ap.add_argument("--markets-every", type=float, default=600)
     ap.add_argument("--push", action="store_true")
     ap.add_argument(
         "--translate",
@@ -237,7 +255,8 @@ def main(argv: list[str] | None = None) -> None:
     end = time.time() + a.minutes * 60
     while True:
         t0 = time.time()
-        changed = step(out, state, t0, a.cal_every, a.news_every, a.react_every, a.social_every)
+        every = (a.cal_every, a.news_every, a.react_every, a.social_every, a.markets_every)
+        changed = step(out, state, t0, *every)
         if changed:
             (out / "live.json").write_text(
                 json.dumps({"updated": int(t0 * 1000), "files": changed}), encoding="utf-8"

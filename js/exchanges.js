@@ -11,10 +11,10 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202611090429";
+import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202611090440";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
-function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
+export function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
   let ws = null, closed = false, timer = null, retry = 0;
   const start = () => {
     if (closed) return;
@@ -363,7 +363,7 @@ const bybit = {
 const HL_REST = "https://api.hyperliquid.xyz/info";
 const HL_WS = "wss://api.hyperliquid.xyz/ws";
 // Hàng hóa, chỉ số, cổ phiếu nằm ở các sàn con HIP-3 (vd. xyz:CL là dầu WTI, xyz:GOLD là vàng), không ở danh sách chính
-const HL_ALIAS = { XAU: "GOLD", XAUUSD: "GOLD", XAG: "SILVER", XAGUSD: "SILVER", WTI: "CL", USOIL: "CL", OIL: "CL", BRENT: "BRENTOIL", UKOIL: "BRENTOIL", NDX: "XYZ100", NAS100: "XYZ100" };
+const HL_ALIAS = { XPT: "PLATINUM", BZ: "BRENTOIL", XAU: "GOLD", XAUUSD: "GOLD", XAG: "SILVER", XAGUSD: "SILVER", WTI: "CL", USOIL: "CL", OIL: "CL", BRENT: "BRENTOIL", UKOIL: "BRENTOIL", NDX: "XYZ100", NAS100: "XYZ100" };
 let hlNames = null; // tên coin thật của mọi sàn con, nạp một lần
 async function hlUniverse() {
   if (hlNames) return hlNames;
@@ -375,13 +375,15 @@ async function hlUniverse() {
   if (all.length) hlNames = all; // lỗi mạng thì lần sau hỏi lại
   return all;
 }
+// bảng mọi hợp đồng (sàn chính và các sàn con HIP-3) kèm số liệu mới nhất: markPx, funding, openInterest, dayNtlVlm
+export function hlContexts() { hlNames = null; return hlUniverse(); }
 // "XYZ:CL" -> "xyz:CL"; "BTCUSDT" -> "BTC"; "CL", "XAU" -> tìm trong các sàn con
 const hlBase = symbol => {
   const u = symbol.toUpperCase();
   if (u.includes(":")) { const [d, c] = u.split(":"); return `${d.toLowerCase()}:${c}`; }
   return u.replace(/(USDT|USDC|USD)$/, "") || u;
 };
-async function hlCoin(symbol) {
+export async function hlCoin(symbol) {
   const c = hlBase(symbol);
   if (c.includes(":")) return c;
   const all = await hlUniverse().catch(() => []), want = [c, HL_ALIAS[symbol.toUpperCase()] || HL_ALIAS[c]].filter(Boolean);

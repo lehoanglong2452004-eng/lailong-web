@@ -115,6 +115,8 @@ def _yahoo_daily(symbol: str, rng: str = "1mo") -> dict | None:
     return {
         "symbol": symbol,
         "t": int(last_t) * 1000,
+        # lúc của giá gần nhất theo Yahoo (giây -> ms): cho biết giá mới hay đang đứng vì thị trường nghỉ
+        "qt": int(meta.get("regularMarketTime") or last_t) * 1000,
         "price": meta.get("regularMarketPrice") or last_c,
         "prev": prev,
         "chg": None if not prev else round((last_c / prev - 1) * 100, 3),
@@ -151,12 +153,20 @@ def term_structure(front: float, nxt: float, months_apart: int) -> dict:
     }
 
 
-def _commodity(row, now: datetime) -> dict:
+def _commodity(row, now: datetime, legs_too: bool = True) -> dict:
     code, name, group, ex, cycle, mult, unit = row
     gen = _yahoo_daily(f"{code}=F")
     out = {"code": code, "name": name, "group": group, "unit": unit, "mult": mult}
+    if not legs_too:  # chỉ giá hợp đồng chung (vòng nhanh), kỳ hạn lấy lại mỗi giờ
+        if gen:
+            cents = unit.startswith("cent")
+            out.update(price=gen["price"], chg=gen["chg"], volume=gen["volume"], closes=gen["closes"], qt=gen["qt"])
+            out["notional"] = round(gen["volume"] * gen["price"] * mult * (0.01 if cents else 1))
+        return out
     if gen:
-        out.update(price=gen["price"], chg=gen["chg"], volume=gen["volume"], closes=gen["closes"])
+        out.update(
+            price=gen["price"], chg=gen["chg"], volume=gen["volume"], closes=gen["closes"], qt=gen["qt"]
+        )
         cents = unit.startswith("cent")
         out["notional"] = round(gen["volume"] * gen["price"] * mult * (0.01 if cents else 1))
     legs = []
@@ -190,10 +200,20 @@ def _commodity(row, now: datetime) -> dict:
     return out
 
 
-def fetch_commodities(now: datetime | None = None) -> list[dict]:
+def fetch_commodities(
+    now: datetime | None = None, legs_too: bool = True, prev: list[dict] | None = None
+) -> list[dict]:
+    """legs_too=False: chỉ lấy giá hợp đồng chung, giữ kỳ hạn và contango của lần trước (prev)."""
     now = now or datetime.now(UTC)
     with ThreadPoolExecutor(6) as ex:
-        rows = list(ex.map(lambda r: _commodity(r, now), COMMODITIES))
+        rows = list(ex.map(lambda r: _commodity(r, now, legs_too), COMMODITIES))
+    if not legs_too:
+        old = {r.get("code"): r for r in prev or []}
+        for r in rows:
+            o = old.get(r["code"]) or {}
+            for k in ("legs", "curve"):
+                if k in o:
+                    r[k] = o[k]
     rows = [r for r in rows if r.get("price")]
     rows.sort(key=lambda r: -(r.get("notional") or 0))
     for i, r in enumerate(rows):
@@ -252,7 +272,7 @@ def fetch_fx() -> list[dict]:
             "rate": rates.get(area),
         }
         if q:
-            row.update(price=q["price"], chg=q["chg"], closes=q["closes"])
+            row.update(price=q["price"], chg=q["chg"], closes=q["closes"], qt=q["qt"])
         out.append(row)
     return out if not err else [*out, {"error": err}]
 
@@ -274,6 +294,7 @@ def fetch_stocks() -> list[dict]:
             "chg": q["chg"],
             "value": round((q["price"] or 0) * (q["volume"] or 0)),
             "closes": q["closes"],
+            "qt": q["qt"],
         })
     return out
 
@@ -537,6 +558,64 @@ def build(outdir: Path) -> dict:
     return res
 
 
+def snapshot(prev: dict | None = None, full: bool = True) -> dict:
+    """Bản markets.json cho vòng cập nhật nhanh (khoảng 10 phút một lần).
+
+    full=False: chỉ giá (hàng hoá, forex, cổ phiếu); kỳ hạn hàng hoá, lãi suất và crypto lấy từ bản trước.
+    """
+    prev = prev or {}
+    now = datetime.now(UTC)
+    res: dict = {"updated": int(now.timestamp() * 1000)}
+    errors = []
+    try:
+        res["commodities"] = fetch_commodities(now, full, prev.get("commodities"))
+    except Exception as exc:
+        errors.append(f"commodities: {exc}")
+    try:
+        if full or not prev.get("fx"):
+            res["fx"] = fetch_fx()
+        else:  # giữ lãi suất điều hành (BIS, theo ngày), chỉ lấy lại tỷ giá
+            res["fx"] = _refresh_fx_quotes(prev["fx"])
+    except Exception as exc:
+        errors.append(f"fx: {exc}")
+    try:
+        res["stocks"] = fetch_stocks()
+    except Exception as exc:
+        errors.append(f"stocks: {exc}")
+    if full or not prev.get("crypto"):
+        try:
+            res["crypto"] = fetch_crypto()
+        except Exception as exc:
+            errors.append(f"crypto: {exc}")
+    for k in ("commodities", "fx", "stocks", "crypto"):  # phần nào lỗi thì giữ bản trước
+        if not res.get(k) and prev.get(k):
+            res[k] = prev[k]
+    res["errors"] = errors
+    # dấu để biết có gì đổi (giá và lúc báo giá), tránh đẩy lại bản y hệt
+    res["sig"] = [
+        [x.get("code"), x.get("price"), x.get("qt")]
+        for k in ("commodities", "fx", "stocks")
+        for x in res.get(k) or []
+    ]
+    return res
+
+
+def _refresh_fx_quotes(prev_fx: list[dict]) -> list[dict]:
+    syms = [r["pair"] if r.get("pair") != "DXY" else "DX-Y.NYB" for r in prev_fx if r.get("code")]
+    with ThreadPoolExecutor(6) as ex:
+        quotes = dict(zip(syms, ex.map(_yahoo_daily, syms), strict=False))
+    out = []
+    for r in prev_fx:
+        if not r.get("code"):
+            continue
+        q = quotes.get(r["pair"] if r.get("pair") != "DXY" else "DX-Y.NYB")
+        row = dict(r)
+        if q:
+            row.update(price=q["price"], chg=q["chg"], closes=q["closes"], qt=q["qt"])
+        out.append(row)
+    return out
+
+
 _cache: dict[str, tuple[float, dict]] = {}
 
 
@@ -553,6 +632,7 @@ def cached(name: str, ttl: float = 900) -> dict:
             "commodities": fetch_commodities(),
             "fx": fetch_fx(),
             "crypto": fetch_crypto(),
+            "stocks": fetch_stocks(),
         }
     _cache[name] = (now, data)
     return data

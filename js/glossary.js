@@ -1048,6 +1048,16 @@ export const GLOSSARY = [
     body: "<p>Lãi suất điều hành là mức ngân hàng trung ương đặt ra để điều tiết kinh tế: Fed (Mỹ), ECB (châu Âu), BOJ (Nhật), BOE (Anh), PBOC (Trung Quốc), RBA (Úc), BOC (Canada), SNB (Thuỵ Sĩ), HKMA (Hồng Kông). Số liệu lấy từ BIS (Ngân hàng Thanh toán Quốc tế).</p><p><b>Lần đổi gần nhất</b> cho biết lần cuối họ tăng hay giảm bao nhiêu điểm cơ bản (100 điểm = 1%).</p><p><b>Cách đọc</b>: chênh lệch lãi suất giữa hai nước là động lực lớn của tỷ giá. Ví dụ Fed giữ lãi suất cao trong khi BOJ giữ thấp thì USD/JPY có xu hướng tăng. Bấm vào một đồng tiền để xem lịch dữ liệu (lạm phát, việc làm, quyết định lãi suất) và tin liên quan của nước đó.</p>"
   },
   {
+    id: "heatmap4", group: "Thị trường", term: "Bản đồ nhiệt 4 nhóm",
+    short: "Hàng hoá, crypto, chứng khoán Mỹ, forex: mỗi nhóm có nguồn, giờ cập nhật và trạng thái riêng.",
+    body: "<p><b>Hàng hoá</b> (vàng, bạc, đồng, bạch kim, dầu WTI, dầu Brent) và <b>Crypto</b> (BTC, ETH) là hợp đồng đuôi USDT trên sàn crypto, lấy thẳng trong trình duyệt nên chạy trực tiếp, kể cả cuối tuần. Đổi sàn ở bảng Hàng hoá và crypto đuôi USDT ngay bên dưới.</p><p><b>Chứng khoán Mỹ</b> và <b>Forex</b> lấy từ Yahoo Finance, chậm khoảng 15 phút (cổ phiếu) và vài phút (tỷ giá); máy chủ lấy lại mỗi 10 phút.</p><p><b>Nhãn trạng thái:</b> xanh Trực tiếp; vàng Trễ kèm giờ của giá; xám Đóng cửa kèm giờ mở lại (giờ Việt Nam), lúc này giá đứng yên là bình thường; đỏ khi giá cũ hơn 40 phút dù thị trường đang mở, nghĩa là nguồn đang có vấn đề.</p><p>Giờ mở cửa (giờ VN, mùa đông): forex từ 05:00 thứ Hai tới 05:00 thứ Bảy; hàng hoá CME từ 06:00 thứ Hai tới 05:00 thứ Bảy, nghỉ 05:00–06:00 mỗi ngày; chứng khoán Mỹ 21:30–04:00. Mùa hè sớm hơn 1 giờ. Không tính ngày lễ.</p>",
+  },
+  {
+    id: "usdt-board", group: "Thị trường", term: "Hàng hoá và crypto đuôi USDT",
+    short: "Giá, % 24 giờ, khối lượng, hợp đồng mở và funding của XAUUSDT, CLUSDT, BTCUSDT… theo sàn, hoặc gộp các sàn.",
+    body: "<p>Hợp đồng vĩnh cửu đuôi USDT của vàng (XAU), bạc (XAG), bạch kim (XPT), đồng (COPPER), dầu WTI (CL), dầu Brent (BZ), BTC và ETH. Mặc định Binance; bấm Bybit, OKX, Hyperliquid để xem sàn khác. Sàn nào không có mã thì dòng đó để trống.</p><p><b>Gộp tất cả:</b> giá trung bình theo khối lượng các sàn, khối lượng và hợp đồng mở cộng lại, funding trung bình theo hợp đồng mở và quy về kỳ 8 giờ (Hyperliquid tính funding mỗi giờ).</p><p><b>Funding</b> dương: phe long trả phí cho phe short, tức đang đông người long; âm thì ngược lại. <b>Hợp đồng mở (OI)</b> tăng cùng giá là tiền mới vào theo xu hướng.</p>",
+  },
+  {
     id: "crypto-top", group: "Thị trường", term: "Crypto top 10 vốn hoá",
     short: "10 đồng crypto có vốn hoá lớn nhất (đã bỏ stablecoin và token bọc). BTC và ETH được tô nổi.",
     body: "<p>Vốn hoá = giá × lượng coin đang lưu hành. Cột tỷ trọng là phần của mỗi coin trong tổng vốn hoá top 10: tỷ trọng BTC tăng thường là lúc thị trường thận trọng, tiền rút khỏi altcoin về BTC.</p><p>Nguồn CoinGecko, cập nhật mỗi 30 phút.</p>"
