@@ -3,8 +3,8 @@
 // Trình duyệt gọi thẳng sàn, không qua máy chủ. Binance: giá chạy từng giây qua WebSocket miniTicker, funding và
 // hợp đồng mở (OI) hỏi lại mỗi phút. Bybit, OKX, Hyperliquid: hỏi lại bảng giá mỗi 10 đến 15 giây.
 // "Gộp tất cả": giá trung bình theo khối lượng, khối lượng và OI cộng các sàn, funding trung bình theo OI quy về 8 giờ.
-import { getJson } from "./util.js?v=202611090459";
-import { openSocket, hlContexts, hlCoin } from "./exchanges.js?v=202611090459";
+import { getJson } from "./util.js?v=202611090506";
+import { openSocket, hlContexts, hlCoin } from "./exchanges.js?v=202611090506";
 
 // [mã gốc, tên, nhóm]: nhóm "comm" là hàng hoá, "crypto" là BTC, ETH
 export const BOARD = [
