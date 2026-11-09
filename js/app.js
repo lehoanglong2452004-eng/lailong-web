@@ -1,60 +1,58 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611062257";
-import { MarketState, Book } from "./market.js?v=202611062257";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611062257";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611062257";
-import { FlowChart } from "./flowchart.js?v=202611062257";
-import { LiqHeatChart } from "./liqchart.js?v=202611062257";
-import { liqHeat, LIQ_MODELS, LIQ_RANGES } from "./liqheat.js?v=202611062257";
-import { Dom } from "./dom.js?v=202611062257";
-import { srLevels, abnormalVolume, liquidationMap, summary, isDeltaApprox, biasSummary } from "./analytics.js?v=202611062257";
-import { initBacktest } from "./backtestview.js?v=202611062257";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611062257";
-import { absorption, clusterSearch } from "./orderflow.js?v=202611062257";
-import { Tape } from "./tape.js?v=202611062257";
-import { LiqMap } from "./liqmap.js?v=202611062257";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611062257";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611062257";
-import { FlowMarks } from "./bmind.js?v=202611062257";
-import { Replay } from "./replay.js?v=202611062257";
-import { Alerts } from "./alerts.js?v=202611062257";
-import { venueDerivs, deribitOptions } from "./derivs.js?v=202611062257";
-import { setVenue, getVenue, venueName } from "./venue.js?v=202611062257";
-import { initNews } from "./newsview.js?v=202611062257";
-import { initSocial } from "./socialview.js?v=202611062257";
-import { initDepth } from "./depthview.js?v=202611062257";
-import { initMarkets } from "./marketsview.js?v=202611062257";
-import { initTgBot } from "./tgbot.js?v=202611062257";
-import { initInst } from "./instview.js?v=202611062257";
-import { setFresh, tickFresh } from "./fresh.js?v=202611062257";
-import { initRadar } from "./radarview.js?v=202611062257";
-import { Drawings } from "./drawings.js?v=202611062257";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611062257";
-import { PaperBroker } from "./paper.js?v=202611062257";
-import { OrderLines } from "./orderlines.js?v=202611062257";
-import { MultiChart } from "./multichart.js?v=202611062257";
-import { DOM_COLS } from "./dom.js?v=202611062257";
-import { initFractal } from "./fractalview.js?v=202611062257";
-import { initJournal } from "./journalview.js?v=202611062257";
-import { installHealth, clockSkew } from "./health.js?v=202611062257";
-import { initHealth } from "./healthview.js?v=202611062257";
-import { initFlows } from "./flowsview.js?v=202611062257";
-import { initPerf } from "./perfview.js?v=202611062257";
-import { initShock } from "./shockview.js?v=202611062257";
-import { initCompass } from "./compassview.js?v=202611062257";
-import { initConsensus } from "./consensusview.js?v=202611062257";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202611062257";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611062257";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611062257";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611062257";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611062257";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202611062257";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611062257";
-import { mountLang } from "./lang.js?v=202611062257";
-import { initI18n } from "./i18n.js?v=202611062257";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611062257";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611090429";
+import { MarketState, Book } from "./market.js?v=202611090429";
+import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611090429";
+import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611090429";
+import { FlowChart } from "./flowchart.js?v=202611090429";
+import { LiqHeatChart } from "./liqchart.js?v=202611090429";
+import { liqHeat, LIQ_MODELS, LIQ_RANGES } from "./liqheat.js?v=202611090429";
+import { Dom } from "./dom.js?v=202611090429";
+import { srLevels, abnormalVolume, liquidationMap, summary, isDeltaApprox } from "./analytics.js?v=202611090429";
+import { initBacktest } from "./backtestview.js?v=202611090429";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611090429";
+import { absorption, clusterSearch } from "./orderflow.js?v=202611090429";
+import { Tape } from "./tape.js?v=202611090429";
+import { LiqMap } from "./liqmap.js?v=202611090429";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611090429";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611090429";
+import { FlowMarks } from "./bmind.js?v=202611090429";
+import { Replay } from "./replay.js?v=202611090429";
+import { Alerts } from "./alerts.js?v=202611090429";
+import { setVenue } from "./venue.js?v=202611090429";
+import { initNews } from "./newsview.js?v=202611090429";
+import { initSocial } from "./socialview.js?v=202611090429";
+import { initMarkets } from "./marketsview.js?v=202611090429";
+import { initTgBot } from "./tgbot.js?v=202611090429";
+import { initInst } from "./instview.js?v=202611090429";
+import { setFresh, tickFresh } from "./fresh.js?v=202611090429";
+import { initRadar } from "./radarview.js?v=202611090429";
+import { Drawings } from "./drawings.js?v=202611090429";
+import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611090429";
+import { PaperBroker } from "./paper.js?v=202611090429";
+import { OrderLines } from "./orderlines.js?v=202611090429";
+import { MultiChart } from "./multichart.js?v=202611090429";
+import { DOM_COLS } from "./dom.js?v=202611090429";
+import { initFractal } from "./fractalview.js?v=202611090429";
+import { initJournal } from "./journalview.js?v=202611090429";
+import { installHealth, clockSkew } from "./health.js?v=202611090429";
+import { initHealth } from "./healthview.js?v=202611090429";
+import { initFlows } from "./flowsview.js?v=202611090429";
+import { initPerf } from "./perfview.js?v=202611090429";
+import { initShock } from "./shockview.js?v=202611090429";
+import { initCompass } from "./compassview.js?v=202611090429";
+import { initConsensus } from "./consensusview.js?v=202611090429";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202611090429";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611090429";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611090429";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611090429";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611090429";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202611090429";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611090429";
+import { mountLang } from "./lang.js?v=202611090429";
+import { initI18n } from "./i18n.js?v=202611090429";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611090429";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
@@ -226,7 +224,6 @@ function recompute() {
   recomputeFlow();
   renderSignals();
   updateConfl();
-  if (S.view === "analysis") renderAnalysis();
 }
 // Các mốc giá trong ngày (giờ UTC) từ nến đang có: giá mở cửa, đỉnh, đáy hôm nay và đỉnh, đáy hôm qua
 function priceMarks(bars) {
@@ -416,7 +413,6 @@ heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
 const newsView = initNews({ $, esc, alerts, coin });
 mountLang($("langBtn")); initI18n(); // nút VI / EN góc trên bên phải: đổi ngôn ngữ cả trang
 const socialView = initSocial({ $, esc });
-const depthView = initDepth({ $, esc });
 const marketsView = initMarkets({ $, esc });
 initTgBot({ alerts, onTap: d => (d.startsWith("sig:") ? signalsView.onTap(d) : null) });
 const instView = initInst({ $, esc });
@@ -491,63 +487,15 @@ async function loadSymbols() {
 }
 
 // ---------- trang Phân tích ----------
-// nến các khung khác cho tab Phân tích: tải song song, dùng chung một bộ nhớ đệm 60 giây và gộp các lần hỏi trùng
-const tfCache = new Map();
-function tfBars(tf) {
-  if (tf === S.interval) return Promise.resolve(market.bars);
-  const ck = `${S.ex}:${S.symbol}:${tf}`, c = tfCache.get(ck);
-  if (c && Date.now() - c.t < 60e3) return c.p;
-  const p = ex().klines(S.symbol, tf, 500);
-  tfCache.set(ck, { t: Date.now(), p });
-  p.catch(() => tfCache.delete(ck));
-  return p;
-}
-let analysisBusy = false, analysisAgain = false;
-async function renderAnalysis() {
-  if (analysisBusy) { analysisAgain = true; return; } // đang vẽ thì chỉ hẹn vẽ lại một lần, không chồng nhiều lượt
-  analysisBusy = true;
-  try { await renderAnalysisNow(); } finally { analysisBusy = false; if (analysisAgain) { analysisAgain = false; renderAnalysis(); } }
-}
-async function renderAnalysisNow() {
-  if (!analysis) { $("mtfTable").innerHTML = `<div class="empty">Đang tải dữ liệu...</div>`; return; }
-  const dec = decimalsFor(market.tick || market.fpStep), last = market.bars[market.bars.length - 1].c;
-  setFresh($("fsMtf"), S.ex === "SIM" ? "delay" : "live", Date.now(), { label: S.ex === "SIM" ? "Dữ liệu giả lập" : `Trực tiếp (${ex().name})`, expect: 5 * 60e3, note: "Nến lấy thẳng từ sàn; các khung được tải lại tối đa mỗi 60 giây khi đang mở Phân tích" });
-  renderDvol(); renderDerivs(); newsView.render();
-  const tfs = ["5m", "15m", "1h", "4h", "1d"], rows = [], sums = [];
-  const got = await Promise.allSettled(tfs.map(tfBars));
-  for (const [j, tf] of tfs.entries()) {
-    const g = got[j];
-    if (g.status === "rejected") { rows.push(`<tr><td>${tf}</td><td colspan="7" class="t muted">Lỗi: ${esc(g.reason.message)}</td></tr>`); continue; }
-    const { trend: t, momentum: m, volatility: v } = summary(g.value, INTERVALS[tf]);
-    sums.push({ tf, trend: t, momentum: m });
-    const sc = x => x == null ? "-" : `<span class="bar"><i style="${x >= 0 ? "left:50%" : `left:${50 + x / 2}%`};width:${Math.abs(x) / 2}%;background:${x >= 0 ? "var(--buy)" : "var(--sell)"}"></i></span>${x.toFixed(0)}`;
-    rows.push(`<tr><td>${tf}</td><td>${trendTag(t.label, t.score)}</td><td>${sc(t.score)}</td><td class="t">${esc(t.structure || "-")}</td><td>${trendTag(m.label, m.score)} ${sc(m.score)}</td><td>${fmtPct(m.roc10)}</td><td class="t">${esc(v.regime || "-")} (${v.percentile == null ? "-" : v.percentile.toFixed(0)}%)</td><td>${v.realized == null ? "-" : v.realized.toFixed(0) + "%"} · ATR ${v.atrPct == null ? "-" : v.atrPct.toFixed(2) + "%"}</td></tr>`);
-  }
-  $("mtfTable").innerHTML = table([["Khung", "mtf"], "Xu hướng", ["Điểm xu hướng", "trend-score"], ["Cấu trúc", "structure"], ["Động lượng", "momentum"], ["Thay đổi 10 nến", "roc"], ["Chế độ biến động", "vol-regime"], ["Biến động năm hoá", "realized-vol"]], rows, "");
-  renderBias(biasSummary(sums, { levels: analysis.levels, last }), dec);
-}
-// ô thiên hướng đầu tab Phân tích: điểm −100…+100 gộp từ 5 khung, lý do và HT/KC gần nhất
-function renderBias(b, dec) {
-  $("biasSym").textContent = S.symbol;
-  if (!b) { $("biasLabel").textContent = "Chưa đủ dữ liệu"; $("biasScore").textContent = ""; $("biasWhy").innerHTML = ""; $("biasLv").innerHTML = ""; return; }
-  const cls = b.score >= 15 ? "pos" : b.score <= -15 ? "neg" : "";
-  $("biasLabel").textContent = b.label; $("biasLabel").className = cls;
-  $("biasScore").textContent = (b.score > 0 ? "+" : "") + b.score; $("biasScore").className = cls;
-  $("biasMark").style.left = (50 + b.score / 2) + "%";
-  $("biasWhy").innerHTML = b.reasons.map(r => `<li><b class="${r.w > 0 ? "pos" : r.w < 0 ? "neg" : ""}">${r.w > 0 ? "+" : ""}${r.w}</b> ${esc(r.text)}</li>`).join("");
-  const lv = (l, name, c) => l ? `<span class="${c}">${name} ${l.price.toFixed(dec)} · độ mạnh ${l.strength.toFixed(0)}</span>` : "";
-  $("biasLv").innerHTML = lv(b.support, "HT gần", "pos") + lv(b.resistance, "KC gần", "neg");
-}
 // tab con của Phân tích: mỗi khối gắn data-at với các tab nó thuộc về; nhớ tab đang chọn trong phiên.
 // Mục Thị trường (trước là trang riêng) chỉ tải dữ liệu khi đang mở.
-let aTab = "overview"; try { aTab = sessionStorage.getItem("lailong.atab") || aTab; } catch { /* bỏ qua */ }
-if (![...$("aTabs").children].some(b => b.dataset.at === aTab)) aTab = "overview"; // tab Tin tức, Mức giá đã bỏ
+let aTab = "macro"; try { aTab = sessionStorage.getItem("lailong.atab") || aTab; } catch { /* bỏ qua */ }
+if (![...$("aTabs").children].some(b => b.dataset.at === aTab)) aTab = "macro"; // Tin tức, Mức giá, Tổng quan, Phái sinh đã bỏ
 function syncMarkets() { if (S.view === "analysis" && aTab === "markets") marketsView.show(); else marketsView.hide(); }
 function anTab(at) {
   if (at) aTab = at;
   for (const b of $("aTabs").children) b.classList.toggle("on", b.dataset.at === aTab);
   for (const sec of document.querySelectorAll("#view-analysis section[data-at]")) sec.hidden = !sec.dataset.at.split(" ").includes(aTab);
-  $("biasCard").hidden = aTab !== "overview";
   $("view-markets").hidden = aTab !== "markets";
   try { sessionStorage.setItem("lailong.atab", aTab); } catch { /* bỏ qua */ }
   if (typeof marketsView !== "undefined") syncMarkets();
@@ -565,85 +513,6 @@ $("nTabs").onclick = e => { const b = e.target.closest("[data-nt]"); if (b) nTab
 $("aTabs").onclick = e => { const b = e.target.closest("[data-at]"); if (b) anTab(b.dataset.at); };
 anTab(); nTab();
 
-
-// ---------- dữ liệu phái sinh ----------
-let drvCache = null, optCache = null;
-async function renderDerivs() {
-  const sym = S.symbol, c = coin(), box = $("drvStats"), ob = $("optStats");
-  const V = getVenue(), vn = venueName(V);
-  setFresh($("drvInfo"), "live", Date.now(), { label: `Trực tiếp · ${sym} · ${vn} khung 1 giờ, 48 giờ`, expect: 10 * 60e3, note: `Long/short, mua/bán chủ động, funding, OI lấy thẳng từ ${vn} (làm mới mỗi 2 phút); quyền chọn từ Deribit (mỗi 5 phút)` });
-  try {
-    if (!drvCache || drvCache.sym !== sym || drvCache.V !== V || Date.now() - drvCache.t > 120e3) drvCache = { sym, V, t: Date.now(), d: await venueDerivs(V, sym) };
-    const d = drvCache.d, lv = a => a && a.length ? a[a.length - 1].v : null, ch = a => a && a.length > 24 ? a[a.length - 1].v - a[a.length - 25].v : null;
-    const f2 = (x, k = 2) => x == null || !isFinite(x) ? "-" : x.toFixed(k), sg = (x, k = 2) => x == null || !isFinite(x) ? "" : ` <small class="${x >= 0 ? "pos" : "neg"}">(${x >= 0 ? "+" : ""}${x.toFixed(k)} / 24h)</small>`;
-    const accL = d.accLong, topL = d.topLong, fr = d.funding, tk = lv(d.taker), oi = lv(d.oi), oiCh = d.oi && d.oi.length > 24 ? (lv(d.oi) / d.oi[d.oi.length - 25].v - 1) * 100 : null;
-    const crowd = accL == null ? "" : accL >= 0.65 ? "Đám đông nghiêng hẳn về LONG: dễ bị quét xuống trước khi đi tiếp." : accL <= 0.4 ? "Đám đông nghiêng hẳn về SHORT: dễ bị ép lên (short squeeze)." : "Đám đông khá cân bằng.";
-    const smart = accL != null && topL != null ? (topL - accL >= 0.05 ? " Top trader long nhiều hơn đám đông: tiền lớn đang nghiêng về phía mua." : accL - topL >= 0.05 ? " Top trader long ít hơn đám đông: tiền lớn thận trọng hơn nhỏ lẻ." : "") : "";
-    const NA = `<small class="muted">${esc(vn)} không công bố</small>`, miss = k => d.missing.includes(k);
-    box.innerHTML = d.errors.length >= 5 && d.funding == null ? `<p class="note">${esc(vn)} không có dữ liệu phái sinh cho ${esc(sym)}: ${esc(d.errors[0])}</p>` :
-      `<div class="kv"><span data-g="ls-ratio">Tài khoản đang LONG (mọi người)</span><b>${miss("acc") ? NA : accL == null ? "-" : (accL * 100).toFixed(1) + "%"}</b>` +
-      `<span data-g="ls-ratio">Tỷ lệ long/short mọi tài khoản</span><b>${miss("acc") ? NA : f2(lv(d.acc)) + sg(ch(d.acc))}</b>` +
-      `<span data-g="ls-ratio">Top trader: vị thế LONG</span><b>${miss("top") ? NA : topL == null ? "-" : (topL * 100).toFixed(1) + "%"}</b>` +
-      `<span data-g="taker-ratio">Mua/bán chủ động (1 giờ gần nhất)</span><b class="${tk >= 1 ? "pos" : "neg"}">${miss("taker") ? NA : f2(tk)}</b>` +
-      `<span data-g="funding">Funding hiện tại (mỗi ${d.fundingH} giờ)</span><b class="${fr >= 0 ? "pos" : "neg"}">${fr == null ? "-" : (fr * 100).toFixed(4) + "%"}</b>` +
-      `<span data-g="oi">Open interest</span><b>${oi == null ? "-" : fmtUsd(oi)}${oiCh == null ? "" : ` <small class="${oiCh >= 0 ? "pos" : "neg"}">(${oiCh >= 0 ? "+" : ""}${oiCh.toFixed(1)}% / 24h)</small>`}</b></div>` +
-      `<p class="note">${crowd}${smart}${fr != null && Math.abs(fr * 8 / d.fundingH) >= 0.0005 ? ` Funding ${fr > 0 ? "dương" : "âm"} cao: phe ${fr > 0 ? "long" : "short"} đang trả phí đắt để giữ lệnh, dễ bị xả.` : ""}</p>`;
-    drawDerivs(d);
-  } catch (e) { box.innerHTML = `<p class="note">Không tải được dữ liệu phái sinh từ ${esc(vn)}: ${esc(e.message)}</p>`; }
-  if (c !== "BTC" && c !== "ETH") { ob.innerHTML = `<p class="note">Deribit chỉ có quyền chọn đủ thanh khoản cho BTC và ETH.</p>`; return; }
-  try {
-    if (!optCache || optCache.c !== c || Date.now() - optCache.t > 300e3) optCache = { c, t: Date.now(), o: await deribitOptions(c) };
-    const o = optCache.o; if (!o) { ob.innerHTML = `<p class="note">Deribit chưa có dữ liệu quyền chọn.</p>`; return; }
-    const day = t => new Date(t).toISOString().slice(0, 10), strikes = a => a.map(x => `${fmtVol(x.strike)} (${fmtVol(x.oi)})`).join(", ");
-    ob.innerHTML = `<div class="kv"><span data-g="put-call">Put/Call theo OI</span><b class="${o.pcOi > 1 ? "neg" : "pos"}">${o.pcOi == null ? "-" : o.pcOi.toFixed(2)}</b>` +
-      `<span data-g="put-call">Put/Call theo khối lượng 24h</span><b class="${o.pcVol > 1 ? "neg" : "pos"}">${o.pcVol == null ? "-" : o.pcVol.toFixed(2)}</b>` +
-      `<span data-g="max-pain">Max pain kỳ ${day(o.mainExpiry)}</span><b>${fmtVol(o.maxPain)}</b>` +
-      `<span data-g="max-pain">Max pain kỳ lớn nhất ${day(o.bigExpiry)}</span><b>${fmtVol(o.bigMaxPain)}</b>` +
-      `<span>Call OI lớn nhất (kỳ ${day(o.mainExpiry)})</span><b class="pos">${strikes(o.topCalls)}</b>` +
-      `<span>Put OI lớn nhất</span><b class="neg">${strikes(o.topPuts)}</b>` +
-      `<span data-g="iv-skew">Lệch IV put − call (cách 10%)</span><b class="${o.skew > 0 ? "neg" : "pos"}">${o.skew == null ? "-" : (o.skew >= 0 ? "+" : "") + o.skew.toFixed(1) + " điểm"}</b></div>` +
-      `<p class="note">Giá spot ${o.under ? fmtVol(o.under) : "-"}. Put/Call trên 1 là thị trường mua bảo hiểm giảm giá nhiều hơn. Gần ngày đáo hạn, giá hay bị hút về max pain và các giá thực hiện có OI lớn.</p>`;
-  } catch (e) { ob.innerHTML = `<p class="note">Không tải được quyền chọn từ Deribit: ${esc(e.message)}</p>`; }
-}
-function drawDerivs(d) {
-  const cv = $("drvCanvas"), F = cv._fit || (cv._fit = fitCanvas(cv, () => drvCache && drawDerivs(drvCache.d))), ctx = F.ctx;
-  ctx.fillStyle = T.bg; ctx.fillRect(0, 0, F.w, F.h);
-  const lines = [[d.acc, "#f5c542", "Long/short mọi TK"], [d.top, "#56b6ff", "Long/short top trader"], [d.taker, "#c678dd", "Mua/bán chủ động"]].filter(x => x[0] && x[0].length > 1);
-  if (!lines.length) return;
-  const all = lines.flatMap(x => x[0].map(p => p.v)), lo = Math.min(1, ...all), hi = Math.max(1, ...all), t0 = Math.min(...lines.map(x => x[0][0].t)), t1 = Math.max(...lines.map(x => x[0][x[0].length - 1].t));
-  const X = t => 4 + (t - t0) / (t1 - t0 || 1) * (F.w - 48), Y = v => 18 + (hi - v) / (hi - lo || 1) * (F.h - 34);
-  ctx.strokeStyle = alpha(T.text, 0.35); ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(4, Y(1)); ctx.lineTo(F.w - 44, Y(1)); ctx.stroke(); ctx.setLineDash([]);
-  ctx.font = `11px ${MONO}`; let lx = 6;
-  for (const [a, col, name] of lines) {
-    ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath(); a.forEach((p, i) => i ? ctx.lineTo(X(p.t), Y(p.v)) : ctx.moveTo(X(p.t), Y(p.v))); ctx.stroke();
-    ctx.fillStyle = col; ctx.textAlign = "left"; ctx.fillText(name, lx, 11); lx += ctx.measureText(name).width + 14;
-  }
-  ctx.fillStyle = T.muted; ctx.textAlign = "left"; ctx.fillText(hi.toFixed(2), F.w - 40, 22); ctx.fillText(lo.toFixed(2), F.w - 40, F.h - 14); ctx.fillText("1.00", F.w - 40, Y(1) + 4);
-}
-
-let dvolCache = null;
-async function renderDvol() {
-  const c = coin(), box = $("dvolStats");
-  if (c !== "BTC" && c !== "ETH") { box.innerHTML = `<p class="note">Deribit chỉ công bố chỉ số biến động quyền chọn DVOL cho BTC và ETH.</p>`; return; }
-  try {
-    if (!dvolCache || dvolCache.c !== c || Date.now() - dvolCache.t > 300e3) {
-      const end = Date.now(), start = end - 30 * 86400e3;
-      const r = await getJson(`https://www.deribit.com/api/v2/public/get_volatility_index_data?currency=${c}&start_timestamp=${start}&end_timestamp=${end}&resolution=3600`);
-      dvolCache = { c, t: Date.now(), data: r.result.data.map(x => ({ t: x[0], v: x[4] })).sort((a, b) => a.t - b.t) };
-    }
-    const d = dvolCache.data, cur = d[d.length - 1].v, day = d[Math.max(0, d.length - 25)].v;
-    const pct = d.filter(x => x.v <= cur).length / d.length * 100, rv = analysis.sum.volatility.realized;
-    const daily = cur / Math.sqrt(365);
-    box.innerHTML = `<div class="kv"><span data-g="dvol">DVOL hiện tại (biến động kỳ vọng 30 ngày)</span><b>${cur.toFixed(1)}%</b><span data-g="dvol">Tương đương mỗi ngày</span><b>khoảng ±${daily.toFixed(2)}%</b><span>Thay đổi 24 giờ</span><b class="${cur >= day ? "pos" : "neg"}">${(cur - day >= 0 ? "+" : "") + (cur - day).toFixed(1)} điểm</b><span>Vị trí trong 30 ngày</span><b>${pct.toFixed(0)}%</b><span data-g="realized-vol">Biến động thực tế (${S.interval})</span><b>${rv == null ? "-" : rv.toFixed(1) + "%"}</b><span data-g="dvol">Chênh lệch kỳ vọng − thực tế</span><b>${rv == null ? "-" : (cur - rv).toFixed(1) + " điểm"}</b></div>` +
-      `<p class="note">Nghĩa là thị trường quyền chọn đang trả giá cho mức dao động khoảng ±${daily.toFixed(1)}% mỗi ngày trong 30 ngày tới. Vị trí ${pct.toFixed(0)}% trong 30 ngày: ${pct >= 80 ? "đang ở mức cao, thị trường đang lo sợ" : pct <= 20 ? "đang ở mức thấp, thị trường đang bình yên (thường đi trước một đợt biến động)" : "ở mức trung bình"}.</p>`;
-    const cv = $("dvolCanvas"), F = cv._fit || (cv._fit = fitCanvas(cv, () => renderDvol())), ctx = F.ctx;
-    ctx.fillStyle = T.bg; ctx.fillRect(0, 0, F.w, F.h);
-    const lo = Math.min(...d.map(x => x.v)), hi = Math.max(...d.map(x => x.v));
-    ctx.strokeStyle = "#c678dd"; ctx.lineWidth = 1.5; ctx.beginPath();
-    d.forEach((x, i) => { const px = i / (d.length - 1) * (F.w - 40), py = 8 + (hi - x.v) / (hi - lo || 1) * (F.h - 24); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.stroke();
-    ctx.fillStyle = T.muted; ctx.font = `11px ${MONO}`; ctx.textAlign = "left"; ctx.fillText(hi.toFixed(0), F.w - 36, 14); ctx.fillText(lo.toFixed(0), F.w - 36, F.h - 12); ctx.fillText("DVOL 30 ngày", 4, F.h - 3);
-  } catch (e) { box.innerHTML = `<p class="note">Không tải được DVOL từ Deribit: ${esc(e.message)}</p>`; }
-}
 
 // ---------- trang Backtest ----------
 const btChart = new FlowChart($("btChart"), { emptyText: "Bấm \"Chạy backtest\" để xem điểm vào/ra lệnh trên biểu đồ" });
@@ -714,18 +583,7 @@ async function updateConfl() {
     if (zs.length && price && A > 0) { for (const z of zs) z.dist = (z.mid - price) / A; zs.sort((a, b) => Math.abs(a.dist) - Math.abs(b.dist)); }
     conflZones = zs;
     heat.setOverlays({ confl: zs }); flow.setOverlays({ confl: zs });
-    if (S.view === "analysis") renderConfl();
   } finally { conflBusy = false; }
-}
-function renderConfl() {
-  const dec = decimalsFor(market.tick || market.fpStep), zs = conflZones.filter(z => Math.abs(z.dist) <= 4).sort((a, b) => b.mid - a.mid);
-  let ver = {}; try { ver = JSON.parse(localStorage.getItem(VERIFIED_KEY) || "{}")[S.symbol] || {}; } catch { /* bỏ qua */ }
-  $("conflInfo").textContent = `${S.symbol} · ${conflBars ? "nến 15 phút 10 ngày" : `nến ${S.interval} đang xem`} cộng nguồn trực tiếp · ±4 ATR quanh giá`;
-  const hist = b => { const v = ver[b.id]; return v && v.n ? `<span class="${v.all === "edge" ? "pos" : v.all === "lose" ? "neg" : "muted"}">${v.n} lần, bật đúng ${Math.round(v.hit * 100)}%, ${v.net >= 0 ? "+" : "−"}${Math.abs(v.net).toFixed(2)} ATR sau ${esc(v.h || "")}</span>` : `<span class="muted">chưa chấm (tab Tín hiệu)</span>`; };
-  $("conflBody").innerHTML = table(["Vùng giá", "Cách giá", ["Điểm", "confluence"], "Nguồn trùng nhau", ["Lịch sử vùng cùng hạng", "signals-book"]],
-    zs.map(z => { const b = bucketOf(z.score); return `<tr class="${z.score >= CONFL_MIN ? "" : "muted"}"><td>${z.lo.toFixed(dec)} – ${z.hi.toFixed(dec)}</td><td class="${z.dist >= 0 ? "neg" : "pos"}">${z.dist >= 0 ? "+" : "−"}${Math.abs(z.dist).toFixed(1)} ATR</td><td><b>${z.score.toFixed(1)}</b></td><td class="t">${esc(z.kinds.map(k => (LEVEL_KINDS[k] ? LEVEL_KINDS[k].name : k)).join(", "))}</td><td class="t small">${esc(b.name)}: ${hist(b)}</td></tr>`; }),
-    "Chưa đủ dữ liệu để dựng vùng (cần ít nhất 30 nến và một ngày trước đó).") +
-    `<p class="note">Điểm = tổng trọng số các loại nguồn trong vùng (mỗi loại tính một lần). Vùng từ ${CONFL_MIN} điểm được tô vàng trên Bookmap và footprint. Cột cuối là kết quả sổ tín hiệu đã chấm cho lần đầu giá chạm vùng cùng hạng trong lịch sử (${BUCKETS.map(b => b.name.toLowerCase()).join("; ")}).</p>`;
 }
 const signalsView = initSignals({ $, esc, S, toast, alerts, liveSources });
 // khoá rủi ro: chặn lệnh giả lập làm tăng vị thế, vẫn cho đóng bớt
@@ -809,7 +667,7 @@ function openGloss(id) {
 const closeGloss = () => { $("glossary").hidden = true; $("glossBtn").classList.remove("on"); };
 renderGlossary();
 $("glossSearch").oninput = () => renderGlossary($("glossSearch").value);
-$("glossBtn").onclick = () => $("glossary").hidden ? openGloss() : closeGloss();
+$("glossBtn").onclick = () => { gearClose(); if ($("glossary").hidden) openGloss(); else closeGloss(); };
 $("glossClose").onclick = closeGloss;
 document.addEventListener("click", e => {
   const el = e.target.closest(".q[data-g], th[data-g], span[data-g], .stat[data-g], .dom-cols [data-g]");
@@ -822,7 +680,7 @@ function renderThemePanel() {
   $("themeColors").innerHTML = EDITABLE.map(([k, label]) => `<label for="c-${k}">${esc(label)}</label><input type="color" id="c-${k}" data-color="${k}" value="${T[k]}">`).join("");
 }
 renderThemePanel();
-$("themeBtn").onclick = () => { const p = $("themePanel"); p.hidden = !p.hidden; $("themeBtn").classList.toggle("on", !p.hidden); };
+$("themeBtn").onclick = () => { gearClose(); const p = $("themePanel"); p.hidden = !p.hidden; $("themeBtn").classList.toggle("on", !p.hidden); };
 $("themeClose").onclick = () => { $("themePanel").hidden = true; $("themeBtn").classList.remove("on"); };
 $("themePresets").onclick = e => { const b = e.target.closest("[data-preset]"); if (b) { applyTheme({ ...THEMES[b.dataset.preset] }); renderThemePanel(); } };
 $("themeColors").oninput = e => {
@@ -839,7 +697,6 @@ function mix(a, b, f) {
 window.addEventListener("lailong-theme", () => {
   heat.dirty = flow.dirty = dom.dirty = tape.dirty = btChart.dirty = true;
   backtest.redraw();
-  if (S.view === "analysis" && analysis) renderAnalysis();
 });
 
 // ---------- kéo giãn khung và phóng to ----------
@@ -884,20 +741,19 @@ document.addEventListener("keydown", e => {
 // ---------- điều khiển giao diện ----------
 function setConn(text, ok) { const p = $("connPill"); p.className = "pill" + (ok === true ? " ok" : ok === false ? " bad" : ""); p.querySelector("span").textContent = text; }
 // các trang đã gỡ khỏi thanh menu theo yêu cầu (Backtest, FRACTAL, Nhật ký): link cũ mở về Terminal
-const DROPPED_VIEWS = new Set(["backtest", "fractal", "journal", "radar", "signals"]); // Radar, Tín hiệu: bro bỏ khỏi menu, code vẫn giữ
+const DROPPED_VIEWS = new Set(["backtest", "fractal", "journal", "radar", "signals", "depth"]); // Radar, Tín hiệu: bro bỏ khỏi menu, code vẫn giữ
 function setView(v) {
   if (v === "markets") { anTab("markets"); v = "analysis"; } // Thị trường đã thành một mục trong tab Phân tích
   if (v === "social") { nTab("social"); v = "news"; } // Mạng xã hội đã thành một mục trong tab Tin tức
   if (DROPPED_VIEWS.has(v) || !$("view-" + v)) v = "terminal";
   S.view = v; persist();
   for (const b of $("views").children) b.classList.toggle("on", b.dataset.view === v);
-  for (const id of ["terminal", "radar", "signals", "multi", "news", "analysis", "depth", "backtest", "fractal", "journal", "health"]) $("view-" + id).hidden = id !== v;
-  document.body.classList.toggle("not-terminal", v !== "terminal");
+  for (const id of ["terminal", "radar", "signals", "multi", "news", "analysis", "backtest", "fractal", "journal", "health"]) $("view-" + id).hidden = id !== v;
+  document.body.classList.toggle("not-terminal", v !== "terminal"); document.body.dataset.view = v; // công cụ Terminal chỉ hiện ở Terminal
   heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
   if (v === "signals") signalsView.show(); else signalsView.hide();
   if (v === "news") { if (nTabCur === "social") socialView.render(); else newsView.render(); }
-  if (v === "depth") depthView.show(); else depthView.hide();
-  if (v === "analysis") { renderAnalysis(); renderConfl(); instView.show(); flowsView.show(); } else { instView.hide(); flowsView.hide(); }
+  if (v === "analysis") { instView.show(); flowsView.show(); } else { instView.hide(); flowsView.hide(); }
   if (v === "journal") { journal.show(); perfView.show(); compassView.render(); consensusView.render(); shockView.render(); }
   if (v === "health") healthView.show(); else healthView.hide();
   syncMarkets();
@@ -974,12 +830,19 @@ ivPaint();
 setInterval(() => { const el = $("cdTerm"), cd = candleCountdown(INTERVALS[S.interval], Date.now() + clockSkew()); el.textContent = `⏱ ${cd.text}`; el.classList.toggle("warn", cd.soon); }, 1000);
 // ngân sách gọi REST Binance trong 60 giây qua; đỏ khi sàn đang tạm chặn (lúc đó trang tự ngừng gọi)
 setInterval(() => {
-  const b = binanceBudget(), el = $("apiPill"); el.hidden = !b.used && !b.blockedFor;
+  const b = binanceBudget(), el = $("apiPill");
   const pct = Math.round(b.used / b.limit * 100);
   el.className = "pill apipill" + (b.blockedFor ? " bad" : pct >= 60 ? " warn" : "");
+  $("gearDot").hidden = !b.blockedFor && pct < 60; $("gearDot").className = b.blockedFor ? "bad" : "";
   el.textContent = b.blockedFor ? `API Binance tạm chặn ${Math.ceil(b.blockedFor / 1000)}s` : `API ${pct}%`;
   el.dataset.tip = b.blockedFor ? `Binance trả lỗi ${b.status} vì gọi quá nhiều. Trang tự ngừng gọi REST tới khi hết hạn; dữ liệu trực tiếp qua WebSocket vẫn chạy` : `Đã dùng ${b.used}/${b.limit} trọng số gọi REST Binance trong 60 giây qua. Trang tự chờ khi chạm 75% để không bị chặn`;
 }, 1000);
+// ---------- nút ⚙: ngôn ngữ, màu, giải thích, sức khoẻ dữ liệu, sao lưu, cài app ----------
+const gearClose = () => $("gearBtn").parentElement.classList.remove("open");
+const gearSw = () => { const c = getComputedStyle(document.documentElement); $("gearSw").innerHTML = ["--bg", "--accent", "--buy", "--sell"].map(k => `<i style="background:${c.getPropertyValue(k)}"></i>`).join(""); };
+$("gearBtn").onclick = e => { e.stopPropagation(); const d = $("gearBtn").parentElement; d.classList.toggle("open"); if (d.classList.contains("open")) gearSw(); };
+$("gearHealth").onclick = () => { gearClose(); setView("health"); };
+$("gearBackup").onclick = () => { gearClose(); setView("health"); const c = $("backupCard"); if (c) c.scrollIntoView({ block: "start", behavior: "smooth" }); };
 $("views").onclick = e => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); };
 $("chartMode").onclick = e => { const b = e.target.closest("[data-mode]"); if (b) setMode(b.dataset.mode); };
 $("layerBtn").onclick = e => { e.stopPropagation(); $("layerBtn").parentElement.classList.toggle("open"); };
@@ -1333,9 +1196,10 @@ $("mnav").onclick = e => { const b = e.target.closest("[data-panel]"); if (b) mS
 { let id = null; try { id = sessionStorage.getItem("lailong.mpanel"); } catch { /* bỏ qua */ } mShow(id && $(id) && $("mnav").querySelector(`[data-panel="${id}"]`) ? id : "mainPanel"); }
 // cài như ứng dụng (PWA): chạy được khi mạng chập chờn, mở từ màn hình chính
 let installEv = null;
-addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEv = e; $("installBtn").hidden = false; });
-addEventListener("appinstalled", () => { installEv = null; $("installBtn").hidden = true; });
-$("installBtn").onclick = async () => { if (!installEv) return; installEv.prompt(); await installEv.userChoice.catch(() => {}); installEv = null; $("installBtn").hidden = true; };
+const installShow = on => { $("installBtn").hidden = !on; $("installNo").hidden = on; };
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEv = e; installShow(true); });
+addEventListener("appinstalled", () => { installEv = null; installShow(false); });
+$("installBtn").onclick = async () => { gearClose(); if (!installEv) return; installEv.prompt(); await installEv.userChoice.catch(() => {}); installEv = null; installShow(false); };
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 $("tapeGroup").onchange = () => { tape.group = $("tapeGroup").value; tape.dirty = true; };
 

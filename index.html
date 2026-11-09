@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611062257">
-<link rel="stylesheet" href="css/app.css?v=202611062257">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611090429">
+<link rel="stylesheet" href="css/app.css?v=202611090429">
 </head>
 <body>
 <header class="menubar">
@@ -27,13 +27,20 @@
     <button data-view="multi" data-tip="Nhiều biểu đồ nến cùng lúc, mỗi ô một mã và khung thời gian riêng; kéo thả, đổi cỡ, thu nhỏ từng ô">Đa biểu đồ</button>
     <button data-view="news" data-tip="Lịch kinh tế có số thực tế, tin tức cập nhật vài phút một lần, báo động khi chỉ số biến động bất thường">Tin tức</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
-    <button data-view="depth" data-tip="Market Depth: lệnh chờ trên sổ lệnh nhiều sàn crypto và vị thế ước tính theo giá vào lệnh, kiểu FXSSI Order Book">Market Depth</button>
-    <button data-view="health" data-g="data-health">Dữ liệu</button>
   </nav>
-  <label class="field" data-tip="Sàn lấy dữ liệu. Giả lập: dữ liệu ngẫu nhiên để thử giao diện">Sàn <select id="exchange"></select></label>
-  <label class="field" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
+  <label class="field termmulti" data-tip="Sàn lấy dữ liệu. Giả lập: dữ liệu ngẫu nhiên để thử giao diện">Sàn <select id="exchange"></select></label>
+  <label class="field termonly" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
   <datalist id="symbolList"></datalist>
-  <button id="toolsBtn" class="tool on" data-tip="Ẩn/hiện thanh công cụ của biểu đồ (Bookmap, Footprint, Nến, lớp hiển thị...) để biểu đồ cao hơn">☰<span class="lbl"> Công cụ</span></button>
+  <button id="toolsBtn" class="tool on termonly" data-tip="Ẩn/hiện thanh công cụ của biểu đồ (Bookmap, Footprint, Nến, lớp hiển thị...) để biểu đồ cao hơn">☰<span class="lbl"> Công cụ</span></button>
+  <div class="dropdown ivdd termonly"><button id="ivBtn" class="tool ivbtn" aria-label="Khung thời gian của mỗi nến"></button><div class="menu ivmenu" id="intervals"></div></div>
+  <span id="cdTerm" class="cdterm termonly" data-tip="Thời gian còn lại tới lúc đóng nến của khung đang xem (giờ sàn). Chuyển màu khi sắp đóng"></span>
+  <div class="dropdown layoutdd termonly">
+    <button id="layoutBtn" class="tool" data-tip="Bố cục Terminal: kéo tiêu đề khung để đổi chỗ, kéo đường chia để đổi kích thước">▦<span class="lbl"> Bố cục</span></button>
+    <div class="menu right" id="layoutMenu"></div>
+  </div>
+  <div class="spacer"></div>
+  <div class="pill evpill" id="evPill" hidden></div>
+  <div class="pill" id="connPill" data-tip="Trạng thái kết nối dữ liệu trực tiếp với sàn"><i></i><span>Đang kết nối</span></div>
   <div class="dropdown alertdd">
     <button id="alertBtn" class="tool" data-g="alerts">🔔<span class="lbl"> Cảnh báo</span></button>
     <div class="menu right alertmenu" id="alertMenu">
@@ -64,19 +71,21 @@
       <div id="alHist" class="alhist"></div>
     </div>
   </div>
-  <div class="dropdown ivdd"><button id="ivBtn" class="tool ivbtn" aria-label="Khung thời gian của mỗi nến"></button><div class="menu ivmenu" id="intervals"></div></div>
-  <span id="cdTerm" class="cdterm" data-tip="Thời gian còn lại tới lúc đóng nến của khung đang xem (giờ sàn). Chuyển màu khi sắp đóng"></span>
-  <div class="spacer"></div>
-  <div class="pill evpill" id="evPill" hidden></div>
-  <div class="pill" id="connPill" data-tip="Trạng thái kết nối dữ liệu trực tiếp với sàn"><i></i><span>Đang kết nối</span></div>
-  <div class="pill apipill" id="apiPill" hidden></div>
-  <button id="installBtn" class="tool" hidden data-tip="Cài Lai Long Desk như một ứng dụng trên máy này (mở từ màn hình chính, không cần thanh địa chỉ)">⬇ Cài app</button>
-  <span id="langBtn" class="seg langseg" role="group" aria-label="Ngôn ngữ"></span>
-  <button id="glossBtn" class="tool" data-tip="Mở danh sách giải thích thuật ngữ">?<span class="lbl"> Giải thích</span></button>
-  <button id="themeBtn" class="tool" data-tip="Đổi màu giao diện"><span class="mob">Màu</span><span class="lbl">Màu sắc</span></button>
-  <div class="dropdown layoutdd">
-    <button id="layoutBtn" class="tool" data-tip="Bố cục Terminal: kéo tiêu đề khung để đổi chỗ, kéo đường chia để đổi kích thước">▦<span class="lbl"> Bố cục</span></button>
-    <div class="menu right" id="layoutMenu"></div>
+  <div class="dropdown geardd">
+    <button id="gearBtn" class="tool" aria-label="Cài đặt: ngôn ngữ, màu, giải thích, dữ liệu, cài app">⚙<i id="gearDot" hidden></i></button>
+    <div class="menu right gearmenu" id="gearMenu">
+      <div class="mh">Hiển thị</div>
+      <div class="gi">Ngôn ngữ <span id="langBtn" class="seg langseg" role="group" aria-label="Ngôn ngữ"></span></div>
+      <button class="gi" id="themeBtn">Màu sắc <span class="gsw" id="gearSw"></span></button>
+      <button class="gi" id="glossBtn">Giải thích thuật ngữ <small>mở danh sách ›</small></button>
+      <div class="mh">Dữ liệu</div>
+      <button class="gi" id="gearHealth">Sức khoẻ dữ liệu <small>nguồn nào chạy, trễ bao nhiêu ›</small></button>
+      <div class="gi">API Binance đã dùng <span class="pill apipill" id="apiPill">0%</span></div>
+      <button class="gi" id="gearBackup">Sao lưu, khôi phục <small>›</small></button>
+      <div class="mh">Ứng dụng</div>
+      <button class="gi" id="installBtn" hidden>Cài Lai Long Desk như app <small>›</small></button>
+      <div class="gi muted" id="installNo">Cài app: mở trang bằng Chrome hoặc Edge, hoặc đã cài rồi</div>
+    </div>
   </div>
   <button id="fullscreenBtn" class="icon" data-tip="Toàn màn hình (Esc để thoát)">⛶</button>
 </header>
@@ -438,36 +447,9 @@
 </main>
 
 
-<main class="view analysis" id="view-depth" hidden>
-  <div class="socbar"><h3>Market Depth · độ sâu thị trường và vị thế <button class="q" data-g="market-depth">?</button></h3><div id="depthBar" class="dptools"></div></div>
-  <div class="dpgrid">
-    <section class="card dpmain">
-      <div class="dpcv"><canvas id="depthCanvas"></canvas></div>
-      <div class="dpsnap"><input type="range" id="depthSnap" min="0" max="0" value="0" aria-label="Xem lại lần chụp sổ lệnh"><small id="depthSnapInfo"></small></div>
-      <div id="depthRatios" class="dpratios"></div>
-    </section>
-    <section class="card dpside" id="depthQuick"><h4>Tâm lý nhanh</h4><p class="note">Đang tải…</p></section>
-  </div>
-  <div id="depthTip" class="dptip" hidden></div>
-</main>
-
 <main class="view analysis" id="view-analysis" hidden>
-  <div class="newstabs atabs" id="aTabs" role="tablist" aria-label="Mục phân tích"><button data-at="overview" class="on">Tổng quan</button><button data-at="derivs">Phái sinh</button><button data-at="macro">Vĩ mô và dòng tiền</button><button data-at="markets">Thị trường</button></div>
-  <section class="card biascard" id="biasCard" data-g="mtf">
-    <div class="biasL"><small>Thiên hướng <span id="biasSym"></span> (gộp 5 khung)</small><div class="biasV"><b id="biasLabel">Đang tính…</b> <span id="biasScore"></span></div>
-      <div class="biasbar"><i id="biasMark"></i></div><div class="biasax"><span>−100 giảm mạnh</span><span>0</span><span>+100 tăng mạnh</span></div>
-      <div class="biaslv" id="biasLv"></div></div>
-    <div class="biasR"><small>Vì sao</small><ul id="biasWhy"></ul></div>
-  </section>
+  <div class="newstabs atabs" id="aTabs" role="tablist" aria-label="Mục phân tích"><button data-at="macro" class="on">Vĩ mô và dòng tiền</button><button data-at="markets">Thị trường</button></div>
   <div class="cards">
-    <section class="card wide" data-at="overview">
-      <h3>Bản đồ mức giá hợp lưu <button class="q" data-g="confluence">?</button> <small id="conflInfo"></small></h3>
-      <div id="conflBody" class="tablewrap"></div>
-    </section>
-    <section class="card wide" data-at="derivs">
-      <h3>Chỉ số tổ chức theo dõi: crypto <button class="q" data-g="inst-crypto">?</button> <span id="instCryptoFresh"></span></h3>
-      <div id="instCrypto" class="tablewrap"></div>
-    </section>
     <section class="card wide" data-at="macro">
       <h3>Biến động Mỹ: VIX, cấu trúc kỳ hạn, VVIX, SKEW, MOVE <button class="q" data-g="inst-vol">?</button> <span id="instVolFresh"></span></h3>
       <div class="gexcv"><canvas id="instVix"></canvas></div>
@@ -479,24 +461,10 @@
       <div class="gexcv flowscv"><canvas id="flowsChart"></canvas></div>
       <div id="flowsBody"></div>
     </section>
-    <section class="card wide" data-at="derivs macro">
+    <section class="card wide" data-at="macro">
       <h3>COT của CFTC: tổ chức đang long hay short <button class="q" data-g="cot">?</button> <span id="instCotFresh"></span></h3>
       <div id="instCotTabs" class="newstabs"></div>
       <div id="instCot"></div>
-    </section>
-    <section class="card wide" data-at="overview">
-      <h3>Xu hướng, động lượng và độ biến động theo khung thời gian <button class="q" data-g="mtf">?</button> <span id="fsMtf"></span></h3>
-      <div id="mtfTable" class="tablewrap"></div>
-    </section>
-    <section class="card wide" data-at="overview derivs">
-      <h3>Dữ liệu phái sinh: long/short, funding, quyền chọn <button class="q" data-g="derivs">?</button> <span id="drvInfo"></span></h3>
-      <div class="drvgrid"><div id="drvStats"></div><div id="optStats"></div></div>
-      <div class="mini"><canvas id="drvCanvas"></canvas></div>
-    </section>
-    <section class="card" data-at="derivs">
-      <h3>Biến động quyền chọn (Deribit DVOL) <button class="q" data-g="dvol">?</button></h3>
-      <div id="dvolStats"></div>
-      <div class="mini"><canvas id="dvolCanvas"></canvas></div>
     </section>
   </div>
   <div class="atabmk" id="view-markets" data-at="markets">
@@ -721,7 +689,7 @@
       <div id="healthBody" class="healthwrap"></div>
       <p class="note">Độ trễ WebSocket là thời gian từ lúc sàn ghi tin tới lúc máy này nhận, đã trừ lệch đồng hồ máy so với Binance. Độ trễ REST là thời gian khứ hồi một lần gọi. Với file dữ liệu, độ trễ là tuổi của file. "Phiên này chưa dùng" nghĩa là chưa mở trang dùng nguồn đó; bấm Kiểm tra lại để gọi thử.</p>
     </section>
-    <section class="card wide">
+    <section class="card wide" id="backupCard">
       <h3>Sao lưu toàn bộ để chuyển máy <button class="q" data-g="backup">?</button></h3>
       <p class="small">Một file gồm nhật ký giao dịch (kèm khoá rủi ro), tài khoản giả lập, bố cục đã lưu, báo cáo hiệu suất, các chiến lược đang forward test và sổ tín hiệu (sự kiện ghi trực tiếp, kết quả chấm điểm). Cất file lên Google Drive; sang máy mới mở app, vào đây bấm Khôi phục. Mã Telegram và khoá API không nằm trong file, phải nhập lại.</p>
       <div class="bkrow"><button class="tool" id="bkSave">⬇ Sao lưu toàn bộ</button> <button class="tool" id="bkLoad">⬆ Khôi phục từ file</button><input type="file" id="bkFile" accept=".json,application/json" hidden> <span class="muted small" id="bkMsg"></span></div>
@@ -797,6 +765,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611062257"></script>
+<script type="module" src="js/app.js?v=202611090429"></script>
 </body>
 </html>

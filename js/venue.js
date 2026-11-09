@@ -1,8 +1,8 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
-// Lai Long Web: sàn chung cho mọi tab crypto. Ô Sàn trên cùng đổi sàn thì Phân tích, Market Depth, bản đồ nhiệt
+// Lai Long Web: sàn chung cho mọi tab crypto. Ô Sàn trên cùng đổi sàn thì Terminal, Đa biểu đồ, bản đồ nhiệt
 // crypto, Nhật ký, Đồng thuận, Kịch bản sốc… đều lấy dữ liệu của sàn đó. Chế độ Giả lập dùng Binance cho các tab khác.
 // Dữ liệu Yahoo (chứng khoán, forex, hàng hoá), tin tức và mạng xã hội không đổi theo sàn.
-import { EXCHANGES } from "./exchanges.js?v=202611062257";
+import { EXCHANGES } from "./exchanges.js?v=202611090429";
 
 let cur = "BINANCE";
 export const getVenue = () => cur;
