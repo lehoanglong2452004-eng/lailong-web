@@ -1,15 +1,17 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
-// Lai Long Web: tab Đa biểu đồ. Tối đa 6 biểu đồ nến, mỗi ô chọn mã và khung thời gian riêng.
-//   Bố cục dùng chung lưới ghép với Terminal: kéo tiêu đề để đổi chỗ, kéo đường chia để đổi cỡ, nút — để thu nhỏ.
-//   Nút 1 / 2 / 3 / 4 / 6 dựng lại lưới đều theo số ô. Mọi tuỳ chỉnh chỉ giữ trong lúc tab còn mở.
-import { FlowChart } from "./flowchart.js?v=202611090459";
-import { Layout } from "./layout.js?v=202611090459";
-import { deltaOf, footprintStep } from "./market.js?v=202611090459";
-import { INTERVALS, niceStep } from "./util.js?v=202611090459";
-import { analyze } from "./radar.js?v=202611090459";
-import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202611090459";
-import { clockSkew } from "./health.js?v=202611090459";
-import { approxFootprint, approxBar } from "./fphistory.js?v=202611090459";
+// Lai Long Web: tab Đa biểu đồ. Tối đa 6 biểu đồ nến, mỗi ô chọn mã và khung thời gian riêng; lấy dữ liệu của sàn đang chọn.
+//   Laptop: thanh công cụ một hàng gồm Mẫu, Số ô, Đồng bộ, ↺ và ?; bố cục dùng chung lưới ghép với Terminal (kéo tiêu đề để
+//   đổi chỗ, kéo đường chia để đổi cỡ, nút – để thu nhỏ). Nhóm A/B hiện bằng vạch màu bên trái mỗi ô.
+//   Điện thoại: một biểu đồ mỗi màn hình, bấm tab hoặc vuốt tiêu đề để đổi ô; xoay ngang thì hiện 2 ô cạnh nhau.
+//   Mọi tuỳ chỉnh chỉ giữ trong lúc tab còn mở.
+import { FlowChart } from "./flowchart.js?v=202611090506";
+import { Layout } from "./layout.js?v=202611090506";
+import { deltaOf, footprintStep } from "./market.js?v=202611090506";
+import { INTERVALS, niceStep } from "./util.js?v=202611090506";
+import { analyze } from "./radar.js?v=202611090506";
+import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202611090506";
+import { clockSkew } from "./health.js?v=202611090506";
+import { approxFootprint, approxBar } from "./fphistory.js?v=202611090506";
 
 const MAX = 6, KEY = "lailong.multi.v2", POLL = 3000;
 const IDS = Array.from({ length: MAX }, (_, i) => "mc" + i);
@@ -22,11 +24,18 @@ export const MC_DEFAULT = {
   groups: ["A", "A", "B", "B", "A", "B"],
   sync: { sym: false, iv: false, cross: true },
 };
-// hai mẫu dựng sẵn: (a) nhiều mã cùng một khung, (c) một mã nhiều kiểu biểu đồ và khung
+// ba mẫu dựng sẵn: nhiều mã cùng một khung, một mã nhiều khung, một mã trộn nến và footprint
 export const MC_PRESETS = {
+  frames: { n: 4, cells: [["BTCUSDT", "1m"], ["BTCUSDT", "15m"], ["BTCUSDT", "1h"], ["BTCUSDT", "4h"], ["BTCUSDT", "5m"], ["BTCUSDT", "1d"]], types: Array(MAX).fill("candle"), groups: Array(MAX).fill("A"), sync: { sym: true, iv: false, cross: true } },
   symbols: { n: 4, cells: [["BTCUSDT", "5m"], ["ETHUSDT", "5m"], ["SOLUSDT", "5m"], ["XRPUSDT", "5m"], ["BNBUSDT", "5m"], ["DOGEUSDT", "5m"]], types: Array(MAX).fill("candle"), groups: Array(MAX).fill("A"), sync: { sym: false, iv: true, cross: true } },
   mixed: { n: 4, cells: [["BTCUSDT", "1m"], ["BTCUSDT", "5m"], ["BTCUSDT", "15m"], ["BTCUSDT", "1h"], ["ETHUSDT", "5m"], ["ETHUSDT", "1h"]], types: ["fp", "candle", "fp", "candle", "fp", "candle"], groups: ["A", "A", "A", "A", "B", "B"], sync: { sym: true, iv: false, cross: true } },
 };
+export const PRESET_NAMES = { symbols: ["Nhiều mã cùng khung", "BTC, ETH, SOL, XRP cùng khung 5 phút; đổi khung một ô thì cả nhóm đổi theo"], frames: ["Một mã nhiều khung", "BTC 1m, 15m, 1h, 4h; đổi mã một ô thì cả nhóm đổi theo"], mixed: ["Trộn kiểu biểu đồ", "BTC nhiều khung, nến và footprint cạnh nhau"] };
+const SYNC_NAMES = { sym: "mã", iv: "khung", cross: "con trỏ" };
+// chữ trên nút Đồng bộ: các phần đang bật, hoặc "tắt"
+export function syncLabel(sync) { const on = Object.keys(SYNC_NAMES).filter(k => sync && sync[k]); return on.length ? on.map(k => SYNC_NAMES[k]).join(", ") : "tắt"; }
+// ô kế tiếp khi vuốt trên điện thoại (vòng trong n ô đầu)
+export function nextCell(act, n, dir) { return ((act + dir) % n + n) % n; }
 // trạng thái lưu từ bản cũ thiếu trường mới thì lấy theo mặc định
 export function fixState(st) {
   const d = JSON.parse(JSON.stringify(MC_DEFAULT));
@@ -37,6 +46,7 @@ export function fixState(st) {
     types: ok(st.types, t => t === "candle" || t === "fp") ? st.types : d.types,
     groups: ok(st.groups, g => g === "A" || g === "B" || g === "") ? st.groups : d.groups,
     sync: st.sync && typeof st.sync === "object" ? { ...d.sync, ...st.sync } : d.sync,
+    preset: PRESET_NAMES[st.preset] ? st.preset : "",
   };
 }
 // các ô cùng nhóm với ô i (không gồm i); ô đứng riêng thì không có
@@ -74,22 +84,17 @@ export class MultiChart {
     try { st = JSON.parse(sessionStorage.getItem(KEY) || "null"); } catch { /* bỏ qua */ }
     this.st = fixState(st);
     const ivs = Object.keys(INTERVALS);
+    const dd = (id, label, menu, tip) => `<div class="dropdown mcdd" id="${id}"><button class="mcddb" aria-label="${tip}">${label}</button><div class="menu">${menu}</div></div>`;
     root.innerHTML = `<div class="mcbar">
-        <span class="title">Đa biểu đồ</span>
-        <span class="muted">Mẫu</span><div class="seg" id="mcPreset">
-          <button data-preset="symbols" data-tip="4 mã khác nhau cùng khung 5 phút, cùng nhóm A, đổi khung một ô thì cả nhóm đổi theo">Nhiều mã cùng khung</button>
-          <button data-preset="mixed" data-tip="BTC ở nhiều khung, trộn footprint và nến; đổi mã một ô thì cả nhóm đổi theo">Trộn kiểu biểu đồ</button>
-        </div>
-        <span class="muted">Số ô</span><div class="seg" id="mcCount">${Object.keys(ROWS).map(k => `<button data-n="${k}">${k}</button>`).join("")}</div>
-        <span class="muted" data-tip="Các ô cùng màu nhóm (A cam, B xanh) đồng bộ với nhau. Bấm ô vuông màu ở đầu mỗi ô để đổi nhóm">Đồng bộ trong nhóm</span>
-        <label class="field small"><input type="checkbox" id="mcSyncSym"> Mã</label>
-        <label class="field small"><input type="checkbox" id="mcSyncIv"> Khung</label>
-        <label class="field small"><input type="checkbox" id="mcSyncCross"> Con trỏ</label>
-        <button id="mcSync" data-tip="Đổi mã của mọi ô thành mã của ô 1">Cùng mã ô 1</button>
-        <button id="mcRadar" class="on" data-tip="Hiện sự kiện Radar trên mọi ô: khối lượng bất thường theo bối cảnh, mức giá và phản ứng (xanh: chính thức, đỏ: tạm thời, vàng: chưa rõ)">Radar</button>
-        <button id="mcReset" data-tip="Về 4 ô mặc định: BTC 1m, ETH 1m, BTC 15m, SOL 5m">Về mặc định</button>
-        <span class="hint">Kéo tiêu đề ô để đổi chỗ · kéo đường chia để đổi cỡ · lăn chuột: phóng to · kéo: di chuyển · bấm đúp: về hiện tại</span>
+        ${dd("mcPreset", `Mẫu<span class="mcsep">: </span><b id="mcPresetName"></b> ▾`, Object.entries(PRESET_NAMES).map(([k, [nm, d]]) => `<button class="mcit" data-preset="${k}">${nm}<small>${d}</small></button>`).join("") +
+          `<div class="mh">Hiển thị</div><button class="mcit on" id="mcRadar" data-tip="Khối lượng bất thường theo bối cảnh, mức giá và phản ứng (xanh: chính thức, đỏ: tạm thời, vàng: chưa rõ)">Radar trên mọi ô<small>đánh dấu khối lượng bất thường</small></button>`, "Chọn bố cục dựng sẵn")}
+        ${dd("mcCount", `▦ <b id="mcCountName"></b> ▾`, Object.keys(ROWS).map(k => `<button class="mcit" data-n="${k}">${k} ô</button>`).join(""), "Số biểu đồ hiện cùng lúc")}
+        ${dd("mcSyncDd", `🔗 Đồng bộ<span class="mcsep">: </span><b id="mcSyncName"></b> ▾`, `<label><input type="checkbox" id="mcSyncSym"> Đồng bộ mã trong nhóm</label><label><input type="checkbox" id="mcSyncIv"> Đồng bộ khung trong nhóm</label><label><input type="checkbox" id="mcSyncCross"> Đồng bộ con trỏ</label>` +
+          `<button class="mcit" id="mcSync">Cùng mã ô 1<small>đổi mọi ô thành mã của ô 1</small></button><p class="muted small mcnote">Nhóm A (cam) và B (xanh): đổi ở một ô thì cả nhóm đổi theo. Bấm ô vuông màu ở đầu mỗi ô để đổi nhóm.</p>`, "Các ô cùng nhóm đổi theo nhau")}
+        <button class="mcddb" id="mcReset" data-tip="Về 4 ô mặc định: BTC 1m, ETH 1m, BTC 15m, SOL 5m">↺</button>
+        <button class="q" data-tip="Kéo tiêu đề ô để đổi chỗ · kéo đường chia để đổi cỡ · ⤢ phóng to một ô · – thu nhỏ ô · lăn chuột: phóng to biểu đồ · kéo: di chuyển · bấm đúp: về hiện tại" aria-label="Hướng dẫn">?</button>
       </div>
+      <div class="mctabs" id="mcTabs"></div>
       <div class="mcws" id="mcws">${IDS.map((id, i) => `<section class="panel mc-panel" id="${id}">
         <div class="panel-head"><button class="mcgrp" data-mcgrp="${i}" aria-label="Nhóm liên kết ô ${i + 1}"></button><b class="mcnum">${i + 1}</b>
           <input class="mcsym" list="symbolList" spellcheck="false" aria-label="Mã ô ${i + 1}">
@@ -125,7 +130,7 @@ export class MultiChart {
     const sy = { mcSyncSym: "sym", mcSyncIv: "iv", mcSyncCross: "cross" };
     for (const [elId, k] of Object.entries(sy)) {
       const cb = root.querySelector("#" + elId); cb.checked = !!this.st.sync[k];
-      cb.onchange = () => { this.st.sync[k] = cb.checked; this.save(); if (k === "cross" && !cb.checked) this.crossClear(); };
+      cb.onchange = () => { this.st.sync[k] = cb.checked; this.save(); this.paintBar(); if (k === "cross" && !cb.checked) this.crossClear(); };
     }
     root.querySelector("#mcPreset").onclick = e => { const b = e.target.closest("[data-preset]"); if (b) this.applyPreset(b.dataset.preset); };
     this.charts.forEach((c, i) => c.setType(this.st.types[i] === "fp" ? "box" : "candle"));
@@ -151,7 +156,40 @@ export class MultiChart {
       if (mn) { e.stopPropagation(); document.getElementById(mn.dataset.mcmin).classList.remove("maxed"); this.layout.minimize(mn.dataset.mcmin); }
       if (mx) { const p = document.getElementById(mx.dataset.mcmax), on = !p.classList.contains("maxed"); for (const x of this.ws.querySelectorAll(".maxed")) x.classList.remove("maxed"); p.classList.toggle("maxed", on); this.dirty(); }
     });
+    // thanh công cụ: mỗi ô thả xuống mở một menu, bấm ra ngoài thì đóng (app.js)
+    root.querySelector(".mcbar").addEventListener("click", e => {
+      const b = e.target.closest(".mcddb"), d = b && b.parentElement.classList.contains("mcdd") ? b.parentElement : null;
+      if (d) { const on = !d.classList.contains("open"); document.querySelectorAll(".dropdown.open").forEach(x => x.classList.remove("open")); d.classList.toggle("open", on); return; }
+      if (e.target.closest(".mcit:not(#mcRadar)")) e.target.closest(".dropdown").classList.remove("open");
+    });
+    // điện thoại: một biểu đồ mỗi màn hình, bấm tab hoặc vuốt tiêu đề để đổi ô
+    this.act = 0;
+    this.tabsEl = root.querySelector("#mcTabs");
+    this.tabsEl.onclick = e => { const b = e.target.closest("[data-mct]"); if (b) this.setAct(+b.dataset.mct); };
+    let x0 = null;
+    const ts = e => { x0 = e.touches[0].clientX; }, te = e => {
+      if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 50) this.setAct(nextCell(this.act, this.st.n, dx < 0 ? 1 : -1));
+    };
+    for (const el of [this.tabsEl, ...this.ws.querySelectorAll(".panel-head")]) { el.addEventListener("touchstart", ts, { passive: true }); el.addEventListener("touchend", te); }
     this.markCount();
+  }
+
+  setAct(i) {
+    this.act = Math.max(0, Math.min(this.st.n - 1, i));
+    IDS.forEach((id, k) => { const p = document.getElementById(id); p.classList.toggle("mcact", k === this.act); p.classList.toggle("mcact2", k === nextCell(this.act, this.st.n, 1) && this.st.n > 1); });
+    this.paintTabs(); this.dirty();
+  }
+  paintTabs() {
+    if (!this.tabsEl) return;
+    this.tabsEl.innerHTML = this.st.cells.slice(0, this.st.n).map(([s, iv], i) => `<button data-mct="${i}" class="${i === this.act ? "on" : ""}">${i + 1} · ${s.replace(/USDT$/, "")} ${iv}</button>`).join("");
+  }
+  paintBar() {
+    const pn = document.getElementById("mcPresetName"); if (!pn) return;
+    pn.textContent = this.st.preset ? PRESET_NAMES[this.st.preset][0] : "Tuỳ chỉnh";
+    document.getElementById("mcCountName").textContent = `${this.st.n} ô`;
+    document.getElementById("mcSyncName").textContent = syncLabel(this.st.sync);
+    for (const b of document.querySelectorAll("#mcPreset [data-preset]")) b.classList.toggle("on", b.dataset.preset === this.st.preset);
   }
 
   save() { try { sessionStorage.setItem(KEY, JSON.stringify(this.st)); } catch { /* bỏ qua */ } }
@@ -159,6 +197,8 @@ export class MultiChart {
   rename() { IDS.forEach((id, i) => { this.names[id] = `${i + 1}: ${this.st.cells[i][0]} ${this.st.cells[i][1]}`; }); this.layout.apply(); }
   markCount() {
     for (const b of document.querySelectorAll("#mcCount [data-n]")) b.classList.toggle("on", +b.dataset.n === this.st.n);
+    if (this.act != null) this.setAct(Math.min(this.act, this.st.n - 1));
+    this.paintBar();
     IDS.forEach((id, i) => document.getElementById(id).classList.toggle("mcoff", i >= this.st.n)); // màn hình nhỏ: chỉ hiện n ô đầu
   }
   shown(i) { return this.layout.on ? !this.layout.isMin(IDS[i]) : i < this.st.n; }
@@ -173,7 +213,7 @@ export class MultiChart {
     if (sym) c[0] = sym;
     if (iv) c[1] = iv;
     const p = document.getElementById(IDS[i]); p.querySelector(".mcsym").value = c[0]; p.querySelector(".mciv").value = c[1];
-    this.save(); this.loaded[i] = null; this.rename();
+    this.save(); this.loaded[i] = null; this.rename(); this.paintTabs();
     if (this.visible && this.shown(i)) { this.load(i); this.stream(); }
     // ô cùng nhóm đổi theo (chỉ phần đang bật đồng bộ)
     if (!follow) for (const j of groupMates(this.st.groups, i)) {
@@ -194,7 +234,7 @@ export class MultiChart {
     const shim = { bars: c.bars, fpStep: c.step, intervalMs: INTERVALS[iv], interval: iv, emit: () => c.refresh() };
     try { await approxFootprint(this.ex(), sym, shim, () => this.loaded[i] === tag); } catch { /* giữ dạng nến */ }
   }
-  applyPreset(name) { this.applyState(JSON.parse(JSON.stringify(MC_PRESETS[name]))); }
+  applyPreset(name) { this.applyState({ ...JSON.parse(JSON.stringify(MC_PRESETS[name])), preset: name }); }
   applyState(st) {
     this.st = fixState(st);
     IDS.forEach((id, i) => {
@@ -208,6 +248,7 @@ export class MultiChart {
     IDS.forEach((id, i) => {
       const g = this.st.groups[i], b = document.getElementById(id).querySelector(".mcgrp");
       b.textContent = g || "·"; b.className = "mcgrp" + (g ? " g" + g : "");
+      const pn = document.getElementById(id); pn.classList.toggle("grpA", g === "A"); pn.classList.toggle("grpB", g === "B");
       b.dataset.tip = g ? `Nhóm ${g}: ô cùng nhóm đồng bộ theo các ô Mã / Khung / Con trỏ trên thanh. Bấm để đổi nhóm` : "Ô đứng riêng, không đồng bộ. Bấm để đưa vào nhóm A";
       document.getElementById(id).querySelector(".mctype").value = this.st.types[i];
     });

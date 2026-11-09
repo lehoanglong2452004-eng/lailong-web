@@ -4,10 +4,10 @@
 // một lần (xem util.liveJson và lailong/terminal/live.py); bản trên laptop dùng data/ do máy chủ lấy trực tiếp.
 // Không dùng tin của báo, tác giả, tổ chức Việt Nam hay tin tiếng Việt. Tin nóng được gom thành bản tin Telegram
 // tối đa mỗi 30 phút (xem newsdigest.js); các tin đã gửi lưu trên máy này để không gửi lại.
-import { setFresh } from "./fresh.js?v=202611090459";
-import { bi } from "./lang.js?v=202611090459";
-import { liveJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202611090459";
-import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202611090459";
+import { setFresh } from "./fresh.js?v=202611090506";
+import { bi } from "./lang.js?v=202611090506";
+import { liveJson, fmtTime, fmtDate, FLAG } from "./util.js?v=202611090506";
+import { CATS, isVN, pickDigest, digestHtml, digestText, DIGEST_GAP } from "./newsdigest.js?v=202611090506";
 
 const VI = [[/CPI/i, "lạm phát CPI"], [/PPI/i, "giá sản xuất PPI"], [/Non-Farm|NFP/i, "việc làm phi nông nghiệp"], [/Unemployment/i, "thất nghiệp"],
   [/FOMC|Federal Funds|Fed Chair|Powell/i, "Fed"], [/Retail Sales/i, "doanh số bán lẻ"], [/GDP/i, "GDP"], [/PCE/i, "chi tiêu PCE (Fed hay dùng)"],
