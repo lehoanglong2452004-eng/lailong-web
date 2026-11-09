@@ -1,12 +1,15 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: mục Thị trường trong tab Phân tích. Hàng hoá phái sinh (contango/backwardation), forex và lãi suất điều hành,
 // crypto top 10, công ty và quỹ ETF nắm giữ BTC/ETH, cá voi dùng đòn bẩy trên Hyperliquid, thanh lý lớn trực tiếp.
-// Bản web đọc data/markets.json và data/whales.json do GitHub Actions cập nhật mỗi 30 phút;
-// bản trên laptop dùng cùng đường dẫn nhưng máy chủ lấy trực tiếp (xem lailong/terminal/markets.py).
-import { getVenue, venueName, venueTickers, onVenue } from "./venue.js?v=202611090429";
-import { getJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202611090429";
-import { setFresh } from "./fresh.js?v=202611090429";
-import { layoutGroups, heatColor, cryptoTiles, HEAT_COLORS } from "./treemap.js?v=202611090429";
+// Bản web đọc markets.json ở nhánh live (máy chủ GitHub lấy giá Yahoo mỗi 10 phút, lailong/terminal/live.py) hoặc data/,
+// bản nào mới hơn; bản trên laptop máy chủ lấy trực tiếp (xem lailong/terminal/markets.py).
+// Hàng hoá đuôi USDT và BTC, ETH lấy thẳng từ sàn crypto trong trình duyệt (usdtboard.js), chạy từng giây.
+import { getJson, liveJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202611090440";
+import { setFresh, freshTag } from "./fresh.js?v=202611090440";
+import { layoutGroups, heatColor, HEAT_COLORS } from "./treemap.js?v=202611090440";
+import { EXCHANGES } from "./exchanges.js?v=202611090440";
+import { BOARD, VENUE_SHORT, liveBoard } from "./usdtboard.js?v=202611090440";
+import { marketStatus, vnTime } from "./sessions.js?v=202611090440";
 
 const HL = "https://api.hyperliquid.xyz/info";
 const LIQ_WS = "wss://fstream.binance.com/market/ws/!forceOrder@arr";
@@ -41,8 +44,7 @@ export function chgOver(x, days) {
   return a > 0 ? (b / a - 1) * 100 : x.chg;
 }
 // các ô của bản đồ nhiệt theo lớp tài sản: { sym, group, v (cỡ ô), chg (màu), href? }
-export function heatItems(cls, mk, cryptoTickers, days = 1) {
-  if (cls === "crypto") return (cryptoTickers ? cryptoTiles(cryptoTickers) : []).map(t => ({ ...t, href: `?ex=${getVenue()}&s=${t.symbol}&v=terminal` }));
+export function heatItems(cls, mk, days = 1) {
   if (cls === "comm") return ((mk && mk.commodities) || []).map(c => ({ sym: c.name, sub: c.code, group: c.group || "Khác", v: (c.price || 0) * (c.volume || 0) * (c.mult || 1), chg: chgOver(c, days) }));
   if (cls === "stocks") return ((mk && mk.stocks) || []).map(x => ({ sym: x.code, group: x.sector || "Khác", v: x.value || 0, chg: chgOver(x, days) }));
   if (cls === "fx") return ((mk && mk.fx) || []).map(f => ({ sym: f.code, sub: f.name, group: FX_REGION[f.code] || "Khác", v: FX_SHARE[f.code] || 1, chg: fxStrength({ ...f, chg: chgOver(f, days) }) }));
@@ -96,14 +98,17 @@ const short = a => a.slice(0, 6) + "…" + a.slice(-4);
 const mflow = v => v == null ? "–" : `${v > 0 ? "+" : ""}${v.toFixed(1)}M`;
 
 export function initMarkets({ $, esc }) {
-  let mk = null, wh = null, news = null, cal = null, fxSel = "USD", trCoin = "btc", etfCoin = "btc", openW = null, live = false;
+  let mk = null, wh = null, news = null, cal = null, fxSel = "USD", trCoin = "btc", openW = null, live = false;
   let showAll = false, sock = null, liqs = [], liqMin = 100e3, timer = null;
-  let hmCls = "crypto", hmDays = 1, tickers = null, tickT = 0, tickV = null, hmTimer = null;
+  let hmDays = 1, hmTimer = null, ubVenue = "BINANCE";
+  try { ubVenue = sessionStorage.getItem("lailong.ubvenue") || ubVenue; } catch { /* bỏ qua */ }
+  const board = liveBoard(() => { renderBoard(); paintLive(); });
+  board.setVenue(ubVenue);
   try { liqMin = +sessionStorage.getItem("lailong.liqmin") || liqMin; } catch { /* bỏ qua */ }
 
   async function load() {
     const get = async u => { try { return await getJson(`${u}?t=${Math.floor(Date.now() / 60e3)}`); } catch { return null; } };
-    const [m, w, n, c] = await Promise.all([get("data/markets.json"), get("data/whales.json"), get("data/news.json"), get("data/calendar.json")]);
+    const [m, w, n, c] = await Promise.all([liveJson("markets.json").catch(() => null), get("data/whales.json"), get("data/news.json"), get("data/calendar.json")]);
     if (m) mk = m; if (w && !live) wh = w; if (n) news = n; if (c) cal = c;
     render();
   }
@@ -176,20 +181,6 @@ export function initMarkets({ $, esc }) {
       t.companies.map(c => `<tr><td class="t">${esc(c.name)}</td><td>${esc(c.symbol)}</td><td>${esc(c.country || "")}</td><td>${fmtVol(c.total_holdings)}</td><td>${fmtUsd(c.total_current_value_usd)}</td><td>${c.percentage_of_total_supply.toFixed(3)}%</td></tr>`).join("") + `</tbody></table></div>`;
   }
 
-  function renderEtf() {
-    const el = $("etfBody"); if (!el) return;
-    for (const b of $("etfTabs").children) b.classList.toggle("on", b.dataset.etf === etfCoin);
-    const etf = mk && mk.crypto && mk.crypto["etf_" + etfCoin], s = etfSummary(etf);
-    setFresh($("fsEtf"), "eod", s ? Date.parse(s.last.date + "T21:00:00Z") : null, { note: "Farside Investors: dòng tiền ròng từng quỹ, chốt sau phiên Mỹ, thường có số vào sáng hôm sau giờ Việt Nam" });
-    if (!s) { el.innerHTML = `<div class="empty">Chưa tải được dòng tiền ETF.</div>`; return; }
-    const days = s.days.slice(-22), mx = Math.max(1, ...days.map(d => Math.abs(d.flows[s.ti])));
-    const fund = s.last.flows.slice(0, -1).map((v, i) => [etf.funds[i], v]).filter(([, v]) => v).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
-    el.innerHTML = `<div class="kpis"><div><small>Phiên ${esc(s.last.date.split("-").reverse().slice(0, 2).join("/"))}</small><b class="${cls(s.last.flows[s.ti])}">${mflow(s.last.flows[s.ti])}</b></div>
-      <div><small>5 phiên</small><b class="${cls(s.d5)}">${mflow(s.d5)}</b></div><div><small>20 phiên</small><b class="${cls(s.d20)}">${mflow(s.d20)}</b></div></div>
-      <div class="etfbars">${days.map(d => { const v = d.flows[s.ti]; return `<div data-tip="${esc(d.date)}: ${mflow(v)} USD"><i class="${v >= 0 ? "pos" : "neg"}" style="--h:${(Math.abs(v) / mx * 100).toFixed(1)}%"></i></div>`; }).join("")}</div>
-      <div class="muted etfund">${fund.length ? fund.map(([n, v]) => `<span class="${cls(v)}">${esc(n)} ${mflow(v)}</span>`).join(" · ") : "Phiên gần nhất không quỹ nào có dòng tiền."}</div>`;
-  }
-
   function posChip(p) {
     const d = liqDistance(p), near = d != null && d < 10;
     return `<span class="pchip ${p.side === "LONG" ? "lg" : "sh"}${near ? " near" : ""}" data-tip="Vào lệnh ${px(p.entry)}, lãi/lỗ đang mở ${fmtUsd(p.pnl)}${p.liq ? `, giá thanh lý ${px(p.liq)}` : ""}">${esc(p.coin)} ${p.side === "LONG" ? "LONG" : "SHORT"} ${p.lev || "?"}x ${fmtUsd(p.value)}${d != null ? ` · cách thanh lý ${d > 100 ? "trên 100" : d.toFixed(0)}%` : ""}</span>`;
@@ -260,66 +251,133 @@ export function initMarkets({ $, esc }) {
       `<table class="mktab"><tbody>${liqs.map(l => `<tr><td>${fmtTime(l.t)}</td><td class="t"><b>${esc(l.sym)}</b></td><td class="${l.side === "long" ? "dn" : "up"}">${l.side === "long" ? "LONG bị thanh lý" : "SHORT bị thanh lý"}</td><td>${px(l.px)}</td><td><b>${fmtUsd(l.usd)}</b></td></tr>`).join("")}</tbody></table>`;
   }
 
-  // ---------- bản đồ nhiệt ----------
-  async function loadTickers() {
-    const V = getVenue();
-    if (tickers && tickV === V && Date.now() - tickT < 55e3) return;
-    // bảng giá 24 giờ của sàn đang chọn, đổi về dạng của Binance để cryptoTiles dùng chung
-    try { tickers = (await venueTickers(V)).map(t => ({ symbol: t.symbol, quoteVolume: t.volUsd, priceChangePercent: t.change, lastPrice: t.last })); tickT = Date.now(); tickV = V; } catch { if (tickV !== V) tickers = null; }
+  // ---------- bản đồ nhiệt: 4 nhóm, mỗi nhóm ghi nguồn, giờ cập nhật và trạng thái ----------
+  // % thay đổi theo tuần, tháng của hàng hoá đuôi USDT và BTC, ETH: tính từ nến ngày của sàn đang chọn, nhớ 10 phút
+  const dayCache = new Map();
+  async function boardDays(days) {
+    const V = board.venue === "ALL" ? "BINANCE" : board.venue, out = {};
+    await Promise.all(BOARD.map(async ([c]) => {
+      const k = `${V}:${c}`; let e = dayCache.get(k);
+      if (!e || Date.now() - e.t > 600e3) {
+        try { e = { t: Date.now(), bars: await EXCHANGES[V].klines(c + "USDT", "1d", 25) }; } catch { e = { t: Date.now(), bars: [] }; }
+        dayCache.set(k, e);
+      }
+      const b = e.bars, r = board.data().rows[c];
+      if (b.length > days && r && r.price) out[c] = (r.price / b[b.length - 1 - days].c - 1) * 100;
+    }));
+    return out;
   }
-  async function renderHeat() {
-    const box = $("hmBox"); if (!box) return;
-    for (const b of $("hmCls").children) b.classList.toggle("on", b.dataset.hc === hmCls);
-    for (const b of $("hmDays").children) b.classList.toggle("on", +b.dataset.hd === hmDays);
-    $("hmDays").hidden = hmCls === "crypto";
-    if (hmCls === "crypto") await loadTickers();
-    const items = heatItems(hmCls, mk, tickers, hmDays), W = box.clientWidth || 1000, H = box.clientHeight || 520;
-    if (!items.length) { box.innerHTML = `<div class="empty">${hmCls === "crypto" ? `Chưa tải được bảng giá ${esc(venueName())}.` : "Chưa tải được dữ liệu."}</div>`; return; }
-    const scale = hmCls === "crypto" ? 6 : hmCls === "fx" ? 0.8 * Math.sqrt(hmDays) : hmCls === "stocks" ? 2.5 * Math.sqrt(hmDays) : 3 * Math.sqrt(hmDays);
+  // nhãn trạng thái cho nhóm lấy từ Yahoo: đang nghỉ thì "Đóng cửa · mở lại …", đang mở thì "Trễ … · giá lúc …"
+  function yahooTag(kind, list, delay) {
+    const qt = Math.max(0, ...(list || []).map(x => x.qt || 0)), st = marketStatus(kind);
+    if (!qt && !(mk && mk.updated)) return freshTag("delay", null, { label: "Đang tải…" });
+    if (!st.open) return freshTag("eod", null, { label: `${st.label}${qt ? ` · giá chốt ${vnTime(qt)}` : ""}`, note: "Thị trường đang nghỉ nên giá đứng yên là bình thường" });
+    return freshTag("delay", qt || mk.updated, { label: `Trễ ${delay}${qt ? ` · giá lúc ${vnTime(qt)}` : ""}`, expect: 40 * 60e3, note: `Yahoo Finance chậm ${delay}; máy chủ lấy lại mỗi 10 phút. Đỏ khi giá cũ hơn 40 phút dù thị trường đang mở` });
+  }
+  function liveTag() {
+    const d = board.data(), vn = d.venue === "ALL" ? "gộp các sàn" : VENUE_SHORT[d.venue];
+    if (!d.at) return freshTag("delay", null, { label: d.errors.length ? `Lỗi: ${d.errors.join(", ")}` : `Đang kết nối ${vn}…` });
+    return freshTag("live", d.at, { label: d.live ? "Trực tiếp" : "Vài giây một lần", expect: 90e3, note: `Lấy thẳng từ ${vn} trong trình duyệt` });
+  }
+  const tilesHtml = (items, W, H, scale, href) => {
     const { groups, tiles } = layoutGroups(items, W, H), pct = (a, b) => (a / b * 100).toFixed(3) + "%";
-    box.innerHTML = tiles.map(t => {
-      const m = Math.min(t.w, t.h), fs = m > 140 ? 26 : m > 90 ? 19 : m > 56 ? 14 : m > 34 ? 11 : 0;
+    return tiles.map(t => {
+      const m = Math.min(t.w, t.h), fs = m > 140 ? 24 : m > 90 ? 18 : m > 56 ? 14 : m > 34 ? 11 : 0;
       const ch = t.chg == null ? "–" : (t.chg >= 0 ? "+" : "") + t.chg.toFixed(2) + "%";
-      const tip = `${t.sym}${t.sub ? " · " + t.sub : ""}: ${ch}${hmCls === "crypto" ? `, giá trị giao dịch 24 giờ ${fmtUsd(t.v)}. Bấm để mở trong Terminal` : ""}`;
-      const tag = t.href ? "a" : "div", href = t.href ? ` href="${esc(t.href)}"` : "";
-      return `<${tag}${href} class="hmtile" style="left:${pct(t.x, W)};top:${pct(t.y, H)};width:${pct(t.w, W)};height:${pct(t.h, H)};background:${heatColor(t.chg, scale)}" data-tip="${esc(tip)}">${fs ? `<b style="font-size:${fs}px">${esc(t.sym)}</b>${fs >= 11 && t.h > 30 ? `<span style="font-size:${Math.max(10, Math.round(fs * 0.62))}px">${ch}</span>` : ""}` : ""}</${tag}>`;
-    }).join("") + groups.map(g => `<span class="hmgroup" style="left:${pct(g.x, W)};top:${pct(g.y, H)}">${esc(g.name)}</span>`).join("");
-    const th = [-0.6, -0.3, -0.06, 0, 0.06, 0.3, 0.6];
-    $("hmLegend").innerHTML = HEAT_COLORS.map((c, i) => `<span style="background:${c}">${i === 3 ? "0" : (th[i] > 0 ? "+" : "−") + Math.abs(th[i] * scale).toFixed(hmCls === "fx" ? 2 : 1) + "%"}</span>`).join("") +
-      `<small class="muted">${hmCls === "crypto" ? `Cỡ ô: giá trị giao dịch 24 giờ (${esc(venueName())}, trực tiếp). Màu: % thay đổi 24 giờ` : hmCls === "comm" ? "Cỡ ô: giá trị giao dịch. Màu: % thay đổi" : hmCls === "stocks" ? "48 cổ phiếu Mỹ lớn, Yahoo Finance chậm khoảng 15 phút (cập nhật mỗi 30 phút). Cỡ ô: giá trị giao dịch phiên gần nhất. Màu: % thay đổi" : "Cỡ ô: tỷ trọng giao dịch ngoại hối toàn cầu. Màu: đồng tiền mạnh lên (xanh) hay yếu đi (đỏ) so với USD; USD là DXY"}</small>`;
+      const tip = `${t.sym}${t.sub ? " · " + t.sub : ""}: ${ch}${href ? ". Bấm để mở trong Terminal" : ""}`;
+      const tag = t.href ? "a" : "div", hr = t.href ? ` href="${esc(t.href)}"` : "";
+      return `<${tag}${hr} class="hmtile" style="left:${pct(t.x, W)};top:${pct(t.y, H)};width:${pct(t.w, W)};height:${pct(t.h, H)};background:${heatColor(t.chg, scale)}" data-tip="${esc(tip)}">${fs ? `<b style="font-size:${fs}px">${esc(t.sym)}</b>${fs >= 11 && t.h > 30 ? `${t.sub && t.h > 64 ? `<small>${esc(t.sub)}</small>` : ""}<span style="font-size:${Math.max(10, Math.round(fs * 0.62))}px">${ch}</span>` : ""}` : ""}</${tag}>`;
+    }).join("") + (groups.length > 1 ? groups.map(g => `<span class="hmgroup" style="left:${pct(g.x, W)};top:${pct(g.y, H)}">${esc(g.name)}</span>`).join("") : "");
+  };
+  let hmBusy = false;
+  async function renderHeat() {
+    const box = $("hm4"); if (!box || hmBusy) return;
+    for (const b of $("hmDays").children) b.classList.toggle("on", +b.dataset.hd === hmDays);
+    hmBusy = true;
+    let periodChg = null;
+    try { if (hmDays > 1) periodChg = await boardDays(hmDays); } finally { hmBusy = false; }
+    const d = board.data(), V = d.venue === "ALL" ? "BINANCE" : d.venue;
+    const boardItems = grp => BOARD.filter(x => x[2] === grp).map(([c, name]) => {
+      const r = d.rows[c]; if (!r || !r.price) return null;
+      return { sym: grp === "crypto" ? c : name, sub: c + "USDT", group: grp, v: Math.sqrt(r.vol || 1), // căn bậc hai để ô nhỏ vẫn đọc được
+      chg: hmDays > 1 ? (periodChg && periodChg[c]) : r.chg, href: `?ex=${V}&s=${c}USDT&v=terminal` };
+    }).filter(Boolean);
+    const groups = [
+      { id: "comm", name: "Hàng hoá", tag: liveTag(), src: `${d.venue === "ALL" ? "Gộp các sàn" : VENUE_SHORT[d.venue]} · XAUUSDT, CLUSDT… · đổi sàn ở bảng bên dưới`, items: boardItems("comm"), scale: 3 * Math.sqrt(hmDays), href: true },
+      { id: "crypto", name: "Crypto", tag: liveTag(), src: `${d.venue === "ALL" ? "Gộp các sàn" : VENUE_SHORT[d.venue]} · chỉ BTC và ETH`, items: boardItems("crypto"), scale: 5 * Math.sqrt(hmDays), href: true },
+      { id: "stocks", name: "Chứng khoán Mỹ", tag: yahooTag("us", mk && mk.stocks, "15 phút"), src: "Yahoo Finance · 48 cổ phiếu lớn · cỡ ô: giá trị giao dịch", items: heatItems("stocks", mk, hmDays), scale: 2.5 * Math.sqrt(hmDays) },
+      { id: "fx", name: "Forex", tag: yahooTag("fx", mk && mk.fx, "vài phút"), src: "Yahoo Finance · mạnh lên (xanh) hay yếu đi (đỏ) so với USD", items: heatItems("fx", mk, hmDays), scale: 0.8 * Math.sqrt(hmDays) },
+    ];
+    // giữ khung các nhóm, chỉ thay ô bên trong để không nháy
+    if (box.children.length !== groups.length) box.innerHTML = groups.map(g => `<div class="hmg hmg-${g.id}"><div class="hmgh"><b>${esc(g.name)}</b><span class="hmgtag"></span></div><div class="hmgs"></div><div class="hmbox"></div></div>`).join("");
+    groups.forEach((g, i) => {
+      const el = box.children[i], area = el.querySelector(".hmbox");
+      el.querySelector(".hmgtag").innerHTML = g.tag; el.querySelector(".hmgs").textContent = g.src;
+      const W = area.clientWidth || 300, H = area.clientHeight || 300;
+      area.innerHTML = g.items.length ? tilesHtml(g.items, W, H, g.scale, g.href) : `<div class="empty">${g.id === "comm" || g.id === "crypto" ? "Đang lấy giá…" : "Chưa tải được dữ liệu."}</div>`;
+    });
+    const th = [-0.6, -0.3, -0.06, 0, 0.06, 0.3, 0.6], sc = 3 * Math.sqrt(hmDays);
+    $("hmLegend").innerHTML = HEAT_COLORS.map((c, i) => `<span style="background:${c}">${i === 3 ? "0" : (th[i] > 0 ? "+" : "−") + Math.abs(th[i] * sc).toFixed(1) + "%"}</span>`).join("") +
+      `<small class="muted">Thang màu của nhóm Hàng hoá; mỗi nhóm có thang riêng theo độ biến động thường gặp. ${hmDays === 1 ? "Ngày: thay đổi 24 giờ (hàng hoá, crypto) hoặc so với phiên trước (cổ phiếu, forex)" : `${hmDays === 5 ? "Tuần" : "Tháng"}: thay đổi ${hmDays} phiên`}. Bấm ô hàng hoá, crypto để mở Terminal.</small>`;
   }
+  // chỉ cập nhật nhãn và ô của 2 nhóm chạy trực tiếp, không vẽ lại cả bản đồ mỗi giây
+  let paintT = 0, paintLater = null;
+  function paintLive() {
+    if (!shown || paintLater) return;
+    const wait = Math.max(0, 2000 - (Date.now() - paintT)); // tối đa một lần mỗi 2 giây, lần cuối luôn được vẽ
+    paintLater = setTimeout(() => { paintLater = null; paintT = Date.now(); renderHeat(); }, wait);
+  }
+
+  // ---------- bảng hàng hoá và crypto đuôi USDT ----------
+  const fundTxt = (f, h) => f == null ? "–" : `${f >= 0 ? "+" : ""}${(f * 100).toFixed(4)}%<small class="muted"> /${h}h</small>`;
+  function renderBoard() {
+    const el = $("ubBody"); if (!el) return;
+    const d = board.data(), all = d.venue === "ALL";
+    for (const b of $("ubVenue").children) b.classList.toggle("on", b.dataset.ub === d.venue);
+    setFresh($("fsUb"), d.at ? "live" : "delay", d.at || null, { label: d.at ? (d.live ? "Trực tiếp" : "Cập nhật vài giây một lần") : d.errors.length ? `Lỗi: ${d.errors.join(", ")}` : "Đang kết nối…", expect: 90e3,
+      note: d.venue === "BINANCE" ? "Giá, % 24 giờ, khối lượng chạy từng giây qua WebSocket Binance; funding và OI hỏi lại mỗi phút" : all ? "Hỏi lại cả 4 sàn mỗi 20 giây" : "Hỏi lại bảng giá của sàn mỗi 10 đến 15 giây" });
+    const V = all ? "BINANCE" : d.venue;
+    el.innerHTML = `<table class="mktab ubtab"><thead><tr><th>Mã</th><th>Tên</th><th>Giá</th><th>24 giờ</th><th data-tip="Tổng giá trị giao dịch 24 giờ (USD)">KL 24 giờ</th><th data-tip="Hợp đồng mở: tổng giá trị các vị thế đang mở (USD)">Hợp đồng mở (OI)</th><th data-tip="${all ? "Trung bình theo OI, quy về kỳ 8 giờ" : "Funding của kỳ gần nhất; /8h là mỗi 8 giờ, /1h là mỗi giờ"}">Funding${all ? " (quy về 8 giờ)" : ""}</th>${all ? "<th>Sàn có mã</th>" : ""}</tr></thead><tbody>` +
+      BOARD.map(([c, name]) => {
+        const r = d.rows[c];
+        if (!r || !r.price) return `<tr class="muted"><td class="t"><b>${c}USDT</b></td><td class="t">${esc(name)}</td><td colspan="${all ? 6 : 5}" class="t muted">${d.at ? `${all ? "Không sàn nào" : esc(VENUE_SHORT[d.venue])} có mã này` : "Đang lấy…"}</td></tr>`;
+        return `<tr class="click" data-ubs="${c}USDT"><td class="t"><a href="?ex=${V}&s=${c}USDT&v=terminal"><b>${c}USDT</b></a></td><td class="t">${esc(name)}</td><td><b>${px(r.price)}</b></td><td class="${cls(r.chg)}">${fmtPct(r.chg)}</td><td>${r.vol ? fmtUsd(r.vol) : "–"}</td><td>${r.oi ? fmtUsd(r.oi) : "–"}</td><td class="${cls(r.fund)}">${fundTxt(r.fund, r.fundH)}</td>${all ? `<td class="t"><small>${(r.venues || []).map(v => VENUE_SHORT[v]).join(", ")}</small></td>` : ""}</tr>`;
+      }).join("") + `</tbody></table><p class="note">Bấm một dòng để mở mã đó ở Terminal (sàn ${esc(VENUE_SHORT[V])}). Funding dương: phe long trả phí cho phe short, tức đang đông người long. Hợp đồng hàng hoá chạy 24/7 trên sàn crypto kể cả khi CME nghỉ, nên cuối tuần giá vẫn chạy.</p>`;
+  }
+
   function render() {
-    renderHeat();
-    renderCommodities(); renderFx(); renderCrypto(); renderTreasury(); renderEtf(); renderWhales(); renderLiq();
-    const t = mk && mk.updated, snap = "Bản trên web được máy chủ GitHub cập nhật mỗi 30 phút; bản trên laptop lấy mới tối đa mỗi 15 phút";
-    setFresh($("mkUpd"), "delay", t, { label: "Trễ 10–15 phút", note: `Yahoo Finance: giá hợp đồng tương lai CME, NYMEX, COMEX, ICE chậm 10 đến 15 phút. ${snap}` });
-    setFresh($("fsFx"), "delay", t, { label: "Tỷ giá trễ vài phút · lãi suất cuối ngày", note: `Tỷ giá từ Yahoo Finance; lãi suất điều hành từ BIS (cập nhật theo ngày). ${snap}` });
+    renderHeat(); renderBoard();
+    renderCommodities(); renderFx(); renderCrypto(); renderTreasury(); renderWhales(); renderLiq();
+    const t = mk && mk.updated, snap = "Bản trên web lấy lại mỗi 10 phút (giá), kỳ hạn và lãi suất mỗi giờ; bản trên laptop lấy mới tối đa mỗi 15 phút";
+    $("mkUpd").innerHTML = mk ? yahooTag("cme", mk.commodities, "10–15 phút") : "";
+    $("fsFx").innerHTML = mk ? yahooTag("fx", mk.fx, "vài phút") : "";
     setFresh($("fsCry"), "delay", t, { label: "Bản chụp", note: `CoinGecko, giá trung bình nhiều sàn. ${snap}. Giá trực tiếp xem ở Terminal` });
     setFresh($("fsTr"), "eod", t, { note: "CoinGecko: lượng coin các công ty niêm yết công bố nắm giữ, cập nhật khi công ty báo cáo" });
   }
 
   $("cmdAll").onclick = () => { showAll = !showAll; renderCommodities(); };
-  $("hmCls").onclick = e => { const b = e.target.closest("[data-hc]"); if (b) { hmCls = b.dataset.hc; renderHeat(); } };
+  $("ubVenue").onclick = e => { const b = e.target.closest("[data-ub]"); if (!b) return; ubVenue = b.dataset.ub; try { sessionStorage.setItem("lailong.ubvenue", ubVenue); } catch { /* bỏ qua */ } board.setVenue(ubVenue); renderBoard(); renderHeat(); };
+  $("ubBody").onclick = e => { if (e.target.closest("a")) return; const r = e.target.closest("[data-ubs]"); if (r) location.href = `?ex=${board.venue === "ALL" ? "BINANCE" : board.venue}&s=${r.dataset.ubs}&v=terminal`; };
   $("hmDays").onclick = e => { const b = e.target.closest("[data-hd]"); if (b) { hmDays = +b.dataset.hd; renderHeat(); } };
-  { let rt = null; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if ($("hmBox").clientWidth) renderHeat(); }, 150); }).observe($("hmBox")); }
+  { let rt = null; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if ($("hm4").clientWidth) { $("hm4").innerHTML = ""; renderHeat(); } }, 150); }).observe($("hm4")); }
   $("fxBody").onclick = e => { const r = e.target.closest("[data-fx]"); if (r) { fxSel = r.dataset.fx; renderFx(); } };
   $("trTabs").onclick = e => { const b = e.target.closest("[data-tr]"); if (b) { trCoin = b.dataset.tr; renderTreasury(); } };
-  $("etfTabs").onclick = e => { const b = e.target.closest("[data-etf]"); if (b) { etfCoin = b.dataset.etf; renderEtf(); } };
   $("whBody").onclick = e => { if (e.target.closest("a")) return; const r = e.target.closest("[data-w]"); if (r) { openW = openW === r.dataset.w ? null : r.dataset.w; renderWhales(); } };
   $("whLive").onclick = refreshLive;
   $("liqMin").value = String(liqMin);
   $("liqMin").onchange = () => { liqMin = +$("liqMin").value; try { sessionStorage.setItem("lailong.liqmin", liqMin); } catch { /* bỏ qua */ } liqs = liqs.filter(l => l.usd >= liqMin); renderLiq(); };
 
   let loaded = false, shown = false;
-  onVenue(() => { if (shown && hmCls === "crypto") renderHeat(); }); // đổi sàn ở ô Sàn: vẽ lại bản đồ nhiệt crypto
+  const tickFreshTags = () => { if (mk) { renderHeat(); $("mkUpd").innerHTML = yahooTag("cme", mk.commodities, "10–15 phút"); $("fsFx").innerHTML = yahooTag("fx", mk.fx, "vài phút"); } };
   return {
     show() {
       shown = true;
       if (!loaded) { loaded = true; load(); }
       startLiq();
-      if (!timer) timer = setInterval(load, 5 * 60e3);
-      if (!hmTimer) hmTimer = setInterval(() => { if (hmCls === "crypto") renderHeat(); }, 60e3);
+      board.show();
+      if (!timer) timer = setInterval(load, 2 * 60e3);
+      if (!hmTimer) hmTimer = setInterval(() => { tickFreshTags(); }, 30e3); // nhãn Đóng cửa / mở lại tự đổi theo giờ
     },
-    hide() { shown = false; clearInterval(hmTimer); hmTimer = null; if (sock) { const s = sock; sock = null; s.onclose = null; s.close(); } clearInterval(timer); timer = null; },
+    hide() { shown = false; board.hide(); clearInterval(hmTimer); hmTimer = null; if (sock) { const s = sock; sock = null; s.onclose = null; s.close(); } clearInterval(timer); timer = null; },
   };
 }

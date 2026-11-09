@@ -9,7 +9,7 @@
 // Chuỗi không có chữ cái (giá, khối lượng, giờ) bỏ qua ngay; câu đã dịch được nhớ lại nên không dịch lại.
 // Bấm VI thì trả lại đúng chữ gốc.
 
-import { getLang } from "./lang.js?v=202611090429";
+import { getLang } from "./lang.js?v=202611090440";
 
 let S = null, PATS = null, BY = null, on = false, mo = null, patched = false;
 const CACHE = new Map(), CACHE_MAX = 30000;
