@@ -1188,9 +1188,24 @@ export const GLOSSARY = [
     body: "<p>Mục tiêu là vào phiên với kế hoạch đã viết sẵn, không mở app ra mới nghĩ. Khi không có tín hiệu nào qua kiểm chứng trong bối cảnh hiện tại, kế hoạch ghi rõ để bro đứng ngoài hoặc giảm khối lượng.</p><p><b>Chỉ báo tín hiệu đã kiểm chứng</b> (trong nút 🔔): iceberg, tường bị rút và Big Trade chỉ kêu khi sổ tín hiệu đã chấm loại đó là có lợi thế cho mã này, chung hoặc trong phiên đang chạy.</p>",
   },
   {
-    id: "flows", group: "Thị trường", term: "Dòng tiền ETF và stablecoin",
-    short: "Tiền vào/ra ròng mỗi ngày của các quỹ ETF Bitcoin/Ethereum giao ngay ở Mỹ (Farside), và tổng stablecoin đang lưu hành (DefiLlama). Số cuối ngày.",
-    body: "<p><b>ETF</b>: tiền vào ròng là tổ chức Mỹ đang mua coin thật qua quỹ (IBIT, FBTC…). Nhiều phiên liên tiếp cùng chiều quan trọng hơn một phiên lớn.</p><p><b>Stablecoin</b>: tổng USDT, USDC… tăng là tiền mới vào hệ crypto, là nhiên liệu cho giá; giảm là tiền rút ra.</p><p>Nguồn miễn phí, có thể đổi định dạng hoặc chặn; nếu lỗi, app giữ số cũ và ghi rõ là số cũ.</p>",
+    id: "flows", group: "Thị trường", term: "Dòng tiền ETF Bitcoin và Ethereum",
+    short: "Tiền vào/ra ròng mỗi phiên của các quỹ ETF Bitcoin/Ethereum giao ngay ở Mỹ (Farside Investors), từng quỹ và luỹ kế từ khi ra mắt. Số cuối ngày.",
+    body: "<p>Tiền vào ròng là tổ chức Mỹ đang mua coin thật qua quỹ (IBIT của BlackRock, FBTC của Fidelity…). Nhiều phiên liên tiếp cùng chiều (<b>chuỗi</b>) quan trọng hơn một phiên lớn.</p><p><b>Cột</b>: dòng tiền ròng 30 phiên gần nhất. <b>Đường vàng</b>: tổng tiền vào luỹ kế; đường đi ngang hoặc chúc xuống là tổ chức ngừng mua.</p><p><b>Bảng quỹ</b>: quỹ nào đang hút hay mất tiền. GBTC của Grayscale phí cao nên hay bị rút đều; điều đó bình thường, nên nhìn tổng.</p><p>Farside chốt số sau phiên Mỹ (sáng hôm sau giờ Việt Nam). Nguồn miễn phí, có thể đổi định dạng hoặc chặn; nếu lỗi, app giữ số cũ và ghi rõ là số cũ.</p>",
+  },
+  {
+    id: "stablecoin", group: "Thị trường", term: "Stablecoin: tiền chờ vào crypto",
+    short: "Tổng USDT, USDC và các stablecoin đô la đang lưu hành (DefiLlama), lượng in thêm hoặc đốt bớt mỗi ngày, thị phần từng đồng.",
+    body: "<p>Stablecoin là tiền mặt của thị trường crypto. Tổng cung tăng là có tiền mới đổi từ đô la vào, sẵn sàng mua coin; giảm là tiền rút ra khỏi hệ crypto.</p><p><b>Cột</b>: phát hành ròng mỗi ngày, xanh là in thêm, đỏ là đốt bớt.</p><p><b>Đọc cùng ETF</b>: ETF rút mà stablecoin vẫn tăng là tiền đang đứng ngoài chờ; cả hai cùng giảm là tín hiệu xấu nhất; cả hai cùng tăng là tốt nhất.</p>",
+  },
+  {
+    id: "sentiment", group: "Thị trường", term: "Kim tâm lý thị trường",
+    short: "Gom nhiều chỉ số thành một điểm 0 đến 100 cho Crypto và Chứng khoán Mỹ: 0–20 Bán tháo, 20–40 Bán, 40–60 Trung lập, 60–80 Mua, 80–100 Mua mạnh.",
+    body: "<p>Mỗi thành phần được chấm 0 (sợ hãi) đến 100 (tham lam) rồi lấy trung bình có trọng số. Rê chuột vào từng dòng để xem điểm của nó.</p><p><b>Crypto</b>: dòng tiền ETF 5 phiên, stablecoin 7 ngày, funding BTC và ETH trên Binance, tỷ lệ tài khoản long Binance, chỉ số Fear &amp; Greed của alternative.me, giá BTC so với trung bình 50 ngày. Tỷ lệ tài khoản long là <b>tín hiệu ngược</b>: nhỏ lẻ thường long nhiều khi giá đang giảm, nên đám đông càng long thì điểm càng thấp.</p><p><b>Chứng khoán Mỹ</b>: VIX so với 1 năm qua, cấu trúc kỳ hạn VIX/VIX3M (trên 1 là hoảng loạn), VVIX và SKEW (lo rủi ro đuôi), MOVE (biến động trái phiếu), S&amp;P 500 so với trung bình 50 phiên. Số của Yahoo trễ khoảng 15 phút; ngoài giờ là giá chốt phiên.</p><p><b>Hôm qua, tuần trước, tháng trước</b>: điểm tính lại bằng chính các chuỗi số đó tại thời điểm cũ; thành phần nào không có lịch sử đủ xa thì bỏ qua.</p><p>Kim đo tâm lý đám đông, không phải tín hiệu vào lệnh. Cực sợ hãi (Bán tháo) thường gần đáy ngắn hạn, cực tham lam thường gần đỉnh.</p>",
+  },
+  {
+    id: "cftc-news", group: "Thị trường", term: "Tin và thông báo từ CFTC",
+    short: "Thông cáo báo chí, các vụ xử phạt, phát biểu của lãnh đạo CFTC và mốc công bố báo cáo COT, lấy từ trang công khai của cftc.gov.",
+    body: "<p><b>Thông cáo</b>: quy định mới, hợp đồng mới được duyệt, thoả thuận với cơ quan khác. <b>Xử phạt</b>: các vụ CFTC kiện hoặc phạt vì gian lận, thao túng giá, báo cáo sai (app nhận ra qua từ khoá trong tiêu đề như court, fraud, penalty). <b>Phát biểu</b>: bài nói, tuyên bố của Chủ tịch và các uỷ viên, thường báo trước hướng quản lý crypto và phái sinh. <b>Báo cáo</b>: mốc công bố COT hằng tuần.</p><p>CFTC tạm tắt RSS từ tháng 10/2026 nên app đọc thẳng trang danh sách, lấy lại mỗi 30 phút. Trang chỉ ghi ngày đăng, không ghi giờ. Tiêu đề dịch máy, kèm bản gốc tiếng Anh.</p>",
   },
   {
     id: "opt-flow", group: "Phái sinh", term: "Dòng lệnh quyền chọn lớn",
@@ -1209,8 +1224,8 @@ export const GLOSSARY = [
   },
   {
     id: "cot", group: "Thị trường", term: "COT của CFTC",
-    short: "Báo cáo hằng tuần của Ủy ban giao dịch hàng hoá tương lai Mỹ: đầu cơ lớn (quỹ, CTA) và bên phòng hộ (nhà sản xuất, ngân hàng) đang long hay short bao nhiêu hợp đồng trên vàng, dầu, chỉ số, trái phiếu, tiền tệ, Bitcoin CME, nông sản.",
-    body: "<p><b>Đầu cơ ròng</b> = long trừ short của nhóm non-commercial. <b>Chỉ số COT</b> đặt giá trị hiện tại trong khoảng 3 năm: 100 là long nhiều nhất 3 năm, 0 là short nhiều nhất. Vùng trên 90 hoặc dưới 10 là cực đoan, thường báo trước đảo chiều trung hạn chứ không phải điểm vào lệnh ngay.</p><p><b>Bên phòng hộ</b> thường đi ngược giá: họ mua khi giá thấp, bán khi giá cao, nên COT phòng hộ cao là vùng giá tốt.</p><p><b>Độ trễ</b>: CFTC chốt vị thế thứ Ba, công bố chiều thứ Sáu giờ Mỹ (sáng thứ Bảy giờ Việt Nam). Đường nhỏ là vị thế ròng đầu cơ 3 năm.</p>",
+    short: "Báo cáo hằng tuần của Ủy ban giao dịch hàng hoá tương lai Mỹ: các quỹ, tổ chức và nhỏ lẻ đang long hay short bao nhiêu hợp đồng trên vàng, dầu, chỉ số, trái phiếu, tiền tệ, Bitcoin CME, nông sản.",
+    body: "<p><b>Nhóm theo dõi</b>: với hàng hoá (kim loại, năng lượng, nông sản) là <b>quỹ quản lý</b> (managed money, báo cáo Disaggregated); với chứng khoán, lãi suất, tiền tệ, crypto là <b>quỹ đòn bẩy</b> (leveraged funds, báo cáo TFF). Đây là tiền đầu cơ chạy theo xu hướng. Nếu thiếu báo cáo chi tiết, app dùng nhóm đầu cơ lớn (non-commercial) của báo cáo Legacy.</p><p><b>Vị thế ròng</b> = long trừ short, tính bằng số hợp đồng. <b>Chỉ số COT</b> đặt giá trị hiện tại trong khoảng 3 năm: 100 là long nhiều nhất 3 năm, 0 là short nhiều nhất. Vùng trên 90 hoặc dưới 10 là cực đoan, thường báo trước đảo chiều trung hạn chứ không phải điểm vào lệnh ngay.</p><p><b>Bấm một dòng</b> để xem vị thế 3 năm của cả 3 nhóm: quỹ, tổ chức (nhà sản xuất và phòng hộ với hàng hoá, quỹ quản lý tài sản với tài chính) và nhỏ lẻ. Bên phòng hộ thường đi ngược giá: họ mua khi giá thấp, bán khi giá cao. Với Bitcoin CME, quỹ đòn bẩy short nhiều thường là bán chênh lệch giá với ETF (mua ETF, bán tương lai), không hẳn là đặt cược giá giảm.</p><p><b>Độ trễ</b>: CFTC chốt vị thế thứ Ba, công bố 15:30 thứ Sáu giờ New York (03:30 sáng thứ Bảy giờ Việt Nam mùa đông, 02:30 mùa hè). Tuần có ngày lễ Mỹ thì lùi lại.</p>",
   },
   {
     id: "gex", group: "Phái sinh", term: "GEX (gamma exposure) theo strike",

@@ -4,15 +4,20 @@
   (VIX9D, VIX, VIX3M, VIX6M), VVIX, SKEW, MOVE (trái phiếu), VXN, GVZ (vàng), OVX (dầu).
 - COT của CFTC (hằng tuần: số liệu chốt thứ Ba, công bố chiều thứ Sáu giờ Mỹ): vị thế của
   đầu cơ lớn (non-commercial) và bên phòng hộ (commercial) trên các hợp đồng tương lai lớn,
-  kèm chỉ số COT 3 năm (0 = thấp nhất, 100 = cao nhất).
+  kèm chỉ số COT 3 năm (0 = thấp nhất, 100 = cao nhất). Thêm nhóm chi tiết: quỹ quản lý
+  (báo cáo Disaggregated, hàng hoá) hoặc quỹ đòn bẩy (báo cáo TFF, tài chính).
+- Tin của CFTC: thông cáo báo chí (có tách xử phạt) và phát biểu, đọc từ trang danh sách
+  công khai của cftc.gov (CFTC tạm tắt RSS từ 10/2026).
 
-Chạy như script: python macro.py <thư mục> ghi vol.json và cot.json. Không phụ thuộc gói lailong
-để GitHub Actions của bản web chạy được trực tiếp.
+Chạy như script: python macro.py <thư mục> ghi vol.json, cot.json và cftc.json.
+Không phụ thuộc gói lailong để GitHub Actions của bản web chạy được trực tiếp.
 """
 
 from __future__ import annotations
 
+import html
 import json
+import re
 import sys
 import time
 import urllib.parse
@@ -35,11 +40,31 @@ VOL = [
     ("^VXN", "VXN", "Biến động Nasdaq 100"),
     ("^GVZ", "GVZ", "Biến động vàng"),
     ("^OVX", "OVX", "Biến động dầu thô"),
+    ("^GSPC", "SPX", "Chỉ số S&P 500, để so với đường trung bình 50 ngày"),
 ]
 
 COT_URL = (
     "https://publicreporting.cftc.gov/resource/6dca-aqww.json"  # Legacy, chỉ hợp đồng tương lai
 )
+# báo cáo chi tiết theo nhóm: hàng hoá (Disaggregated) và tài chính (Traders in Financial Futures)
+COT_DIS = "https://publicreporting.cftc.gov/resource/72hh-3qpy.json"
+COT_TFF = "https://publicreporting.cftc.gov/resource/gpe5-46if.json"
+# nhóm quỹ, nhóm tổ chức, cột long/short của từng nhóm; nhỏ lẻ là nonrept ở cả hai báo cáo
+COT_GROUPS = {
+    "dis": (
+        ("Quỹ quản lý", "m_money_positions_long_all", "m_money_positions_short_all"),
+        (
+            "Nhà sản xuất và phòng hộ",
+            ("prod_merc_positions_long", "swap_positions_long_all"),
+            ("prod_merc_positions_short", "swap__positions_short_all"),
+        ),
+    ),
+    "tff": (
+        ("Quỹ đòn bẩy", "lev_money_positions_long", "lev_money_positions_short"),
+        ("Quỹ quản lý tài sản", "asset_mgr_positions_long", "asset_mgr_positions_short"),
+    ),
+}
+COT_DIS_GROUPS = {"Kim loại", "Năng lượng", "Nông sản"}
 # (mã CFTC, mã ngắn, tên, nhóm)
 COT = [
     ("088691", "GC", "Vàng", "Kim loại"),
@@ -194,7 +219,7 @@ def parse_cot(rows: list[dict]) -> list[dict]:
     return sorted(out, key=lambda x: order[x["code"]])
 
 
-def fetch_cot(years: int = 3) -> dict:
+def fetch_cot(years: int = 3, detail: bool = True) -> dict:
     since = (datetime.now(UTC) - timedelta(days=365 * years + 14)).strftime("%Y-%m-%d")
     codes = ",".join(f"'{c[0]}'" for c in COT)
     q = {
@@ -219,20 +244,172 @@ def fetch_cot(years: int = 3) -> dict:
     missing = [c[1] for c in COT if c[0] not in {x["code"] for x in items}]
     if missing:
         errors.append("không có dữ liệu: " + ", ".join(missing))
-    return {"updated": int(time.time() * 1000), "items": items, "errors": errors}
+    out = {"updated": int(time.time() * 1000), "items": items, "errors": errors}
+    if detail and items:
+        add_cot_detail(out, years)
+    return out
+
+
+def _sum(r: dict, cols) -> float:
+    return sum(_num(r.get(c)) for c in ((cols,) if isinstance(cols, str) else cols))
+
+
+def parse_cot_detail(rows: list[dict], rep: str) -> dict[str, dict]:
+    """Vị thế ròng 3 nhóm (quỹ, tổ chức, nhỏ lẻ) theo tuần của báo cáo chi tiết."""
+    (fname, fl, fs), (iname, il, is_) = COT_GROUPS[rep]
+    by: dict[str, dict[str, list]] = {}
+    for r in rows:
+        code, d = (
+            r.get("cftc_contract_market_code"),
+            (r.get("report_date_as_yyyy_mm_dd") or "")[:10],
+        )
+        if not code or not d:
+            continue
+        by.setdefault(code, {})[d] = [
+            d,
+            _sum(r, fl) - _sum(r, fs),
+            _sum(r, il) - _sum(r, is_),
+            _num(r.get("nonrept_positions_long_all")) - _num(r.get("nonrept_positions_short_all")),
+            _num(r.get("open_interest_all")),
+        ]
+    out = {}
+    for code, days in by.items():
+        ws = [days[k] for k in sorted(days)]
+        last, prev = ws[-1], ws[-2] if len(ws) > 1 else None
+        out[code] = {
+            "rep": rep,
+            "who": [fname, iname, "Nhỏ lẻ"],
+            "fund": last[1],
+            "fundChg": last[1] - prev[1] if prev else None,
+            "fundPctOi": round(last[1] / last[4] * 100, 1) if last[4] else None,
+            "fundIdx": cot_index([w[1] for w in ws], last[1]),
+            "instIdx": cot_index([w[2] for w in ws], last[2]),
+            "smallIdx": cot_index([w[3] for w in ws], last[3]),
+            "h3": [w[:4] for w in ws[-156:]],
+        }
+    return out
+
+
+def _socrata(url: str, codes: list[str], since: str) -> list[dict]:
+    q = {
+        "$where": (
+            f"cftc_contract_market_code in({','.join(repr(c) for c in codes)})"
+            f" AND report_date_as_yyyy_mm_dd >= '{since}'"
+        ),
+        "$order": "report_date_as_yyyy_mm_dd",
+        "$limit": "50000",
+    }
+    return json.loads(_get(f"{url}?{urllib.parse.urlencode(q)}", timeout=90))
+
+
+def add_cot_detail(data: dict, years: int = 3) -> None:
+    """Gắn nhóm quỹ quản lý (hàng hoá) hoặc quỹ đòn bẩy (tài chính) vào từng hợp đồng."""
+    since = (datetime.now(UTC) - timedelta(days=365 * years + 14)).strftime("%Y-%m-%d")
+    dis = [c[0] for c in COT if c[3] in COT_DIS_GROUPS]
+    tff = [c[0] for c in COT if c[3] not in COT_DIS_GROUPS]
+    found: dict[str, dict] = {}
+    for rep, url, codes in (("dis", COT_DIS, dis), ("tff", COT_TFF, tff)):
+        try:
+            found.update(parse_cot_detail(_socrata(url, codes, since), rep))
+        except Exception as exc:
+            data.setdefault("errors", []).append(f"COT chi tiết {rep}: {exc}")
+    for x in data.get("items", []):
+        if x["code"] in found:
+            x.update(found[x["code"]])
+
+
+# ---------- tin và thông báo của CFTC ----------
+# CFTC tạm tắt RSS từ 10/2026 nên đọc thẳng trang danh sách (bảng Ngày | Tiêu đề)
+CFTC = "https://www.cftc.gov"
+CFTC_PAGES = [
+    ("press", f"{CFTC}/PressRoom/PressReleases", r"/PressRoom/PressReleases/(?!index)[\w-]+"),
+    (
+        "speech",
+        f"{CFTC}/PressRoom/SpeechesTestimony",
+        r"/PressRoom/SpeechesTestimony/(?!index)[\w-]+",
+    ),
+]
+# thông cáo nói về xử phạt: toà án, phạt tiền, buộc tội, gian lận
+ENFORCE = re.compile(
+    r"\b(court|charges|charged|fraud|penalt|to pay|sanction|enforcement|complaint|judgment|"
+    r"restitution|disgorge|manipulat|ponzi|indict|liable|spoof)",
+    re.I,
+)
+_TR = re.compile(r"<tr\b.*?</tr>", re.S | re.I)
+_A = re.compile(r"<a\b[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>", re.S | re.I)
+_DATE = re.compile(r"(\d{2})/(\d{2})/(\d{4})")
+_TAG = re.compile(r"<[^>]+>")
+
+
+def _text(h: str) -> str:
+    return " ".join(html.unescape(_TAG.sub(" ", h)).split())
+
+
+def parse_cftc_list(page: str, kind: str, path_re: str) -> list[dict]:
+    """Các dòng của bảng danh sách: ngày (tháng/ngày/năm giờ Mỹ), tiêu đề, đường dẫn, loại."""
+    pr = re.compile(path_re)
+    out = []
+    rows = _TR.findall(page)
+    if not rows:  # không phải bảng: mỗi đường dẫn đi kèm ngày đứng ngay trước nó
+        rows = [page[max(0, m.start() - 400) : m.end()] for m in _A.finditer(page)]
+    for tr in rows:
+        d = _DATE.search(_text(tr))
+        link = next(((u, t) for u, t in _A.findall(tr) if pr.search(u)), None)
+        if not d or not link:
+            continue
+        url = link[0] if link[0].startswith("http") else CFTC + link[0]
+        title = _text(link[1])
+        if not title:
+            continue
+        mo, dd, yy = (int(x) for x in d.groups())
+        # trang chỉ ghi ngày: tính 12:00 trưa giờ Mỹ (17:00 UTC) để ngày không lệch khi đổi giờ VN
+        t = int(datetime(yy, mo, dd, 17, tzinfo=UTC).timestamp() * 1000)
+        cat = kind if kind != "press" else ("enforce" if ENFORCE.search(title) else "press")
+        out.append(
+            {"t": t, "date": f"{yy}-{mo:02d}-{dd:02d}", "title": title, "url": url, "cat": cat}
+        )
+    return out
+
+
+def fetch_cftc(prev: dict | None = None) -> dict:
+    items, errors = [], []
+    for kind, url, path_re in CFTC_PAGES:
+        try:
+            got = parse_cftc_list(_get(url, timeout=30).decode("utf-8", "replace"), kind, path_re)
+            if not got:
+                raise ValueError("không thấy bảng danh sách")
+            items += got[:30]
+        except Exception as exc:
+            errors.append(f"{kind}: {exc}")
+            items += [x for x in (prev or {}).get("items", []) if x.get("cat") in _KIND_CATS[kind]]
+    seen, uniq = set(), []
+    for x in sorted(items, key=lambda x: -x["t"]):
+        if x["url"] not in seen:
+            seen.add(x["url"])
+            uniq.append(x)
+    old = {x["url"]: x.get("vi") for x in (prev or {}).get("items", []) if x.get("vi")}
+    for x in uniq:
+        if not x.get("vi") and old.get(x["url"]):
+            x["vi"] = old[x["url"]]
+    return {"updated": int(time.time() * 1000), "items": uniq[:60], "errors": errors}
+
+
+_KIND_CATS = {"press": ("press", "enforce"), "speech": ("speech",)}
 
 
 _cache: dict[str, tuple[float, dict]] = {}
 
 
 def cached(name: str) -> dict:
-    """Dùng cho máy chủ trên laptop: biến động lấy lại tối đa mỗi 10 phút, COT mỗi 6 giờ."""
+    """Dùng cho máy chủ trên laptop: biến động lấy lại tối đa mỗi 10 phút, tin CFTC mỗi 30 phút,
+    COT mỗi 6 giờ."""
     now = time.time()
-    ttl = 600 if name == "vol" else 6 * 3600
+    ttl = {"vol": 600, "cftc": 1800}.get(name, 6 * 3600)
     if name in _cache and now - _cache[name][0] < ttl:
         return _cache[name][1]
     try:
-        data = fetch_vol() if name == "vol" else fetch_cot()
+        fn = {"vol": fetch_vol, "cftc": lambda: fetch_cftc(_cache.get("cftc", (0, None))[1])}
+        data = fn.get(name, fetch_cot)()
         if not data["items"]:
             raise ValueError("; ".join(data["errors"]) or "không có dữ liệu")
     except Exception as exc:
@@ -264,7 +441,15 @@ def _mirror(name: str, exc: Exception) -> dict | None:
 if __name__ == "__main__":
     outdir = Path(sys.argv[1] if len(sys.argv) > 1 else "data")
     outdir.mkdir(parents=True, exist_ok=True)
-    for name, fn in (("vol", fetch_vol), ("cot", fetch_cot)):
+
+    def _cftc():
+        try:
+            prev = json.loads((outdir / "cftc.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            prev = None
+        return fetch_cftc(prev)
+
+    for name, fn in (("vol", fetch_vol), ("cot", fetch_cot), ("cftc", _cftc)):
         try:
             data = fn()
             if data["items"]:

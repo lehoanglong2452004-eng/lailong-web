@@ -20,6 +20,8 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import flows  # noqa: E402
+import macro  # noqa: E402
 import markets  # noqa: E402
 import news  # noqa: E402
 import social  # noqa: E402
@@ -136,6 +138,7 @@ def step(
     react_every: float,
     social_every: float = 300,
     markets_every: float = 600,
+    macro_every: float = 600,
 ) -> list[str]:
     """Một vòng: trả về tên các file vừa thay đổi.
 
@@ -218,6 +221,8 @@ def step(
                 changed.append("markets.json")
         except Exception as exc:
             print("thị trường lỗi:", exc, flush=True)
+    # Vĩ mô: VIX… mỗi 10 phút; tin CFTC mỗi 30 phút; ETF và stablecoin mỗi giờ; COT mỗi 6 giờ
+    changed += _macro(out, state, now, macro_every, tr)
     if now - state.get("t_move", -1e18) >= 180:
         state["t_move"] = now
         try:
@@ -226,6 +231,48 @@ def step(
         except Exception as exc:
             print("biến động lỗi:", exc, flush=True)
     return changed
+
+
+def _flows_sig(d: dict) -> list:
+    return [(d.get(k) or {}).get("rows", [[None]])[-1:] for k in ("btc", "eth")] + [
+        len((d.get("stable") or {}).get("series", [])),
+        (d.get("stable") or {}).get("coins", []),
+    ]
+
+
+def _macro(out: Path, state: dict, now: float, every: float, tr) -> list[str]:
+    changed = []
+    jobs = [
+        ("vol.json", every, "items", lambda prev: macro.fetch_vol()),
+        ("cftc.json", max(every, 1800), "items", lambda prev: macro.fetch_cftc(prev)),
+        ("flows.json", max(every, 3600), "sig", lambda prev: _flows(prev)),
+        ("cot.json", max(every, 6 * 3600), "items", lambda prev: macro.fetch_cot()),
+    ]
+    for name, gap, key, fn in jobs:
+        if now - state.get(f"t_{name}", -1e18) < gap:
+            continue
+        state[f"t_{name}"] = now
+        try:
+            data = fn(_read(out / name))
+            if name == "cftc.json" and tr is not None:
+                translate.add_vi_news(data, tr, budget=40)
+                _vi_errors(data, tr)
+                if tr.dirty:
+                    tr.save()
+            if _write(out / name, data, key):
+                changed.append(name)
+        except Exception as exc:
+            print(f"{name} lỗi:", exc, flush=True)
+    return changed
+
+
+def _flows(prev: dict | None) -> dict:
+    data = flows.fetch_all()
+    for k in ("btc", "eth", "stable"):  # nguồn nào lỗi lần này thì giữ số lần trước
+        if k not in data and prev and k in prev:
+            data[k] = {**prev[k], "stale": True}
+    data["sig"] = _flows_sig(data) if any(k in data for k in ("btc", "eth", "stable")) else []
+    return data
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -240,6 +287,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--react-every", type=float, default=300)
     ap.add_argument("--social-every", type=float, default=300)
     ap.add_argument("--markets-every", type=float, default=600)
+    ap.add_argument("--macro-every", type=float, default=600)
     ap.add_argument("--push", action="store_true")
     ap.add_argument(
         "--translate",
@@ -255,7 +303,14 @@ def main(argv: list[str] | None = None) -> None:
     end = time.time() + a.minutes * 60
     while True:
         t0 = time.time()
-        every = (a.cal_every, a.news_every, a.react_every, a.social_every, a.markets_every)
+        every = (
+            a.cal_every,
+            a.news_every,
+            a.react_every,
+            a.social_every,
+            a.markets_every,
+            a.macro_every,
+        )
         changed = step(out, state, t0, *every)
         if changed:
             (out / "live.json").write_text(

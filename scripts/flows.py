@@ -37,7 +37,7 @@ FARSIDE = {
 }
 LLAMA_LIST = "https://stablecoins.llama.fi/stablecoins?includePrices=false"
 LLAMA_CHART = "https://stablecoins.llama.fi/stablecoincharts/all"
-KEEP_DAYS = 120
+KEEP_DAYS = 250
 
 
 def _get(url: str, timeout: float = 25) -> bytes:
@@ -101,10 +101,16 @@ def parse_farside(html: str) -> dict:
     p.feed(html)
     head: list[str] | None = None
     rows = []
+    cum: dict | None = None
     for r in p.rows:
         if head is None:
             if any(c.lower() == "total" for c in r) and len(r) >= 3:
                 head = r
+            continue
+        if r and r[0].strip().lower() == "total" and len(r) == len(head) and cum is None:
+            # dòng Total cuối bảng: luỹ kế từ khi quỹ ra mắt
+            vals = [_flow(c) for c in r[1:]]
+            cum = {head[k + 1]: v for k, v in enumerate(vals) if v is not None}
             continue
         t = _day(r[0]) if r else None
         if t is None or len(r) != len(head):
@@ -118,7 +124,13 @@ def parse_farside(html: str) -> dict:
         rows.append([t, total, funds])
     rows.sort(key=lambda x: x[0])
     funds = [c for c in head[1:] if c.lower() != "total"] if head else []
-    return {"funds": funds, "rows": rows[-KEEP_DAYS:]}
+    out = {"funds": funds, "rows": rows[-KEEP_DAYS:]}
+    if cum:
+        tot = next((v for k, v in cum.items() if k.lower() == "total"), None)
+        out["cum"] = {k: v for k, v in cum.items() if k.lower() != "total"}
+        if tot is not None:
+            out["cumTotal"] = tot
+    return out
 
 
 def fetch_etf(asset: str) -> dict:

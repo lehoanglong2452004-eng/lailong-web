@@ -1,20 +1,16 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
-// Lai Long Web: các chỉ số mà bàn giao dịch tổ chức theo dõi, trong tab Phân tích.
-//   - Crypto (trực tiếp): OI, long/short top trader và mọi tài khoản, mua/bán chủ động của sàn đang chọn; funding 3 sàn,
-//     chênh giá Coinbase,
-//     put/call và DVOL của Deribit
-//   - Biến động Mỹ (trễ ~15 phút, Yahoo): VIX và cấu trúc kỳ hạn, VVIX, SKEW, MOVE, VXN, GVZ, OVX; put/call SPX, SPY, QQQ (CBOE)
-//   - COT của CFTC (hằng tuần): đầu cơ lớn và bên phòng hộ, chỉ số COT 3 năm
-// Bản web đọc data/vol.json, data/cot.json do GitHub Actions cập nhật; bản laptop lấy qua máy chủ (lailong/terminal/macro.py).
-import { getVenue, venueName, onVenue } from "./venue.js?v=202611090440";
-import { venueDerivs } from "./derivs.js?v=202611090440";
-import { getJson, fitCanvas, fmtUsd, MONO } from "./util.js?v=202611090440";
-import { setFresh } from "./fresh.js?v=202611090440";
-import { ivRank, putCall } from "./optpro.js?v=202611090440";
+// Lai Long Web: COT của CFTC và tin, thông báo của CFTC, trong tab Phân tích (Vĩ mô và dòng tiền).
+//   - COT (hằng tuần): nhóm quỹ (quỹ quản lý với hàng hoá, quỹ đòn bẩy với tài chính), tổ chức và nhỏ lẻ; chỉ số COT 3 năm;
+//     bấm một dòng để xem vị thế 3 năm của cả 3 nhóm. Thiếu báo cáo chi tiết thì dùng đầu cơ lớn của báo cáo Legacy.
+//   - Tin CFTC: thông cáo báo chí (tách xử phạt), phát biểu, và mốc công bố báo cáo COT.
+// Bản web đọc cot.json, cftc.json (máy chủ GitHub, xem lailong/terminal/live.py); bản laptop lấy qua máy chủ (macro.py).
+// readVol vẫn giữ cho bảng tóm tắt và kiểm thử; bảng VIX cũ đã chuyển thành kim tâm lý (sentimentview.js).
+import { liveJson } from "./util.js?v=202611090459";
+import { setFresh } from "./fresh.js?v=202611090459";
+import { ivRank } from "./optpro.js?v=202611090459";
+import { nyClock, vnWhen } from "./sessions.js?v=202611090459";
+import { getLang } from "./lang.js?v=202611090459";
 
-const FAPI = "https://fapi.binance.com", DERIBIT = "https://www.deribit.com/api/v2/public";
-const COINS = ["BTC", "ETH", "SOL"];
-const pct = (x, k = 2) => x == null || !isFinite(x) ? "–" : `${x >= 0 ? "+" : ""}${x.toFixed(k)}%`;
 const cls = x => x == null ? "" : x >= 0 ? "up" : "dn";
 
 // ---------- phần tính (kiểm thử được) ----------
@@ -47,135 +43,105 @@ export function cotNote(x) {
   return "";
 }
 
+// mốc công bố báo cáo COT: thứ Sáu 15:30 giờ New York (sau ngày chốt thứ Ba 3 ngày); không tính ngày lễ
+export function cotRelease(tue) {
+  const fri = Date.parse(tue + "T00:00:00Z") + 3 * 864e5;
+  for (const h of [19, 20]) { const t = fri + h * 36e5 + 30 * 60e3, c = nyClock(t); if (c.wd === 5 && c.min === 930) return t; }
+  return fri + 20 * 36e5 + 30 * 60e3;
+}
+export function nextCotRelease(now = Date.now()) {
+  for (let x = Math.ceil(now / 900e3) * 900e3; x < now + 8 * 864e5; x += 900e3) { const c = nyClock(x); if (c.wd === 5 && c.min === 930) return x; }
+  return null;
+}
+// dòng COT dùng nhóm chi tiết khi có, không thì đầu cơ lớn của Legacy
+export function cotView(x) {
+  if (x.fund != null) return { who: x.who[0], net: x.fund, chg: x.fundChg, idx: x.fundIdx, pctOi: x.fundPctOi, hedge: x.rep === "dis" ? x.instIdx : null, hist: (x.h3 || []).map(r => r[1]) };
+  return { who: "Đầu cơ lớn", net: x.spec, chg: x.specChg, idx: x.specIdx, pctOi: x.specPctOi, hedge: x.commIdx, hist: (x.hist || []).map(r => r[1]) };
+}
+export function cotRowNote(x) {
+  const v = cotView(x), w = v.who;
+  if (v.idx == null) return "";
+  if (v.idx >= 90) return `${w} long gần mức cao nhất 3 năm: đám đông đã chật, dễ đảo chiều khi có tin xấu`;
+  if (v.idx <= 10) return `${w} short gần mức cao nhất 3 năm: dễ bị ép mua lại (short squeeze)`;
+  if (v.hedge != null && v.hedge >= 90) return "Bên phòng hộ (hàng thật) mua ròng nhiều nhất 3 năm: thường là vùng giá tốt";
+  if (v.hedge != null && v.hedge <= 10) return "Bên phòng hộ bán ròng nhiều nhất 3 năm: họ coi giá đang cao";
+  if (v.chg != null && v.net && Math.abs(v.chg) / Math.abs(v.net) > 0.15) return `${w} ${v.chg > 0 ? "tăng" : "giảm"} ròng mạnh trong tuần`;
+  return "";
+}
+export const CFTC_CATS = { press: "Thông cáo", enforce: "Xử phạt", speech: "Phát biểu", report: "Báo cáo" };
+
 export function initInst({ $, esc }) {
-  let vol = null, cot = null, crypto = null, us = null, timer = null, busy = false, cotGroup = "";
-  const cv = { vix: fitCanvas($("instVix"), () => drawVix()) };
-  const get = async u => { try { return await getJson(`${u}?t=${Math.floor(Date.now() / 60e3)}`); } catch { return null; } };
-
-  let shown = false;
-  onVenue(() => { if (shown) { crypto = null; renderCrypto(); loadCrypto().then(renderCrypto, () => {}); } });
-  async function loadCrypto() {
-    const safe = p => p.catch(() => null), now = Date.now(), V = getVenue();
-    // OI, long/short, mua/bán chủ động: của sàn đang chọn; funding thì so cả ba sàn lớn
-    const rows = await Promise.all(COINS.map(async c => {
-      const s = `${c}USDT`;
-      const [d, prem, by, ok, cb] = await Promise.all([
-        safe(venueDerivs(V, s)),
-        safe(getJson(`${FAPI}/fapi/v1/premiumIndex?symbol=${s}`)), safe(getJson(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${s}`)),
-        safe(getJson(`https://www.okx.com/api/v5/public/funding-rate?instId=${c}-USDT-SWAP`)),
-        c === "SOL" ? null : safe(getJson(`https://api.exchange.coinbase.com/products/${c}-USD/ticker`)),
-      ]);
-      const L = a => Array.isArray(a) && a.length ? a[a.length - 1].v : null, A = (a, n) => Array.isArray(a) && a.length > n ? a[a.length - 1 - n].v : null;
-      const oiNow = d ? L(d.oi) : null, oi24 = d ? A(d.oi, 24) : null, cbp = cb && +cb.price, ref = d && (d.index || d.mark);
-      return {
-        c, oi: oiNow, oiChg: oiNow && oi24 ? (oiNow / oi24 - 1) * 100 : null, missing: d ? d.missing : [],
-        fBn: prem && prem.lastFundingRate != null ? +prem.lastFundingRate * 100 : null, fBy: by && by.result && by.result.list && by.result.list[0] ? +by.result.list[0].fundingRate * 100 : null,
-        fOk: ok && ok.data && ok.data[0] ? +ok.data[0].fundingRate * 100 : null,
-        top: d ? d.topLong : null, acc: d ? d.accLong : null, taker: d ? L(d.taker) : null,
-        cbPrem: cbp && ref ? (cbp / ref - 1) * 100 : null,
-      };
-    }));
-    // quyền chọn Deribit: put/call và DVOL hiện tại cho BTC, ETH
-    await Promise.all(["BTC", "ETH"].map(async c => {
-      const r = rows.find(x => x.c === c);
-      const [bk, dv] = await Promise.all([safe(getJson(`${DERIBIT}/get_book_summary_by_currency?currency=${c}&kind=option`)), safe(getJson(`${DERIBIT}/get_volatility_index_data?currency=${c}&start_timestamp=${now - 3 * 36e5}&end_timestamp=${now}&resolution=3600`))]);
-      if (bk && bk.result) { let co = 0, po = 0, cvv = 0, pv = 0; for (const o of bk.result) { const p = /-P$/.test(o.instrument_name); if (p) { po += +o.open_interest || 0; pv += +o.volume || 0; } else { co += +o.open_interest || 0; cvv += +o.volume || 0; } } r.pcOi = co ? po / co : null; r.pcVol = cvv ? pv / cvv : null; }
-      if (dv && dv.result && dv.result.data && dv.result.data.length) r.dvol = +dv.result.data[dv.result.data.length - 1][4];
-    }));
-    crypto = { t: Date.now(), rows, V };
-  }
-
+  let cot = null, news = null, timer = null, busy = false, cotGroup = "", open = "", cat = "";
   async function load() {
     if (busy) return; busy = true;
     try {
-      const [v, c, spx, spy, qqq] = await Promise.all([get("data/vol.json"), get("data/cot.json"), get("data/gex_SPX.json"), get("data/gex_SPY.json"), get("data/gex_QQQ.json"), loadCrypto().catch(() => { crypto = null; })]);
-      vol = v; cot = c;
-      us = [["SPX", spx], ["SPY", spy], ["QQQ", qqq]].filter(x => x[1] && x[1].rows).map(([s, ch]) => ({ s, t: ch.updated, ...putCall(ch) }));
+      const [c, n] = await Promise.all([liveJson("cot.json").catch(() => null), liveJson("cftc.json").catch(() => null)]);
+      cot = c || cot; news = n || news;
     } finally { busy = false; }
     render();
   }
+  function render() { renderCot(); renderNews(); }
 
-  function render() { renderCrypto(); renderVol(); renderCot(); }
-
-  function renderCrypto() {
-    const el = $("instCrypto"); if (!el) return;
-    const vn = venueName(crypto ? crypto.V : getVenue());
-    if (!crypto) { el.innerHTML = `<div class="empty">Đang tải từ ${esc(vn)}, Coinbase, Deribit…</div>`; return; }
-    setFresh($("instCryptoFresh"), "live", crypto.t, { label: "Trực tiếp", expect: 6 * 60e3, note: `OI, long/short và mua/bán chủ động của ${vn}; funding so ba sàn Binance, Bybit, OKX; Coinbase, Deribit. Làm mới mỗi 2 phút khi đang mở Phân tích` });
-    const NA = k => x => (x.missing || []).includes(k) ? `<small class="muted">không công bố</small>` : null;
-    const r = crypto.rows, row = (name, tip, f) => `<tr><td class="t" data-tip="${esc(tip)}">${name}</td>${r.map(x => `<td>${f(x)}</td>`).join("")}</tr>`;
-    const fund = v => v == null ? "–" : `<span class="${v > 0.03 ? "dn" : v < 0 ? "up" : ""}">${v.toFixed(4)}%</span>`;
-    const lp = v => v == null ? "–" : `<span class="${v >= 0.6 ? "dn" : v <= 0.42 ? "up" : ""}">${(v * 100).toFixed(1)}%</span>`;
-    el.innerHTML = `<table class="mktab insttab"><thead><tr><th></th>${r.map(x => `<th>${x.c}</th>`).join("")}</tr></thead><tbody>` +
-      row("Open interest", `Tổng giá trị hợp đồng đang mở trên ${vn} và thay đổi 24 giờ. OI tăng cùng giá là tiền mới vào theo xu hướng; OI tăng mà giá đứng là đang dồn đòn bẩy`, x => x.oi == null ? "–" : `${fmtUsd(x.oi)} <small class="${cls(x.oiChg)}">${pct(x.oiChg, 1)}</small>`) +
-      row("Funding Binance", "Phí giữ lệnh mỗi 8 giờ. Dương cao: long trả phí đắt, đám đông đang long. Âm: short đông", x => fund(x.fBn)) +
-      row("Funding Bybit", "Như trên, sàn Bybit", x => fund(x.fBy)) +
-      row("Funding OKX", "Như trên, sàn OKX", x => fund(x.fOk)) +
-      row("Top trader đang long", `Phần trăm vị thế của nhóm tài khoản lớn nhất ${vn} đang long. Đây là tiền lớn`, x => NA("top")(x) || lp(x.top)) +
-      row("Mọi tài khoản đang long", `Phần trăm tài khoản ${vn} đang long. Đây là đám đông; trên 60% là đám đông nghiêng long quá`, x => NA("acc")(x) || lp(x.acc)) +
-      row("Mua/bán chủ động 1 giờ", "Khối lượng mua chủ động chia bán chủ động trong giờ gần nhất. Trên 1 là bên mua đang đánh", x => NA("taker")(x) || (x.taker == null ? "–" : `<span class="${x.taker >= 1 ? "up" : "dn"}">${x.taker.toFixed(2)}</span>`)) +
-      row("Chênh giá Coinbase", `Giá Coinbase (USD, nơi tổ chức Mỹ mua) so với giá chỉ số của ${vn} (USDT). Dương là người Mỹ đang mua mạnh hơn`, x => x.cbPrem == null ? "–" : `<span class="${cls(x.cbPrem)}">${pct(x.cbPrem, 3)}</span>`) +
-      row("Put/Call Deribit (OI · KL)", "Tỷ lệ put/call theo hợp đồng mở và theo khối lượng 24 giờ trên Deribit", x => x.pcOi == null ? "–" : `${x.pcOi.toFixed(2)} · ${x.pcVol != null ? x.pcVol.toFixed(2) : "–"}`) +
-      row("DVOL", "Chỉ số biến động 30 ngày của Deribit (giống VIX cho crypto)", x => x.dvol == null ? "–" : x.dvol.toFixed(1)) +
-      `</tbody></table>`;
-  }
-
-  function renderVol() {
-    const el = $("instVol"); if (!el) return;
-    if (!vol || !vol.items || !vol.items.length) { el.innerHTML = `<div class="empty">Chưa có dữ liệu biến động. Bản web cần chờ lần cập nhật tự động kế tiếp; bản laptop cần khởi động lại máy chủ.</div>`; drawVix(); return; }
-    const last = vol.items.reduce((a, x) => Math.max(a, x.lastT || 0), 0);
-    setFresh($("instVolFresh"), "delay", last || vol.updated, { label: "Trễ ~15 phút (Yahoo)", expect: 4 * 864e5, note: "Chỉ số của CBOE qua Yahoo Finance, trễ khoảng 15 phút trong giờ giao dịch Mỹ; ngoài giờ là giá đóng cửa. Bản web cập nhật mỗi 30 phút" });
-    const kp = vol.items.map(x => {
-      const s = x.series || [], prev = s.length > 1 ? s[s.length - 2][1] : null, ch = prev && x.last ? (x.last / prev - 1) * 100 : null, rk = s.length > 30 ? ivRank(s.map(p => p[1]), x.last) : null;
-      return `<div data-tip="${esc(x.desc)}"><small>${esc(x.sym)}</small><b>${x.last != null ? x.last.toFixed(x.last >= 100 ? 0 : 2) : "–"} <small class="${ch == null ? "" : ch >= 0 ? "dn" : "up"}">${pct(ch, 1)}</small></b>${rk ? `<small>rank 1 năm ${Math.round(rk.rank * 100)}%</small>` : ""}</div>`;
-    }).join("");
-    const lines = readVol(vol.items);
-    const pcs = us && us.length ? `<div class="mh">Put/call quyền chọn Mỹ (CBOE, trễ 15 phút)</div><div class="kpis">${us.map(u => `<div data-tip="Theo hợp đồng mở (OI) và theo khối lượng hôm nay"><small>${u.s}</small><b>${u.oi != null ? u.oi.toFixed(2) : "–"} <small>· KL ${u.vol != null ? u.vol.toFixed(2) : "–"}</small></b></div>`).join("")}</div>` : "";
-    el.innerHTML = `<div class="kpis">${kp}</div><ul class="gexread optread">${lines.map(l => `<li class="${l.dir > 0 ? "pos" : l.dir < 0 ? "neg" : ""}">${esc(l.text)}</li>`).join("")}</ul>${pcs}`;
-    drawVix();
-  }
-
-  function drawVix() {
-    const { ctx, w, h } = cv.vix; ctx.clearRect(0, 0, w, h);
-    const v = vol && vol.items && vol.items.find(x => x.sym === "VIX"), v3 = vol && vol.items && vol.items.find(x => x.sym === "VIX3M");
-    if (!v || !v.series || v.series.length < 2) return;
-    const s = v.series, pad = { l: 34, r: 150, t: 12, b: 16 }, t0 = s[0][0], t1 = s[s.length - 1][0];
-    let lo = Math.min(...s.map(x => x[1])), hi = Math.max(...s.map(x => x[1])); lo = Math.floor(lo - 1); hi = Math.ceil(hi + 1);
-    const X = t => pad.l + (t - t0) / (t1 - t0 || 1) * (w - pad.l - pad.r), Y = y => h - pad.b - (y - lo) / (hi - lo) * (h - pad.t - pad.b);
-    ctx.font = `10px ${MONO}`; ctx.fillStyle = "#a3a3a3"; ctx.strokeStyle = "#2b2b2b"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for (const y of [lo, (lo + hi) / 2, hi]) { ctx.beginPath(); ctx.moveTo(pad.l, Math.round(Y(y)) + 0.5); ctx.lineTo(w - pad.r, Math.round(Y(y)) + 0.5); ctx.stroke(); ctx.fillText(y.toFixed(0), pad.l - 4, Y(y)); }
-    for (const [lv, col] of [[30, "rgba(229,72,77,.5)"], [14, "rgba(31,181,122,.5)"]]) if (lv > lo && lv < hi) { ctx.strokeStyle = col; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(pad.l, Y(lv)); ctx.lineTo(w - pad.r, Y(lv)); ctx.stroke(); ctx.setLineDash([]); }
-    if (v3 && v3.series) { ctx.strokeStyle = "rgba(78,161,255,.7)"; ctx.lineWidth = 1; ctx.beginPath(); v3.series.filter(x => x[0] >= t0).forEach((x, i) => i ? ctx.lineTo(X(x[0]), Y(x[1])) : ctx.moveTo(X(x[0]), Y(x[1]))); ctx.stroke(); }
-    ctx.strokeStyle = "#ff9f1c"; ctx.lineWidth = 1.6; ctx.beginPath(); s.forEach((x, i) => i ? ctx.lineTo(X(x[0]), Y(x[1])) : ctx.moveTo(X(x[0]), Y(x[1]))); ctx.stroke(); ctx.lineWidth = 1;
-    ctx.textAlign = "left"; ctx.fillStyle = "#ff9f1c"; ctx.fillText("VIX 1 năm", pad.l + 4, pad.t); ctx.fillStyle = "#4ea1ff"; ctx.fillText("VIX3M", pad.l + 74, pad.t);
-    // cấu trúc kỳ hạn hiện tại: 9 ngày, 30 ngày, 3 tháng, 6 tháng
-    const ts = [["9n", "VIX9D"], ["30n", "VIX"], ["3th", "VIX3M"], ["6th", "VIX6M"]].map(([k, sy]) => [k, vol.items.find(x => x.sym === sy)]).filter(x => x[1] && x[1].last);
-    if (ts.length >= 2) {
-      const x0 = w - pad.r + 22, x1 = w - 12, vals = ts.map(x => x[1].last), l2 = Math.min(...vals) - 1, h2 = Math.max(...vals) + 1, Y2 = y => h - pad.b - (y - l2) / (h2 - l2) * (h - pad.t - pad.b - 14);
-      const XX = i => x0 + i / (ts.length - 1) * (x1 - x0), back = ts[0][1].last > ts[ts.length - 1][1].last;
-      ctx.fillStyle = "#a3a3a3"; ctx.textAlign = "center"; ctx.fillText(back ? "Kỳ hạn: đảo ngược" : "Kỳ hạn: contango", (x0 + x1) / 2, pad.t);
-      ctx.strokeStyle = back ? "#e5484d" : "#1fb57a"; ctx.lineWidth = 2; ctx.beginPath(); ts.forEach((x, i) => i ? ctx.lineTo(XX(i), Y2(x[1].last)) : ctx.moveTo(XX(i), Y2(x[1].last))); ctx.stroke(); ctx.lineWidth = 1;
-      ts.forEach((x, i) => { ctx.fillStyle = "#e6e6e6"; ctx.beginPath(); ctx.arc(XX(i), Y2(x[1].last), 2.5, 0, 7); ctx.fill(); ctx.fillStyle = "#a3a3a3"; ctx.fillText(x[0], XX(i), h - 5); ctx.fillText(x[1].last.toFixed(1), XX(i), Y2(x[1].last) - 9); });
-    }
+  const n0 = v => v == null ? "–" : `${v >= 0 ? "+" : "−"}${Math.abs(Math.round(v)).toLocaleString("en-US")}`;
+  const ddmm = t => { const d = new Date(t); return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`; };
+  const spark = (hs, W = 110, H = 22) => {
+    const v = hs.slice(-52), lo = Math.min(...v), hi = Math.max(...v); if (v.length < 2 || !(hi > lo)) return "";
+    const up = v[v.length - 1] >= v[0], pts = v.map((y, i) => `${(i / (v.length - 1) * W).toFixed(1)},${(H - 2 - (y - lo) / (hi - lo) * (H - 4)).toFixed(1)}`).join(" ");
+    return `<svg width="${W}" height="${H}" class="spark"><polyline points="${pts}" fill="none" class="${up ? "su" : "sd"}" stroke-width="1.3"/></svg>`;
+  };
+  const bar = v => v == null ? "–" : `<span class="cotbar" data-tip="Chỉ số COT 3 năm: ${v.toFixed(0)} (0 = ngắn nhất, 100 = dài nhất trong 3 năm)"><i style="left:${v}%"></i></span> <b class="${v >= 90 || v <= 10 ? "warn" : ""}">${v.toFixed(0)}</b>`;
+  // biểu đồ 3 năm của 3 nhóm (quỹ, tổ chức, nhỏ lẻ)
+  function chart3(x) {
+    const H3 = x.h3 && x.h3.length > 2 ? x.h3 : (x.hist || []).map(r => [r[0], r[1], r[2], null]);
+    if (H3.length < 3) return `<div class="empty">Chưa đủ lịch sử.</div>`;
+    const who = x.who || ["Đầu cơ lớn", "Bên phòng hộ", "Nhỏ lẻ"], W = 900, H = 200, P = 6;
+    const all = H3.flatMap(r => [r[1], r[2], r[3]]).filter(v => v != null), lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+    const X = i => (P + i / (H3.length - 1) * (W - 2 * P)).toFixed(1), Y = v => (H - P - (v - lo) / (hi - lo || 1) * (H - 2 * P)).toFixed(1);
+    const line = (k, c) => H3.some(r => r[k] != null) ? `<polyline points="${H3.map((r, i) => r[k] == null ? "" : `${X(i)},${Y(r[k])}`).join(" ")}" class="${c}" fill="none" vector-effect="non-scaling-stroke"/>` : "";
+    const yr = H3.map((r, i) => [r[0].slice(0, 4), i]).filter((r, i, a) => i && r[0] !== a[i - 1][0]);
+    return `<div class="cot3"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" class="ax"/>${yr.map(([, i]) => `<line x1="${X(i)}" x2="${X(i)}" y1="0" y2="${H}" class="gr"/>`).join("")}${line(1, "l1")}${line(2, "l2")}${line(3, "l3")}</svg>` +
+      `<div class="fbx abs"><span style="left:0">${esc(H3[0][0].split("-").reverse().join("/"))}</span>${yr.map(([y, i]) => `<span class="mid" style="left:${(+X(i) / W * 100).toFixed(1)}%">${esc(y)}</span>`).join("")}<span style="right:0">${esc(H3[H3.length - 1][0].split("-").reverse().join("/"))}</span></div>` +
+      `<p class="note"><b class="k1">━ ${esc(who[0])}</b> · <b class="k2">━ ${esc(who[1])}</b>${H3.some(r => r[3] != null) ? ` · <b class="k3">━ ${esc(who[2])}</b>` : ""} · vị thế ròng (long trừ short), số hợp đồng, ${H3.length} tuần. Cao nhất ${n0(hi)}, thấp nhất ${n0(lo)}</p></div>`;
   }
 
   function renderCot() {
     const el = $("instCot"); if (!el) return;
     if (!cot || !cot.items || !cot.items.length) { el.innerHTML = `<div class="empty">Chưa có dữ liệu COT. Bản web cần chờ lần cập nhật tự động kế tiếp; bản laptop cần khởi động lại máy chủ.</div>`; return; }
-    const d = cot.items.reduce((a, x) => x.date > a ? x.date : a, "");
-    setFresh($("instCotFresh"), "weekly", Date.parse(d + "T20:30:00Z") + 3 * 864e5, { label: `Hằng tuần · số liệu ngày ${d.split("-").reverse().join("/")}`, expect: 10 * 864e5, note: "CFTC chốt vị thế mỗi thứ Ba, công bố chiều thứ Sáu giờ Mỹ (sáng thứ Bảy giờ Việt Nam). Số liệu luôn trễ 3 ngày so với ngày chốt" });
+    const d = cot.items.reduce((a, x) => x.date > a ? x.date : a, ""), rel = cotRelease(d), nx = nextCotRelease();
+    setFresh($("instCotFresh"), "weekly", rel, { label: `Báo cáo ${ddmm(rel)} (số liệu thứ Ba ${ddmm(Date.parse(d))})`, expect: 10 * 864e5, note: "CFTC chốt vị thế mỗi thứ Ba, công bố 15:30 thứ Sáu giờ New York. Tuần có ngày lễ Mỹ thì lùi lại" });
+    $("instCotNext").textContent = nx ? `kỳ tới: ${vnWhen(nx)} ${ddmm(nx + 7 * 36e5)} giờ VN` : "";
     const groups = [...new Set(cot.items.map(x => x.group))];
-    $("instCotTabs").innerHTML = [["", "Tất cả"], ...groups.map(g => [g, g])].map(([g, n]) => `<button class="${g === cotGroup ? "on" : ""}" data-cg="${esc(g)}">${esc(n)}</button>`).join("");
-    const bar = v => v == null ? "–" : `<span class="cotbar" data-tip="Chỉ số COT 3 năm: ${v.toFixed(0)} (0 = thấp nhất, 100 = cao nhất)"><i style="left:${v}%"></i></span> ${v.toFixed(0)}`;
-    const n = v => v == null ? "–" : `${v >= 0 ? "+" : ""}${Math.round(v).toLocaleString("en-US")}`;
-    const spark = x => { const hs = x.hist.map(r => r[1]), lo = Math.min(...hs), hi = Math.max(...hs), W = 90, H = 20; if (!(hi > lo)) return ""; const pts = hs.map((v, i) => `${(i / (hs.length - 1) * W).toFixed(1)},${(H - (v - lo) / (hi - lo) * H).toFixed(1)}`).join(" "); return `<svg width="${W}" height="${H}" class="spark"><polyline points="${pts}" fill="none" stroke="#ff9f1c" stroke-width="1.2"/></svg>`; };
-    el.innerHTML = `<div class="tablewrap"><table class="mktab"><thead><tr><th>Hợp đồng</th><th data-tip="Đầu cơ lớn (non-commercial: quỹ, CTA): long trừ short">Đầu cơ ròng</th><th>Đổi tuần</th><th data-tip="Vị thế ròng của đầu cơ so với tổng hợp đồng mở">% OI</th><th data-tip="Vị trí vị thế ròng đầu cơ trong 3 năm">COT đầu cơ</th><th data-tip="Bên phòng hộ (commercial: nhà sản xuất, ngân hàng): vị trí vị thế ròng trong 3 năm">COT phòng hộ</th><th>3 năm</th><th>Ghi chú</th></tr></thead><tbody>` +
-      cot.items.filter(x => !cotGroup || x.group === cotGroup).map(x => `<tr><td class="t"><b>${esc(x.sym)}</b> ${esc(x.name)}</td><td class="${cls(x.spec)}">${n(x.spec)}</td><td class="${cls(x.specChg)}">${n(x.specChg)}</td><td>${x.specPctOi != null ? x.specPctOi.toFixed(1) + "%" : "–"}</td><td>${bar(x.specIdx)}</td><td>${bar(x.commIdx)}</td><td>${spark(x)}</td><td class="t muted">${esc(cotNote(x))}</td></tr>`).join("") + `</tbody></table></div>`;
+    $("instCotTabs").innerHTML = [["", "Tất cả"], ...groups.map(g => [g, g])].map(([g, nm]) => `<button class="${g === cotGroup ? "on" : ""}" data-cg="${esc(g)}">${esc(nm)}</button>`).join("");
+    const rows = cot.items.filter(x => !cotGroup || x.group === cotGroup);
+    el.innerHTML = `<div class="tablewrap"><table class="mktab cottab"><thead><tr><th>Thị trường</th><th data-tip="Quỹ quản lý (báo cáo Disaggregated) với hàng hoá, quỹ đòn bẩy (báo cáo TFF) với tài chính; thiếu thì dùng đầu cơ lớn (Legacy)">Nhóm theo dõi</th><th>Vị thế ròng</th><th>Đổi trong tuần</th><th data-tip="Vị thế ròng so với tổng hợp đồng mở">% OI</th><th>Chỉ số COT 3 năm</th><th>52 tuần</th><th>Nhận xét</th></tr></thead><tbody>` +
+      rows.map(x => { const v = cotView(x), note = cotRowNote(x), on = open === x.sym;
+        return `<tr class="cotrow${on ? " on" : ""}" data-cs="${esc(x.sym)}"><td class="t"><b>${esc(x.name)}</b> <small class="muted">${esc(x.sym)}</small></td><td class="t muted">${esc(v.who)}</td><td class="${cls(v.net)}">${n0(v.net)}</td><td class="${cls(v.chg)}">${n0(v.chg)}</td><td>${v.pctOi != null ? v.pctOi.toFixed(1) + "%" : "–"}</td><td>${bar(v.idx)}</td><td>${spark(v.hist)}</td><td class="t ${v.idx >= 90 || v.idx <= 10 ? "warn" : "muted"}">${esc(note)}</td></tr>` +
+          (on ? `<tr class="cotx"><td colspan="8">${chart3(x)}</td></tr>` : ""); }).join("") +
+      `</tbody></table></div>`;
+  }
+
+  function renderNews() {
+    const el = $("cftcBody"); if (!el) return;
+    const items = [...((news && news.items) || [])];
+    if (cot && cot.items && cot.items.length) {
+      const d = cot.items.reduce((a, x) => x.date > a ? x.date : a, ""), t = cotRelease(d);
+      items.push({ t, cat: "report", title: "Commitments of Traders weekly report released", vi: `Báo cáo COT tuần đã công bố (số liệu thứ Ba ${ddmm(Date.parse(d))})`, url: "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm", exact: true });
+    }
+    items.sort((a, b) => b.t - a.t);
+    $("cftcCats").innerHTML = [["", "Tất cả"], ...Object.entries(CFTC_CATS)].map(([k, nm]) => `<button class="${k === cat ? "on" : ""}" data-cc="${k}">${esc(nm)}</button>`).join("");
+    if (news) setFresh($("cftcFresh"), "delay", news.updated, { label: "Lấy lại mỗi 30 phút", expect: 4 * 36e5, note: "Đọc trang danh sách thông cáo và phát biểu công khai của cftc.gov (CFTC tạm tắt RSS). Trang chỉ ghi ngày nên giờ hiện là ngày đăng" });
+    const shown = items.filter(x => !cat || x.cat === cat).slice(0, 25), vi = getLang() === "vi";
+    el.innerHTML = shown.length ? shown.map(x => `<a class="cfti" href="${esc(x.url)}" target="_blank" rel="noopener"><span class="muted">${x.exact ? `${ddmm(x.t + 7 * 36e5)} ${vnWhen(x.t, x.t)}` : ddmm(x.t)}</span><span class="cftc ${esc(x.cat)}">${esc(CFTC_CATS[x.cat] || x.cat)}</span><span>${esc(vi && x.vi ? x.vi : x.title)}<small>${vi && x.vi && x.vi !== x.title ? `${esc(x.title)} · ` : ""}cftc.gov</small></span></a>`).join("")
+      : `<div class="empty">${news ? "Không có tin trong mục này." : "Chưa có tin CFTC. Bản web cần chờ lần cập nhật tự động kế tiếp."}</div>`;
+    if (news && news.errors && news.errors.length) el.insertAdjacentHTML("beforeend", `<p class="muted small">Nguồn lỗi lần gần nhất: ${esc(news.errors.join("; "))}</p>`);
   }
 
   $("instCotTabs").onclick = e => { const b = e.target.closest("[data-cg]"); if (b) { cotGroup = b.dataset.cg; renderCot(); } };
+  $("instCot").onclick = e => { const r = e.target.closest("[data-cs]"); if (r) { open = open === r.dataset.cs ? "" : r.dataset.cs; renderCot(); } };
+  if (typeof document !== "undefined") document.addEventListener("lailong-lang", () => renderNews());
+  $("cftcCats").onclick = e => { const b = e.target.closest("[data-cc]"); if (b) { cat = b.dataset.cc; renderNews(); } };
   return {
-    show() { shown = true; load(); clearInterval(timer); timer = setInterval(load, 120e3); },
-    hide() { shown = false; clearInterval(timer); timer = null; },
+    show() { load(); clearInterval(timer); timer = setInterval(load, 600e3); },
+    hide() { clearInterval(timer); timer = null; },
   };
 }

@@ -4,12 +4,12 @@
 // Bản web đọc markets.json ở nhánh live (máy chủ GitHub lấy giá Yahoo mỗi 10 phút, lailong/terminal/live.py) hoặc data/,
 // bản nào mới hơn; bản trên laptop máy chủ lấy trực tiếp (xem lailong/terminal/markets.py).
 // Hàng hoá đuôi USDT và BTC, ETH lấy thẳng từ sàn crypto trong trình duyệt (usdtboard.js), chạy từng giây.
-import { getJson, liveJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202611090440";
-import { setFresh, freshTag } from "./fresh.js?v=202611090440";
-import { layoutGroups, heatColor, HEAT_COLORS } from "./treemap.js?v=202611090440";
-import { EXCHANGES } from "./exchanges.js?v=202611090440";
-import { BOARD, VENUE_SHORT, liveBoard } from "./usdtboard.js?v=202611090440";
-import { marketStatus, vnTime } from "./sessions.js?v=202611090440";
+import { getJson, liveJson, fmtUsd, fmtVol, fmtTime, fmtPct } from "./util.js?v=202611090459";
+import { setFresh, freshTag } from "./fresh.js?v=202611090459";
+import { layoutGroups, heatColor, HEAT_COLORS } from "./treemap.js?v=202611090459";
+import { EXCHANGES } from "./exchanges.js?v=202611090459";
+import { BOARD, VENUE_SHORT, liveBoard } from "./usdtboard.js?v=202611090459";
+import { marketStatus, vnTime } from "./sessions.js?v=202611090459";
 
 const HL = "https://api.hyperliquid.xyz/info";
 const LIQ_WS = "wss://fstream.binance.com/market/ws/!forceOrder@arr";
