@@ -1,5 +1,5 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
-// Lai Long Web: vẽ đường ngang và vùng giá lên Bookmap và Footprint, lưu theo từng mã trên máy này.
+// Lai Long Web: vẽ đường ngang và vùng giá lên biểu đồ footprint, lưu theo từng mã trên máy này.
 //   Bấm "─ Đường" rồi bấm vào biểu đồ: một đường ngang tại giá đó.
 //   Bấm "▤ Vùng" rồi kéo dọc trên biểu đồ: một vùng giá (hỗ trợ / kháng cự tự đánh dấu).
 //   Bấm đúp lên đường hoặc mép vùng để xoá. Muốn được báo khi giá chạm thì đặt mức giá trong nút 🔔.

@@ -2,12 +2,12 @@
 // Lai Long Web: thẻ Đồng thuận 4 lớp ở trang Nhật ký, và cảnh báo khi một mã trong danh sách theo dõi có đủ 4 lớp cùng chiều.
 // Quét mỗi 5 phút bằng nến 1 giờ đã đóng của sàn đang chọn. Một mã vào trạng thái đồng thuận thì báo một lần; hết đồng thuận
 // rồi quay lại thì báo lần nữa. Đang khoá giao dịch thì không báo. Danh sách mã và trạng thái lưu trên máy này.
-import { venueBars, getVenue, venueName } from "./venue.js?v=202611090506";
-import { evaluate, consensusHtml, consensusText } from "./consensus.js?v=202611090506";
-import { leans, usdTrend, riskMood, etfFlow } from "./compass.js?v=202611090506";
-import { bigEvents } from "./shock.js?v=202611090506";
-import { guard } from "./journal.js?v=202611090506";
-import { fmtDate, fmtVol } from "./util.js?v=202611090506";
+import { venueBars, getVenue, venueName } from "./venue.js?v=202611141528";
+import { evaluate, consensusHtml, consensusText } from "./consensus.js?v=202611141528";
+import { leans, usdTrend, riskMood, etfFlow } from "./compass.js?v=202611141528";
+import { bigEvents } from "./shock.js?v=202611141528";
+import { guard } from "./journal.js?v=202611141528";
+import { fmtDate, fmtVol } from "./util.js?v=202611141528";
 
 const STORE = "lailong.consensus";
 const DEF_SYMS = "BTCUSDT, ETHUSDT, SOLUSDT, XAUUSDT";

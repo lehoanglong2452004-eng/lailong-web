@@ -3,8 +3,8 @@
 //   - Quỹ ETF Bitcoin/Ethereum giao ngay (Farside): tiền vào/ra ròng mỗi phiên và từng quỹ, luỹ kế từ khi ra mắt, chuỗi phiên.
 //   - Stablecoin (DefiLlama): tổng lượng đang lưu hành, phát hành ròng mỗi ngày, từng đồng lớn và thị phần.
 // Bản web đọc flows.json (máy chủ GitHub lấy lại mỗi giờ, xem lailong/terminal/live.py); bản laptop lấy qua máy chủ (flows.py).
-import { getJson, liveJson } from "./util.js?v=202611090506";
-import { setFresh } from "./fresh.js?v=202611090506";
+import { getJson, liveJson } from "./util.js?v=202611141528";
+import { setFresh } from "./fresh.js?v=202611141528";
 
 const LLAMA = "https://stablecoins.llama.fi/stablecoins?includePrices=false";
 const usdM = x => x == null || !isFinite(x) ? "–" : `${x >= 0 ? "+" : "−"}${Math.abs(x) >= 1000 ? (Math.abs(x) / 1000).toFixed(2) + " tỷ" : Math.abs(x).toFixed(1) + " tr"}`;

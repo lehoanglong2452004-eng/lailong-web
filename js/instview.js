@@ -5,11 +5,11 @@
 //   - Tin CFTC: thông cáo báo chí (tách xử phạt), phát biểu, và mốc công bố báo cáo COT.
 // Bản web đọc cot.json, cftc.json (máy chủ GitHub, xem lailong/terminal/live.py); bản laptop lấy qua máy chủ (macro.py).
 // readVol vẫn giữ cho bảng tóm tắt và kiểm thử; bảng VIX cũ đã chuyển thành kim tâm lý (sentimentview.js).
-import { liveJson } from "./util.js?v=202611090506";
-import { setFresh } from "./fresh.js?v=202611090506";
-import { ivRank } from "./optpro.js?v=202611090506";
-import { nyClock, vnWhen } from "./sessions.js?v=202611090506";
-import { getLang } from "./lang.js?v=202611090506";
+import { liveJson } from "./util.js?v=202611141528";
+import { setFresh } from "./fresh.js?v=202611141528";
+import { ivRank } from "./optpro.js?v=202611141528";
+import { nyClock, vnWhen } from "./sessions.js?v=202611141528";
+import { getLang } from "./lang.js?v=202611141528";
 
 const cls = x => x == null ? "" : x >= 0 ? "up" : "dn";
 

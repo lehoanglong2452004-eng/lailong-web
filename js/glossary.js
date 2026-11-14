@@ -1,256 +1,6 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Từ điển giải thích thuật ngữ hiển thị trong ngăn "Giải thích" và chú thích khi rê chuột.
 export const GLOSSARY = [
-  // ───────────── Bookmap ─────────────
-  {
-    id: "large-lot", group: "Bookmap", term: "Lệnh chờ lớn (Large Lot Tracker)",
-    short: "Đánh dấu lệnh chờ lớn bất thường ngay trên bản đồ, suốt thời gian nó đứng, kèm khối lượng và kết cục.",
-    body: "<p>Lấy từ bộ theo dõi tường: lệnh chờ ≥ 6 lần trung vị và thuộc top 3% trong ±1% quanh giá. Vạch sáng chạy theo thời gian lệnh đứng, vòng tròn ở cuối càng to thì lệnh càng lớn, số bên cạnh là khối lượng.</p><p><b>Kết cục:</b> chấm đặc giữa vòng là <b>bị ăn</b> (có người khớp vào, tường thật); dấu × và nét đứt là <b>rút khi giá tới gần</b> (nghi tường giả); vòng rỗng là rút khi giá còn xa. Xanh là chờ mua, đỏ là chờ bán.</p>"
-  },
-  {
-    id: "bm-sweeps", group: "Bookmap", term: "Lệnh quét (Sweeps)",
-    short: "Một lệnh chủ động ăn qua từ 3 mức giá trở lên trong một lần: người vào lệnh chấp nhận trượt giá để vào ngay.",
-    body: "<p>Vạch dọc từ giá đầu tới giá cuối của lệnh, mũi tên theo hướng quét (xanh lơ: mua, hồng: bán). Chỉ hiện lệnh từ ngưỡng \"vừa\" của Smart Tape (top 5%) trở lên; lệnh cá voi có ghi khối lượng.</p><p>Nhiều lệnh quét cùng hướng liên tiếp thường đi trước một cú chạy. Lệnh quét vào thẳng tường lớn mà giá không đi tiếp là dấu hiệu hấp thụ.</p>"
-  },
-  {
-    id: "bm-absorb", group: "Bookmap", term: "Hấp thụ trên Bookmap (Absorption)",
-    short: "Phía chủ động đánh dồn dập vào một mức giá mà giá không đi qua được: phía bị động đang đỡ hoặc chặn.",
-    body: "<p>Mỗi 5 giây, cộng khối lượng mua và bán chủ động ở từng mức giá. Ô nào thuộc top 1% và gấp ít nhất 5 lần mức thường của 15 phút gần nhất mà 15 giây sau giá vẫn không vượt quá mức đó hơn 1 bước giá thì đánh dấu ô chữ <b>A</b>.</p><p><b>A đỏ:</b> mua chủ động bị phía bán chặn, kháng cự thật. <b>A xanh:</b> bán chủ động bị phía mua đỡ, hỗ trợ thật. Hấp thụ ở rìa vùng giá sau một đợt chạy hay báo trước đảo chiều.</p>"
-  },
-  {
-    id: "bm-stops", group: "Bookmap", term: "Chuỗi cắt lỗ (Stops)",
-    short: "Chuỗi lệnh cùng phía khớp liên tục đẩy giá đi xa trong vòng 1 giây: thường là cắt lỗ hoặc thanh lý dây chuyền.",
-    body: "<p>Điều kiện: trong 1 giây có ít nhất 10 lệnh cùng phía, giá đi một mạch ít nhất 6 bước giá hoặc 0,04%, và lệnh mới nhất nằm ở đầu chuỗi. Các chuỗi liền nhau được nối thành một. Vẽ đường chéo nét đứt từ đầu tới cuối chuỗi, ô chữ <b>S</b> ở cuối (vàng: mua dây chuyền, tím: bán dây chuyền).</p><p>Sau chuỗi cắt lỗ giá hay chạy quá đà rồi hồi lại, vì người buộc phải thoát đã thoát xong.</p>"
-  },
-  {
-    id: "bm-overview",
-    group: "Bookmap",
-    term: "Toàn cảnh",
-    short: "Thu cả lịch sử sổ lệnh đang có và toàn bộ biên độ giá vào một màn hình, tự giãn ra khi dữ liệu dài thêm.",
-    body: "<p>Bấm <b>⛶ Toàn cảnh</b> để xem bức tranh lớn: các tường lệnh chờ đã đứng ở đâu, giá đã đi qua chúng thế nào trong mấy giờ qua. Bản đồ tự giãn theo thời gian khi dữ liệu tích thêm, bên phải luôn là bây giờ.</p><p>Lăn chuột, kéo hoặc bấm đúp là thoát Toàn cảnh để soi chi tiết. Bấm lại nút để quay về.</p><p>Trang tự giữ khoảng <b>4 giờ</b> sổ lệnh từ lúc mở: 5 phút gần nhất chi tiết từng 0,1 giây (đúng nhịp sàn gửi sổ lệnh), tới 20 phút gộp thành cột 0,5 giây, cũ hơn gộp thành cột 2 giây. Muốn mở trang lên là có ngay lịch sử cả ngày, thêm mã vào <b>Máy ghi 24/7</b> trong ⚙ Cài đặt. Mỗi cột chụp toàn bộ sổ lệnh trong ±1% quanh giá.</p>"
-  },
-  {
-    id: "bm-replay", group: "Bookmap", term: "Phát lại phiên (Replay)",
-    short: "Xem lại sổ lệnh và lệnh khớp của một khoảng thời gian đã ghi, như đang diễn ra, với tốc độ x1 tới x60.",
-    body: "<p>Cần <b>Máy ghi 24/7</b> chạy trên laptop (⚙ Cài đặt). Bấm <b>▶ Phát lại</b>, chọn thời điểm bắt đầu và độ dài rồi bấm Tải. Bản đồ chuyển sang dữ liệu đã ghi, chạy theo đồng hồ ảo: bấm ▶/⏸ hoặc phím cách để phát hay dừng, kéo thanh thời gian để tua, chọn tốc độ.</p><p>Dữ liệu ghi mỗi 2 giây một cột, trong ±1% quanh giá. Bấm ✕ hoặc đổi mã để quay về thị trường trực tiếp; kết nối trực tiếp vẫn chạy ngầm trong lúc phát lại.</p>"
-  },
-  {
-    id: "bm-settings",
-    group: "Bookmap",
-    term: "Cài đặt Bookmap",
-    short: "Chỉnh màu bản đồ, bong bóng, các đường và các cột bên phải. Lưu trên máy của bạn, nhấp đúp vào ô để về mặc định.",
-    body: "<p>Bảng cài đặt chia bốn phần: <b>màu bản đồ</b>, <b>bong bóng khối lượng</b>, <b>đường trên bản đồ</b> và <b>cột bên phải</b>. Mọi thay đổi được lưu trên trình duyệt của bạn, mở lại trang vẫn giữ.</p><p>Nhấp đúp vào một ô để đưa ô đó về mặc định.</p>"
-  },
-  {
-    id: "bm-colors",
-    group: "Bookmap",
-    term: "Bảng màu",
-    short: "Bookmap: xanh đen, xanh nhạt, vàng, cam, đỏ (đỏ là dày nhất). Xám: đen tới trắng.",
-    body: "<p>Màu càng nóng thì lệnh chờ ở mức giá đó càng dày. Bảng xám giúp nhìn bong bóng và đường giá rõ hơn khi bản đồ quá rực.</p>"
-  },
-  {
-    id: "bm-cutoff",
-    group: "Bookmap",
-    term: "Ngưỡng cắt trên / dưới",
-    short: "Lệnh chờ từ phân vị cắt trên trở lên tô màu đậm nhất; dưới phân vị cắt dưới để nền tối.",
-    body: "<p>Các mức lệnh chờ đang thấy được xếp từ nhỏ tới lớn. <b>Cắt trên 99%</b> nghĩa là 1% mức dày nhất cùng tô màu đỏ đậm nhất, phần còn lại trải theo thang log nên thanh khoản bình thường chìm màu xanh đậm. Màu đậm nhất luôn cần dày ít nhất 8 lần mức trung vị, nên sổ lệnh dày đều không bị sáng rực cả bản đồ. <b>Cắt dưới 30%</b> nghĩa là 30% mức mỏng nhất để nền tối, đỡ rối mắt.</p><p>Hạ cắt trên (ví dụ 95%) thì nhiều tường hiện đỏ hơn; tăng cắt dưới (ví dụ 20%) thì chỉ còn chỗ dày nổi lên.</p>"
-  },
-  {
-    id: "bm-auto",
-    group: "Bookmap",
-    term: "Tự chỉnh tương phản",
-    short: "Liên tục: tính lại ngưỡng màu mỗi lần vẽ. Khi căn giữa lại: chỉ tính lại khi giá chạy ra mép hoặc khi phóng to/thu nhỏ. Giữ nguyên: khoá ngưỡng, chỉ tính lại khi phóng to / thu nhỏ hoặc đổi chế độ.",
-    body: "<p>Giữ nguyên giúp so màu giữa các thời điểm (cùng một màu là cùng một lượng lệnh chờ). Liên tục giúp bản đồ luôn rõ nhưng màu có thể đổi khi có tường lớn xuất hiện.</p>"
-  },
-  {
-    id: "bm-smooth",
-    group: "Bookmap",
-    term: "Làm mịn dọc",
-    short: "Làm mịn bản đồ theo chiều giá. Tự động chỉ làm khi thu nhỏ nhiều (nhiều mức giá trong một điểm ảnh).",
-    body: "<p>Khi thu nhỏ, mỗi điểm ảnh chứa nhiều mức giá nên bản đồ dễ bị lốm đốm. Làm mịn lấy trung bình với các điểm ảnh trên dưới để thấy vùng thanh khoản rõ hơn. Khi phóng to sát, nên tắt để thấy từng mức giá.</p>"
-  },
-  {
-    id: "bm-dim",
-    group: "Bookmap",
-    term: "Làm tối bản đồ",
-    short: "Giảm độ sáng bản đồ để bong bóng, đường giá và nến nổi lên.",
-    body: "<p>Giảm độ sáng bản đồ để bong bóng, đường giá và nến nổi lên.</p>"
-  },
-  {
-    id: "bm-aggregate",
-    group: "Bookmap",
-    term: "Sổ lệnh cộng dồn trên bản đồ",
-    short: "Mỗi mức giá tô theo tổng lệnh chờ từ giá hiện tại tới mức đó, thay vì riêng mức đó.",
-    body: "<p>Cho biết giá phải ăn hết bao nhiêu lệnh chờ để đi tới một mức. Càng xa giá càng sáng, nên chỗ màu tăng vọt là nơi có tường.</p>"
-  },
-  {
-    id: "bm-cluster",
-    group: "Bookmap",
-    term: "Gom bong bóng",
-    short: "Cách gộp lệnh khớp thành một bong bóng: thông minh, theo thời gian, theo khối lượng hoặc theo giá.",
-    body: "<ul><li><b>Thông minh:</b> mỗi nhóm điểm ảnh một bong bóng, rồi gộp các quả chồng lên nhau nhiều. Mặc định.</li><li><b>Theo thời gian:</b> mỗi N giây một bong bóng, không phụ thuộc phóng to.</li><li><b>Theo khối lượng:</b> mỗi bong bóng đủ một lượng khớp (0 là tự động: khoảng 1/120 tổng khối lượng trên màn hình). Bong bóng đều cỡ, dày đặc khi thị trường sôi động.</li><li><b>Theo giá:</b> gộp tới khi giá khớp đổi sang mức khác.</li></ul><p>Bong bóng đặt ở giá trung bình đã khớp và thời điểm trung bình của nhóm.</p>"
-  },
-  {
-    id: "bm-dotmode",
-    group: "Bookmap",
-    term: "Bong bóng theo tổng hay delta",
-    short: "Tổng: cỡ theo tổng khối lượng khớp. Delta: cỡ theo chênh lệch mua chủ động trừ bán chủ động, màu theo phe thắng.",
-    body: "<p>Tổng: cỡ theo tổng khối lượng khớp. Delta: cỡ theo chênh lệch mua chủ động trừ bán chủ động, màu theo phe thắng.</p>"
-  },
-  {
-    id: "bm-dotmin",
-    group: "Bookmap",
-    term: "Ẩn bong bóng nhỏ",
-    short: "Chỉ vẽ bong bóng có khối lượng (hoặc delta) từ mức này trở lên. 0 là hiện tất cả.",
-    body: "<p>Chỉ vẽ bong bóng có khối lượng (hoặc delta) từ mức này trở lên. 0 là hiện tất cả.</p>"
-  },
-  {
-    id: "bm-bbo",
-    group: "Bookmap",
-    term: "Đường giá mua / bán và giá khớp cuối",
-    short: "Đường bậc thang xanh là giá mua tốt nhất, đỏ là giá bán tốt nhất, trắng mảnh là giá khớp cuối.",
-    body: "<p>Khi thu nhỏ tới mức hai đường xanh đỏ gần nhau dưới ngưỡng điểm ảnh đã chọn, chúng tự ẩn và chỉ còn đường giá khớp cuối cho đỡ rối. Chúng hiện lại khi khoảng cách rộng hơn ngưỡng 20%, để khỏi nhấp nháy.</p>"
-  },
-  {
-    id: "bm-vwap",
-    group: "Bookmap",
-    term: "VWAP phiên",
-    short: "Giá trung bình theo khối lượng của mọi lệnh khớp kể từ lúc mở trang (đường tím).",
-    body: "<p>Giá trên VWAP: phe mua đang lời trung bình. Dưới VWAP: phe bán chiếm ưu thế. VWAP thường là nơi giá quay về.</p>"
-  },
-  {
-    id: "bm-poc",
-    group: "Bookmap",
-    term: "Đường POC",
-    short: "POC là giá khớp nhiều nhất. Đường vàng liền là POC của vùng đang xem, cam nét đứt là POC cả phiên.",
-    body: "<p>Đường chỉ hiện khi cột Volume Profile tương ứng đang bật.</p>"
-  },
-  {
-    id: "bm-candles",
-    group: "Bookmap",
-    term: "Nến trên Bookmap",
-    short: "Nến chồng lên bản đồ. Mặc định tự hiện khi thu nhỏ và tự đổi khung (1m, 5m, 15m, 30m, 1h, 4h, 1d) theo độ thu nhỏ; phóng to thì ẩn để nhìn rõ sổ lệnh.",
-    body: "<p><b>Tự đổi khung khi thu nhỏ</b>: thu nhỏ tới mức nến 1 phút hẹp còn khoảng 30 điểm ảnh thì nến hiện ra. Thu nhỏ tiếp, khung tự lên 5m, 15m, 30m, 1h, 4h, 1d sao cho mỗi nến rộng ít nhất 10 điểm ảnh; góc dưới bên trái ghi khung đang xem. Nến được gộp từ chính dữ liệu sổ lệnh và khớp lệnh của bản đồ, không phụ thuộc khung đang chọn trên thanh menu.</p><p>Lúc này bong bóng cũng gộp theo nến: mỗi nến một quả tại giá khớp trung bình, to theo tổng khối lượng, phần xanh / đỏ là tỷ lệ mua / bán chủ động. Đường giá được ẩn vì nến đã cho thấy giá.</p><p><b>Luôn hiện</b>: dùng nến của khung đang chọn trên thanh menu, ở mọi độ phóng.</p>"
-  },
-  {
-    id: "bm-candlevol",
-    group: "Bookmap",
-    term: "Số mua / bán dưới nến",
-    short: "Dưới mỗi nến tự đổi khung ghi hai số: trên (xanh) là khối lượng mua chủ động, dưới (đỏ) là bán chủ động trong nến đó.",
-    body: "<p>Mua chủ động là lệnh khớp ngay vào giá bán (người mua sốt ruột), bán chủ động thì ngược lại. Nến tăng mà số đỏ lớn hơn số xanh: giá lên nhưng bên bán đang xả vào, cẩn thận. Nến giảm mà số xanh lớn: có người đang gom. Số chỉ hiện khi nến đủ rộng để ghi; thu nhỏ quá thì ẩn.</p>"
-  },
-  {
-    id: "bm-glow",
-    group: "Bookmap",
-    term: "Bóng hấp thụ trên nến",
-    short: "Quầng sáng ở đỉnh hoặc đáy nến khi giá chạm một tường lệnh chờ dày rồi bị đẩy lại. Cam là bên bán chặn ở trên, xanh là bên mua đỡ ở dưới.",
-    body: "<p>Một nến được đánh dấu khi râu dài (ít nhất 35% biên độ nến, tức giá bị đẩy lại) và ngay mức giá đó, trong lúc nến chạy, có tường lệnh chờ dày ít nhất một nửa mức màu đậm nhất của bản đồ.</p><p><b>Cam ở đỉnh</b>: phía bán đang chặn, mức đó là kháng cự. <b>Xanh ở đáy</b>: phía mua đang đỡ, mức đó là hỗ trợ. Bóng càng sáng thì tường càng dày. Rê chuột vào bóng để xem số liệu.</p>"
-  },
-  {
-    id: "bm-lines",
-    group: "Bookmap",
-    term: "Mức giá thành vệt sáng",
-    short: "Khi phóng to, mỗi mức giá vẽ thành một vệt sáng ở giữa và mờ dần ra hai mép, giữa các mức có khe tối như Bookmap, thay vì một khối màu đặc.",
-    body: "<p>Phần giữa vệt mang đúng màu của khối lượng chờ, ra mép còn khoảng 20%. Nhờ vậy các mức giá sát nhau vẫn tách bạch, tường dày hiện thành một đường sáng rõ. Chỉ áp dụng khi mỗi mức giá cao từ 5 điểm ảnh trở lên; thu nhỏ thì vẽ như cũ.</p>"
-  },
-  {
-    id: "bm-persist",
-    group: "Bookmap",
-    term: "Làm mượt theo thời gian",
-    short: "Lấy trung bình trượt vài giây cho mỗi mức giá, để lệnh chờ chớp tắt không làm bản đồ vỡ thành khối vụn.",
-    body: "<p>Nhiều lệnh chờ chỉ đứng vài trăm mili giây rồi rút (thường là thuật toán). Không làm mượt thì mỗi lần chớp tắt là một khối màu, bản đồ rất rối. Với 3 giây, tường đứng lâu vẫn sáng đều thành đường dài, còn lệnh chớp tắt chỉ để lại chấm mờ.</p><p>Đổi lại, tường mới xuất hiện cần khoảng 3 giây để sáng hết màu. Chọn Tắt nếu muốn thấy từng thay đổi ngay lập tức.</p>"
-  },
-  {
-    id: "bm-soft",
-    group: "Bookmap",
-    term: "Làm mịn hiển thị",
-    short: "Làm các dải thanh khoản mềm và liền như Bookmap thay vì lốm đốm từng ô. Tắt đi nếu muốn thấy từng ô sắc nét.",
-    body: "<p>Chỉ đổi cách hiển thị, không đổi số liệu. Bản đồ được nội suy nhẹ theo chiều giá và nhoè rất ít, nên mắt đọc ra các vùng thanh khoản nhanh hơn và đỡ mỏi. Khi cần đếm từng mức giá sát nhau, tắt mục này.</p>"
-  },
-  {
-    id: "bm-slices",
-    group: "Bookmap",
-    term: "Vạch chia thời gian",
-    short: "Kẻ vạch chấm dọc mỗi N giây hoặc phút để dễ đếm thời gian trên bản đồ.",
-    body: "<p>Kẻ vạch chấm dọc mỗi N giây hoặc phút để dễ đếm thời gian trên bản đồ.</p>"
-  },
-  {
-    id: "bm-recenter",
-    group: "Bookmap",
-    term: "Tự căn giữa",
-    short: "Khi đang theo dõi, bản đồ tự dời lên xuống khi giá chạy ra gần mép. Chọn theo giá mua/bán, theo giá khớp cuối, hoặc tắt.",
-    body: "<p>Khi đang theo dõi, bản đồ tự dời lên xuống khi giá chạy ra gần mép. Chọn theo giá mua/bán, theo giá khớp cuối, hoặc tắt.</p>"
-  },
-  {
-    id: "bm-cob",
-    group: "Bookmap",
-    term: "Cột COB (sổ lệnh hiện tại)",
-    short: "Thanh và con số lệnh chờ ở từng dòng giá ngay lúc này: đỏ là chờ bán, xanh là chờ mua. Có thể kèm sổ lệnh cộng dồn và hiện theo %.",
-    body: "<p>COB đi cùng dòng giá với bản đồ. Dòng tô nền là giá mua / bán tốt nhất. Khi thu nhỏ, vài mức giá được gộp chung một dòng để chữ không chồng nhau.</p><p>Chế độ % cho biết mỗi dòng chiếm bao nhiêu phần trăm tổng lệnh chờ đang thấy.</p>"
-  },
-  {
-    id: "bm-vp",
-    group: "Bookmap",
-    term: "Volume Profile vùng / phiên",
-    short: "Khối lượng đã khớp ở từng dòng giá. Vùng: trong khoảng thời gian trên màn hình. Phiên: từ lúc mở trang.",
-    body: "<p>Phần xanh là mua chủ động, đỏ là bán chủ động. Viền vàng là POC. Giá hay bị hút về POC và hay đi nhanh qua chỗ ít khối lượng.</p>"
-  },
-  {
-    id: "bm-qd",
-    group: "Bookmap",
-    term: "Cột +/− lệnh chờ",
-    short: "Lệnh chờ được thêm vào (xanh, số dương) hay rút ra hoặc bị khớp (đỏ, số âm) ở mỗi dòng giá, đặt lại mỗi khi giá tốt nhất đổi.",
-    body: "<p>Dùng để bắt người lớn đang dựng hay rút tường ngay trước mặt giá. Ví dụ giá đi lên mà các dòng phía trên liên tục âm: bên bán đang rút lệnh, đường lên dễ hơn.</p>"
-  },
-  {
-    id: "bm-tc",
-    group: "Bookmap",
-    term: "Cột đếm số lệnh khớp",
-    short: "Số lệnh khớp ở mỗi dòng giá trong khoảng thời gian đang xem.",
-    body: "<p>Nhiều lệnh mà khối lượng nhỏ thường là thuật toán hoặc đám đông nhỏ lẻ; ít lệnh mà khối lượng lớn thường là tay to.</p>"
-  },
-  {
-    id: "bookmap",
-    group: "Bookmap",
-    term: "Bookmap (bản đồ nhiệt sổ lệnh)",
-    short: "Hình ảnh sổ lệnh theo thời gian: màu càng sáng ở mức giá nào thì càng nhiều lệnh chờ ở đó.",
-    body: "<p>Bookmap vẽ lại sổ lệnh (các lệnh mua/bán đang chờ khớp) theo thời gian. Trục ngang là thời gian, trục dọc là giá. Mỗi điểm màu cho biết tại thời điểm đó, ở mức giá đó có bao nhiêu lệnh đang chờ.</p><p><b>Cách đọc:</b></p><ul><li>Màu xanh đậm = rất ít lệnh chờ.</li><li>Xanh nhạt, vàng, cam, đỏ = càng lúc càng nhiều lệnh chờ. Đỏ là dày nhất, thường gọi là “tường thanh khoản”.</li><li>Đường bậc thang xanh lá = giá mua tốt nhất (bid), đỏ = giá bán tốt nhất (ask). Nét đứt bên phải là giá mua / bán đang đứng.</li><li><b>Bong bóng 3D</b> = khối lượng đã khớp. Thể tích quả cầu tỷ lệ với khối lượng; phần xanh là mua chủ động, phần đỏ là bán chủ động.</li><li><b>Cột sổ lệnh bên phải</b> (COB): thanh và con số lệnh chờ ở từng dòng giá, cạnh đó là sổ lệnh cộng dồn.</li><li><b>Mốc giá</b>: mở cửa ngày, đỉnh / đáy hôm nay và hôm qua (giờ UTC), cùng hỗ trợ / kháng cự, có nhãn ở trục giá.</li><li>Hai thanh nhỏ góc trên: lệch sổ lệnh và lệch khối lượng khớp giữa mua và bán.</li></ul><p><b>Ví dụ:</b> BTC đang ở 62.300 USDT, bạn thấy một dải vàng sáng kéo dài ngang ở 62.000. Nghĩa là ở 62.000 có nhiều người đặt lệnh mua chờ, giá đi xuống đó dễ bị chặn lại.</p><p><b>Lưu ý:</b> Lệnh chờ có thể bị huỷ bất cứ lúc nào, nên dải sáng không đảm bảo giá sẽ dừng ở đó.</p>"
-  },
-  {
-    id: "liquidity-wall",
-    group: "Bookmap",
-    term: "Tường thanh khoản",
-    short: "Một mức giá có lượng lệnh chờ lớn bất thường, có thể chặn giá lại — nhưng cũng có thể bị rút đi (spoofing).",
-    body: "<p>Tường thanh khoản là một mức giá có rất nhiều lệnh chờ mua hoặc chờ bán so với các mức xung quanh. Trên Bookmap nó hiện thành một dải ngang màu vàng, cam hoặc đỏ.</p><p><b>Cách đọc:</b> Tường dưới giá (lệnh chờ mua) có thể làm “đệm đỡ”; tường trên giá (lệnh chờ bán) có thể làm “trần”. Nếu giá chạm tường và tường bị ăn dần (dải nhạt đi trong khi có nhiều bong bóng khớp), tường có thể sắp bị phá.</p><p><b>Ví dụ:</b> ETH ở 2.450, có tường bán 3.000 ETH ở 2.480. Giá lên 2.478 rồi quay đầu nhiều lần — tường đang giữ.</p><p><b>Lưu ý (spoofing):</b> Có người đặt tường lớn để doạ thị trường rồi rút ngay khi giá đến gần. Nếu dải sáng biến mất đột ngột mà không có lệnh khớp, đó là tường giả.</p>"
-  },
-  {
-    id: "trade-bubble",
-    group: "Bookmap",
-    term: "Bong bóng lệnh khớp",
-    short: "Mỗi vòng tròn là lệnh vừa khớp: xanh lá = mua chủ động, đỏ = bán chủ động, càng to càng nhiều khối lượng.",
-    body: "<p>Bong bóng là các lệnh đã thực sự khớp, vẽ đè lên Bookmap đúng thời điểm và mức giá khớp.</p><p><b>Cách đọc:</b></p><ul><li>Xanh lá = người mua chủ động (đặt lệnh market mua, ăn vào lệnh chờ bán).</li><li>Đỏ = người bán chủ động.</li><li>Bong bóng càng to thì khối lượng khớp càng lớn.</li></ul><p><b>Ví dụ:</b> Giá BTC chạm tường mua ở 62.000 và xuất hiện một loạt bong bóng đỏ to nhưng giá không giảm thêm — người mua chờ đang “hấp thụ” lực bán, thường là dấu hiệu đỡ giá.</p>"
-  },
-  {
-    id: "big-trade",
-    group: "Bookmap",
-    term: "Lệnh lớn",
-    short: "Lệnh khớp thuộc nhóm 0,5% lớn nhất kể từ lúc mở trang, được đánh dấu bằng vòng trắng.",
-    body: "<p>Lệnh lớn là những lệnh khớp có kích thước lớn hơn hẳn bình thường, thường do quỹ hoặc “cá voi” đặt.</p><p><b>Cách đọc:</b> Ứng dụng đánh dấu bằng vòng tròn trắng. Ngưỡng được tính tự động: lệnh thuộc top 0,5% lớn nhất trong tất cả lệnh khớp kể từ khi bạn mở trang.</p><p><b>Ví dụ:</b> Nếu 99,5% lệnh BTC nhỏ hơn 4 BTC, thì lệnh 5 BTC sẽ có vòng trắng.</p><p><b>Lưu ý:</b> Vừa mở trang thì có ít dữ liệu, ngưỡng còn chưa ổn định. Đợi vài phút để ngưỡng chính xác hơn.</p>"
-  },
-  {
-    id: "contrast",
-    group: "Bookmap",
-    term: "Thanh tương phản",
-    short: "Chỉnh độ nhạy màu của Bookmap: tăng để thấy cả lệnh chờ nhỏ, giảm để chỉ thấy các tường lớn.",
-    body: "<p>Thanh tương phản quyết định bao nhiêu lệnh chờ thì được tô sáng.</p><p><b>Cách đọc:</b> Kéo lên cao: các lượng lệnh chờ vừa phải cũng hiện màu vàng/cam, hình nhiều chi tiết hơn. Kéo xuống thấp: chỉ những tường thật lớn mới sáng, dễ nhìn ra mức quan trọng.</p><p><b>Ví dụ:</b> Khi thị trường đông đúc và cả màn hình đều vàng, hãy giảm tương phản để lộ ra 1-2 tường lớn nhất.</p>"
-  },
-  {
-    id: "grid",
-    group: "Bookmap",
-    term: "Tầng giá (gộp mức giá)",
-    short: "Gộp các mức giá gần nhau thành một hàng để hình gọn và dễ thấy vùng tập trung lệnh hơn.",
-    body: "<p>Sàn chia giá thành các bước rất nhỏ (ví dụ BTC bước 0,1 USDT). Xem từng bước thì quá vụn. Tầng giá gộp nhiều bước liền nhau thành một hàng.</p><p><b>Ví dụ:</b> Tầng giá 10 USDT nghĩa là mọi lệnh chờ từ 62.000 đến 62.009,9 được cộng chung vào hàng 62.000.</p><p><b>Lưu ý:</b> Tầng lớn giúp thấy bức tranh tổng thể; tầng nhỏ giúp thấy chi tiết nhưng rối mắt hơn.</p>"
-  },
 
   // ───────────── Footprint ─────────────
   {
@@ -328,6 +78,16 @@ export const GLOSSARY = [
 
   // ───────────── Thanh lý ─────────────
   {
+    id: "rest-liq", group: "Order flow nâng cao", term: "Vùng lệnh chờ lớn đang đứng",
+    short: "Dải mờ trên footprint tại các mức giá đang có lệnh chờ mua / bán lớn trong sổ lệnh thật. Giá tới gần những vùng này thường phản ứng.",
+    body: "<p>Lấy thẳng từ sổ lệnh đang nhận trực tiếp của sàn: những mức giá có lệnh chờ lớn hơn hẳn các mức quanh nó và đã đứng được một lúc (bộ theo dõi tường trong Nhật ký tường). Dải xanh dưới giá là lệnh chờ mua lớn, dải đỏ trên giá là lệnh chờ bán lớn; chữ bên cạnh ghi khối lượng, đã đứng bao lâu và giá đã bật khỏi đó mấy lần.</p><p><b>Cách đọc:</b> giá tiến tới một dải lớn mà chậm lại, in ra nhiều ô mất cân bằng ngược chiều rồi quay đầu là lệnh chờ đó đang hấp thụ. Giá xuyên qua dải mà dải biến mất ngay trước đó là tường bị rút (xem Tường giả). Vùng càng đứng lâu, càng bật nhiều lần thì càng đáng tin.</p><p><b>Lưu ý:</b> lệnh chờ có thể bị huỷ bất cứ lúc nào, nên vùng này là nơi <i>chờ phản ứng</i>, không phải nơi chắc chắn giá dừng. Vùng chỉ dựng từ sổ lệnh thật, không ước tính.</p>"
+  },
+  {
+    id: "liq-col", group: "Thanh lý", term: "Cột Thanh lý cạnh biểu đồ",
+    short: "Thanh ngang ở mỗi tầng giá: tiền ước tính sẽ bị thanh lý tại đó, xếp chồng theo đòn bẩy; chấm là lệnh thanh lý thật 1 giờ qua.",
+    body: "<p>Cột đứng sát biểu đồ và dùng chung thang giá, nên đọc ngang sang là biết cụm thanh lý nằm ở nến nào. Dưới giá là long bị thanh lý khi giá rơi (đỏ), trên giá là short bị thanh lý khi giá lên (xanh). Thanh càng dài càng nhiều tiền; mỗi thanh chia lớp theo đòn bẩy, lớp đậm là đòn bẩy cao (gần giá, dễ bị quét trước).</p><p><b>Chấm bên phải</b> là lệnh thanh lý thật sàn vừa báo trong 1 giờ: càng mới càng sát mép phải, càng to tiền càng lớn. <b>Chân khung</b> cộng tổng long / short bị thanh lý 1 giờ qua và chỉ ra cụm ước tính lớn nhất mỗi phía: nhiên liệu nằm phía nào thì giá dễ bị kéo về phía đó để quét.</p><p><b>Lưu ý:</b> thanh ngang là ƯỚC TÍNH từ open interest mới mở ở mỗi nến và giá vào lệnh, chia theo mô hình đòn bẩy đang chọn; không ai biết chính xác người khác vào ở đâu với đòn bẩy bao nhiêu. Chấm là số thật.</p>"
+  },
+  {
     id: "liquidation",
     group: "Thanh lý",
     term: "Thanh lý (Liquidation)",
@@ -342,32 +102,11 @@ export const GLOSSARY = [
     body: "<p>Đây là <b>ước tính</b>, không phải dữ liệu thật. Ứng dụng xem OI tăng ở mức giá nào (có người mở vị thế ở đó), rồi giả định họ dùng đòn bẩy phổ biến 5x, 10x, 25x, 50x, 100x để tính ra giá thanh lý của họ.</p><p><b>Cách đọc:</b> Cụm càng sáng = càng nhiều vị thế có thể bị thanh lý ở mức giá đó. Giá hay bị “hút” về các cụm lớn vì ở đó có nhiều thanh khoản (lệnh cưỡng bức) cho người lớn khớp lệnh.</p><p><b>Ví dụ:</b> Nhiều long mở ở 62.000 với 25x → giá thanh lý khoảng 62.000 × (1 − 1/25) ≈ 59.520. Bản đồ sẽ có cụm sáng quanh 59.500.</p><p><b>Lưu ý:</b> Không ai biết chính xác người khác dùng đòn bẩy bao nhiêu; hãy coi đây là bản đồ tham khảo.</p>"
   },
   {
-    id: "liq-heat",
-    group: "Thanh lý",
-    term: "Thẻ Thanh lý (bản đồ nhiệt thanh lý theo thời gian)",
-    short: "Mức giá nào đang dồn nhiều vị thế có thể bị thanh lý, sinh ra lúc nào và bị giá quét lúc nào. Đây là ƯỚC TÍNH từ OI.",
-    body: "<p>Thẻ này vẽ bản đồ thanh lý <b>ước tính</b> theo thời gian, kiểu Liquidation Heatmap. Trục ngang là thời gian, trục dọc là giá. Mỗi khi OI tăng, ứng dụng coi như có vị thế mới mở ở giá điển hình của nến đó, chia theo các bậc đòn bẩy phổ biến để ra giá thanh lý: long bị thanh lý ở dưới, short ở trên. Phần mở long hay short lấy theo tỷ lệ mua chủ động của nến. OI giảm thì mọi mức co lại theo tỷ lệ; giá chạm mức nào thì mức đó coi như đã bị thanh lý và tắt.</p><p><b>Cách đọc:</b></p><ul><li>Dải ngang càng sáng (tím than → xanh dương → xanh lơ → xanh lá → vàng) thì càng nhiều tiền ước tính sẽ bị thanh lý ở mức giá đó. Dải kéo dài từ trái sang là mức đã tích tụ lâu mà giá chưa quét.</li><li>Dải tắt ngay chỗ nến chạm vào là lúc các vị thế đó bị quét.</li><li><b>Cột bên phải</b>: ảnh chụp lúc này. Thanh đỏ là long đang chờ dưới giá, thanh xanh lá là short đang chờ trên giá; đường cong là tổng cộng dồn tính từ giá hiện tại ra xa.</li><li>Rê chuột (hoặc chạm) vào một ô để xem số tiền ước tính và khoảng cách tới giá hiện tại.</li></ul><p><b>Ví dụ:</b> BTC ở 80.600, có dải vàng ở 82.100 kéo dài hai ngày và cột bên phải báo short chờ 40 triệu USD ở đó. Giá hay bị hút về những cụm như vậy vì ở đó có sẵn lệnh mua cưỡng bức cho tay to khớp.</p><p><b>Lưu ý:</b> Không ai biết chính xác người khác dùng đòn bẩy bao nhiêu và vào lệnh ở đâu. Đây là bản đồ tham khảo tính từ OI và nến, không phải dữ liệu thanh lý thật của sàn. Lệnh thanh lý thật đã xảy ra xem ở lớp “Lệnh thanh lý thật”.</p>"
-  },
-  {
-    id: "liq-range",
-    group: "Thanh lý",
-    term: "Khoảng thời gian của bản đồ thanh lý",
-    short: "24 giờ (nến 5 phút), 3 ngày (15 phút), 7 ngày (1 giờ) hoặc 30 ngày (4 giờ).",
-    body: "<p>Khoảng ngắn cho thấy chi tiết các mức vừa sinh ra; khoảng dài cho thấy những cụm đã tích tụ lâu mà giá chưa quét tới. Sàn chỉ giữ lịch sử OI khoảng 30 ngày nên khoảng dài nhất là 30 ngày. Với 24 giờ, 3 ngày và 7 ngày, ứng dụng tính thêm một đoạn trước đó để các mức cũ kịp hiện ra từ mép trái.</p>"
-  },
-  {
     id: "liq-model",
     group: "Thanh lý",
     term: "Mô hình đòn bẩy",
     short: "Giả định người mở vị thế dùng đòn bẩy bao nhiêu: đủ bậc 5x–100x, chỉ đòn bẩy cao hoặc chỉ đòn bẩy thấp.",
-    body: "<p>Mặc định chia vị thế mới theo 5x (10%), 10x (25%), 25x (30%), 50x (20%) và 100x (15%). Đòn bẩy càng cao thì giá thanh lý càng gần giá vào lệnh: 100x chỉ cách khoảng 0,5%, 5x cách khoảng 19,5%.</p><p><b>Cách dùng:</b> Chọn “Đòn bẩy cao” để xem các mức gần giá mà thị trường hay quét nhanh; chọn “Đòn bẩy thấp” để xem các mức xa hơn khi có biến động lớn.</p>"
-  },
-  {
-    id: "liq-thr",
-    group: "Thanh lý",
-    term: "Ngưỡng màu",
-    short: "Ô nhỏ hơn ngưỡng này (so với mốc sáng nhất) thì không tô, để chỉ còn các cụm đáng chú ý.",
-    body: "<p>Mốc sáng nhất là phân vị 99,5% của mọi ô trong khoảng đang xem (con số ghi ở đầu thang màu bên trái). Kéo ngưỡng sang phải để giấu các mức nhỏ và chỉ còn những cụm lớn; kéo sang trái để thấy cả các mức mỏng.</p>"
+    body: "<p>Cột Thanh lý vẽ tách từng bậc đòn bẩy: đủ bậc là 10x, 25x, 50x, 100x; đòn bẩy cao là 25x–100x; đòn bẩy thấp là 5x–25x. Đòn bẩy càng cao thì giá thanh lý càng gần giá vào lệnh: 100x chỉ cách khoảng 0,5%, 5x cách khoảng 19,5%.</p><p><b>Cách dùng:</b> Chọn “Đòn bẩy cao” để xem các mức gần giá mà thị trường hay quét nhanh; chọn “Đòn bẩy thấp” để xem các mức xa hơn khi có biến động lớn.</p>"
   },
   {
     id: "liq-windows",
@@ -803,11 +542,6 @@ export const GLOSSARY = [
     body: "<p>Như chỉ báo Depth Of Market của ATAS. Mỗi dòng là một mức giá (tự gộp nhiều bước giá khi thu nhỏ để dòng không thấp hơn 11 điểm ảnh), thanh càng dài lệnh chờ càng lớn, số ở mép phải là khối lượng.</p><ul><li><b>Thanh sáng:</b> lệnh chờ tại mức đó.</li><li><b>Đường chấm mảnh:</b> lệnh chờ cộng dồn từ giá tốt nhất tới mức đó, cho biết giá phải ăn qua bao nhiêu để tới đây.</li><li><b>Góc dưới phải:</b> tổng chờ mua và chờ bán trong khung nhìn.</li></ul><p>Bật/tắt trong <b>Lớp hiển thị</b> hoặc nút trên thanh công cụ bên trái khi xem Footprint.</p>"
   },
   {
-    id: "dom-liqmap", group: "Order flow nâng cao", term: "Bản đồ thanh khoản (khung cạnh sổ lệnh)",
-    short: "Bookmap thu nhỏ đặt giữa biểu đồ giá và sổ lệnh: mỗi dòng trùng một dòng giá của DOM, màu sáng là lệnh chờ dày, đường trắng là dấu vết giá.",
-    body: "<p>Khung <b>Bản đồ thanh khoản</b> vẽ lịch sử sổ lệnh 30 giây đến 15 phút gần nhất (chọn ở đầu khung), bên phải là bây giờ. Mỗi dòng trùng đúng một dòng giá của Smart DOM bên cạnh nên đọc ngang là thấy giá.</p><p>Cách tô màu giống bản đồ Bookmap chính: mỗi dòng giá là một vệt sáng, làm mượt 3 giây để lệnh chớp tắt không vỡ thành khối.</p><ul><li>Vệt sáng kéo dài: tường thanh khoản đứng yên lâu, đáng tin hơn. Vạch vàng mảnh dưới dòng là tường đang đứng, chốt ở đầu vạch là lúc tường xuất hiện.</li><li>Vệt sáng biến mất khi giá tới gần: lệnh bị rút; dấu × cam là nghi tường giả.</li><li><b>Dấu vết</b>: đường trắng là giá giữa, dải mờ quanh nó là khoảng chênh giữa giá mua và bán tốt nhất.</li><li><b>Cột ±10s</b> bên phải: lệnh chờ ở mỗi dòng giá bây giờ so với 10 giây trước. Xanh sang phải là được xếp thêm, đỏ sang trái là bị rút hoặc bị khớp.</li><li>Bong bóng xanh/đỏ: lệnh gốc mua/bán chủ động; viền trắng là lệnh lớn.</li></ul><p>Kéo đường chia bên trái để đổi độ rộng, bấm ✕ để ẩn (bật lại trong <b>Lớp hiển thị</b>). Lăn chuột trên khung để cuộn giá cùng sổ lệnh.</p>"
-  },
-  {
     id: "smart-tape", group: "Order flow nâng cao", term: "Smart Tape (băng lệnh thông minh)",
     short: "Băng lệnh khớp đã ghép các lệnh nhỏ cùng thời điểm, cùng phía thành lệnh gốc, để thấy đúng kích thước lệnh của tổ chức.",
     body: "<p>Khi một quỹ mua 1.000 hợp đồng bằng lệnh market, lệnh đó ăn qua nhiều lệnh chờ và sàn báo thành hàng trăm lệnh khớp nhỏ cùng một thời điểm. Băng thường trông như một chuỗi số nhỏ lộn xộn.</p><p><b>Smart Tape</b> ghép các lệnh khớp liền nhau cùng phía, cùng thời điểm thành <b>một lệnh gốc</b>.</p><p><b>Các cột:</b> Thời gian · Giá · +/− (số mức giá đã ăn qua) · KL (khối lượng gốc) · Bid/Ask (giá tốt nhất ngay trước khi khớp) · Sizes (khối lượng chờ ở bid × ask lúc đó) · TB (khối lượng trung bình mỗi lệnh nhỏ).</p><p>Dòng tô màu đậm là lệnh lớn (top 0,5%). Tắt <b>Ghép lệnh</b> để xem băng thô của sàn.</p>"
@@ -863,11 +597,6 @@ export const GLOSSARY = [
     body: "<p><b>Nhật ký</b>: mỗi dòng là một tường đã mất. Cột Sau 1′ và Sau 5′ là giá thay đổi bao nhiêu % kể từ lúc tường mất.</p><p><b>Thống kê</b>: <i>tỷ lệ rút khi giá tới gần</i> là trong các tường bị giá chạm tới, bao nhiêu phần trăm bị rút ngay trước khi bị ăn. Tỷ lệ cao ở phía mua nghĩa là tường đỡ giá phần lớn là giả. Bảng phản ứng giá tính theo hướng tường bảo vệ: tường mua thì giá lên là dương, tường bán thì giá xuống là dương. Tường bị ăn mà con số dương là tường hấp thụ xong giá bật lại; âm là giá phá tường và chạy tiếp.</p><p><b>Đang đứng</b>: các tường trong ±1% quanh giá ngay lúc này.</p><p>Số liệu tính từ lúc mở trang cho mã đang xem; cần vài chục lần mỗi loại thì mới đáng tin.</p><p><b>Khi thu nhỏ:</b> lăn chuột thu nhỏ tới lúc nến hẹp hơn 40px (các ô số không đọc được nữa) thì biểu đồ tự vẽ nến thường để nhìn tổng quan; phóng to lại thì footprint quay về. Dưới mỗi nến có hai số: xanh là long (mua chủ động), đỏ là short (bán chủ động); thu nhỏ quá thì số ẩn đi cho khỏi chồng nhau. Ô Long / Short dưới cùng vẽ thanh mua lên, bán xuống cho từng nến, bên phải ghi % long và short của cả vùng đang xem; dòng trên cùng ghi tổng long, short và chênh lệch.</p>",
   },
   {
-    id: "book-imb", group: "Bookmap", term: "Mất cân bằng sổ lệnh gần giá",
-    short: "Đường tím ở ô dưới Bookmap: (lệnh chờ mua − lệnh chờ bán) / tổng, chỉ tính trong ±0,5% quanh giá, mỗi cột một điểm. Trên vạch giữa là chờ mua dày hơn.",
-    body: "<p>Đọc cùng CVD (đường vàng): CVD tăng mà sổ nghiêng về bán là người mua đang chủ động ăn vào tường bán, nếu tường không rút mà giá vẫn đứng là bên bán đang hấp thụ. CVD giảm mà sổ nghiêng về mua là có bên đang đỡ giá. Sổ lệnh đổi chiều đột ngột ngay trước một cú chạy thường là tường bị rút.</p><p>Lưu ý: lệnh chờ có thể bị rút bất cứ lúc nào, nên đây là thứ để đọc cùng dòng lệnh đã khớp, không phải tín hiệu riêng.</p>",
-  },
-  {
     id: "telegram", group: "Công cụ", term: "Cảnh báo qua Telegram",
     short: "Gửi mọi cảnh báo đang bật sang Telegram của bro. Cần mã bot và chat id; cả hai chỉ lưu trên máy này.",
     body: "<p><b>Cách lấy</b>: trong Telegram nhắn cho @BotFather lệnh /newbot để tạo bot và nhận mã bot. Nhắn cho bot vừa tạo một tin bất kỳ, rồi nhắn cho @userinfobot để biết chat id của mình. Dán hai thứ đó vào menu Cảnh báo và bấm Gửi thử.</p><p>Trang phải đang mở thì mới gửi được cảnh báo.</p>",
@@ -880,7 +609,7 @@ export const GLOSSARY = [
   {
     id: "iceberg", group: "Order flow nâng cao", term: "Lệnh băng chìm (iceberg)",
     short: "Một mức giá bị khớp nhiều hơn hẳn lượng đang hiện trên sổ lệnh mà vẫn đứng: có người giấu lệnh lớn hoặc liên tục nạp lại.",
-    body: "<p>Ở mỗi mức giá đang bị khớp chủ động, hệ thống so tổng khối lượng đã khớp với lượng lớn nhất từng hiện trên sổ ở giá đó. Khi khớp được <b>gấp 2 lần</b> lượng hiện ra, qua ít nhất 3 lệnh, và phần dư ít nhất bằng một lệnh lớn (top 5%), đó là nghi iceberg.</p><p>Trên Bookmap hiện thành vạch ngang và ô <b>I</b>: xanh ngọc là lệnh chờ MUA ẩn (đỡ giá), hồng là lệnh chờ BÁN ẩn (chặn giá). Nét liền là đã <b>giữ</b> được giá, nét đứt là đã bị <b>xuyên thủng</b>.</p><p><b>Lưu ý:</b> sàn crypto không công bố lệnh iceberg, nên đây là ước tính. Sổ lệnh Binance gửi 10 lần mỗi giây, nên một tường được nạp lại thật nhanh trông giống hệt iceberg; về mặt giao dịch hai thứ có cùng ý nghĩa: có người rất muốn mua hoặc bán ở giá đó.</p>"
+    body: "<p>Ở mỗi mức giá đang bị khớp chủ động, hệ thống so tổng khối lượng đã khớp với lượng lớn nhất từng hiện trên sổ ở giá đó. Khi khớp được <b>gấp 2 lần</b> lượng hiện ra, qua ít nhất 3 lệnh, và phần dư ít nhất bằng một lệnh lớn (top 5%), đó là nghi iceberg.</p><p>Trên Smart DOM hiện ở cột <b>I</b>: xanh ngọc là lệnh chờ MUA ẩn (đỡ giá), hồng là lệnh chờ BÁN ẩn (chặn giá). Nét liền là đã <b>giữ</b> được giá, nét đứt là đã bị <b>xuyên thủng</b>.</p><p><b>Lưu ý:</b> sàn crypto không công bố lệnh iceberg, nên đây là ước tính. Sổ lệnh Binance gửi 10 lần mỗi giây, nên một tường được nạp lại thật nhanh trông giống hệt iceberg; về mặt giao dịch hai thứ có cùng ý nghĩa: có người rất muốn mua hoặc bán ở giá đó.</p>"
   },
   {
     id: "tpo-read", group: "Hồ sơ khối lượng", term: "Đọc phiên TPO (Market Profile)",
@@ -935,7 +664,7 @@ export const GLOSSARY = [
   {
     id: "derivs", group: "Phái sinh", term: "Dữ liệu phái sinh",
     short: "Đám đông đang long hay short, tiền lớn nghiêng về đâu, futures đắt hay rẻ hơn spot, và thị trường quyền chọn đang đặt cược gì.",
-    body: "<p>Lấy thẳng từ API công khai: Binance Futures (tỷ lệ long/short, mua/bán chủ động, funding, open interest; khung 1 giờ, 48 giờ gần nhất) và Deribit (quyền chọn BTC, ETH).</p><p><b>Cách dùng:</b> đây là bối cảnh, không phải tín hiệu vào lệnh. Đám đông nghiêng quá một phía cộng funding cao thường là nhiên liệu cho một cú quét ngược. Kết hợp với Bookmap để tìm điểm vào cụ thể.</p><p>Dòng tiền ETF và dòng coin nạp/rút sàn (on-chain) cần nguồn trả phí (Glassnode, CryptoQuant), chưa có trong app.</p>"
+    body: "<p>Lấy thẳng từ API công khai: Binance Futures (tỷ lệ long/short, mua/bán chủ động, funding, open interest; khung 1 giờ, 48 giờ gần nhất) và Deribit (quyền chọn BTC, ETH).</p><p><b>Cách dùng:</b> đây là bối cảnh, không phải tín hiệu vào lệnh. Đám đông nghiêng quá một phía cộng funding cao thường là nhiên liệu cho một cú quét ngược. Kết hợp với footprint và Smart DOM để tìm điểm vào cụ thể.</p><p>Dòng tiền ETF và dòng coin nạp/rút sàn (on-chain) cần nguồn trả phí (Glassnode, CryptoQuant), chưa có trong app.</p>"
   },
   {
     id: "ls-ratio", group: "Phái sinh", term: "Tỷ lệ long/short",
@@ -1008,24 +737,9 @@ export const GLOSSARY = [
     body: "<p>Nguồn: 51 nguồn quốc tế như CNBC, Bloomberg, MarketWatch, Investing.com, ForexLive, OilPrice, Google News (kim loại, năng lượng), BBC, Al Jazeera, thông cáo của Fed và ECB, cùng CoinDesk, Cointelegraph, Decrypt, The Block, Bitcoin Magazine.</p><p><b>Không bao giờ dùng tin của báo, tác giả hay tổ chức Việt Nam, kể cả tin tiếng Việt.</b> Tin có tên nguồn hoặc tên miền Việt Nam (đuôi .vn, VnExpress, CafeF…) hay tiêu đề có dấu tiếng Việt đều bị bỏ, cả khi đến qua Google News.</p><p>Mục của mỗi tin được xếp tự động theo từ khoá trong tiêu đề, nên đôi khi xếp nhầm. Tiêu đề giữ nguyên tiếng Anh gốc để không sai thuật ngữ. Trong mục Crypto, nút <b>Mọi coin / Chỉ tin về ...</b> lọc theo đồng đang xem.</p><p><b>Bản tin nóng qua Telegram</b> (bật sẵn trong nút 🔔): tối đa một bản mỗi 30 phút, gồm các tin 🔥 trong 2 giờ qua chưa gửi lần nào, chia theo 6 mục, bấm vào tiêu đề để mở bài. Cùng một chuyện nhiều báo đưa thì gộp một dòng; tin về Fed, lạm phát, việc làm, lãi suất xếp trước. Tin thuần chính trị (bầu cử, phát ngôn) chỉ xem ở đây, không gửi. Chỉ gửi khi Desk đang mở.</p>"
   },
   {
-    id: "multibook", group: "Bookmap", term: "Multibook (gộp nhiều sàn)",
-    short: "Cộng sổ lệnh và lệnh khớp của Binance, OKX và Bybit cho cùng một mã thành một bản đồ, như Bookmap Multibook.",
-    body: "<p>Mỗi sàn chỉ là một phần thị trường. Một tường lệnh nhỏ trên Binance có thể là tường lớn khi cộng cả ba sàn. Khối lượng các sàn đều đổi ra số coin rồi cộng ở cùng mức giá (làm tròn theo bước giá của sàn đang chọn).</p><p><b>Lưu ý:</b> giá giữa các sàn lệch nhau vài bước giá là bình thường, nên quanh giá hiện tại sổ gộp hơi nhoè. Bong bóng, Smart Tape, footprint đều cộng lệnh khớp của cả ba sàn. Mã nào sàn khác không có thì sàn đó bị bỏ qua (xem Nhật ký kết nối). Tốn băng thông gấp khoảng 3 lần.</p>"
-  },
-  {
-    id: "recorder", group: "Công cụ", term: "Máy ghi 24/7 (laptop)",
-    short: "Chương trình chạy nền trên laptop, ghi sổ lệnh và lệnh khớp Binance Futures mỗi 2 giây, để Bookmap có lịch sử cả ngày.",
-    body: "<p>Bấm đúp <b>Ghi du lieu 24-7.bat</b> trong thư mục Lai Long và để cửa sổ đó mở (thu nhỏ được). Muốn tự chạy khi bật máy: Win+R, gõ <code>shell:startup</code>, kéo một lối tắt của file đó vào thư mục vừa mở.</p><p>Chọn mã cần ghi, số ngày giữ lại và số giờ lịch sử nạp khi mở Bookmap trong nút ⚙ Cài đặt của Bookmap (chỉ hiện khi mở bằng \"Mo Lai Long.bat\"). Máy ghi tự nhận mã mới sau khoảng 1 phút.</p><p>Mỗi mã tốn khoảng 30 đến 60 MB mỗi ngày (file nén, trong thư mục data/record). Lịch sử được ghi trong ±1% quanh giá, mỗi 2 giây, nên chi tiết kém hơn phần trực tiếp một chút.</p>"
-  },
-  {
     id: "drawing", group: "Công cụ", term: "Vẽ đường và vùng giá",
-    short: "Đánh dấu mức giá hoặc vùng giá quan trọng lên Bookmap và Footprint. Lưu theo từng mã trên máy này.",
-    body: "<p><b>─ Đường:</b> bấm nút rồi bấm vào biểu đồ, có ngay một đường ngang tại giá đó. <b>▤ Vùng:</b> bấm nút rồi kéo dọc trên biểu đồ. Nét vẽ hiện trên cả Bookmap lẫn Footprint, có nhãn giá ở trục bên phải.</p><p>Bấm đúp lên đường (hoặc mép vùng) để xoá một hình; nút ✕ xoá hết của mã đang xem. Muốn được báo khi giá chạm, đặt mức giá trong nút 🔔.</p>"
-  },
-  {
-    id: "tape-speed", group: "Bookmap", term: "Tốc độ băng",
-    short: "Số lệnh khớp mỗi giây, vẽ bằng đường xanh lơ ở ô dưới Bookmap. Chấm sáng là lúc tốc độ vượt 3 lần mức thường.",
-    body: "<p>Tốc độ băng tăng vọt nghĩa là nhiều người cùng lao vào một lúc: thường là lúc bắt đầu một cú chạy, lúc quét cắt lỗ, hoặc lúc ra tin. Tốc độ cao mà giá không đi được là dấu hiệu hấp thụ.</p><p>Mức \"thường\" là trung vị của vùng đang xem trên màn hình.</p>"
+    short: "Đánh dấu mức giá hoặc vùng giá quan trọng lên biểu đồ footprint. Lưu theo từng mã trên máy này.",
+    body: "<p><b>─ Đường:</b> bấm nút rồi bấm vào biểu đồ, có ngay một đường ngang tại giá đó. <b>▤ Vùng:</b> bấm nút rồi kéo dọc trên biểu đồ. Nét vẽ có nhãn giá ở trục bên phải.</p><p>Bấm đúp lên đường (hoặc mép vùng) để xoá một hình; nút ✕ xoá hết của mã đang xem. Muốn được báo khi giá chạm, đặt mức giá trong nút 🔔.</p>"
   },
   {
     id: "impact-map", group: "Công cụ", term: "Bản đồ tác động tin tức",
@@ -1175,7 +889,7 @@ export const GLOSSARY = [
   {
     id: "confluence", group: "Hỗ trợ / kháng cự", term: "Vùng hợp lưu",
     short: "Nơi nhiều mức giá quan trọng từ các nguồn khác nhau trùng nhau: POC, VAH/VAL, đỉnh/đáy hôm qua, POC tuần, POC chưa chạm, hỗ trợ/kháng cự đã test, VWAP, tường call/put, điểm lật gamma, cụm thanh lý, tường lệnh, iceberg. Càng nhiều nguồn, điểm càng cao.",
-    body: "<p><b>Điểm</b>: tổng trọng số các loại nguồn trong vùng, mỗi loại chỉ tính một lần (hai mức hỗ trợ sát nhau không nhân đôi). POC, POC chưa chạm, tường quyền chọn, điểm lật gamma 2 điểm; VAH/VAL, đỉnh/đáy hôm qua, POC tuần, cụm thanh lý, tường lệnh, iceberg 1,5; còn lại 1.</p><p>Các mức cách nhau dưới 0,25 ATR được gộp. Vùng từ 3 điểm tô vàng trên Bookmap và footprint (tắt ở Lớp hiển thị).</p><p><b>Đã kiểm chứng chưa</b>: sổ tín hiệu chấm lần đầu mỗi ngày giá chạm vùng theo 3 hạng điểm, xem vùng điểm cao có bật lại nhiều hơn vùng 1 nguồn không. Phần lịch sử chỉ dựng được từ nến (không có quyền chọn, tường, iceberg quá khứ).</p>",
+    body: "<p><b>Điểm</b>: tổng trọng số các loại nguồn trong vùng, mỗi loại chỉ tính một lần (hai mức hỗ trợ sát nhau không nhân đôi). POC, POC chưa chạm, tường quyền chọn, điểm lật gamma 2 điểm; VAH/VAL, đỉnh/đáy hôm qua, POC tuần, cụm thanh lý, tường lệnh, iceberg 1,5; còn lại 1.</p><p>Các mức cách nhau dưới 0,25 ATR được gộp. Vùng từ 3 điểm tô vàng trên footprint (tắt ở Lớp hiển thị).</p><p><b>Đã kiểm chứng chưa</b>: sổ tín hiệu chấm lần đầu mỗi ngày giá chạm vùng theo 3 hạng điểm, xem vùng điểm cao có bật lại nhiều hơn vùng 1 nguồn không. Phần lịch sử chỉ dựng được từ nến (không có quyền chọn, tường, iceberg quá khứ).</p>",
   },
   {
     id: "hist-store", group: "Công cụ", term: "Kho lịch sử data.binance.vision",
@@ -1254,7 +968,7 @@ export const GLOSSARY = [
   },
   {
     id: "paper-trading", group: "Công cụ", term: "Lệnh giả lập (paper trading)",
-    short: "Tập đặt lệnh bằng tiền ảo 10.000 USDT trên dữ liệu thật. Lệnh, SL, TP hiện thành đường trên Bookmap và Footprint, kéo được để dời giá.",
+    short: "Tập đặt lệnh bằng tiền ảo 10.000 USDT trên dữ liệu thật. Lệnh, SL, TP hiện thành đường trên footprint, kéo được để dời giá.",
     body: "<p>Khung <b>Lệnh giả lập</b> thu nhỏ sẵn ở thanh dưới cùng; bấm <b>▣ Lệnh giả lập</b> để mở. Không có lệnh nào gửi lên sàn: mọi thứ chỉ chạy trong trình duyệt.</p><ul><li><b>Market</b> khớp ngay theo sổ lệnh hiện tại. <b>Limit</b> xếp hàng sau khối lượng đang chờ ở mức giá đó và chỉ khớp khi lượng phía trước đã được khớp hết.</li><li><b>SL / TP</b>: giá chạm mức là đóng vị thế bằng lệnh market. Có thể nhập lúc đặt lệnh hoặc bấm Đặt SL / Đặt TP sau.</li><li>Trên biểu đồ: <b>kéo</b> đường lệnh chờ, SL, TP để dời giá; <b>bấm đúp</b> lên đường để huỷ; <b>Alt + bấm</b> lên biểu đồ để đặt nhanh lệnh limit (dưới giá là MUA, trên giá là BÁN) với khối lượng trong khung.</li><li>Nhãn SL/TP ghi luôn số USDT lãi/lỗ nếu giá chạm mức đó. Đường vàng nâu là giá thanh lý ước tính.</li></ul><p>Tài khoản giả lập được giữ lại cả khi đóng tab, giống nhật ký giao dịch. Bấm <b>Đặt lại</b> để về 10.000 USDT.</p>"
   },
   {
@@ -1344,4 +1058,4 @@ export const GLOSSARY = [
   },
 ];
 
-export const GROUPS = ["Radar", "Fractal & kiểm chứng", "Order flow nâng cao", "Bookmap", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest", "Phái sinh", "Thị trường", "Công cụ"];
+export const GROUPS = ["Radar", "Fractal & kiểm chứng", "Order flow nâng cao", "Footprint", "Dòng lệnh", "Thanh lý", "Hỗ trợ / kháng cự", "Xu hướng & động lượng", "Biến động", "Hồ sơ khối lượng", "Backtest", "Phái sinh", "Thị trường", "Công cụ"];

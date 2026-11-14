@@ -1,17 +1,17 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
-// Lai Long Web: tab Đa biểu đồ. Tối đa 6 biểu đồ nến, mỗi ô chọn mã và khung thời gian riêng; lấy dữ liệu của sàn đang chọn.
+// Lai Long Web: lưới 2/4/6 biểu đồ trong khung Biểu đồ của Terminal. Tối đa 6 biểu đồ nến, mỗi ô chọn mã và khung thời gian riêng; lấy dữ liệu của sàn đang chọn.
 //   Laptop: thanh công cụ một hàng gồm Mẫu, Số ô, Đồng bộ, ↺ và ?; bố cục dùng chung lưới ghép với Terminal (kéo tiêu đề để
 //   đổi chỗ, kéo đường chia để đổi cỡ, nút – để thu nhỏ). Nhóm A/B hiện bằng vạch màu bên trái mỗi ô.
 //   Điện thoại: một biểu đồ mỗi màn hình, bấm tab hoặc vuốt tiêu đề để đổi ô; xoay ngang thì hiện 2 ô cạnh nhau.
 //   Mọi tuỳ chỉnh chỉ giữ trong lúc tab còn mở.
-import { FlowChart } from "./flowchart.js?v=202611090506";
-import { Layout } from "./layout.js?v=202611090506";
-import { deltaOf, footprintStep } from "./market.js?v=202611090506";
-import { INTERVALS, niceStep } from "./util.js?v=202611090506";
-import { analyze } from "./radar.js?v=202611090506";
-import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202611090506";
-import { clockSkew } from "./health.js?v=202611090506";
-import { approxFootprint, approxBar } from "./fphistory.js?v=202611090506";
+import { FlowChart } from "./flowchart.js?v=202611141528";
+import { Layout } from "./layout.js?v=202611141528";
+import { deltaOf, footprintStep } from "./market.js?v=202611141528";
+import { INTERVALS, niceStep } from "./util.js?v=202611141528";
+import { analyze } from "./radar.js?v=202611141528";
+import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202611141528";
+import { clockSkew } from "./health.js?v=202611141528";
+import { approxFootprint, approxBar } from "./fphistory.js?v=202611141528";
 
 const MAX = 6, KEY = "lailong.multi.v2", POLL = 3000;
 const IDS = Array.from({ length: MAX }, (_, i) => "mc" + i);

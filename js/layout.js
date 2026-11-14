@@ -7,7 +7,7 @@
 const KEY = "lailong.layout.v2", PRESETS = "lailong.layout.presets";
 const GAP = 5, MIN = 110;
 
-export const NAMES = { mainPanel: "Biểu đồ", lmapPanel: "Thanh khoản", domPanel: "Sổ lệnh", tapePanel: "Smart Tape", wallPanel: "Nhật ký tường", orderPanel: "Lệnh giả lập" };
+export const NAMES = { mainPanel: "Biểu đồ", liqPanel: "Thanh lý", domPanel: "Smart DOM", tapePanel: "Smart Tape", wallPanel: "Nhật ký tường", orderPanel: "Lệnh giả lập" };
 
 // bố cục mặc định giống bản cũ: biểu đồ co giãn, ba khung bên phải giữ độ rộng cố định
 export function defaultTree(w = {}) {
