@@ -957,8 +957,8 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 .gearmenu .gi { white-space: nowrap; }
 .gearmenu .mh { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; padding: 8px 12px 3px; border-top: 1px solid var(--line); }
 .gearmenu .mh:first-child { border-top: 0; }
-.menubar .gearmenu .gi { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 12px; background: transparent; border: 0; border-radius: 0; color: var(--ink); font-size: 12.5px; font-weight: 500; text-align: left; box-shadow: none; }
-.menubar .gearmenu button.gi:hover { background: var(--panel-2); }
+:is(.menubar, .ribbon) .gearmenu .gi { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 12px; background: transparent; border: 0; border-radius: 0; color: var(--ink); font-size: 12.5px; font-weight: 500; text-align: left; box-shadow: none; }
+:is(.menubar, .ribbon) .gearmenu button.gi:hover { background: var(--panel-2); }
 .gearmenu .gi small { color: var(--muted); font-size: 11px; }
 .gearmenu .gi.muted { color: var(--muted); font-size: 11.5px; }
 .gearmenu .gsw { display: inline-flex; gap: 3px; }
@@ -1073,7 +1073,7 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 .ribbon .qt { height: 36px; min-width: 56px; padding: 0 10px; border: 0; border-radius: 4px; font-weight: 800; font-size: 12.5px; letter-spacing: .04em; color: #fff; }
 .ribbon .qt.buy { background: var(--buy); } .ribbon .qt.buy:hover { filter: brightness(1.12); }
 .ribbon .qt.sell { background: var(--sell); } .ribbon .qt.sell:hover { filter: brightness(1.12); }
-.ribbon .qt.flat { background: #2b3442; color: #fff; } .ribbon .qt.flat:disabled { opacity: .45; cursor: default; }
+.ribbon .qt.flat { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); } .ribbon .qt.flat:disabled { opacity: .45; cursor: default; }
 .ribbon #rbAcct { font-family: var(--mono); font-size: 11px; color: #8b95a3; white-space: nowrap; }
 .ribbon #cdTerm { min-width: 6em; }
 .ribbon .lmenu .li { padding: 6px; }
@@ -1129,4 +1129,137 @@ body.not-terminal .ribbon { display: none; }
   .ribbon .rg.rg-layout, .ribbon .rg.rg-panels, .ribbon #rbAcct { display: none; }
   .ribbon .dropdown .menu { position: fixed; left: 6px; right: 6px; top: auto; min-width: 0; max-height: 70vh; overflow: auto; }
   .workspace > .liq-panel.mshow { flex: 0 0 30%; }
+}
+
+/* ---------- Terminal theo bản phác họa đã duyệt: chữ đơn cách, thanh Trang trên cùng, ribbon, tiêu đề khung có tab,
+   chip trạng thái, chân DOM có nút đặt lệnh, thanh vẽ có nhóm, thanh Phát lại, thanh trạng thái dưới cùng ---------- */
+.menubar, .ribbon, #view-terminal, .statusbar { --ui: var(--mono); }
+.menubar .brand { color: var(--accent); font: 700 14px/1 var(--mono); letter-spacing: .08em; }
+.menubar .brand span { display: none; }
+.menubar .ptabs { display: flex; align-items: stretch; gap: 0; margin: -3px 0 -3px 2px; }
+.menubar .ptabs-pages { display: contents; }
+.menubar .ptabs button { border-left: 1px solid var(--pro-line); font: 500 12px var(--mono); padding: 0 14px; height: auto; }
+.menubar .ptabs button.on { box-shadow: inset 0 2px 0 var(--accent); background: #20252d; }
+.menubar .ptabs > button:last-child { border-right: 1px solid var(--pro-line); }
+.menubar .ptabs .pg i { font-style: normal; color: #6b7480; margin-left: 8px; padding: 0 2px; }
+.menubar .ptabs .pg i:hover { color: #fff; }
+.menubar .ptabs .padd { color: #8b95a3; font-size: 15px; padding: 0 12px; }
+.menubar .acct { font: 500 12px var(--mono); color: #8b95a3; white-space: nowrap; padding: 0 6px; cursor: help; }
+.menubar .acct b { color: var(--pro-text); font-weight: 600; }
+.menubar .acct .pos { color: var(--buy); } .menubar .acct .neg { color: var(--sell); }
+@media (min-width: 901px) { body[data-view=terminal] .menubar #connPill { display: none; } }
+/* ribbon: nhóm Công cụ nhận nút Cảnh báo và Cài đặt khi đang ở Terminal (app.js chuyển chúng vào đây) */
+.ribbon .rib:has(.dropdown.open) { overflow: visible; }
+.ribbon #rgTools { gap: 2px; }
+.ribbon #rgTools > .dropdown > .tool { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 40px; height: 36px; padding: 2px 5px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: #cfd2dc; font-size: 15px; line-height: 16px; box-shadow: none; }
+.ribbon #rgTools > .dropdown > .tool:hover { background: var(--pro-hover); color: #fff; }
+.ribbon #rgTools > .dropdown.open > .tool { background: var(--pro-on); color: #fff; }
+.ribbon #rgTools .tool .lbl { display: block; font-size: 10.5px; line-height: 1.1; font-weight: 500; white-space: nowrap; }
+.ribbon #rgTools .tool .mob { display: none; }
+.ribbon .geardd #gearDot { top: 2px; right: 6px; }
+.ribbon .gridseg button { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 32px; padding: 2px 7px; font-size: 10.5px; line-height: 1.1; }
+.ribbon .gridseg button i { font-style: normal; font-size: 13px; line-height: 15px; letter-spacing: -1px; }
+.ribbon .rb, .ribbon .rg .cap, .ribbon .qt, .ribbon .field { font-family: var(--mono); }
+.ribbon :is(.rb, .tool, .ivbtn, .seg button), #view-terminal :is(.chip, .ptabs2 button, .domfoot button, .plist button), .replaybar button { text-transform: none; letter-spacing: 0; }
+/* tiêu đề khung: tab trong khung, ⚙ 📌 ▢ ✕ ở góc phải */
+#view-terminal .panel-head.tbar { flex-wrap: nowrap; overflow: visible; }
+#view-terminal .ptabs2 { display: flex; align-self: stretch; align-items: flex-end; gap: 1px; margin-left: 4px; min-width: 0; overflow: hidden; }
+#view-terminal .panel-head .ptabs2 button { border: 1px solid transparent; border-bottom: 0; border-radius: 3px 3px 0 0; padding: 3px 8px; font-size: 11.5px; color: #8b95a3; background: transparent; box-shadow: none; }
+#view-terminal .panel-head .ptabs2 button:hover { color: #fff; background: var(--pro-hover); }
+#view-terminal .panel-head .ptabs2 button.on { background: var(--pro-panel); color: #fff; border-color: #2d3039; box-shadow: inset 0 2px 0 var(--accent); }
+#view-terminal .ptabs2 b { font-weight: 600; color: var(--accent); margin-left: 2px; }
+#view-terminal .panel-head .tabadd { color: #8b95a3; padding: 1px 8px; font-size: 14px; }
+#view-terminal .panel-head .icon.pin { filter: grayscale(1); opacity: .5; }
+#view-terminal .panel-head .icon.pin.on { filter: none; opacity: 1; background: var(--pro-on); }
+#view-terminal .panel.pinned { border-color: #5a4419; }
+#view-terminal .panel:has(.dropdown.open) { z-index: 25; }
+#view-terminal .pdd .menu { min-width: 260px; max-width: min(380px, 90vw); }
+#view-terminal .pdd .menu .mh { font: 700 11px var(--mono); color: var(--accent); padding: 6px 6px 3px; }
+#view-terminal .pdd .menu .note { font-size: 11.5px; color: var(--muted); margin: 2px 6px 6px; line-height: 1.4; }
+#view-terminal .pdd .menu .li { padding: 2px 0; }
+#view-terminal .pdd .menu .li button { width: 100%; text-align: left; background: transparent; border: 1px solid transparent; padding: 5px 6px; }
+#view-terminal .pdd .menu .li button:hover { background: var(--pro-hover); }
+/* chip trạng thái dưới tiêu đề DOM và Tape */
+#view-terminal .chips { display: flex; gap: 5px; padding: 5px 6px; border-bottom: 1px solid var(--pro-line); background: var(--pro-panel); overflow-x: auto; scrollbar-width: none; flex: none; }
+#view-terminal .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border: 1px solid #2d3039; border-radius: 11px; background: #12151a; color: #9aa4b1; font: 500 11px/1.45 var(--mono); white-space: nowrap; cursor: default; flex: none; }
+#view-terminal button.chip { cursor: pointer; }
+#view-terminal button.chip:hover { color: #fff; border-color: #4a4d59; }
+#view-terminal .chip.on { color: var(--pro-text); border-color: #4a4d59; background: #1a1e25; }
+#view-terminal .chip b { color: #fff; font-weight: 600; }
+#view-terminal .chip .pos { color: var(--buy); } #view-terminal .chip .neg { color: var(--sell); }
+#view-terminal .chip.lean-b { border-color: color-mix(in srgb, var(--buy) 70%, transparent); color: var(--buy); background: color-mix(in srgb, var(--buy) 10%, transparent); }
+#view-terminal .chip.lean-s { border-color: color-mix(in srgb, var(--sell) 70%, transparent); color: var(--sell); background: color-mix(in srgb, var(--sell) 10%, transparent); }
+#view-terminal .chip.ice { border-color: #3b6fd6; color: #8fb3ff; }
+#view-terminal .chip.pull { border-color: #a5432f; color: #ff8a73; }
+#view-terminal .chip input { width: 54px; padding: 0 3px; border: 0; background: transparent; color: #fff; font: inherit; }
+/* chân Smart DOM: vị thế + MUA BÁN ĐÓNG, dòng hướng dẫn, bảng Lệnh chờ / Vị thế */
+#view-terminal .domfoot { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-top: 1px solid var(--pro-line); background: var(--pro-head); font: 500 12px var(--mono); color: #9aa4b1; flex: none; min-height: 36px; }
+#view-terminal .domfoot b { color: #fff; font-weight: 600; }
+#view-terminal :is(.domfoot, .plist) .pos { color: var(--buy); } #view-terminal :is(.domfoot, .plist) .neg { color: var(--sell); }
+#view-terminal .domfoot .dfpos { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#view-terminal .domfoot .qt { height: 26px; min-width: 50px; padding: 0 10px; border: 0; border-radius: 4px; font: 800 12px var(--mono); color: #fff; flex: none; }
+#view-terminal .domfoot .qt.buy { background: var(--buy); } #view-terminal .domfoot .qt.sell { background: var(--sell); }
+#view-terminal .domfoot .qt.flat { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+#view-terminal .domfoot .qt:hover { filter: brightness(1.12); }
+#view-terminal .domfoot .qt:disabled { opacity: .4; cursor: default; filter: none; }
+#view-terminal .dhint { padding: 4px 8px; font: 400 11px/1.4 var(--mono); color: #6f7884; border-top: 1px solid var(--pro-line); flex: none; }
+#view-terminal .plist { position: absolute; inset: 0; z-index: 2; overflow: auto; background: var(--pro-panel); padding: 6px; font: 12px var(--mono); }
+#view-terminal .plist table { width: 100%; border-collapse: collapse; }
+#view-terminal .plist :is(th, td) { padding: 5px 6px; text-align: left; border-bottom: 1px solid #1d2128; white-space: nowrap; }
+#view-terminal .plist th { color: #8b95a3; font-weight: 500; }
+#view-terminal .plist :is(.empty, .note) { color: var(--muted); padding: 10px 6px; line-height: 1.5; }
+#view-terminal .plist .li { padding-top: 8px; }
+/* thanh vẽ bên trái: nhóm Vẽ / Order flow, nút chữ, nút xoá ở dưới cùng */
+#view-terminal .toolrail { gap: 2px; }
+#view-terminal .toolrail .rsep { flex: none; width: 100%; text-align: center; font: 600 8.5px/1.15 var(--mono); color: #6b7480; letter-spacing: .03em; padding: 6px 2px 2px; border-top: 1px solid var(--pro-line); margin-top: 3px; text-transform: uppercase; }
+#view-terminal .toolrail .rsep:empty { padding: 0; }
+#view-terminal .toolrail .rt b { font: 700 13px/1 var(--mono); }
+#view-terminal .toolrail .rclear { margin-top: auto; }
+#view-terminal .toolrail .rclear:hover { color: var(--sell); }
+/* thanh Phát lại nổi trên biểu đồ */
+.replaybar { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 3px; padding: 4px 8px; background: rgba(20,23,28,.95); border: 1px solid #5a4419; border-radius: 6px; font: 500 12px var(--mono); color: var(--pro-text); box-shadow: 0 6px 20px rgba(0,0,0,.5); white-space: nowrap; max-width: calc(100% - 16px); overflow-x: auto; scrollbar-width: none; }
+.replaybar b { color: var(--accent); margin-right: 4px; font-weight: 600; }
+.replaybar button { background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--pro-text); padding: 2px 7px; font: inherit; }
+.replaybar button:hover { background: var(--pro-hover); color: #fff; }
+.replaybar button.on, .replaybar .play { color: var(--accent); border-color: #5a4419; }
+.replaybar select { background: #0f1215; border-color: var(--pro-line); border-radius: 4px; padding: 1px 4px; font: 11.5px var(--mono); }
+.replaybar .muted { color: #8b95a3; margin: 0 4px; }
+/* thanh trạng thái dưới cùng */
+.statusbar { flex: none; display: flex; align-items: center; gap: 16px; height: 24px; padding: 0 10px; background: #15181d; border-top: 1px solid #262b33; font: 500 11.5px/1 var(--mono); color: #8b95a3; white-space: nowrap; overflow: hidden; }
+.statusbar b { color: var(--pro-text); font-weight: 600; }
+.statusbar .pos { color: var(--buy); } .statusbar .neg { color: var(--sell); }
+.statusbar > .spacer { flex: 1; min-width: 8px; }
+.statusbar .sb-conn { display: inline-flex; align-items: center; gap: 6px; }
+.statusbar .sb-conn i { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.statusbar .sb-conn.ok i { background: var(--buy); } .statusbar .sb-conn.bad i { background: var(--sell); }
+.statusbar .sb-fp:empty { display: none; }
+.statusbar .sb-fp { max-width: 34ch; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
+body[data-view=terminal] .copyright { bottom: 8px; right: 10px; }
+body[data-view=terminal] .statusbar { padding-right: 132px; }
+.statusbar .sb-sig { min-width: 0; flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.statusbar .sb-sig > span { margin-right: 12px; cursor: help; }
+.statusbar .sb-clock { color: var(--pro-text); }
+body.not-terminal .statusbar { display: none; }
+@media (max-width: 1750px) {
+  .statusbar .sb-sig > span:nth-child(n+4) { display: none; }
+  .ribbon #cdTerm { display: none; }
+  .ribbon .rb { min-width: 36px; padding: 2px 4px; }
+  .ribbon #rgTools > .dropdown > .tool { min-width: 36px; padding: 2px 4px; }
+  .ribbon .field { font-size: 0; gap: 0; } .ribbon .field :is(select, input) { font-size: 12px; }
+  #view-terminal .chip { padding: 1px 6px; font-size: 10.5px; } #view-terminal .chip input { width: 36px; } #view-terminal .chips { gap: 4px; }
+  #view-terminal .panel-head.tbar .icon { padding: 1px 4px; }
+}
+@media (max-width: 1450px) {
+  .ribbon #rgTools .tool .lbl { display: none; }
+  .ribbon .gridseg button { font-size: 0; gap: 0; } .ribbon .gridseg button i { font-size: 13px; }
+  .menubar .ptabs button { padding: 0 9px; font-size: 11.5px; }
+  .statusbar { gap: 12px; } .statusbar .sb-keys, .statusbar .sb-sig { display: none; }
+  .ribbon #symbol { width: 86px; } .ribbon #exchange { max-width: 92px; }
+  .ribbon .qt { min-width: 44px; padding: 0 7px; } .ribbon .rg { padding: 4px 4px 2px; } .ribbon .ivseg button { padding: 4px 4px; min-width: 30px; }
+}
+@media (max-width: 1250px) { .menubar .acct { display: none; } }
+@media (max-width: 900px) {
+  .statusbar, #view-terminal .dhint, .menubar .ptabs .padd { display: none; }
+  #view-terminal .chips { padding: 4px; }
+  .replaybar { top: 8px; }
 }
