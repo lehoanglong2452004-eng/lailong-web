@@ -34,13 +34,13 @@ export function loadTheme() {
 }
 
 // Chữ "Lai Long" trắng mờ làm nền, vẽ ngay sau khi tô nền để nằm dưới dữ liệu
-export function watermark(ctx, w, h) {
+export function watermark(ctx, w, h, a = 0.06) {
   if (w < 120 || h < 60) return;
   const size = Math.round(Math.min(w / 5.5, h / 3, 140));
   ctx.save();
   ctx.font = `700 ${size}px 'IBM Plex Sans', 'Segoe UI', Arial, sans-serif`;
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillStyle = alpha(T.text, 0.06);
+  ctx.fillStyle = alpha(T.text, a);
   ctx.fillText("Lai Long", w / 2, h / 2);
   ctx.restore();
 }

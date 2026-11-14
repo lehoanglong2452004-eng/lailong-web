@@ -90,8 +90,9 @@ export function computeRects(n, box, hidden = new Set(), out = { panels: {}, spl
 
 export class Layout {
   // key: chỗ lưu trong phiên; tree: hàm dựng bố cục mặc định; hiddenDefault: các khung thu nhỏ sẵn khi mở
-  constructor(ws, ids, { legacy = {}, onChange = () => {}, key = KEY, tree = defaultTree, hiddenDefault = [], names = NAMES, presets = PRESETS } = {}) {
-    this.ws = ws; this.ids = ids; this.onChange = onChange; this.legacy = legacy;
+  // dock: false thì không có thanh "Đã thu nhỏ" (mở lại khung bằng nút riêng của trang, ví dụ nhóm Khung trên ribbon)
+  constructor(ws, ids, { legacy = {}, onChange = () => {}, key = KEY, tree = defaultTree, hiddenDefault = [], names = NAMES, presets = PRESETS, dock = true } = {}) {
+    this.ws = ws; this.ids = ids; this.onChange = onChange; this.legacy = legacy; this.useDock = dock;
     this.key = key; this.makeTree = () => tree(legacy); this.hiddenDefault = hiddenDefault; this.names = names; this.presetsKey = presets;
     this.mq = matchMedia("(min-width: 901px)");
     let saved = null;
@@ -100,6 +101,7 @@ export class Layout {
     const ok = saved && this.valid(saved.tree);
     this.tree = ok ? saved.tree : this.makeTree();
     this.hidden = new Set(ok && Array.isArray(saved.hidden) ? saved.hidden.filter(id => ids.includes(id)) : hiddenDefault);
+    this.pinned = new Set(ok && Array.isArray(saved.pinned) ? saved.pinned.filter(id => ids.includes(id)) : []); // khung đã ghim: không kéo đổi chỗ
     this.splitEls = [];
     this.dock = document.createElement("div"); this.dock.className = "dock"; this.dock.hidden = true;
     ws.appendChild(this.dock);
@@ -119,7 +121,9 @@ export class Layout {
     } catch { return x; }
   }
   valid(t) { try { const p = panelsOf(t); return p.length === this.ids.length && this.ids.every(id => p.includes(id)); } catch { return false; } }
-  save() { try { sessionStorage.setItem(this.key, JSON.stringify({ tree: this.tree, hidden: [...this.hidden] })); } catch { /* bỏ qua */ } }
+  save() { try { sessionStorage.setItem(this.key, JSON.stringify({ tree: this.tree, hidden: [...this.hidden], pinned: [...this.pinned] })); } catch { /* bỏ qua */ } }
+  togglePin(id) { if (this.pinned.has(id)) this.pinned.delete(id); else this.pinned.add(id); this.save(); this.onChange(); return this.pinned.has(id); }
+  isPinned(id) { return this.pinned.has(id); }
   get on() { return this.mq.matches; }
 
   apply() {
@@ -131,7 +135,7 @@ export class Layout {
       for (const id of this.ids) { const p = document.getElementById(id); p.style.cssText = ""; p.classList.remove("minimized"); }
       this.dock.hidden = true; return;
     }
-    const pad = 4, dockH = this.hidden.size ? 30 : 0;
+    const pad = 4, dockH = this.useDock && this.hidden.size ? 30 : 0;
     const box = { x: pad, y: pad, w: ws.clientWidth - pad * 2, h: ws.clientHeight - pad * 2 - dockH };
     const { panels, splits } = computeRects(this.tree, box, this.hidden);
     for (const id of this.ids) {
@@ -147,7 +151,7 @@ export class Layout {
       this.bindSplit(el, s);
       ws.appendChild(el); this.splitEls.push(el);
     }
-    this.dock.hidden = !this.hidden.size;
+    this.dock.hidden = !this.useDock || !this.hidden.size;
     this.dock.innerHTML = `<span class="dock-l">Đã thu nhỏ:</span>` + [...this.hidden].map(id => `<button data-restore="${id}" data-tip="Mở lại khung này">▣ ${this.names[id] || id}</button>`).join("");
     this.onChange();
   }
@@ -188,8 +192,9 @@ export class Layout {
   }
 
   presets() { try { return JSON.parse(localStorage.getItem(this.presetsKey) || "{}"); } catch { return {}; } }
-  savePreset(name) { const p = this.presets(); p[name] = { tree: clone(this.tree), hidden: [...this.hidden] }; try { localStorage.setItem(this.presetsKey, JSON.stringify(p)); } catch { /* bỏ qua */ } }
-  loadPreset(name) { const x = this.repair(this.presets()[name] || {}); if (!x || !this.valid(x.tree)) return; this.tree = clone(x.tree); this.hidden = new Set(x.hidden || []); this.apply(); this.save(); }
+  // extra: thông tin thêm của trang (ví dụ số biểu đồ), trả lại nguyên vẹn khi mở trang
+  savePreset(name, extra = {}) { const p = this.presets(); p[name] = { ...extra, tree: clone(this.tree), hidden: [...this.hidden], pinned: [...this.pinned] }; try { localStorage.setItem(this.presetsKey, JSON.stringify(p)); } catch { /* bỏ qua */ } }
+  loadPreset(name) { const raw = this.presets()[name] || {}, x = this.repair(raw); if (!x || !this.valid(x.tree)) return null; this.tree = clone(x.tree); this.hidden = new Set(x.hidden || []); this.pinned = new Set(raw.pinned || []); this.apply(); this.save(); return raw; }
   deletePreset(name) { const p = this.presets(); delete p[name]; try { localStorage.setItem(this.presetsKey, JSON.stringify(p)); } catch { /* bỏ qua */ } }
 
   // kéo tiêu đề khung: hiện vùng thả trên khung đang rê tới
@@ -207,7 +212,7 @@ export class Layout {
       const head = e.target.closest(".panel-head");
       if (!head || e.target.closest("button, select, input, label, a, .dropdown, .menu")) return;
       const p = head.closest(".panel");
-      if (!p || !this.ids.includes(p.id) || p.classList.contains("maxed")) return;
+      if (!p || !this.ids.includes(p.id) || p.classList.contains("maxed") || this.pinned.has(p.id)) return;
       drag = { id: p.id, x: e.clientX, y: e.clientY, on: false };
     });
     window.addEventListener("pointermove", e => {
@@ -216,7 +221,7 @@ export class Layout {
       if (!drag.on) { drag.on = true; document.body.classList.add("resizing", "dragging-panel"); document.getElementById(drag.id).classList.add("dragsrc"); }
       const el = document.elementFromPoint(e.clientX, e.clientY), t = el && el.closest(".panel");
       drag.target = drag.side = null; ov.hidden = true;
-      if (!t || t.id === drag.id || !this.ids.includes(t.id)) return;
+      if (!t || t.id === drag.id || !this.ids.includes(t.id) || (this.pinned.has(t.id) && sideOf(t.getBoundingClientRect(), e.clientX, e.clientY) === "center")) return; // khung đã ghim không bị đổi chỗ
       const r = t.getBoundingClientRect(), w = this.ws.getBoundingClientRect(), side = sideOf(r, e.clientX, e.clientY);
       drag.target = t.id; drag.side = side;
       const z = { left: [0, 0, .5, 1], right: [.5, 0, .5, 1], top: [0, 0, 1, .5], bottom: [0, .5, 1, .5], center: [.2, .2, .6, .6] }[side];

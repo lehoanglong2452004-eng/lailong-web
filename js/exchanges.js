@@ -11,7 +11,7 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202611141528";
+import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202611142030";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
 export function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
@@ -453,7 +453,29 @@ const sim = {
   _price: 65000, _anchor: 65000,
   async listSymbols() { return [{ symbol: "BTCUSDT", last: this._price, change: 0, volUsd: 1e9 }]; },
   async info() { return { tick: 0.1, ctVal: 1 }; },
+  // khung ≤ 1 giờ gộp từ một chuỗi 1 phút chung (sinh lại mỗi phút), để footprint ước tính từ nến nhỏ khớp đúng với nến lớn
+  _path(symbol) {
+    const key = symbol + ":" + Math.floor(Date.now() / 60e3);
+    if (!this._pc || this._pc.key !== key) this._pc = { key, bars: this._gen("1m", 120000, symbol, false) };
+    return this._pc.bars;
+  },
   _bars(interval, n, symbol = "BTCUSDT") {
+    const ms = INTERVALS[interval];
+    if (!(ms <= 3600e3)) return this._gen(interval, n, symbol, true);
+    const base = this._path(symbol), out = [];
+    const need = Math.min(base.length, (n + 1) * Math.round(ms / 60e3));
+    let cur = null;
+    for (let i = base.length - need; i < base.length; i++) {
+      const b = base[i], t = Math.floor(b.t / ms) * ms;
+      if (!cur || cur.t !== t) { if (cur) out.push(cur); cur = { t, o: b.o, h: b.h, l: b.l, c: b.c, v: b.v, bv: b.bv, oi: b.oi, full: b.t === t }; }
+      else { cur.h = Math.max(cur.h, b.h); cur.l = Math.min(cur.l, b.l); cur.c = b.c; cur.v += b.v; cur.bv += b.bv; cur.oi = b.oi; }
+    }
+    if (cur) out.push(cur);
+    if (out.length && !out[0].full) out.shift(); // nến đầu thiếu phút
+    const res = out.slice(-n), k = res.length ? this._anchor / res[res.length - 1].c : 1;
+    return res.map(({ full, ...b }) => ({ ...b, o: b.o * k, h: b.h * k, l: b.l * k, c: b.c * k }));
+  },
+  _gen(interval, n, symbol, anchor) {
     // mỗi mã giả lập một chuỗi giá riêng (BTCUSDT giữ nguyên chuỗi cũ)
     const seed = symbol === "BTCUSDT" ? 0 : [...symbol].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 100003, 7);
     const ms = INTERVALS[interval], r = prng(7 + ms / 1000 + seed), out = [];
@@ -466,11 +488,11 @@ const sim = {
       const c = o * Math.exp(ret), h = Math.max(o, c) * (1 + Math.abs(gauss(r)) * vol * 0.6), l = Math.min(o, c) * (1 - Math.abs(gauss(r)) * vol * 0.6);
       const v = 400 * Math.sqrt(ms / 60e3) * Math.exp(gauss(r) * 0.5 + (Math.abs(ret) / vol) * 0.4);
       const bv = v * Math.min(0.95, Math.max(0.05, 0.5 + ret / vol * 0.15 + gauss(r) * 0.05));
-      oi = Math.max(1000, oi * (1 + gauss(r) * 0.004 + (Math.abs(ret) > vol * 2 ? -0.01 : 0.0015)));
+      oi = Math.max(1000, oi * (1 + gauss(r) * 0.004 + (Math.abs(ret) > vol * 2 ? -0.01 : 0.0015) - (oi / 80000 - 1) * 0.002)); // kéo dần về mức nền, chuỗi dài không phình vô hạn
       out.push({ t, o, h, l, c, v, bv, oi }); p = c;
     }
     // đưa giá cuối về đúng giá đang chạy để nến lịch sử khớp với sổ lệnh giả lập
-    const k = out.length ? this._anchor / out[out.length - 1].c : 1;
+    const k = out.length && anchor ? this._anchor / out[out.length - 1].c : 1;
     for (const b of out) { b.o *= k; b.h *= k; b.l *= k; b.c *= k; }
     return out;
   },
