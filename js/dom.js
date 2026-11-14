@@ -4,10 +4,10 @@
 // Cột (bật/tắt được): khối lượng hôm nay | tường lệnh chờ | thay đổi chờ mua | bán đã khớp | chờ mua | giá |
 // chờ bán | mua đã khớp | thay đổi chờ bán | kéo/xếp | footprint nến | cân bằng | tổng chờ.
 // Kiểu vẽ: nền xám than, dải chờ mua xanh / chờ bán đỏ chạy dọc hai bên cột giá, lệnh chờ lớn bất thường
-// (≥ 4 lần trung vị trong khung nhìn) tô đậm và chữ trắng đậm như "large size highlight" của Jigsaw. Bản đồ thanh khoản nằm ở khung riêng (liqmap.js), cùng dòng giá.
+// (≥ 4 lần trung vị trong khung nhìn) tô đậm và chữ trắng đậm như "large size highlight" của Jigsaw.
 
-import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202611090506";
-import { T, alpha } from "./theme.js?v=202611090506";
+import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202611141528";
+import { T, alpha } from "./theme.js?v=202611141528";
 
 export const ROW_H = 18, HDR_H = 24;
 const UI = "'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif";

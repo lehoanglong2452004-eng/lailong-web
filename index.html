@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Lai Long Desk</title>
 <meta name="copyright" content="© 2026 Lai Long Desk">
-<meta name="description" content="Phân tích định lượng thuần giá và khối lượng cho crypto futures: bookmap, footprint, sổ lệnh, thanh lý, hỗ trợ/kháng cự, xu hướng, động lượng, biến động và backtest.">
+<meta name="description" content="Phân tích định lượng thuần giá và khối lượng cho crypto futures: footprint, order flow, sổ lệnh, thanh lý, hỗ trợ/kháng cự, xu hướng, động lượng, biến động và backtest.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%23000'/%3E%3Cpath d='M3 12V4h2v6h4v2zM10 12V4h2v6h2v2z' fill='%23ff9f1c'/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#000000">
@@ -16,28 +16,18 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611090506">
-<link rel="stylesheet" href="css/app.css?v=202611090506">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611141528">
+<link rel="stylesheet" href="css/app.css?v=202611141528">
 </head>
 <body>
 <header class="menubar">
   <div class="brand" data-tip="© 2026 Lai Long Desk. Bảo lưu mọi quyền.">LAI LONG <span>DESK</span></div>
   <nav class="seg views" id="views">
-    <button data-view="terminal" class="on" data-tip="Bookmap, footprint, nến và sổ lệnh trực tiếp">Terminal</button>
-    <button data-view="multi" data-tip="Nhiều biểu đồ nến cùng lúc, mỗi ô một mã và khung thời gian riêng; kéo thả, đổi cỡ, thu nhỏ từng ô">Đa biểu đồ</button>
+    <button data-view="terminal" class="on" data-tip="Footprint, order flow, Smart DOM, Smart Tape và thanh lý trực tiếp">Terminal</button>
     <button data-view="news" data-tip="Lịch kinh tế có số thực tế, tin tức cập nhật vài phút một lần, báo động khi chỉ số biến động bất thường">Tin tức</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
   </nav>
-  <label class="field termmulti" data-tip="Sàn lấy dữ liệu. Giả lập: dữ liệu ngẫu nhiên để thử giao diện">Sàn <select id="exchange"></select></label>
-  <label class="field termonly" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
   <datalist id="symbolList"></datalist>
-  <button id="toolsBtn" class="tool on termonly" data-tip="Ẩn/hiện thanh công cụ của biểu đồ (Bookmap, Footprint, Nến, lớp hiển thị...) để biểu đồ cao hơn">☰<span class="lbl"> Công cụ</span></button>
-  <div class="dropdown ivdd termonly"><button id="ivBtn" class="tool ivbtn" aria-label="Khung thời gian của mỗi nến"></button><div class="menu ivmenu" id="intervals"></div></div>
-  <span id="cdTerm" class="cdterm termonly" data-tip="Thời gian còn lại tới lúc đóng nến của khung đang xem (giờ sàn). Chuyển màu khi sắp đóng"></span>
-  <div class="dropdown layoutdd termonly">
-    <button id="layoutBtn" class="tool" data-tip="Bố cục Terminal: kéo tiêu đề khung để đổi chỗ, kéo đường chia để đổi kích thước">▦<span class="lbl"> Bố cục</span></button>
-    <div class="menu right" id="layoutMenu"></div>
-  </div>
   <div class="spacer"></div>
   <div class="pill evpill" id="evPill" hidden></div>
   <div class="pill" id="connPill" data-tip="Trạng thái kết nối dữ liệu trực tiếp với sàn"><i></i><span>Đang kết nối</span></div>
@@ -91,190 +81,134 @@
 </header>
 
 <!-- ============ TERMINAL ============ -->
-<main class="view workspace" id="view-terminal">
-  <section class="panel chart-panel" id="mainPanel">
-    <div class="panel-head chart-tools" id="chartTools">
-      <div class="seg" id="chartMode">
-        <button data-mode="heat" class="on" data-g="bookmap">Bookmap</button>
-        <button data-mode="box" data-g="footprint">Footprint</button>
-        <button data-mode="liq" data-g="liq-heat">Thanh lý</button>
-      </div>
-      <div class="dropdown noLiq">
-        <button id="layerBtn" data-tip="Bật/tắt các lớp dữ liệu vẽ trên biểu đồ. Mặc định tắt hết; chọn công cụ ở thanh bên trái thì lớp cần cho công cụ đó tự bật">Lớp hiển thị <b class="lcount" id="layerCount">0</b> ▾</button>
-        <div class="menu layermenu" id="layerMenu">
-          <p class="note">Mặc định tắt hết. Bấm một công cụ ở thanh bên trái biểu đồ, lớp mà công cụ đó cần sẽ tự bật.</p>
+<div class="ribbon" id="ribbon">
+  <div class="pages" id="pages"></div>
+  <div class="rib">
+    <div class="rg"><div class="row">
+        <label class="field" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
+        <label class="field" data-tip="Sàn lấy dữ liệu. Giả lập: dữ liệu ngẫu nhiên để thử giao diện">Sàn <select id="exchange"></select></label>
+      </div><div class="cap">Mã · Sàn</div></div>
+    <div class="rg"><div class="row">
+        <div class="seg ivseg" id="ivSeg"></div>
+        <div class="dropdown ivdd"><button id="ivBtn" class="tool ivbtn" aria-label="Khung thời gian của mỗi nến"></button><div class="menu ivmenu" id="intervals"></div></div>
+        <span id="cdTerm" class="cdterm" data-tip="Thời gian còn lại tới lúc đóng nến của khung đang xem (giờ sàn). Chuyển màu khi sắp đóng"></span>
+      </div><div class="cap">Khung thời gian</div></div>
+    <div class="rg"><div class="row">
+        <div class="dropdown"><button id="layerBtn" class="rb" data-tip="Bật/tắt các lớp dữ liệu vẽ trên biểu đồ"><i>◧</i>Lớp <b class="lcount" id="layerCount">0</b></button>
+          <div class="menu layermenu" id="layerMenu">
+          <p class="note">Bấm một công cụ ở thanh bên trái biểu đồ, lớp mà công cụ đó cần sẽ tự bật. Mặc định bật: vùng lệnh chờ lớn, mất cân bằng xếp chồng, hồ sơ khối lượng.</p>
           <h4>Lớp phân tích</h4>
+          <label data-g="rest-liq"><input type="checkbox" data-layer="walls" checked> Vùng lệnh chờ lớn đang đứng (từ sổ lệnh thật)</label>
           <label data-g="sr-level"><input type="checkbox" data-layer="levels"> Hỗ trợ / kháng cự đã test</label>
           <label data-g="abnormal-volume"><input type="checkbox" data-layer="zones"> Vùng khối lượng bất thường</label>
           <label data-g="confluence"><input type="checkbox" data-layer="confl"> Vùng hợp lưu (từ 3 điểm)</label>
           <label data-g="liquidation"><input type="checkbox" data-layer="liq"> Lệnh thanh lý thật</label>
           <label data-g="liq-map"><input type="checkbox" data-layer="liqMap"> Bản đồ thanh lý ước tính</label>
-          <label data-g="big-trade"><input type="checkbox" data-layer="bigOnly"> Chỉ hiện lệnh lớn (Bookmap)</label>
-          <label data-g="iceberg"><input type="checkbox" data-layer="ice"> Lệnh băng chìm / nạp lại (Bookmap)</label>
-          <label data-g="large-lot"><input type="checkbox" data-layer="lots"> Lệnh chờ lớn, Large Lot Tracker (Bookmap)</label>
-          <label data-g="bm-sweeps"><input type="checkbox" data-layer="sweeps"> Lệnh quét nhiều mức giá, Sweeps (Bookmap)</label>
-          <label data-g="bm-absorb"><input type="checkbox" data-layer="hAbsorb"> Hấp thụ, Absorption (Bookmap)</label>
-          <label data-g="bm-stops"><input type="checkbox" data-layer="stops"> Chuỗi cắt lỗ, Stops (Bookmap)</label>
-          <label data-g="stacked-imbalance"><input type="checkbox" data-layer="imb"> Mất cân bằng xếp chồng (footprint)</label>
-          <label data-g="fp-auction"><input type="checkbox" data-layer="auction"> Đấu giá chưa xong, kiệt sức (footprint)</label>
+          <label data-g="stacked-imbalance"><input type="checkbox" data-layer="imb" checked> Mất cân bằng xếp chồng</label>
+          <label data-g="fp-auction"><input type="checkbox" data-layer="auction"> Đấu giá chưa xong, kiệt sức</label>
           <label data-g="fp-diverg"><input type="checkbox" data-layer="diverg"> Phân kỳ delta</label>
-          <label data-g="absorption"><input type="checkbox" data-layer="absorb"> Chỉ báo hấp thụ (footprint)</label>
-          <label data-g="big-trades"><input type="checkbox" data-layer="big"> Big Trades (footprint)</label>
-          <label data-g="signal-score"><input type="checkbox" data-layer="score"> Điểm tín hiệu ≥ 60 (footprint)</label>
-          <label data-g="algo-twap"><input type="checkbox" data-layer="algo"> Dấu vết lệnh chia đều (footprint)</label>
-          <label data-g="spoofing"><input type="checkbox" data-layer="spoof"> Tường giả bị rút (footprint)</label>
-          <label data-g="volume-profile"><input type="checkbox" data-layer="profile"> Hồ sơ khối lượng vùng đang xem</label>
+          <label data-g="absorption"><input type="checkbox" data-layer="absorb"> Chỉ báo hấp thụ</label>
+          <label data-g="big-trades"><input type="checkbox" data-layer="big"> Big Trades</label>
+          <label data-g="signal-score"><input type="checkbox" data-layer="score"> Điểm tín hiệu ≥ 60</label>
+          <label data-g="algo-twap"><input type="checkbox" data-layer="algo"> Dấu vết lệnh chia đều</label>
+          <label data-g="spoofing"><input type="checkbox" data-layer="spoof"> Tường giả bị rút</label>
+          <label data-g="volume-profile"><input type="checkbox" data-layer="profile" checked> Hồ sơ khối lượng vùng đang xem</label>
           <label data-g="range-profile"><input type="checkbox" data-layer="dayProfile"> Hồ sơ khối lượng từng ngày</label>
-          <label data-g="cvd-oi-combo"><input type="checkbox" data-layer="cvd"> CVD + open interest (footprint)</label>
+          
           <h4>Phần lõi của biểu đồ</h4>
-          <label data-g="trade-bubble"><input type="checkbox" data-layer="bubbles" checked> Bong bóng khớp lệnh (Bookmap)</label>
-          <label data-g="fp-stats"><input type="checkbox" data-layer="stats" checked> Mua / Bán / Delta dưới mỗi nến (footprint)</label>
-          <label data-g="delta"><input type="checkbox" data-layer="delta" checked> Ô Delta (footprint)</label>
-          <label data-g="dom-chart"><input type="checkbox" data-layer="depth" checked> Depth Of Market: sổ lệnh trên biểu đồ (footprint, nến)</label>
-          <h4>Khung phụ</h4>
-          <label data-g="dom-liqmap"><input type="checkbox" id="lmapShow"> Khung bản đồ thanh khoản (cạnh sổ lệnh)</label>
+          <label data-g="fp-stats"><input type="checkbox" data-layer="stats" checked> Dòng Khối lượng dưới mỗi nến</label>
+          <label data-g="fp-stats"><input type="checkbox" data-layer="statsFull"> Thêm dòng Delta và Delta cộng dồn dưới nến</label>
+          <label data-g="delta"><input type="checkbox" data-layer="delta"> Ô Delta (thanh delta từng nến)</label>
+          <label data-g="dom-chart"><input type="checkbox" data-layer="depth" checked> Depth Of Market: sổ lệnh trên biểu đồ</label>
           <div class="li"><button class="tool" id="layersOff">Tắt hết lớp phân tích</button></div>
-        </div>
-      </div>
-      <div class="dropdown heatOnly">
-        <button id="hmCfgBtn" data-g="bm-settings">⚙ Cài đặt ▾</button>
-        <div class="menu hmcfg" id="hmCfgMenu">
-          <p class="note">Nhấp đúp vào ô để về mặc định.</p>
-          <h4>Multibook</h4>
-          <label data-g="multibook"><input type="checkbox" id="multiBook"> Gộp sổ lệnh và khớp lệnh Binance + OKX + Bybit</label>
-          <div id="recWrap" hidden>
-            <h4 data-g="recorder">Máy ghi 24/7 (laptop)</h4>
-            <div id="recStatus" class="note"></div>
-            <label class="row" data-g="recorder">Mã cần ghi <input type="text" id="recSyms" placeholder="BTCUSDT, ETHUSDT" spellcheck="false"></label>
-            <label class="row" data-g="recorder">Giữ lại (ngày) <input type="number" id="recKeep" min="1" max="90" step="1" value="7"></label>
-            <label class="row" data-g="recorder">Nạp lịch sử khi mở (giờ) <input type="number" id="recHours" min="0" max="72" step="1" value="6"></label>
-            <button class="tool" id="recSave">Lưu cài đặt máy ghi</button>
           </div>
-          <h4>Màu bản đồ</h4>
-          <label class="row" data-g="bm-colors">Bảng màu <select data-hm="palette"><option value="bookmap" selected>Bookmap</option><option value="gray">Xám</option></select></label>
-          <label class="row" data-g="bm-cutoff">Ngưỡng cắt trên (phân vị %) <input type="number" data-hm="upper" value="99" min="50" max="100" step="0.5"></label>
-          <label class="row" data-g="bm-cutoff">Ngưỡng cắt dưới (phân vị %) <input type="number" data-hm="lower" value="50" min="0" max="60" step="0.5"></label>
-          <label class="row" data-g="bm-auto">Tự chỉnh tương phản <select data-hm="auto"><option value="live" selected>Liên tục</option><option value="recenter">Khi căn giữa lại</option><option value="off">Giữ nguyên (chỉ đổi khi phóng)</option></select></label>
-          <label data-g="bm-lines"><input type="checkbox" data-hm="lines" checked> Mức giá thành vệt sáng khi phóng to</label>
-          <label class="row" data-g="bm-persist">Làm mượt theo thời gian <select data-hm="persist"><option value="0">Tắt</option><option value="1">1 giây</option><option value="3" selected>3 giây</option><option value="6">6 giây</option></select></label>
-          <label data-g="bm-soft"><input type="checkbox" data-hm="soft" checked> Làm mịn hiển thị (như Bookmap)</label>
-          <label class="row" data-g="bm-smooth">Làm mịn dọc <select data-hm="smooth"><option value="auto" selected>Tự động</option><option value="none">Tắt</option><option value="1">Nhẹ</option><option value="2">Vừa</option><option value="3">Mạnh</option></select></label>
-          <label class="row" data-g="bm-dim">Làm tối (%) <input type="number" data-hm="dim" value="0" min="0" max="90" step="5"></label>
-          <label data-g="bm-aggregate"><input type="checkbox" data-hm="aggregate"> Sổ lệnh cộng dồn trên bản đồ</label>
-          <h4>Bong bóng khối lượng</h4>
-          <label class="row" data-g="trade-bubble">Dạng <select data-hm="dots"><option value="2d" selected>2D</option><option value="3d">3D</option></select></label>
-          <label class="row" data-g="trade-bubble">Kiểu tô <select data-hm="dotStyle"><option value="side" selected>Một màu theo phe (Bookmap)</option><option value="pie">Chia miếng</option><option value="gradient">Pha màu</option><option value="solid">Hai màu đặc</option></select></label>
-          <label class="row" data-g="bm-cluster">Gom bong bóng <select data-hm="cluster"><option value="smart" selected>Thông minh</option><option value="time">Theo thời gian</option><option value="volume">Theo khối lượng</option><option value="price">Theo giá</option></select></label>
-          <label class="row" data-g="bm-cluster">Gom theo thời gian (giây) <input type="number" data-hm="clusterSec" value="1" min="0.5" max="300" step="0.5"></label>
-          <label class="row" data-g="bm-cluster">Gom theo khối lượng (0 = tự động) <input type="number" data-hm="clusterVol" value="0" min="0" step="any"></label>
-          <label class="row" data-g="bm-dotmode">Hiện theo <select data-hm="dotMode"><option value="total" selected>Tổng khối lượng</option><option value="delta">Delta (mua − bán)</option></select></label>
-          <label class="row" data-g="bm-dotmin">Ẩn bong bóng nhỏ hơn <input type="number" data-hm="dotMin" value="0" min="0" step="any"></label>
-          <label class="row" data-g="trade-bubble">Cỡ bong bóng (×) <input type="number" data-hm="dotSize" value="1" min="0.2" max="4" step="0.1"></label>
-          <label class="row" data-g="trade-bubble">Độ đậm (%) <input type="number" data-hm="dotAlpha" value="100" min="10" max="100" step="5"></label>
-          <h4>Đường trên bản đồ</h4>
-          <label class="row" data-g="bm-bbo">Ẩn giá mua/bán khi gần nhau dưới (điểm ảnh) <input type="number" data-hm="bboHide" value="3" min="0" max="30" step="1"></label>
-          <label data-g="bm-bbo"><input type="checkbox" data-hm="lastLine" checked> Đường giá khớp cuối</label>
-          <label data-g="bm-vwap"><input type="checkbox" data-hm="vwap" checked> VWAP phiên</label>
-          <label data-g="bm-poc"><input type="checkbox" data-hm="poc" checked> Đường POC (từ cột Volume Profile)</label>
-          <label class="row" data-g="bm-candles">Nến của khung đang chọn <select data-hm="candles"><option value="auto" selected>Tự hiện, tự đổi khung khi thu nhỏ</option><option value="on">Luôn hiện (khung đang chọn)</option><option value="off">Tắt</option></select></label>
-          <label data-g="bm-candlevol"><input type="checkbox" data-hm="candleVol" checked> Số mua / bán dưới nến</label>
-          <label data-g="bm-glow"><input type="checkbox" data-hm="glow" checked> Bóng hấp thụ trên nến</label>
-          <label data-g="book-imb"><input type="checkbox" data-hm="imb"> Mất cân bằng sổ lệnh ±0,5% ở ô dưới (cạnh CVD)</label>
-          <label data-g="tape-speed"><input type="checkbox" data-hm="speed"> Tốc độ băng (lệnh mỗi giây) ở ô dưới</label>
-          <label class="row" data-g="bm-slices">Vạch chia thời gian <select data-hm="slices"><option value="0" selected>Tắt</option><option value="10">10 giây</option><option value="15">15 giây</option><option value="30">30 giây</option><option value="60">1 phút</option><option value="120">2 phút</option><option value="300">5 phút</option><option value="600">10 phút</option><option value="900">15 phút</option><option value="1800">30 phút</option><option value="3600">60 phút</option></select></label>
-          <label class="row" data-g="bm-recenter">Tự căn giữa theo <select data-hm="recenter"><option value="bbo" selected>Giá mua/bán</option><option value="last">Giá khớp cuối</option><option value="none">Tắt</option></select></label>
-          <h4>Cột bên phải</h4>
-          <label data-g="bm-cob"><input type="checkbox" data-hm="colCob" checked> COB: sổ lệnh hiện tại</label>
-          <label data-g="bm-cob"><input type="checkbox" data-hm="colCum"> Kèm sổ lệnh cộng dồn</label>
-          <label data-g="bm-cob"><input type="checkbox" data-hm="cobPct"> COB hiện % thay vì số</label>
-          <label data-g="bm-vp"><input type="checkbox" data-hm="colCvp" checked> Volume Profile vùng đang xem</label>
-          <label data-g="bm-vp"><input type="checkbox" data-hm="colSvp"> Volume Profile cả phiên</label>
-          <label data-g="bm-qd"><input type="checkbox" data-hm="colQd"> +/− lệnh chờ thêm hay rút</label>
-          <label data-g="bm-tc"><input type="checkbox" data-hm="colTc"> Đếm số lệnh khớp</label>
         </div>
-      </div>
-      <label class="field small flowOnly" data-g="cvd-pro">Ô dưới
-        <select id="paneMode"><option value="deltaCvd">Delta + CVD</option><option value="delta">Delta</option><option value="cvd">CVD</option><option value="cvdpro">CVD Pro</option><option value="ofi">OFI (áp lực sổ lệnh)</option><option value="vpin">VPIN (dòng lệnh độc)</option><option value="groups">Delta theo nhóm người chơi</option></select>
-      </label>
-      <div class="seg noLiq" id="drawTools">
-        <button data-draw="line" data-g="drawing">─ Đường</button>
-        <button data-draw="zone" data-g="drawing">▤ Vùng</button>
-        <button data-draw="clear" data-tip="Xoá mọi đường và vùng đã vẽ của mã này">✕</button>
-      </div>
-      <button id="overviewBtn" class="tool heatOnly" data-g="bm-overview">⛶ Toàn cảnh</button>
-      <button id="replayBtn" class="tool heatOnly" data-g="bm-replay">▶ Phát lại</button>
-      <button id="selBtn" class="tool" data-g="range-profile">▭ Chọn vùng</button>
-      <div class="dropdown noLiq">
-        <button id="clusterBtn" data-g="cluster-search">Tìm cụm ▾</button>
-        <div class="menu" id="clusterMenu">
+        <div class="dropdown"><button id="fpBtn" class="rb" data-g="fp-modes"><i>▦</i>Footprint</button>
+          <div class="menu fpmenu" id="fpMenu">
+            <p class="note">Cách hiện từng ô và các khung dưới biểu đồ. Nhấp đúp vào ô để về mặc định.</p>
+            <label class="row">Ô footprint <select id="fpMode"><option value="bidask">Mua × Bán</option><option value="bavol">Mua × Bán + tổng</option><option value="delta">Delta</option><option value="volume">Khối lượng</option><option value="histo">Thanh mua/bán</option><option value="profile">Hồ sơ trong nến</option><option value="ratio">Tỷ lệ chéo</option></select></label>
+            <label class="row">Tô màu <select id="fpColor"><option value="side" selected>Mua/bán</option><option value="volume">Theo khối lượng</option><option value="delta">Theo delta</option><option value="imbalance">Chỉ mất cân bằng</option><option value="candle">Theo nến</option></select></label>
+            <label class="row" data-tip="Gộp bao nhiêu bước giá vào một dòng của footprint">Tầng giá <select id="rowSize"><option value="auto" selected>Tự động</option><option>1</option><option>2</option><option>5</option><option>10</option><option>20</option><option>50</option></select></label>
+            <label class="row" data-g="cvd-pro">Khung dưới <select id="paneMode"><option value="cvdOiVol" selected>CVD · Open Interest · Khối lượng</option><option value="deltaCvd">Delta + CVD</option><option value="delta">Delta</option><option value="cvd">CVD</option><option value="cvdpro">CVD Pro</option><option value="ofi">OFI (áp lực sổ lệnh)</option><option value="vpin">VPIN (dòng lệnh độc)</option><option value="groups">Delta theo nhóm người chơi</option></select></label>
+            <label class="row" data-tip="Khung Khối lượng: cột mua trên, bán dưới; hoặc một cột delta">Khung Khối lượng <select id="volStyle"><option value="split" selected>Mua trên · bán dưới</option><option value="delta">Delta</option></select></label>
+          </div>
+        </div>
+        <button id="selBtn" class="rb" data-g="range-profile"><i>▭</i>Chọn vùng</button>
+        <div class="dropdown"><button id="clusterBtn" class="rb" data-g="cluster-search"><i>◫</i>Tìm cụm</button>
+          <div class="menu" id="clusterMenu">
           <label><input type="checkbox" id="clOn"> Bật tìm cụm khối lượng</label>
           <label class="row">Đo theo <select id="clMetric"><option value="volume">Tổng khối lượng</option><option value="delta">Delta |mua − bán|</option><option value="buy">Mua chủ động</option><option value="sell">Bán chủ động</option></select></label>
           <label class="row">Ngưỡng <select id="clTop"><option value="0.001">Top 0,1%</option><option value="0.005" selected>Top 0,5%</option><option value="0.01">Top 1%</option><option value="0.02">Top 2%</option></select></label>
           <label class="row">Hoặc tối thiểu <input type="number" id="clMin" min="0" step="any" placeholder="tự động" style="width:90px"></label>
         </div>
-      </div>
-      <label class="field small liqOnly" hidden data-g="liq-range">Khoảng
-        <select id="liqRange"><option value="24h">24 giờ</option><option value="3d" selected>3 ngày</option><option value="7d">7 ngày</option><option value="30d">30 ngày</option></select>
-      </label>
-      <label class="field small liqOnly" hidden data-g="liq-model">Mô hình
-        <select id="liqModel"><option value="all" selected>Đòn bẩy 5x–100x</option><option value="high">Đòn bẩy cao 25x–100x</option><option value="low">Đòn bẩy thấp 5x–25x</option></select>
-      </label>
-      <label class="field small liqOnly" hidden data-g="liq-thr">Ngưỡng màu <input type="range" id="liqThr" min="0.02" max="0.7" step="0.02" value="0.22"></label>
-      <span class="field small hmsliders" id="contrastBox"><label data-g="contrast">Tương phản <input type="range" id="contrast" min="0.3" max="4" step="0.1" value="1"></label><label data-tip="Độ sáng của bản đồ thanh khoản">Độ sáng <input type="range" id="bright" min="40" max="220" step="5" value="100"></label><i class="heatgrad" data-tip="Thang màu: xanh là lệnh chờ vừa, vàng, cam, đỏ là lớn dần, trắng là rất lớn"></i></span>
-      <label class="field small" id="fpModeBox" hidden data-g="fp-modes">Ô
-        <select id="fpMode"><option value="bidask">Mua × Bán</option><option value="bavol">Mua × Bán + tổng</option><option value="delta">Delta</option><option value="volume">Khối lượng</option><option value="histo">Thanh mua/bán</option><option value="profile">Hồ sơ trong nến</option><option value="ratio">Tỷ lệ chéo</option></select>
-      </label>
-      <label class="field small" id="fpColorBox" hidden data-g="fp-modes">Tô màu
-        <select id="fpColor"><option value="side" selected>Mua/bán (ATAS)</option><option value="volume">Theo khối lượng</option><option value="delta">Theo delta</option><option value="imbalance">Chỉ mất cân bằng</option><option value="candle">Theo nến</option></select>
-      </label>
-      <label class="field small" id="rowBox" hidden data-tip="Gộp bao nhiêu bước giá vào một dòng của footprint">Tầng giá
-        <select id="rowSize"><option value="auto" selected>Tự động</option><option>1</option><option>2</option><option>5</option><option>10</option><option>20</option><option>50</option></select>
-      </label>
+        </div>
+        <div class="dropdown"><button id="drawBtn" class="rb" data-g="drawing"><i>✎</i>Vẽ</button>
+          <div class="menu drawmenu">
+            <p class="note">Chọn công cụ rồi bấm hoặc kéo trên biểu đồ. Bấm đúp lên hình để xoá.</p>
+            <div class="seg drawseg" id="drawTools">
+              <button data-draw="line" data-g="drawing">─ Đường</button>
+              <button data-draw="zone" data-g="drawing">▤ Vùng</button>
+              <button data-draw="clear" data-tip="Xoá mọi đường và vùng đã vẽ của mã này">✕ Xoá hết</button>
+            </div>
+          </div>
+        </div>
+      </div><div class="cap">Biểu đồ</div></div>
+    <div class="rg rg-layout"><div class="row">
+        <div class="seg" id="gridSeg" data-tip="Số biểu đồ trong khung Biểu đồ. Từ 2 ô trở lên, mỗi ô có mã và khung riêng">
+          <button data-n="1" class="on">▢ 1</button><button data-n="2">▯▯ 2</button><button data-n="4">▦ 4</button><button data-n="6">▦▦ 6</button>
+        </div>
+        <div class="dropdown layoutdd"><button id="layoutBtn" class="rb" data-tip="Bố cục Terminal: kéo tiêu đề khung để đổi chỗ, kéo đường chia để đổi kích thước"><i>⊞</i>Mẫu</button><div class="menu right" id="layoutMenu"></div></div>
+      </div><div class="cap">Bố cục</div></div>
+    <div class="rg rg-panels"><div class="row" id="panelBtns">
+        <button class="rb" data-tg="domPanel" data-tip="Bật / tắt khung Smart DOM"><i>☰</i>DOM</button>
+        <button class="rb" data-tg="tapePanel" data-tip="Bật / tắt khung Smart Tape"><i>≡</i>Tape</button>
+        <button class="rb" data-tg="liqPanel" data-tip="Bật / tắt cột Thanh lý cạnh biểu đồ"><i>🔥</i>Thanh lý</button>
+        <button class="rb" data-tg="orderPanel" data-tip="Bật / tắt khung Lệnh giả lập"><i>📋</i>Lệnh</button>
+        <button class="rb" data-tg="wallPanel" data-tip="Bật / tắt Nhật ký tường"><i>▤</i>Tường</button>
+      </div><div class="cap">Khung</div></div>
+    <div class="spacer"></div>
+    <div class="rg last"><div class="row">
+        <button class="qt buy" id="rbBuy" data-tip="Mua market theo khối lượng bên cạnh (tài khoản giả lập). Phím B">MUA</button>
+        <button class="qt sell" id="rbSell" data-tip="Bán market theo khối lượng bên cạnh (tài khoản giả lập). Phím S">BÁN</button>
+        <button class="qt flat" id="rbFlat" data-tip="Đóng toàn bộ vị thế của mã này. Phím F">ĐÓNG</button>
+        <label class="field" data-tip="Khối lượng mỗi lệnh nhanh (đơn vị coin)">KL <input type="number" id="rbQty" min="0" step="any" placeholder="0.01"></label>
+        <small class="muted" id="rbAcct"></small>
+      </div><div class="cap">Giao dịch nhanh · giả lập</div></div>
+  </div>
+</div>
+<main class="view workspace" id="view-terminal">
+  <section class="panel chart-panel" id="mainPanel">
+    <div class="panel-head tbar">
+      <span class="title">Biểu đồ</span>
+      <div class="symtabs" id="symTabs" role="tablist" aria-label="Các mã đã mở"></div>
       <div class="spacer"></div>
       <button class="icon minb" data-min="mainPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng (bấm vào tên khung ở đó để mở lại)">—</button>
       <button class="icon max" data-max="mainPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">⤢</button>
     </div>
-    <div class="symtabs" id="symTabs" role="tablist" aria-label="Các mã đã mở"></div>
-    <div class="replaybar" id="replayBar" hidden>
-      <span class="rpl" data-g="bm-replay">Phát lại</span>
-      <label>Từ <input type="datetime-local" id="rpFrom"></label>
-      <label>Dài <select id="rpDur"><option value="1800000">30 phút</option><option value="3600000" selected>1 giờ</option><option value="7200000">2 giờ</option><option value="14400000">4 giờ</option><option value="43200000">12 giờ</option></select></label>
-      <button id="rpLoad">Tải</button>
-      <button id="rpPlay" disabled data-tip="Phát / tạm dừng (phím cách)">▶</button>
-      <select id="rpSpeed" data-tip="Tốc độ phát"><option value="1">x1</option><option value="5" selected>x5</option><option value="20">x20</option><option value="60">x60</option></select>
-      <input type="range" id="rpSeek" min="0" max="1000" value="0" disabled data-tip="Kéo để tua">
-      <span class="rptime" id="rpTime"></span>
-      <div class="spacer"></div>
-      <button id="rpExit">Về trực tiếp</button>
-    </div>
-    <div class="chart-body">
+    <div class="chart-body" id="chartBody">
       <div class="toolrail" id="toolRail" role="toolbar" aria-label="Công cụ phân tích" aria-orientation="vertical"></div>
-      <div class="chart-wrap"><canvas id="heat"></canvas><canvas id="flow" hidden></canvas><canvas id="liq" hidden></canvas><div class="railtoast" id="railToast" role="status" hidden></div></div>
+      <div class="chart-wrap"><canvas id="flow"></canvas><div class="railtoast" id="railToast" role="status" hidden></div></div>
     </div>
+    <div class="mcroot" id="mcRoot" hidden></div>
     <div class="signalbar" id="signalbar"></div>
     <div class="dom-hint" id="chartHint"></div>
   </section>
 
-  <div class="splitter v" id="splitM" data-tip="Kéo để đổi độ rộng bản đồ thanh khoản. Bấm đúp để về mặc định"></div>
-
-  <section class="panel lmap-panel" id="lmapPanel">
-    <div class="panel-head">
-      <span class="title" data-g="dom-liqmap">Thanh khoản</span>
-      <select id="lmapWin" data-tip="Khoảng thời gian bản đồ hiển thị (bên phải là bây giờ)"><option value="30000">30s</option><option value="60000" selected>1 phút</option><option value="120000">2 phút</option><option value="300000">5 phút</option><option value="900000">15 phút</option></select>
+  <section class="panel liq-panel" id="liqPanel">
+    <div class="panel-head tbar">
+      <span class="title" data-g="liq-col">Thanh lý</span>
+      <select id="liqModel" data-g="liq-model"><option value="all" selected>5x–100x</option><option value="high">25x–100x</option><option value="low">5x–25x</option></select>
       <div class="spacer"></div>
-      <button class="icon" id="lmapHide" data-tip="Ẩn khung này (bật lại trong Lớp hiển thị)">✕</button>
-      <button class="icon minb" data-min="lmapPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng (bấm vào tên khung ở đó để mở lại)">—</button>
-      <button class="icon max" data-max="lmapPanel" data-tip="Phóng to bản đồ thanh khoản">⤢</button>
+      <button class="icon minb" data-min="liqPanel" data-tip="Thu nhỏ khung này xuống thanh dưới cùng">—</button>
+      <button class="icon max" data-max="liqPanel" data-tip="Phóng to khung thanh lý">⤢</button>
     </div>
-    <div class="dom-wrap"><canvas id="lmap"></canvas></div>
-    <div class="dom-hint">Cùng dòng giá với sổ lệnh</div>
+    <div class="dom-wrap"><canvas id="liqcol"></canvas></div>
+    <div class="liqfoot" id="liqFoot"></div>
   </section>
 
-  <div class="splitter v" id="splitV" data-tip="Kéo để đổi độ rộng sổ lệnh. Bấm đúp để về mặc định"></div>
-
   <section class="panel dom-panel" id="domPanel">
-    <div class="panel-head">
-      <span class="title" data-g="dom">Sổ lệnh</span>
+    <div class="panel-head tbar">
+      <span class="title" data-g="dom">Smart DOM</span>
       <select id="domMult" data-tip="Gộp nhiều bước giá vào một dòng"><option value="1">x1</option><option value="2">x2</option><option value="5">x5</option><option value="10">x10</option><option value="50">x50</option></select>
       <div class="spacer"></div>
       <div class="dropdown">
@@ -290,10 +224,8 @@
     <div class="dom-hint">Lăn chuột: cuộn giá · Bấm đúp: về giá hiện tại · Rê chuột lên tiêu đề cột để xem ý nghĩa</div>
   </section>
 
-  <div class="splitter v" id="splitT" data-tip="Kéo để đổi độ rộng Smart Tape. Bấm đúp để về mặc định"></div>
-
   <section class="panel tape-panel" id="tapePanel">
-    <div class="panel-head">
+    <div class="panel-head tbar">
       <span class="title" data-g="smart-tape">Smart Tape</span>
       <label class="field small" data-tip="Ghép các lệnh nhỏ cùng thời điểm, cùng phía thành lệnh gốc. Tắt để xem băng thô của sàn"><input type="checkbox" id="tapeSmart" checked> Ghép</label>
       <label class="field small" data-tip="Chỉ hiện lệnh gốc thuộc top 0,5% lớn nhất"><input type="checkbox" id="tapeBig"> Lớn</label>
@@ -308,7 +240,7 @@
   </section>
 
   <section class="panel wall-panel" id="wallPanel">
-    <div class="panel-head">
+    <div class="panel-head tbar">
       <span class="title" data-g="wall-journal">Nhật ký tường</span>
       <div class="seg" id="wallSeg"><button data-ws="log" class="on">Nhật ký</button><button data-ws="stats">Thống kê</button><button data-ws="live">Đang đứng</button></div>
       <div class="spacer"></div>
@@ -319,7 +251,7 @@
   </section>
 
   <section class="panel order-panel" id="orderPanel">
-    <div class="panel-head">
+    <div class="panel-head tbar">
       <span class="title" data-g="paper-trading">Lệnh giả lập</span>
       <small class="muted" id="ptAcct"></small>
       <div class="spacer"></div>
@@ -341,7 +273,7 @@
       <div id="ptOrders"></div>
       <div id="ptFills"></div>
       <div class="ptrow"><button class="tool" id="ptReset" data-tip="Đặt lại tài khoản giả lập về 10.000 USDT">Đặt lại tài khoản</button></div>
-      <p class="note">Tiền ảo, khớp theo sổ lệnh thật. Trên Bookmap/Footprint: kéo đường lệnh, SL, TP để sửa giá; bấm đúp lên đường để huỷ; Alt + bấm chuột để đặt nhanh lệnh limit tại giá đó.</p>
+      <p class="note">Tiền ảo, khớp theo sổ lệnh thật. Trên biểu đồ: kéo đường lệnh, SL, TP để sửa giá; bấm đúp lên đường để huỷ; Alt + bấm chuột để đặt nhanh lệnh limit tại giá đó.</p>
     </div>
   </section>
 
@@ -350,7 +282,8 @@
 <div id="riskLockBar" class="risklock" hidden></div>
 <nav class="mnav" id="mnav" aria-label="Chọn khung">
   <button data-panel="mainPanel" class="on"><i>▦</i>Biểu đồ</button>
-  <button data-panel="domPanel"><i>☰</i>Sổ lệnh</button>
+  <button data-panel="domPanel"><i>☰</i>DOM</button>
+  <button data-panel="liqPanel"><i>🔥</i>Thanh lý</button>
   <button data-panel="tapePanel"><i>≋</i>Tape</button>
   <button data-panel="wallPanel"><i>▤</i>Tường</button>
   <button data-panel="orderPanel"><i>⇅</i>Lệnh</button>
@@ -362,7 +295,7 @@
     <span class="newstabs" id="radarAssets"></span>
     <span class="newstabs" id="radarTfs"></span>
     <button class="tool" id="radarReload" data-tip="Tải lại ngay">↻</button>
-    <button class="tool" id="radarOpen" data-tip="Mở mã này ở Terminal (Bookmap, footprint, sổ lệnh)">Mở ở Terminal</button>
+    <button class="tool" id="radarOpen" data-tip="Mở mã này ở Terminal (footprint, sổ lệnh)">Mở ở Terminal</button>
     <small class="muted" id="radarSrc"></small>
   </div>
   <div class="lensverdict" id="radarAnswer"></div>
@@ -402,8 +335,6 @@
     </section>
   </div>
 </main>
-
-<main class="view mcview" id="view-multi" hidden></main>
 
 <main class="view analysis" id="view-news" hidden>
   <div class="newstabs atabs" id="nTabs" role="tablist" aria-label="Mục tin tức"><button data-nt="news" class="on">Tin tức</button><button data-nt="social">Mạng xã hội</button></div>
@@ -779,6 +710,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611090506"></script>
+<script type="module" src="js/app.js?v=202611141528"></script>
 </body>
 </html>

@@ -1,59 +1,53 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611090506";
-import { MarketState, Book } from "./market.js?v=202611090506";
-import { connectPeers, mergeBooks, multiPeers } from "./multibook.js?v=202611090506";
-import { Heatmap, HM_DEFAULTS } from "./heatmap.js?v=202611090506";
-import { FlowChart } from "./flowchart.js?v=202611090506";
-import { LiqHeatChart } from "./liqchart.js?v=202611090506";
-import { liqHeat, LIQ_MODELS, LIQ_RANGES } from "./liqheat.js?v=202611090506";
-import { Dom } from "./dom.js?v=202611090506";
-import { srLevels, abnormalVolume, liquidationMap, summary, isDeltaApprox } from "./analytics.js?v=202611090506";
-import { initBacktest } from "./backtestview.js?v=202611090506";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611090506";
-import { absorption, clusterSearch } from "./orderflow.js?v=202611090506";
-import { Tape } from "./tape.js?v=202611090506";
-import { LiqMap } from "./liqmap.js?v=202611090506";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611090506";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611090506";
-import { FlowMarks } from "./bmind.js?v=202611090506";
-import { Replay } from "./replay.js?v=202611090506";
-import { Alerts } from "./alerts.js?v=202611090506";
-import { setVenue } from "./venue.js?v=202611090506";
-import { initNews } from "./newsview.js?v=202611090506";
-import { initSocial } from "./socialview.js?v=202611090506";
-import { initMarkets } from "./marketsview.js?v=202611090506";
-import { initTgBot } from "./tgbot.js?v=202611090506";
-import { initInst } from "./instview.js?v=202611090506";
-import { setFresh, tickFresh } from "./fresh.js?v=202611090506";
-import { initRadar } from "./radarview.js?v=202611090506";
-import { Drawings } from "./drawings.js?v=202611090506";
-import { Layout, NAMES as PANEL_NAMES, defaultTree } from "./layout.js?v=202611090506";
-import { PaperBroker } from "./paper.js?v=202611090506";
-import { OrderLines } from "./orderlines.js?v=202611090506";
-import { MultiChart } from "./multichart.js?v=202611090506";
-import { DOM_COLS } from "./dom.js?v=202611090506";
-import { initFractal } from "./fractalview.js?v=202611090506";
-import { initJournal } from "./journalview.js?v=202611090506";
-import { installHealth, clockSkew } from "./health.js?v=202611090506";
-import { initHealth } from "./healthview.js?v=202611090506";
-import { initFlows } from "./flowsview.js?v=202611090506";
-import { initSentiment } from "./sentimentview.js?v=202611090506";
-import { initPerf } from "./perfview.js?v=202611090506";
-import { initShock } from "./shockview.js?v=202611090506";
-import { initCompass } from "./compassview.js?v=202611090506";
-import { initConsensus } from "./consensusview.js?v=202611090506";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202611090506";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611090506";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611090506";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611090506";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611090506";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202611090506";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611090506";
-import { mountLang } from "./lang.js?v=202611090506";
-import { initI18n } from "./i18n.js?v=202611090506";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, postJson, sleep, fitCanvas, MONO, binanceBudget } from "./util.js?v=202611090506";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611141528";
+import { MarketState } from "./market.js?v=202611141528";
+import { FlowChart } from "./flowchart.js?v=202611141528";
+import { LiqColumn, liqSummary, liqRead } from "./liqcol.js?v=202611141528";
+import { Dom } from "./dom.js?v=202611141528";
+import { srLevels, abnormalVolume, liquidationMap, summary, isDeltaApprox } from "./analytics.js?v=202611141528";
+import { initBacktest } from "./backtestview.js?v=202611141528";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611141528";
+import { absorption, clusterSearch } from "./orderflow.js?v=202611141528";
+import { Tape } from "./tape.js?v=202611141528";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611141528";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611141528";
+import { Alerts } from "./alerts.js?v=202611141528";
+import { setVenue } from "./venue.js?v=202611141528";
+import { initNews } from "./newsview.js?v=202611141528";
+import { initSocial } from "./socialview.js?v=202611141528";
+import { initMarkets } from "./marketsview.js?v=202611141528";
+import { initTgBot } from "./tgbot.js?v=202611141528";
+import { initInst } from "./instview.js?v=202611141528";
+import { setFresh, tickFresh } from "./fresh.js?v=202611141528";
+import { initRadar } from "./radarview.js?v=202611141528";
+import { Drawings } from "./drawings.js?v=202611141528";
+import { Layout, NAMES as PANEL_NAMES } from "./layout.js?v=202611141528";
+import { PaperBroker } from "./paper.js?v=202611141528";
+import { OrderLines } from "./orderlines.js?v=202611141528";
+import { MultiChart } from "./multichart.js?v=202611141528";
+import { DOM_COLS } from "./dom.js?v=202611141528";
+import { initFractal } from "./fractalview.js?v=202611141528";
+import { initJournal } from "./journalview.js?v=202611141528";
+import { installHealth, clockSkew } from "./health.js?v=202611141528";
+import { initHealth } from "./healthview.js?v=202611141528";
+import { initFlows } from "./flowsview.js?v=202611141528";
+import { initSentiment } from "./sentimentview.js?v=202611141528";
+import { initPerf } from "./perfview.js?v=202611141528";
+import { initShock } from "./shockview.js?v=202611141528";
+import { initCompass } from "./compassview.js?v=202611141528";
+import { initConsensus } from "./consensusview.js?v=202611141528";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202611141528";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611141528";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611141528";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611141528";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611141528";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202611141528";
+import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611141528";
+import { mountLang } from "./lang.js?v=202611141528";
+import { initI18n } from "./i18n.js?v=202611141528";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, binanceBudget } from "./util.js?v=202611141528";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
@@ -73,14 +67,13 @@ const S = {
   symbol: (qs.get("s") || saved.symbol || "BTCUSDT").toUpperCase(),
   interval: qs.get("i") || saved.interval || "1m",
   view: qs.get("v") || saved.view || "terminal",
-  mode: ["box", "liq"].includes(saved.mode) ? saved.mode : "heat", // Bookmap, Footprint, Thanh lý
   tab: "clusters",
-  multi: !!saved.multi, // Multibook: gộp sổ lệnh nhiều sàn
+  grid: [1, 2, 4, 6].includes(saved.grid) ? saved.grid : 1, // số biểu đồ trong khung Biểu đồ
 };
 if (!EXCHANGES[S.ex]) S.ex = "BINANCE";
 if (!INTERVALS[S.interval]) S.interval = "1m";
 const persist = () => {
-  try { sessionStorage.setItem("lailong.ui", JSON.stringify({ ex: S.ex, symbol: S.symbol, interval: S.interval, view: S.view, mode: S.mode, multi: S.multi })); } catch { /* bỏ qua */ }
+  try { sessionStorage.setItem("lailong.ui", JSON.stringify({ ex: S.ex, symbol: S.symbol, interval: S.interval, view: S.view, grid: S.grid })); } catch { /* bỏ qua */ }
   const u = new URL(location.href); u.searchParams.set("ex", S.ex); u.searchParams.set("s", S.symbol); u.searchParams.set("i", S.interval); u.searchParams.set("v", S.view);
   history.replaceState(null, "", u);
 };
@@ -100,18 +93,18 @@ const logs = [];
 function log(text) { logs.unshift({ t: Date.now(), text }); if (logs.length > 300) logs.pop(); if (S.tab === "logs") renderTab(); }
 function toast(text, err) { const el = $("toast"); el.textContent = text; el.className = "toast" + (err ? " err" : ""); el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => { el.hidden = true; }, 4000); }
 
-let peers = null;
-const heat = new Heatmap($("heat"), market, { exchangeName: () => peers && peers.names().length ? [ex().name, ...peers.names()].join(" + ") : ex().name });
 const flow = new FlowChart($("flow"));
-const liqChart = new LiqHeatChart($("liq"), { livePrice: () => (market.last ? market.last.p : null) });
+flow.setType("box"); // Terminal thuần order flow: luôn là footprint
 Object.defineProperty(flow, "book", { get: () => market.book }); // Depth Of Market: sổ lệnh lên biểu đồ nến / footprint (sổ đổi khi đổi mã)
 // sổ lệnh đổi liên tục: vẽ lại biểu đồ 4 lần mỗi giây khi đang xem nến / footprint và bật Depth Of Market
-setInterval(() => { if (S.mode === "box" && flow.show.depth && !document.hidden) flow.dirty = true; }, 250);
+setInterval(() => { if (flow.show.depth && !document.hidden && S.grid === 1) flow.dirty = true; }, 250);
 const dom = new Dom($("dom"), market);
 const tape = new Tape($("tape"), market);
-const walls = new WallTracker(); dom.walls = walls;
-const flowMarks = new FlowMarks(); heat.walls = walls; heat.flowMarks = flowMarks; // chỉ báo kiểu Bookmap trả phí trên bản đồ
-const lmap = new LiqMap($("lmap"), market, dom); lmap.walls = walls;
+const walls = new WallTracker(); dom.walls = walls; flow.walls = walls; // vùng lệnh chờ lớn đang đứng vẽ lên footprint
+// cột Thanh lý đứng cạnh biểu đồ, cùng thang giá; vẽ lại mỗi khi biểu đồ vẽ
+const liqcol = new LiqColumn($("liqcol"), { flow, market });
+const redrawAll = () => { flow.dirty = dom.dirty = tape.dirty = liqcol.dirty = true; };
+flow.opts.onDraw = () => { liqcol.dirty = true; };
 flow.prints = () => [market.histPrints, market.prints];
 flow.opts.onRange = () => {};
 
@@ -136,38 +129,30 @@ $("symTabs").onclick = e => {
 };
 async function load() {
   setVenue(S.ex); // các tab crypto khác lấy theo sàn này
-  const token = ++loadToken; persist(); rememberTab(); if (replay) exitReplay();
+  const token = ++loadToken; persist(); rememberTab();
   if (conn) { conn.close(); conn = null; }
   market.reset({ symbol: S.symbol, exchange: S.ex, interval: S.interval });
   draw.sym = S.symbol;
-  alPrevP = null; heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
-  heat.resetView(); dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; scores = null; algo = []; walls.reset(); flowMarks.reset(); conflZones = []; heat.setOverlays({ confl: [] }); flow.setOverlays({ confl: [], spoofs: walls.events, algoRuns: [], scores: [], vpinVals: null, groupVals: null }); tape.reset(); renderSignals(); renderTab();
+  alPrevP = null;
+  dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; scores = null; algo = []; walls.reset(); conflZones = []; liqcol.setData([]); flow.setOverlays({ confl: [], spoofs: walls.events, algoRuns: [], scores: [], vpinVals: null, groupVals: null }); tape.reset(); renderSignals(); renderTab();
   setConn("Đang tải dữ liệu", null);
   let info = { tick: 0, ctVal: 1 };
   try { info = await ex().info(S.symbol); } catch (e) { log(`Không lấy được thông tin mã: ${e.message}`); }
   if (token !== loadToken) return;
   market.tick = info.tick;
-  // Multibook: sàn chính ghi vào sổ riêng, các sàn khác cũng vậy; sổ của market là bản gộp
-  const multi = S.multi && multiPeers(S.ex).length > 0, pBook = multi ? new Book() : market.book;
-  let mergeT = 0, mergeTimer = null;
-  const afterBook = () => {
+  const pBook = market.book;
+  const onBook = () => {
+    if (token !== loadToken) return;
     if (!market.tick) { const s = pBook.sorted(); market.tick = inferTick(s.bids.slice(0, 30).map(x => x[0])); }
-    if (multi) { mergeTimer = null; mergeT = Date.now(); mergeBooks(market.book, [pBook, ...peers.books()], market.tick); }
     market.onBook(); dom.update();
   };
-  const onBook = () => { if (token !== loadToken) return; if (!multi || Date.now() - mergeT > 100) afterBook(); else if (!mergeTimer) mergeTimer = setTimeout(() => token === loadToken && afterBook(), 100); };
-  peers = multi ? connectPeers(EXCHANGES, S.ex, S.symbol, {
-    onBook, onTrades: list => { if (token === loadToken) market.onTrades(list); }, onLiq: list => { if (token === loadToken) market.onLiq(list); },
-    log: text => { if (token === loadToken) log(text); },
-  }) : null;
   const c0 = ex().connect(S.symbol, info, pBook, {
     onBook,
     onTrades: list => { if (token !== loadToken) return; market.onTrades(list); paperTrades(list); },
     onLiq: list => { if (token !== loadToken) return; market.onLiq(list); },
-    onStatus: (text, ok) => { if (token === loadToken) { setConn(multi ? `${text} · Multibook` : text, ok); log(text); } },
+    onStatus: (text, ok) => { if (token === loadToken) { setConn(text, ok); log(text); } },
   });
-  const pr = peers; conn = { close() { c0.close(); if (pr) pr.close(); } };
-  if (laptop) loadRecorded(token);
+  conn = c0;
   try {
     const bars = await ex().klines(S.symbol, S.interval, 1500);
     if (ex().hasOi && bars.length) {
@@ -183,8 +168,7 @@ async function load() {
     flow.setData(market.bars, { step: market.fpStep, tick: market.tick, intervalMs: market.intervalMs, symbol: S.symbol, exchangeName: ex().name, interval: S.interval, deltaApprox: isDeltaApprox(bars) });
     recompute();
     log(`Đã tải ${bars.length} nến ${S.interval} ${S.symbol} từ ${ex().name}`);
-    if (S.mode === "box") startFootprint();
-    if (S.mode === "liq") loadLiq();
+    startFootprint();
     seedDayVolume(token);
   } catch (e) {
     log(`Không tải được nến: ${e.message}`); toast(`Không tải được dữ liệu từ ${ex().name}: ${e.message}`, true);
@@ -220,8 +204,8 @@ function recompute() {
   const zones = zonesAll.filter(z => z.active).slice(-8);
   const liqMap = bars.some(b => b.oi != null) ? liquidationMap(bars) : null;
   analysis = { levels, zones, zonesAll, liqMap, sum: summary(bars, market.intervalMs) };
-  heat.setOverlays({ levels, zones, liqMap, marks: priceMarks(bars) });
-  flow.setOverlays({ levels, zones, liqMap });
+  flow.setOverlays({ levels, zones, liqMap, marks: priceMarks(bars) });
+  liqcol.setData(bars, $("liqModel").value);
   recomputeFlow();
   renderSignals();
   updateConfl();
@@ -295,12 +279,11 @@ function recomputePrints() {
   flow.setOverlays({ algoRuns: algo });
   if (S.tab === "algo") renderTab();
 }
-setInterval(() => { if (S.mode !== "heat" || S.tab === "algo") recomputePrints(); }, 5000);
+setInterval(() => recomputePrints(), 5000);
 // tường lệnh chờ: so sổ lệnh mỗi giây
 setInterval(() => {
   const cols = market.cols; let col = null; for (let i = cols.length - 1; i >= Math.max(0, cols.length - 4); i--) if (cols[i].keys) { col = cols[i]; break; }
   const done = walls.step(Date.now(), col, market.book.mid(), market.grid, market.tradedGrid);
-  flowMarks.step(market.trades, market.tick, Date.now());
   for (const e of done) { const ev = canLog() && fromWall(e, S.symbol, S.ex); if (ev) logEvent(ev); }
   logIce();
   for (const e of done) if (e.kind === "spoof" && alerts.cfg.spoof && gate("wall.pulled")) alerts.fire("spoof", `${S.symbol}: tường ${e.side === "bid" ? "chờ mua" : "chờ bán"} ${fmtVol(e.q)} tại ${e.price.toFixed(decimalsFor(market.tick))} bị rút khi giá tới gần (nghi tường giả)`, e.side === "bid" ? "down" : "up");
@@ -388,9 +371,8 @@ function renderAlertMenu() {
   for (const cb of document.querySelectorAll("[data-al]")) cb.checked = !!alerts.cfg[cb.dataset.al];
   $("alList").innerHTML = lv.length ? lv.map(l => `<div class="alrow"><span>${esc(S.symbol)} chạm <b>${l.price.toFixed(dec)}</b></span><button class="icon" data-alrm="${l.i}" data-tip="Xoá">✕</button></div>`).join("") : `<div class="muted">Chưa có mức giá nào cho ${esc(S.symbol)}.</div>`;
   $("alHist").innerHTML = alerts.hist.length ? "<b>Vừa kêu</b>" + alerts.hist.slice(0, 6).map(h => `<div>${fmtTime(h.t, true)} · ${esc(h.text)}</div>`).join("") : "";
-  heat.setOverlays({ alertLevels: lv });
 }
-alerts.onFire = () => { if ($("alertBtn").parentElement.classList.contains("open")) renderAlertMenu(); else heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) }); };
+alerts.onFire = () => { if ($("alertBtn").parentElement.classList.contains("open")) renderAlertMenu(); };
 $("alertBtn").onclick = e => { e.stopPropagation(); const d = $("alertBtn").parentElement; d.classList.toggle("open"); if (d.classList.contains("open")) { if (market.last && !$("alPrice").value) $("alPrice").value = market.last.p; renderAlertMenu(); } };
 for (const cb of document.querySelectorAll("[data-al]")) cb.onchange = async () => {
   alerts.cfg[cb.dataset.al] = cb.checked; alerts.save();
@@ -410,7 +392,6 @@ $("tgTest").onclick = () => { alerts.tg.token = $("tgToken").value.trim(); alert
 $("alAdd").onclick = () => { const p = parseFloat($("alPrice").value); if (!(p > 0)) return toast("Nhập mức giá cần cảnh báo", true); alerts.addLevel(S.symbol, p); $("alPrice").value = ""; renderAlertMenu(); };
 $("alPrice").onkeydown = e => { if (e.key === "Enter") $("alAdd").click(); };
 $("alList").onclick = e => { const b = e.target.closest("[data-alrm]"); if (b) { alerts.removeLevel(+b.dataset.alrm); renderAlertMenu(); } };
-heat.setOverlays({ alertLevels: alerts.levelsOf(S.symbol) });
 const newsView = initNews({ $, esc, alerts, coin });
 mountLang($("langBtn")); initI18n(); // nút VI / EN góc trên bên phải: đổi ngôn ngữ cả trang
 const socialView = initSocial({ $, esc });
@@ -418,7 +399,7 @@ const marketsView = initMarkets({ $, esc });
 initTgBot({ alerts, onTap: d => (d.startsWith("sig:") ? signalsView.onTap(d) : null) });
 const instView = initInst({ $, esc });
 const radarView = initRadar({ $, esc, onPick: sym => { if (S.ex === "SIM") S.ex = "BINANCE"; $("exchange").value = S.ex; S.symbol = sym; $("symbol").value = sym; load(); setView("terminal"); } });
-const multiChart = new MultiChart($("view-multi"), { ex: () => ex() });
+const multiChart = new MultiChart($("mcRoot"), { ex: () => ex() }); // lưới 2/4/6 biểu đồ trong khung Biểu đồ
 
 function scheduleFlow() { if (flowTimer) return; flowTimer = setTimeout(() => { flowTimer = null; recomputeFlow(); }, 1500); }
 
@@ -473,7 +454,7 @@ function renderTab() {
 }
 // đưa biểu đồ nến/footprint tới nến chứa thời điểm t
 function goToTime(t) {
-  if (S.mode !== "box") setMode("box");
+  if (S.grid !== 1) setGrid(1);
   const i = flow._barIndexAt(t); if (i < 0) return;
   const vis = flow._L ? flow._L.pw / flow.sp : 20;
   flow.offset = Math.max(-flow.bars.length + 3, flow.bars.length - 1 - i - vis / 2); flow.dirty = true;
@@ -584,7 +565,7 @@ async function updateConfl() {
     const A = bars.length > 20 ? atrSeries(bars).at(-1) : 0; // khoảng cách tính theo giá trực tiếp
     if (zs.length && price && A > 0) { for (const z of zs) z.dist = (z.mid - price) / A; zs.sort((a, b) => Math.abs(a.dist) - Math.abs(b.dist)); }
     conflZones = zs;
-    heat.setOverlays({ confl: zs }); flow.setOverlays({ confl: zs });
+    flow.setOverlays({ confl: zs });
   } finally { conflBusy = false; }
 }
 const signalsView = initSignals({ $, esc, S, toast, alerts, liveSources });
@@ -597,12 +578,12 @@ const lockBlocks = (side, qty) => {
 };
 // nhấp đúp vào ô thông số (Backtest, FRACTAL) để trả về giá trị mặc định
 document.addEventListener("dblclick", e => {
-  const el = e.target.closest(".btform input[type=number], .btform input[type=text], .btform select, .hmcfg input:not(#multiBook), .hmcfg select"); if (!el) return;
+  const el = e.target.closest(".btform input[type=number], .btform input[type=text], .btform select"); if (!el) return;
   if (el.type === "checkbox") { el.checked = el.defaultChecked; } else if (el.tagName === "SELECT") { const d = [...el.options].findIndex(o => o.defaultSelected); el.selectedIndex = d < 0 ? 0 : d; } else el.value = el.defaultValue;
   el.dispatchEvent(new Event("change", { bubbles: true }));
   el.classList.add("reset"); setTimeout(() => el.classList.remove("reset"), 500);
 });
-const CANVAS_TIP = { heat, flow, dom, tape, lmap, btChart, ...fractal.tips, ...backtest.tips, ...multiChart.tips };
+const CANVAS_TIP = { flow, dom, tape, liqcol, btChart, ...fractal.tips, ...backtest.tips, ...multiChart.tips };
 let tipFrame = 0, lastMove = null;
 function showTip(html, x, y) {
   tipEl.innerHTML = html; tipEl.hidden = false;
@@ -697,42 +678,23 @@ function mix(a, b, f) {
   return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * f).toString(16).padStart(2, "0")).join("");
 }
 window.addEventListener("lailong-theme", () => {
-  heat.dirty = flow.dirty = dom.dirty = tape.dirty = btChart.dirty = true;
+  flow.dirty = dom.dirty = tape.dirty = liqcol.dirty = btChart.dirty = true;
   backtest.redraw();
 });
 
-// ---------- kéo giãn khung và phóng to ----------
-const LAYOUT_KEY = "lailong.layout";
-const ws = $("view-terminal");
-const layout = (() => { try { return JSON.parse(sessionStorage.getItem(LAYOUT_KEY) || "{}"); } catch { return {}; } })();
-function setLayout(k, v) {
-  if (v == null) { delete layout[k]; ws.style.removeProperty("--" + k); } else { layout[k] = v; ws.style.setProperty("--" + k, v + "px"); }
-  try { sessionStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch { /* bỏ qua */ }
-}
-for (const k of ["rightW", "bottomH", "tapeW", "lmapW"]) if (layout[k]) ws.style.setProperty("--" + k, layout[k] + "px");
-function splitter(el, k, calc) {
-  el.addEventListener("pointerdown", e => {
-    e.preventDefault(); el.setPointerCapture(e.pointerId);
-    document.body.classList.add("resizing"); el.classList.add("drag"); hideTip();
-    const move = ev => setLayout(k, Math.round(calc(ev, ws.getBoundingClientRect())));
-    const up = () => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); document.body.classList.remove("resizing"); el.classList.remove("drag"); heat.dirty = flow.dirty = dom.dirty = tape.dirty = lmap.dirty = true; };
-    el.addEventListener("pointermove", move); el.addEventListener("pointerup", up);
-  });
-  el.addEventListener("dblclick", () => setLayout(k, null));
-}
-splitter($("splitV"), "rightW", (e, r) => { const tw = $("tapePanel").offsetWidth + 6; return Math.min(r.width - tw - 320, Math.max(220, r.right - e.clientX - tw - 4)); });
-splitter($("splitM"), "lmapW", e => Math.max(120, Math.min(900, $("lmapPanel").getBoundingClientRect().right - e.clientX - 3)));
-splitter($("splitT"), "tapeW", (e, r) => Math.min(r.width - 600, Math.max(200, r.right - e.clientX - 4)));
 
+// ---------- phóng to một khung ----------
+const ws = $("view-terminal");
 function setMax(id) {
   const p = id && $(id), on = p && !p.classList.contains("maxed");
   document.querySelectorAll(".panel.maxed").forEach(x => x.classList.remove("maxed"));
   if (on) p.classList.add("maxed");
-  heat.dirty = flow.dirty = dom.dirty = tape.dirty = true;
+  redrawAll();
 }
 for (const b of document.querySelectorAll("[data-max]")) b.onclick = () => setMax(b.dataset.max);
-const topH = () => document.documentElement.style.setProperty("--topH", document.querySelector(".menubar").getBoundingClientRect().height + "px");
-new ResizeObserver(topH).observe(document.querySelector(".menubar"));
+// chiều cao thanh menu + ribbon, cho các ngăn cố định (giải thích, màu, khung phóng to) không bị che
+const topH = () => document.documentElement.style.setProperty("--topH", ($("ribbon").hidden ? 0 : $("ribbon").getBoundingClientRect().height) + document.querySelector(".menubar").getBoundingClientRect().height + "px");
+new ResizeObserver(topH).observe(document.querySelector(".menubar")); new ResizeObserver(topH).observe($("ribbon"));
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   if (!$("glossary").hidden) return closeGloss();
@@ -750,9 +712,10 @@ function setView(v) {
   if (DROPPED_VIEWS.has(v) || !$("view-" + v)) v = "terminal";
   S.view = v; persist();
   for (const b of $("views").children) b.classList.toggle("on", b.dataset.view === v);
-  for (const id of ["terminal", "radar", "signals", "multi", "news", "analysis", "backtest", "fractal", "journal", "health"]) $("view-" + id).hidden = id !== v;
-  document.body.classList.toggle("not-terminal", v !== "terminal"); document.body.dataset.view = v; // công cụ Terminal chỉ hiện ở Terminal
-  heat.dirty = flow.dirty = btChart.dirty = dom.dirty = true;
+  for (const id of ["terminal", "radar", "signals", "news", "analysis", "backtest", "fractal", "journal", "health"]) $("view-" + id).hidden = id !== v;
+  document.body.classList.toggle("not-terminal", v !== "terminal"); document.body.dataset.view = v; // ribbon Terminal chỉ hiện ở Terminal
+  $("ribbon").hidden = v !== "terminal"; topH();
+  flow.dirty = btChart.dirty = dom.dirty = liqcol.dirty = true;
   if (v === "signals") signalsView.show(); else signalsView.hide();
   if (v === "news") { if (nTabCur === "social") socialView.render(); else newsView.render(); }
   if (v === "analysis") { instView.show(); flowsView.show(); sentView.show(); } else { instView.hide(); flowsView.hide(); sentView.hide(); }
@@ -760,62 +723,36 @@ function setView(v) {
   if (v === "health") healthView.show(); else healthView.hide();
   syncMarkets();
   if (v === "radar") radarView.show(); else radarView.hide();
-  if (v === "multi") multiChart.show(); else multiChart.hide();
+  if (v === "terminal" && S.grid > 1) multiChart.show(); else multiChart.hide();
 }
-// ---------- thẻ Thanh lý: bản đồ nhiệt thanh lý ước tính từ OI ----------
-const liqCache = new Map();
-let liqToken = 0, liqBusy = null;
-async function loadLiq(force = false) {
-  const rk = $("liqRange").value, R = LIQ_RANGES[rk] || LIQ_RANGES["3d"], model = LIQ_MODELS[$("liqModel").value] || LIQ_MODELS.all;
-  const ck = `${S.ex}:${S.symbol}:${rk}`, token = ++liqToken, e = ex(), sym = S.symbol;
-  const build = c => {
-    const from = Math.max(0, c.bars.length - R.n), keep = liqChart._for === ck;
-    liqChart.setData(c.bars, liqHeat(c.bars, { tiers: model.tiers }), { from, symbol: sym, tick: market.tick, keepView: keep });
-    liqChart._for = ck;
-  };
-  if (!e.hasOi) { liqChart._for = null; liqChart.setData([], null); liqChart.setMessage(`${e.name} không có lịch sử open interest. Chọn Binance, OKX hoặc Bybit để xem bản đồ thanh lý`); return; }
-  const c = liqCache.get(ck);
-  if (c && !force && Date.now() - c.at < 60e3) return build(c);
-  if (liqBusy === ck && !force) return;
-  if (!c) { liqChart._for = null; liqChart.setData([], null); liqChart.setMessage(`Đang tải nến và open interest ${R.name}...`); }
-  liqBusy = ck;
-  try {
-    const bars = await e.klines(sym, R.interval, R.n + R.warm);
-    if (!bars.length) throw new Error("sàn không trả nến");
-    attachOi(bars, await e.oiHistory(sym, R.interval, bars[0].t), INTERVALS[R.interval]);
-    if (token !== liqToken || sym !== S.symbol) return;
-    if (!bars.some(b => b.oi != null)) { liqChart.setMessage(`${e.name} không trả open interest cho ${sym} trong ${R.name} qua`); return; }
-    const nc = { bars, at: Date.now() }; liqCache.set(ck, nc); build(nc);
-  } catch (err) {
-    if (token !== liqToken) return;
-    log(`Không tải được dữ liệu thanh lý: ${err.message}`); if (!c) liqChart.setMessage(`Không tải được dữ liệu: ${err.message}`);
-  } finally { if (liqBusy === ck) liqBusy = null; }
+// ---------- cột Thanh lý cạnh biểu đồ ----------
+$("liqModel").onchange = () => liqcol.setData(market.bars, $("liqModel").value);
+// chân khung: thanh lý thật 1 giờ qua và cụm ước tính lớn nhất mỗi phía
+let liqFootSig = "";
+function renderLiqFoot() {
+  const el = $("liqFoot"); if (!el || (tiles && tiles.isMin("liqPanel"))) return;
+  const price = market.last ? market.last.p : null, dec = decimalsFor(market.tick || 0.01);
+  const sm = liqSummary(market.liqs || []), rd = liqRead(liqcol.tiers, price);
+  const sig = `${Math.round(sm.long)}|${Math.round(sm.short)}|${sm.n}|${rd ? rd.fuel + (rd.below ? rd.below.price : "") + (rd.above ? rd.above.price : "") : ""}`;
+  if (sig === liqFootSig) return; liqFootSig = sig;
+  const fuel = !rd || !rd.fuel ? "" : rd.fuel === "below" ? `<b class="neg">Nhiên liệu nằm dưới</b>: cụm long ${fmtUsd(rd.below.usd)} quanh ${rd.below.price.toFixed(dec)}, giá dễ bị kéo xuống quét` : rd.fuel === "above" ? `<b class="pos">Nhiên liệu nằm trên</b>: cụm short ${fmtUsd(rd.above.usd)} quanh ${rd.above.price.toFixed(dec)}, giá dễ bị kéo lên quét` : `Hai phía cân nhau: long ${fmtUsd(rd.below.usd)} dưới ${rd.below.price.toFixed(dec)}, short ${fmtUsd(rd.above.usd)} trên ${rd.above.price.toFixed(dec)}`;
+  el.innerHTML = `<div data-g="liquidation">1 giờ qua: <b class="neg">${fmtUsd(sm.long)}</b> long · <b class="pos">${fmtUsd(sm.short)}</b> short · ${sm.n} lệnh</div>` + (fuel ? `<div data-g="liq-col">${fuel}</div>` : "");
 }
-$("liqRange").onchange = () => loadLiq();
-$("liqModel").onchange = () => { liqChart._for = null; loadLiq(); };
-$("liqThr").oninput = () => liqChart.setThreshold(+$("liqThr").value);
-// làm mới mỗi phút khi đang xem thẻ Thanh lý
-setInterval(() => { if (S.mode === "liq" && S.view === "terminal" && !document.hidden) loadLiq(true); }, 60e3);
-setInterval(() => { if (S.mode === "liq" && market.last) liqChart.dirty = true; }, 1000);
+setInterval(() => { if (S.view === "terminal" && !document.hidden) { renderLiqFoot(); if (market.last) liqcol.dirty = true; } }, 1000);
 
-function setMode(m) {
-  S.mode = m; persist();
-  for (const b of $("chartMode").children) b.classList.toggle("on", b.dataset.mode === m);
-  $("heat").hidden = m !== "heat"; $("flow").hidden = m !== "box"; $("liq").hidden = m !== "liq";
-  $("toolRail").style.display = m === "liq" ? "none" : "";
-  $("contrastBox").hidden = m !== "heat"; $("rowBox").hidden = $("fpModeBox").hidden = $("fpColorBox").hidden = m !== "box";
-  $("chartHint").textContent = noHover ? (m === "heat" ? "Kéo: di chuyển · Chụm/mở hai ngón: phóng thời gian (ngang) và giá (dọc) · Chạm đúp: theo dõi · Giữ ngón tay: xem ý nghĩa" : "Kéo: di chuyển · Chụm/mở hai ngón: phóng nến · Chạm đúp: về hiện tại · Giữ ngón tay lên nến: xem ý nghĩa") : m === "heat" ? "Lăn chuột: phóng thời gian · Ctrl + lăn: phóng giá · Kéo: di chuyển · Bấm đúp: theo dõi · Rê chuột để xem ý nghĩa" : "Lăn chuột: phóng to · Kéo: di chuyển · Kéo trục giá: giãn giá · Bấm đúp: về hiện tại · Rê chuột lên nến để xem ý nghĩa";
-  if (m === "liq") $("chartHint").textContent = noHover ? "Kéo lên/xuống: di chuyển giá · Chụm/mở hai ngón: phóng giá · Chạm đúp: về mặc định · Chạm vào ô: xem số tiền ước tính" : "Lăn chuột: phóng giá · Kéo lên/xuống: di chuyển giá · Bấm đúp: về mặc định · Rê chuột lên ô để xem số tiền ước tính";
-  if (m === "box") { flow.setType("box"); startFootprint(); }
-  if (m === "liq") { liqChart.dirty = true; loadLiq(); }
-  for (const el of document.querySelectorAll(".liqOnly")) el.hidden = m !== "liq";
-  for (const el of document.querySelectorAll(".noLiq")) el.style.display = m === "liq" ? "none" : "";
-  for (const el of document.querySelectorAll(".flowOnly")) el.hidden = m !== "box";
-  for (const el of document.querySelectorAll(".heatOnly")) el.hidden = m !== "heat";
-  $("selBtn").hidden = m !== "box";
-  heat.dirty = flow.dirty = true;
-  renderRail();
+// ---------- lưới 1/2/4/6 biểu đồ trong khung Biểu đồ ----------
+function setGrid(n) {
+  n = [1, 2, 4, 6].includes(+n) ? +n : 1; S.grid = n; persist();
+  for (const b of $("gridSeg").children) b.classList.toggle("on", +b.dataset.n === n);
+  const one = n === 1;
+  $("chartBody").hidden = !one; $("mcRoot").hidden = one; $("signalbar").hidden = !one; $("chartHint").hidden = !one; $("toolRail").hidden = !one;
+  liqcol.dirty = true;
+  if (one) { multiChart.hide(); flow.dirty = true; }
+  else if (S.view === "terminal") { multiChart.setCount(n); multiChart.show(); }
+  else multiChart.setCount(n);
 }
+$("gridSeg").onclick = e => { const b = e.target.closest("[data-n]"); if (b) setGrid(+b.dataset.n); };
+$("chartHint").textContent = noHover ? "Kéo: di chuyển · Chụm/mở hai ngón: phóng nến · Chạm đúp: về hiện tại · Giữ ngón tay lên nến: xem ý nghĩa" : "Lăn chuột: phóng to · Kéo: di chuyển · Kéo trục giá: giãn giá · Bấm đúp: về hiện tại · Rê chuột lên nến hoặc vùng lệnh chờ để xem ý nghĩa";
 
 $("exchange").innerHTML = Object.values(EXCHANGES).map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join("");
 $("exchange").value = S.ex; $("symbol").value = S.symbol;
@@ -823,10 +760,14 @@ $("exchange").onchange = () => { S.ex = $("exchange").value; loadSymbols(); load
 $("symbol").addEventListener("change", () => { const v = $("symbol").value.trim().toUpperCase(); if (v && v !== S.symbol) { S.symbol = v; load(); if (S.view === "signals") signalsView.show(); } });
 $("symbol").addEventListener("keydown", e => { if (e.key === "Enter") $("symbol").blur(); });
 // khung thời gian: một ô, bấm vào thì thả danh sách các khung
-const ivPaint = () => { $("ivBtn").innerHTML = `${S.interval} <small>▾</small>`; for (const x of $("intervals").children) x.classList.toggle("on", x.dataset.i === S.interval); };
+const IV_QUICK = ["1m", "5m", "15m", "1h", "4h"].filter(i => INTERVALS[i]); // các khung hay dùng đặt sẵn trên ribbon, khung khác trong ▾
+const ivPaint = () => { $("ivBtn").innerHTML = `${IV_QUICK.includes(S.interval) ? "Khác" : S.interval} <small>▾</small>`; $("ivBtn").classList.toggle("on", !IV_QUICK.includes(S.interval)); for (const x of $("intervals").children) x.classList.toggle("on", x.dataset.i === S.interval); for (const x of $("ivSeg").children) x.classList.toggle("on", x.dataset.i === S.interval); };
 $("intervals").innerHTML = Object.keys(INTERVALS).map(i => `<button data-i="${i}">${i}</button>`).join("");
+$("ivSeg").innerHTML = IV_QUICK.map(i => `<button data-i="${i}">${i}</button>`).join("");
+const setInterval_ = i => { if (!INTERVALS[i] || i === S.interval) return; S.interval = i; ivPaint(); load(); };
+$("ivSeg").onclick = e => { const b = e.target.closest("[data-i]"); if (b) setInterval_(b.dataset.i); };
 $("ivBtn").onclick = e => { e.stopPropagation(); $("ivBtn").parentElement.classList.toggle("open"); };
-$("intervals").onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; $("ivBtn").parentElement.classList.remove("open"); if (b.dataset.i === S.interval) return; S.interval = b.dataset.i; ivPaint(); load(); };
+$("intervals").onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; $("ivBtn").parentElement.classList.remove("open"); setInterval_(b.dataset.i); };
 ivPaint();
 // đồng hồ đếm ngược tới lúc đóng nến của khung đang xem
 setInterval(() => { const el = $("cdTerm"), cd = candleCountdown(INTERVALS[S.interval], Date.now() + clockSkew()); el.textContent = `⏱ ${cd.text}`; el.classList.toggle("warn", cd.soon); }, 1000);
@@ -846,101 +787,19 @@ $("gearBtn").onclick = e => { e.stopPropagation(); const d = $("gearBtn").parent
 $("gearHealth").onclick = () => { gearClose(); setView("health"); };
 $("gearBackup").onclick = () => { gearClose(); setView("health"); const c = $("backupCard"); if (c) c.scrollIntoView({ block: "start", behavior: "smooth" }); };
 $("views").onclick = e => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); };
-$("chartMode").onclick = e => { const b = e.target.closest("[data-mode]"); if (b) setMode(b.dataset.mode); };
 $("layerBtn").onclick = e => { e.stopPropagation(); $("layerBtn").parentElement.classList.toggle("open"); };
-$("hmCfgBtn").onclick = e => { e.stopPropagation(); $("hmCfgBtn").parentElement.classList.toggle("open"); };
-// ---------- máy ghi 24/7 (chỉ khi chạy trên laptop) ----------
-let laptop = null;
-const recHours = () => { const v = +sessionStorage.getItem("lailong.recHours"); return isFinite(v) && sessionStorage.getItem("lailong.recHours") != null ? v : 6; };
-async function checkLaptop() {
-  try { laptop = await getJson("/api/record/info"); } catch { laptop = null; }
-  $("recWrap").hidden = !laptop; document.body.classList.toggle("haslaptop", !!laptop); if (!laptop) return;
-  const syms = Object.entries(laptop.symbols || {});
-  $("recStatus").innerHTML = laptop.running ? `<b class="pos">Đang ghi</b>: ${syms.map(([k, v]) => `${esc(k)} (${fmtVol(v.lines)} dòng, ${esc(v.status)})`).join(", ") || "chưa có mã"}` : `<b class="neg">Máy ghi chưa chạy.</b> Bấm đúp "Ghi du lieu 24-7.bat" trong thư mục Lai Long.`;
-  if (document.activeElement !== $("recSyms")) $("recSyms").value = (laptop.config.symbols || []).join(", ");
-  $("recKeep").value = laptop.config.keep_days; $("recHours").value = recHours();
-}
-$("recSave").onclick = async () => {
-  try {
-    const cfg = await postJson("/api/record/config", { symbols: $("recSyms").value.split(/[\s,;]+/).filter(Boolean), keep_days: +$("recKeep").value || 7 });
-    try { sessionStorage.setItem("lailong.recHours", String(Math.max(0, Math.min(72, +$("recHours").value || 0)))); } catch { /* bỏ qua */ }
-    toast(`Đã lưu: ghi ${cfg.symbols.join(", ") || "không mã nào"}, giữ ${cfg.keep_days} ngày. Máy ghi tự nhận sau khoảng 1 phút.`); checkLaptop();
-  } catch (e) { toast(`Không lưu được: ${e.message}`, true); }
-};
-// nạp lịch sử đã ghi vào bản đồ nhiệt, ngay khi biết bước gộp giá
-async function loadRecorded(token) {
-  if (!laptop || S.ex !== "BINANCE" || !recHours()) return;
-  if (!(laptop.config.symbols || []).includes(S.symbol) && !(laptop.symbols || {})[S.symbol]) return;
-  for (let i = 0; i < 50 && !market.grid; i++) await sleep(200);
-  if (token !== loadToken || !market.grid) return;
-  try {
-    const rows = await getJson(`/api/record/cols?symbol=${S.symbol}&hours=${recHours()}`);
-    if (token !== loadToken) return;
-    const n = market.addRecorded(rows);
-    if (n) { heat.dirty = true; log(`Đã nạp ${n} cột lịch sử (${((rows[rows.length - 1].t - rows[0].t) / 36e5).toFixed(1)} giờ) từ máy ghi 24/7`); toast(`Đã nạp ${((rows[rows.length - 1].t - rows[0].t) / 36e5).toFixed(1)} giờ lịch sử sổ lệnh từ máy ghi`); }
-  } catch (e) { log(`Không nạp được lịch sử máy ghi: ${e.message}`); }
-}
-checkLaptop().then(() => { if (laptop) loadRecorded(loadToken); }); setInterval(checkLaptop, 30e3);
-
-// ---------- phát lại sổ lệnh đã ghi (chỉ khi chạy trên laptop có máy ghi 24/7) ----------
-var replay = null; let rpRaf = 0, rpLast = 0; // var: load() ở trên đã dùng tới replay
-const localInput = t => { const d = new Date(t - new Date(t).getTimezoneOffset() * 6e4); return d.toISOString().slice(0, 16); };
-const rpUi = () => {
-  const on = !!(replay && replay.ready);
-  $("rpPlay").disabled = $("rpSeek").disabled = !on;
-  $("rpPlay").textContent = on && replay.playing ? "❚❚" : "▶";
-  if (!on) { $("rpTime").textContent = ""; return; }
-  $("rpSeek").value = String(Math.round((replay.vt - replay.t0) / Math.max(1, replay.t1 - replay.t0) * 1000));
-  $("rpTime").textContent = `${fmtTime(replay.vt, true)} · x${replay.speed}`;
-};
-function exitReplay() {
-  cancelAnimationFrame(rpRaf); replay = null;
-  heat.m = market; heat.clock = null; heat.resetView();
-  $("replayBar").hidden = true; $("replayBtn").classList.remove("on"); rpUi();
-}
-const rpLoop = ts => {
-  if (!replay) return;
-  const dt = rpLast ? Math.min(250, ts - rpLast) : 0; rpLast = ts;
-  if (replay.advance(dt)) { heat.dirty = true; rpUi(); }
-  rpRaf = requestAnimationFrame(rpLoop);
-};
-$("replayBtn").onclick = () => {
-  if (!$("replayBar").hidden) { exitReplay(); return; }
-  $("replayBar").hidden = false; $("replayBtn").classList.add("on");
-  if (!$("rpFrom").value) $("rpFrom").value = localInput(Date.now() - 3600e3);
-};
-$("rpExit").onclick = exitReplay;
-$("rpLoad").onclick = async () => {
-  if (S.ex !== "BINANCE") { toast("Phát lại dùng dữ liệu máy ghi 24/7, chỉ có cho Binance Futures.", true); return; }
-  const start = new Date($("rpFrom").value).getTime(); if (!isFinite(start)) { toast("Chọn thời điểm bắt đầu.", true); return; }
-  const end = start + +$("rpDur").value;
-  $("rpLoad").disabled = true; $("rpTime").textContent = "Đang tải...";
-  try {
-    const rows = await getJson(`/api/record/range?symbol=${encodeURIComponent(S.symbol)}&start=${start}&end=${end}`);
-    if (!rows.length) { toast(`Máy ghi không có dữ liệu ${S.symbol} trong khoảng này. Thêm mã vào Máy ghi 24/7 trong ⚙ Cài đặt để lần sau có.`, true); $("rpTime").textContent = ""; return; }
-    cancelAnimationFrame(rpRaf);
-    replay = new Replay(rows, { symbol: S.symbol, tick: market.tick }); replay.speed = +$("rpSpeed").value;
-    heat.m = replay.m; heat.clock = () => replay.now(); heat.resetView();
-    replay.seek(replay.t0 + 60e3); replay.playing = true; rpLast = 0; rpRaf = requestAnimationFrame(rpLoop); rpUi();
-    toast(`Đang phát lại ${S.symbol}: ${((replay.t1 - replay.t0) / 36e5).toFixed(1)} giờ sổ lệnh đã ghi.`);
-  } catch (e) { toast(`Không tải được dữ liệu phát lại: ${e.message}`, true); $("rpTime").textContent = ""; }
-  finally { $("rpLoad").disabled = false; }
-};
-$("rpPlay").onclick = () => { if (!replay) return; if (!replay.playing && replay.vt >= replay.t1) replay.seek(replay.t0); replay.playing = !replay.playing; rpUi(); };
-$("rpSpeed").onchange = () => { if (replay) { replay.speed = +$("rpSpeed").value; rpUi(); } };
-$("rpSeek").oninput = () => { if (!replay) return; replay.seek(replay.t0 + +$("rpSeek").value / 1000 * (replay.t1 - replay.t0)); heat.dirty = true; rpUi(); };
-document.addEventListener("keydown", e => { if (replay && e.code === "Space" && !e.target.closest("input, select, textarea")) { e.preventDefault(); $("rpPlay").click(); } });
-
 // ---------- vẽ đường / vùng giá ----------
-const draw = new Drawings(); draw.sym = S.symbol; heat.drawings = flow.drawings = draw;
-const setTool = t => { draw.tool = t; for (const b of $("drawTools").querySelectorAll("[data-draw]")) b.classList.toggle("on", b.dataset.draw === t); for (const id of ["heat", "flow"]) $(id).style.cursor = t ? "crosshair" : ""; };
+const draw = new Drawings(); draw.sym = S.symbol; flow.drawings = draw;
+const setTool = t => { draw.tool = t; for (const b of $("drawTools").querySelectorAll("[data-draw]")) b.classList.toggle("on", b.dataset.draw === t); $("drawBtn").classList.toggle("on", !!t); $("flow").style.cursor = t ? "crosshair" : ""; };
+$("drawBtn").onclick = e => { e.stopPropagation(); $("drawBtn").parentElement.classList.toggle("open"); };
 $("drawTools").onclick = e => {
   const b = e.target.closest("[data-draw]"); if (!b) return;
-  if (b.dataset.draw === "clear") { if (draw.list().length && confirm(`Xoá mọi đường và vùng đã vẽ của ${S.symbol}?`)) { draw.clear(); heat.dirty = flow.dirty = true; } return; }
+  $("drawBtn").parentElement.classList.remove("open");
+  if (b.dataset.draw === "clear") { if (draw.list().length && confirm(`Xoá mọi đường và vùng đã vẽ của ${S.symbol}?`)) { draw.clear(); flow.dirty = true; } return; }
   setTool(draw.tool === b.dataset.draw ? null : b.dataset.draw);
   if (draw.tool) toast(draw.tool === "line" ? "Bấm vào biểu đồ để đặt đường ngang. Bấm đúp lên đường để xoá." : "Kéo dọc trên biểu đồ để đánh dấu vùng giá. Bấm đúp lên mép vùng để xoá.");
 };
-for (const [id, chart] of [["heat", heat], ["flow", flow]]) {
+for (const [id, chart] of [["flow", flow]]) {
   const cv = $(id), yAt = e => { const r = cv.getBoundingClientRect(); return (e.touches ? e.touches[0] || e.changedTouches[0] : e).clientY - r.top; };
   let start = null;
   const down = e => {
@@ -955,72 +814,44 @@ for (const [id, chart] of [["heat", heat], ["flow", flow]]) {
     const p2 = chart.pAt(yAt(e));
     if (draw.tool === "line") draw.add({ type: "line", p: start.p });
     else if (Math.abs(yAt(e) - start.y) > 4) draw.add({ type: "zone", p: start.p, p2 });
-    start = null; draw.preview = null; setTool(null); heat.dirty = flow.dirty = true;
+    start = null; draw.preview = null; setTool(null); flow.dirty = true;
   };
   cv.addEventListener("mousedown", down, true); cv.addEventListener("touchstart", down, { capture: true, passive: false });
   window.addEventListener("mousemove", move, true); cv.addEventListener("touchmove", move, { capture: true, passive: false });
   window.addEventListener("mouseup", up, true); cv.addEventListener("touchend", up, true);
   cv.addEventListener("dblclick", e => {
     const y = yAt(e), s = draw.hit(y, p => chart.yOf(p)); if (!s) return;
-    e.stopImmediatePropagation(); draw.remove(s.id); heat.dirty = flow.dirty = true; toast("Đã xoá");
+    e.stopImmediatePropagation(); draw.remove(s.id); flow.dirty = true; toast("Đã xoá");
   }, true);
 }
 
-$("multiBook").checked = S.multi;
-$("multiBook").onchange = () => {
-  S.multi = $("multiBook").checked; persist();
-  if (S.multi && !multiPeers(S.ex).length) toast("Multibook chỉ có cho Binance, OKX và Bybit", true);
-  else { toast(S.multi ? "Đang gộp sổ lệnh Binance + OKX + Bybit..." : "Đã tắt Multibook, chỉ dùng một sàn"); load(); }
-};
-// Cài đặt Bookmap: đọc từ máy, gắn vào từng ô, lưu lại mỗi khi đổi
-{
-  const KEY = "lailong.hmcfg";
-  let saved = {}; try { saved = JSON.parse(sessionStorage.getItem(KEY) || "{}"); } catch { /* bỏ qua */ }
-  for (const [k, v] of Object.entries(saved)) if (k in HM_DEFAULTS && typeof v === typeof HM_DEFAULTS[k]) heat.cfg[k] = v;
-  for (const el of document.querySelectorAll("[data-hm]")) {
-    const k = el.dataset.hm, d = HM_DEFAULTS[k];
-    if (el.type === "checkbox") el.checked = !!heat.cfg[k]; else el.value = String(heat.cfg[k]);
-    el.addEventListener("change", () => {
-      let v = el.type === "checkbox" ? el.checked : el.value;
-      if (typeof d === "number") { v = +v; if (!isFinite(v) || el.value === "") v = d; if (el.min !== "") v = Math.max(+el.min, v); if (el.max !== "") v = Math.min(+el.max, v); }
-      heat.cfg[k] = v; heat._cut = null; heat.dirty = true;
-      try { sessionStorage.setItem(KEY, JSON.stringify(heat.cfg)); } catch { /* bỏ qua */ }
-    });
-  }
-}
 document.addEventListener("click", e => { if (!e.target.closest(".dropdown")) document.querySelectorAll(".dropdown.open").forEach(d => d.classList.remove("open")); });
 // lớp hiển thị: lớp phân tích mặc định tắt hết; thanh công cụ bên trái biểu đồ bật lớp mà công cụ đó cần.
-// Phần lõi (bong bóng, Mua/Bán/Delta dưới nến, ô Delta) bật sẵn và không tính vào số lớp đang bật.
-const CORE_LAYERS = new Set(["bubbles", "stats", "delta", "depth"]);
+// Phần lõi (vùng lệnh chờ, mất cân bằng, hồ sơ khối lượng, dòng số dưới nến, Depth Of Market) không tính vào số lớp đang bật.
+const CORE_LAYERS = new Set(["stats", "statsFull", "delta", "depth", "walls", "imb", "profile"]);
 // [lớp, tên công cụ, chỉ hiện ở chế độ nào ("" là cả hai), nét vẽ biểu tượng 24×24]
 const RAIL = [
+  ["walls", "Vùng lệnh chờ lớn đang đứng", "", "M3 7h12M3 12h8M3 17h14M19 9v6M17 12h4"],
   ["levels", "Hỗ trợ / kháng cự đã test", "", "M3 8h4M10 8h4M17 8h4M3 16h18"],
   ["confl", "Vùng hợp lưu", "", "M4 6h16v5H4zM4 15h16M4 19h16"],
   ["zones", "Vùng khối lượng bất thường", "", "M4 9h16v6H4zM8 9V5M16 15v4"],
   ["liq", "Lệnh thanh lý thật", "", "M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"],
   ["liqMap", "Bản đồ thanh lý ước tính", "", "M3 6h18M3 12h18M3 18h18M9 3v18M15 3v18"],
-  ["ice", "Băng chìm / nạp lại", "heat", "M12 3l7 9-7 9-7-9zM5 12h14"],
-  ["lots", "Lệnh chờ lớn (Large Lot Tracker)", "heat", "M3 12h12M18 12a3 3 0 1 0 0.01 0M3 7h6M3 17h6"],
-  ["sweeps", "Lệnh quét nhiều mức giá (Sweeps)", "heat", "M12 20V5M7 10l5-5 5 5M8 20h8"],
-  ["hAbsorb", "Hấp thụ trên Bookmap", "heat", "M5 19L12 4l7 15M8 13h8"],
-  ["stops", "Chuỗi cắt lỗ (Stops)", "heat", "M4 18l6-6 3 3 7-9M15 6h5v5"],
-  ["bigOnly", "Chỉ hiện lệnh lớn", "heat", "M12 5a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z"],
-  ["imb", "Mất cân bằng xếp chồng", "box", "M4 5h6v14H4zM14 5h6v14h-6zM10 9h4M10 15h4"],
-  ["absorb", "Hấp thụ", "box", "M3 12h11M10 7l5 5-5 5M19 4v16"],
-  ["big", "Lệnh lớn (Big Trades)", "box", "M12 5a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM12 11.5v1"],
-  ["auction", "Đấu giá chưa xong, kiệt sức", "box", "M5 6h14M5 6v5M19 6v5M9 17h6"],
-  ["spoof", "Tường giả bị rút", "box", "M4 7h9M4 12h9M4 17h9M16 9l5 5M21 9l-5 5"],
-  ["algo", "Dấu vết lệnh chia đều", "box", "M4 17l4-4 4 4 4-4 4 4M4 10l4-4 4 4 4-4 4 4"],
-  ["diverg", "Phân kỳ delta", "box", "M4 18L20 8M4 8l16 10"],
-  ["score", "Điểm tín hiệu ≥ 60", "box", "M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4l-5.3 3 1.2-6-4.5-4.1 6-.7z"],
-  ["profile", "Hồ sơ khối lượng vùng đang xem", "box", "M4 4v16M4 7h8M4 10h13M4 13h16M4 16h9"],
-  ["cvd", "CVD + open interest", "box", "M3 17l5-6 4 3 4-7 5 4"],
-  ["depth", "Depth Of Market: sổ lệnh trên biểu đồ", "box", "M21 5H9M21 9H13M21 13H6M21 17H11M21 21H15"],
+  ["imb", "Mất cân bằng xếp chồng", "", "M4 5h6v14H4zM14 5h6v14h-6zM10 9h4M10 15h4"],
+  ["absorb", "Hấp thụ", "", "M3 12h11M10 7l5 5-5 5M19 4v16"],
+  ["big", "Lệnh lớn (Big Trades)", "", "M12 5a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM12 11.5v1"],
+  ["auction", "Đấu giá chưa xong, kiệt sức", "", "M5 6h14M5 6v5M19 6v5M9 17h6"],
+  ["spoof", "Tường giả bị rút", "", "M4 7h9M4 12h9M4 17h9M16 9l5 5M21 9l-5 5"],
+  ["algo", "Dấu vết lệnh chia đều", "", "M4 17l4-4 4 4 4-4 4 4M4 10l4-4 4 4 4-4 4 4"],
+  ["diverg", "Phân kỳ delta", "", "M4 18L20 8M4 8l16 10"],
+  ["score", "Điểm tín hiệu ≥ 60", "", "M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4l-5.3 3 1.2-6-4.5-4.1 6-.7z"],
+  ["profile", "Hồ sơ khối lượng vùng đang xem", "", "M4 4v16M4 7h8M4 10h13M4 13h16M4 16h9"],
+  ["depth", "Depth Of Market: sổ lệnh trên biểu đồ", "", "M21 5H9M21 9H13M21 13H6M21 17H11M21 21H15"],
 ];
 const LAYER_BOX = {};
 function renderRail() {
   const box = k => LAYER_BOX[k] && LAYER_BOX[k].checked;
-  $("toolRail").innerHTML = RAIL.filter(t => !t[2] || t[2] === S.mode).map(([k, name, , d]) => {
+  $("toolRail").innerHTML = RAIL.map(([k, name, , d]) => {
     const on = box(k);
     return `<button class="rt${on ? " on" : ""}" data-rl="${k}" aria-pressed="${on}" aria-label="${esc(name)}" data-tip="${esc(name)} · ${on ? "đang bật, bấm để tắt" : "bấm để bật"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg></button>`;
   }).join("");
@@ -1034,9 +865,8 @@ function railToast(text) {
 for (const cb of document.querySelectorAll("[data-layer]")) {
   LAYER_BOX[cb.dataset.layer] = cb;
   cb.onchange = () => {
-    const k = cb.dataset.layer; if (k in heat.show) heat.show[k] = cb.checked; if (k in flow.show) flow.show[k] = cb.checked;
-    if (k === "cvd") flow.show.oi = cb.checked; // ô CVD + open interest đi cùng nhau, tắt lớp thì ẩn cả ô
-    heat.dirty = flow.dirty = true; renderRail();
+    const k = cb.dataset.layer; if (k in flow.show) flow.show[k] = cb.checked;
+    flow.dirty = true; renderRail();
   };
   cb.onchange();
 }
@@ -1047,15 +877,12 @@ $("toolRail").onclick = e => {
   railToast((cb.checked ? "Đã tự bật lớp: " : "Đã tắt lớp: ") + name);
 };
 $("layersOff").onclick = () => { for (const [k, cb] of Object.entries(LAYER_BOX)) if (!CORE_LAYERS.has(k) && cb.checked) { cb.checked = false; cb.onchange(); } };
-$("contrast").oninput = () => { heat.contrast = lmap.contrast = +$("contrast").value; heat.dirty = lmap.dirty = true; };
-$("bright").value = heat.cfg.bright || 100;
-$("bright").oninput = () => { heat.cfg.bright = +$("bright").value; heat.dirty = true; try { sessionStorage.setItem("lailong.hmcfg", JSON.stringify(heat.cfg)); } catch { /* bỏ qua */ } };
 $("rowSize").onchange = () => { flow.rowMult = $("rowSize").value; flow.dirty = true; };
 { // chế độ ô và cách tô màu của footprint, nhớ trong phiên
   let fp = {}; try { fp = JSON.parse(sessionStorage.getItem("lailong.fp") || "{}"); } catch { /* bỏ qua */ }
-  if (fp.mode) $("fpMode").value = fp.mode; if (fp.color) $("fpColor").value = fp.color;
-  const apply = () => { flow.fpMode = $("fpMode").value; flow.fpColor = $("fpColor").value; flow.dirty = true; try { sessionStorage.setItem("lailong.fp", JSON.stringify({ mode: flow.fpMode, color: flow.fpColor })); } catch { /* bỏ qua */ } };
-  $("fpMode").onchange = $("fpColor").onchange = apply; apply();
+  if (fp.mode) $("fpMode").value = fp.mode; if (fp.color) $("fpColor").value = fp.color; if (fp.vol) $("volStyle").value = fp.vol;
+  const apply = () => { flow.fpMode = $("fpMode").value; flow.fpColor = $("fpColor").value; flow.volStyle = $("volStyle").value; flow.dirty = true; try { sessionStorage.setItem("lailong.fp", JSON.stringify({ mode: flow.fpMode, color: flow.fpColor, vol: flow.volStyle })); } catch { /* bỏ qua */ } };
+  $("fpMode").onchange = $("fpColor").onchange = $("volStyle").onchange = apply; apply();
 }
 $("domMult").onchange = () => dom.setMult(+$("domMult").value);
 $("domCenter").onclick = () => dom.recenter();
@@ -1063,8 +890,6 @@ $("fullscreenBtn").onclick = () => { if (document.fullscreenElement) document.ex
 
 // ---------- công cụ order flow ----------
 $("paneMode").onchange = () => { flow.pane = $("paneMode").value; if (flow.pane === "groups") recomputePrints(); flow.dirty = true; };
-$("overviewBtn").onclick = () => heat.setOverview(!heat.overview);
-heat.onOverview = on => $("overviewBtn").classList.toggle("on", on);
 $("selBtn").onclick = () => { flow.selecting = !flow.selecting; $("selBtn").classList.toggle("on", flow.selecting); $("flow").style.cursor = flow.selecting ? "col-resize" : ""; };
 $("clusterBtn").onclick = e => { e.stopPropagation(); $("clusterBtn").parentElement.classList.toggle("open"); };
 const clUpdate = () => { CL.on = $("clOn").checked; CL.metric = $("clMetric").value; CL.top = +$("clTop").value; CL.min = +$("clMin").value || 0; $("clusterBtn").classList.toggle("on", CL.on); recomputeFlow(); };
@@ -1083,7 +908,6 @@ $("domClear").onclick = () => { market.tradedAt.clear(); dom.dirty = true; };
 $("tapeSmart").onchange = () => { tape.smart = $("tapeSmart").checked; tape.dirty = true; };
 $("tapeBig").onchange = () => { tape.bigOnly = $("tapeBig").checked; tape.dirty = true; };
 $("tapeMin").oninput = () => { tape.minQ = +$("tapeMin").value || 0; tape.dirty = true; };
-$("lmapWin").onchange = () => lmap.setWindow(+$("lmapWin").value);
 // ---------- lệnh giả lập: khung đặt lệnh và đường lệnh kéo được trên biểu đồ ----------
 const paper = new PaperBroker(() => schedulePaper());
 const pkey = () => `${S.ex}:${S.symbol}`;
@@ -1106,13 +930,14 @@ const olOpts = plotH => ({
     if (r.error) toast(r.error, true);
   },
 });
-heat.ol = new OrderLines(heat, $("heat"), olOpts(L => L.ph));
 flow.ol = new OrderLines(flow, $("flow"), olOpts(L => L.priceH));
-for (const c of [heat, flow]) { const h = c.hitTest.bind(c); c.hitTest = (x, y) => c.ol.hitTest(x, y) || h(x, y); }
+for (const c of [flow]) { const h = c.hitTest.bind(c); c.hitTest = (x, y) => c.ol.hitTest(x, y) || h(x, y); }
 function renderPaper() {
   const k = pkey(), pv = paper.positionView(k), orders = paper.openOrders(k), a = paper.account(), dec = decimalsFor(market.tick || 0.01);
-  heat.ol.set(orders, pv); flow.ol.set(orders, pv);
+  flow.ol.set(orders, pv);
   $("ptAcct").textContent = `Vốn ${a.equity.toFixed(2)} · khả dụng ${a.available.toFixed(2)} USDT`;
+  $("rbAcct").innerHTML = `${a.equity.toFixed(0)} USDT` + (pv.qty ? ` · <b class="${pv.qty > 0 ? "pos" : "neg"}">${pv.qty > 0 ? "LONG" : "SHORT"} ${+Math.abs(pv.qty).toFixed(4)}</b> <span class="${pv.upnl >= 0 ? "pos" : "neg"}">${pv.upnl >= 0 ? "+" : ""}${pv.upnl.toFixed(2)}</span>` : "");
+  $("rbFlat").disabled = !pv.qty;
   $("ptPos").innerHTML = pv.qty ? `<div class="ptpos"><b class="${pv.qty > 0 ? "up" : "dn"}">${pv.qty > 0 ? "LONG" : "SHORT"} ${+Math.abs(pv.qty).toFixed(6)} ${esc(coin())}</b> @ ${pv.avg.toFixed(dec)} · x${pv.lev}<br>
     Lãi/lỗ <b class="${pv.upnl >= 0 ? "up" : "dn"}">${pv.upnl >= 0 ? "+" : ""}${pv.upnl.toFixed(2)} USDT</b> · thanh lý ${pv.liq.toFixed(dec)}<br>
     SL ${pv.sl != null ? pv.sl.toFixed(dec) : "–"} · TP ${pv.tp != null ? pv.tp.toFixed(dec) : "–"}
@@ -1136,29 +961,54 @@ $("ptPos").onclick = e => {
   else { const v = +$(b.dataset.pa === "sl" ? "ptSl" : "ptTp").value; if (v > 0) paper.setBracket(pkey(), b.dataset.pa, v); else toast("Nhập giá vào ô " + b.dataset.pa.toUpperCase(), true); }
 };
 setInterval(() => { const k = pkey(); if (paper.openOrders(k).length) paper.onBook(k, market.book); if (paper.pos(k).qty) { const m = market.book.mid(); if (m != null) paper.pos(k).mark = market.last ? market.last.p : m; schedulePaper(); } }, 1000);
+// giao dịch nhanh trên ribbon: lệnh market theo ô KL, phím B / S / F khi không gõ trong ô nhập
+const quick = side => {
+  const qty = +$("rbQty").value || +$("ptQty").value;
+  if (!(qty > 0)) { toast("Nhập khối lượng ở ô KL cạnh nút MUA / BÁN", true); $("rbQty").focus(); return; }
+  if (lockBlocks(side, qty)) return;
+  const r = paper.place({ key: pkey(), side, type: "market", qty, lev: +$("ptLev").value || 10 }, market.book);
+  if (r.error) toast(r.error, true); else toast(`${side === "buy" ? "MUA" : "BÁN"} market ${qty} ${coin()} (giả lập)`);
+};
+const quickFlat = () => { if (!paper.pos(pkey()).qty) { toast("Chưa có vị thế để đóng"); return; } paper.closePosition(pkey(), market.book); toast("Đã đóng vị thế (giả lập)"); };
+$("rbBuy").onclick = () => quick("buy"); $("rbSell").onclick = () => quick("sell"); $("rbFlat").onclick = quickFlat;
+if (!$("rbQty").value && $("ptQty").value) $("rbQty").value = $("ptQty").value;
+$("rbQty").onchange = () => { if (+$("rbQty").value > 0) $("ptQty").value = $("rbQty").value; };
+document.addEventListener("keydown", e => {
+  if (S.view !== "terminal" || e.ctrlKey || e.metaKey || e.altKey || e.target.closest("input, select, textarea, [contenteditable]")) return;
+  const k = e.key.toLowerCase();
+  if (k === "b") quick("buy"); else if (k === "s") quick("sell"); else if (k === "f") quickFlat(); else return;
+  e.preventDefault();
+});
 renderPaper();
 
-// bố cục lưới ghép: kéo tiêu đề khung để đổi chỗ, nút — để thu nhỏ, menu ▦ Bố cục để lưu / về mặc định
+// bố cục lưới ghép: kéo tiêu đề khung để đổi chỗ, nút — để thu nhỏ, menu Bố cục để lưu / về mặc định
+// mặc định: biểu đồ, cột Thanh lý sát bên, bên phải là Smart DOM trên Smart Tape. Nhật ký tường và lệnh giả lập thu nhỏ sẵn.
 let tiles = null;
-tiles = new Layout(ws, ["mainPanel", "lmapPanel", "domPanel", "tapePanel", "wallPanel", "orderPanel"], {
-  legacy: { lmapW: layout.lmapW, rightW: layout.rightW, tapeW: layout.tapeW },
-  // mặc định: chỉ biểu đồ và sổ lệnh. Smart Tape, bản đồ thanh khoản, nhật ký tường và lệnh giả lập
-  // thu nhỏ sẵn ở thanh dưới, bấm để mở lại khi cần. Khoá lưu mới để ai cũng thấy mặc định này một lần.
-  key: "lailong.layout.v3",
-  tree: () => ({ dir: "row", flex: 0, kids: ["mainPanel", "lmapPanel", { dir: "col", flex: 0, kids: ["domPanel", "tapePanel", "wallPanel", "orderPanel"], size: [0, 300, 260, 380] }], size: [0, 230, 400] }),
-  hiddenDefault: ["lmapPanel", "tapePanel", "wallPanel", "orderPanel"],
-  onChange: () => {
-    if (!tiles) return;
-    const off = tiles.isMin("lmapPanel");
-    ws.classList.toggle("nolmap", off); $("lmapShow").checked = !off;
-    heat.dirty = flow.dirty = dom.dirty = tape.dirty = lmap.dirty = true;
-  },
+tiles = new Layout(ws, ["mainPanel", "liqPanel", "domPanel", "tapePanel", "wallPanel", "orderPanel"], {
+  key: "lailong.layout.v4",
+  tree: () => ({ dir: "row", flex: 0, kids: ["mainPanel", "liqPanel", { dir: "col", flex: 0, kids: ["domPanel", "tapePanel", "wallPanel", "orderPanel"], size: [0, 300, 260, 380] }], size: [0, 164, 400] }),
+  hiddenDefault: ["wallPanel", "orderPanel"],
+  onChange: () => { if (!tiles) return; redrawAll(); paintPanelBtns(); },
 });
-if (layout.lmapOff && !tiles.isMin("lmapPanel")) { tiles.minimize("lmapPanel"); setLayout("lmapOff", null); }
-tiles.onChange();
-const lmapShow = on => on ? tiles.restore("lmapPanel") : tiles.minimize("lmapPanel");
-$("lmapShow").onchange = () => lmapShow($("lmapShow").checked);
-$("lmapHide").onclick = () => lmapShow(false);
+// nút Khung trên ribbon: bật / tắt từng khung
+function paintPanelBtns() { for (const b of $("panelBtns").children) b.classList.toggle("on", !tiles.isMin(b.dataset.tg)); }
+$("panelBtns").onclick = e => { const b = e.target.closest("[data-tg]"); if (!b) return; const id = b.dataset.tg; if (tiles.isMin(id)) tiles.restore(id); else tiles.minimize(id); paintPanelBtns(); };
+// hàng Trang: mỗi bố cục đã lưu là một trang làm việc, "Mặc định" là bố cục gốc
+let pageCur = ""; try { pageCur = sessionStorage.getItem("lailong.page") || ""; } catch { /* bỏ qua */ }
+function renderPages() {
+  const pr = Object.keys(tiles.presets());
+  if (pageCur && !pr.includes(pageCur)) pageCur = "";
+  $("pages").innerHTML = `<button class="pg${pageCur ? "" : " on"}" data-pg="">Mặc định</button>` + pr.map(n => `<button class="pg${n === pageCur ? " on" : ""}" data-pg="${esc(n)}">${esc(n)}<i data-pgx="${esc(n)}" data-tip="Xoá trang này">×</i></button>`).join("") + `<button class="pg add" data-pgadd data-tip="Lưu bố cục đang dùng thành một trang mới">＋ Trang</button>`;
+}
+$("pages").onclick = e => {
+  const x = e.target.closest("[data-pgx]");
+  if (x) { if (confirm(`Xoá trang "${x.dataset.pgx}"?`)) { tiles.deletePreset(x.dataset.pgx); if (pageCur === x.dataset.pgx) pageCur = ""; renderPages(); } return; }
+  if (e.target.closest("[data-pgadd]")) { const name = (prompt("Đặt tên trang làm việc (ví dụ: Scalp, Swing)") || "").trim().slice(0, 24); if (!name) return; tiles.savePreset(name); pageCur = name; }
+  else { const b = e.target.closest("[data-pg]"); if (!b) return; pageCur = b.dataset.pg; if (pageCur) tiles.loadPreset(pageCur); else tiles.reset(); }
+  try { sessionStorage.setItem("lailong.page", pageCur); } catch { /* bỏ qua */ }
+  renderPages(); paintPanelBtns();
+};
+renderPages(); paintPanelBtns();
 for (const b of document.querySelectorAll("[data-min]")) b.onclick = e => { e.stopPropagation(); setMax(null); tiles.minimize(b.dataset.min); };
 function renderLayoutMenu() {
   const pr = Object.keys(tiles.presets()), mins = tiles.ids.filter(id => tiles.isMin(id));
@@ -1175,22 +1025,16 @@ $("layoutMenu").onclick = e => {
   e.stopPropagation();
   const a = b.dataset.lay, n = b.dataset.n;
   if (a === "reset") tiles.reset();
-  else if (a === "save") { const name = (prompt("Đặt tên cho bố cục này (ví dụ: Scalp, Swing)") || "").trim().slice(0, 30); if (name) tiles.savePreset(name); }
-  else if (a === "load") tiles.loadPreset(n);
-  else if (a === "del") tiles.deletePreset(n);
+  else if (a === "save") { const name = (prompt("Đặt tên cho bố cục này (ví dụ: Scalp, Swing)") || "").trim().slice(0, 24); if (name) { tiles.savePreset(name); pageCur = name; } }
+  else if (a === "load") { tiles.loadPreset(n); pageCur = n; }
+  else if (a === "del") { tiles.deletePreset(n); if (pageCur === n) pageCur = ""; }
   else if (a === "restore") tiles.restore(n);
-  renderLayoutMenu();
+  renderLayoutMenu(); renderPages(); paintPanelBtns();
 };
-// thu gọn khung dưới và ẩn thanh công cụ biểu đồ để biểu đồ cao hơn
-const redrawAll = () => { heat.dirty = flow.dirty = dom.dirty = tape.dirty = lmap.dirty = true; };
-const toolsShow = on => { ws.classList.toggle("notools", !on); $("toolsBtn").classList.toggle("on", on); setLayout("toolsOff", on ? null : 1); redrawAll(); };
-$("toolsBtn").onclick = () => toolsShow(!!layout.toolsOff);
-if (layout.toolsOff) toolsShow(false);
 // điện thoại: thanh dưới cùng chọn khung đang xem
 const mShow = id => {
   for (const b of $("mnav").children) b.classList.toggle("on", b.dataset.panel === id);
-  // sổ lệnh đi kèm bản đồ thanh khoản bên trái (cùng dòng giá)
-  for (const p of ws.querySelectorAll(":scope > .panel")) p.classList.toggle("mshow", p.id === id || (id === "domPanel" && p.id === "lmapPanel"));
+  for (const p of ws.querySelectorAll(":scope > .panel")) p.classList.toggle("mshow", p.id === id);
   try { sessionStorage.setItem("lailong.mpanel", id); } catch { /* bỏ qua */ }
   redrawAll();
 };
@@ -1205,7 +1049,7 @@ $("installBtn").onclick = async () => { gearClose(); if (!installEv) return; ins
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 $("tapeGroup").onchange = () => { tape.group = $("tapeGroup").value; tape.dirty = true; };
 
-setMode(S.mode); setView(S.view);
+renderRail(); setGrid(S.grid); setView(S.view);
 loadSymbols(); load();
-window.lailong = { market, heat, flow, dom, tape, walls, lmap, S, alpha }; // tiện kiểm tra trong DevTools
+window.lailong = { market, flow, dom, tape, walls, liqcol, S, alpha }; // tiện kiểm tra trong DevTools
 setInterval(() => tickFresh(), 1000); // chữ "N trước" và trạng thái đỏ của các nhãn dữ liệu

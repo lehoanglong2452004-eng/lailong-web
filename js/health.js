@@ -6,7 +6,7 @@
 //   - File data/*.json: tuổi dữ liệu = bây giờ trừ thời điểm file được tạo (trường "updated").
 
 export const SOURCES = [
-  { id: "binance-ws", name: "Binance Futures WebSocket", kind: "live", feeds: "Giá, lệnh khớp, sổ lệnh, thanh lý (Terminal, Đa biểu đồ)", hosts: ["fstream.binance.com", "stream.binance.com"], expect: 10e3 },
+  { id: "binance-ws", name: "Binance Futures WebSocket", kind: "live", feeds: "Giá, lệnh khớp, sổ lệnh, thanh lý (Terminal)", hosts: ["fstream.binance.com", "stream.binance.com"], expect: 10e3 },
   { id: "binance-rest", name: "Binance REST", kind: "live", feeds: "Nến, OI, funding, tỷ lệ long/short, Radar crypto", hosts: ["fapi.binance.com", "api.binance.com"], probe: "https://fapi.binance.com/fapi/v1/time", expect: 300e3 },
   { id: "bybit", name: "Bybit", kind: "live", feeds: "Funding, OI, sổ lệnh khi chọn sàn Bybit", hosts: ["api.bybit.com", "stream.bybit.com"], probe: "https://api.bybit.com/v5/market/time", expect: 600e3 },
   { id: "okx", name: "OKX", kind: "live", feeds: "Funding, OI, sổ lệnh khi chọn sàn OKX", hosts: ["www.okx.com", "ws.okx.com"], probe: "https://www.okx.com/api/v5/public/time", expect: 600e3 },

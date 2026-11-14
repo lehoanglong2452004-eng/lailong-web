@@ -15,10 +15,6 @@
   /* kiểu Bloomberg: một font đơn cách nét vuông cho toàn trang (IBM Plex Mono, có đủ dấu tiếng Việt, nằm sẵn trong fonts/) */
   --mono: "IBM Plex Mono", Consolas, "Cascadia Mono", Menlo, monospace;
   --sans: var(--mono);
-  --rightW: 430px;
-  --tapeW: 340px;
-  --lmapW: 230px;
-  --bottomH: 210px;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -86,16 +82,9 @@ input[type=number] { font-family: var(--mono); }
 .dropdown .menu label { display: flex; gap: 8px; align-items: center; padding: 5px 6px; cursor: pointer; }
 .dropdown .menu label:hover { background: var(--panel-2); }
 
-/* ---- bố cục Terminal: kéo được hai đường chia ---- */
-.workspace {
-  flex: 1; min-height: 0; display: grid; padding: 4px;
-  grid-template-columns: minmax(0, 1fr) 6px var(--lmapW) 4px var(--rightW) 6px var(--tapeW);
-  grid-template-rows: minmax(0, 1fr);
-  grid-template-areas: "chart sm lmap sv dom st tape";
-}
-.workspace.nolmap { grid-template-columns: minmax(0, 1fr) 0 0 6px var(--rightW) 6px var(--tapeW); }
-.workspace.notools .chart-tools, .workspace.notools #chartHint { display: none; }
-.workspace.nolmap > .lmap-panel, .workspace.nolmap > #splitM { display: none; }
+/* ---- bố cục Terminal: lưới ghép (layout.js) trên máy tính, một khung mỗi lần trên điện thoại ---- */
+.workspace { flex: 1; min-height: 0; display: flex; gap: 4px; padding: 4px; }
+.workspace > .panel { flex: 1 1 0; }
 .panel { background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .panel-head {
   display: flex; align-items: center; gap: 8px; padding: 3px 6px 3px 10px;
@@ -105,25 +94,8 @@ input[type=number] { font-family: var(--mono); }
 .chart-panel .panel-head { flex-wrap: wrap; row-gap: 4px; padding-top: 4px; padding-bottom: 4px; }
 .panel-head .title { font-weight: 800; white-space: nowrap; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; font-size: 12px; }
 .panel-head .hint { color: var(--muted); font-size: 11px; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 400; }
-.chart-panel { grid-area: chart; }
 .panel-head.tabs { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
-#bottomFold { flex: none; }
-.dom-panel { grid-area: dom; }
-.tape-panel { grid-area: tape; }
 .tape-panel > .panel-head { flex-wrap: wrap; row-gap: 4px; padding-top: 4px; padding-bottom: 4px; }
-.lmap-panel { grid-area: lmap; border-right: 0; }
-.lmap-panel .panel-head { gap: 4px; overflow: hidden; }
-.lmap-panel .panel-head select { max-width: 76px; }
-#splitM { grid-area: sm; }
-#splitT { grid-area: st; }
-.bottom { grid-area: bottom; }
-.splitter { background: transparent; position: relative; z-index: 5; }
-.splitter::after { content: ""; position: absolute; background: var(--line); }
-.splitter:hover::after, .splitter.drag::after { background: var(--accent); }
-.splitter.v { grid-area: sv; cursor: col-resize; }
-.splitter.v::after { left: 2px; width: 2px; top: 0; bottom: 0; }
-.splitter.h { grid-area: sh; cursor: row-resize; }
-.splitter.h::after { top: 2px; height: 2px; left: 0; right: 0; }
 body.resizing { user-select: none; }
 body.resizing canvas { pointer-events: none; }
 .chart-wrap, .dom-wrap { position: relative; flex: 1; min-height: 0; }
@@ -301,18 +273,18 @@ input[type=number], input:not([type]) { cursor: text !important; }
 .menubar .field :is(select, input) { background: #0f1215; border-color: var(--pro-line); border-radius: 4px; padding: 3px 7px; font-size: 12.5px; }
 .menubar #symbol { font-family: var(--mono); }
 /* khung thời gian: một ô, bấm vào thả danh sách */
-.menubar .ivbtn { font-family: var(--mono); font-weight: 700; color: #fff; min-width: 52px; justify-content: center; box-shadow: inset 0 -2px 0 var(--accent); }
-.menubar .ivbtn small { color: #8b95a3; font-size: 10px; margin-left: 2px; }
-.menubar #intervals { min-width: 0; padding: 4px; display: none; grid-template-columns: repeat(4, auto); gap: 2px; }
-.menubar .ivdd.open #intervals { display: grid; }
-.menubar #intervals button { border: 0; border-radius: 4px; background: transparent; color: var(--pro-text); font-weight: 600; font-size: 12.5px; padding: 5px 10px; font-family: var(--mono); }
-.menubar #intervals button:hover { background: var(--pro-hover); }
-.menubar #intervals button.on { background: var(--pro-on); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
+.ribbon .ivbtn { font-family: var(--mono); font-weight: 700; color: #fff; min-width: 52px; justify-content: center; box-shadow: inset 0 -2px 0 var(--accent); }
+.ribbon .ivbtn small { color: #8b95a3; font-size: 10px; margin-left: 2px; }
+.ribbon #intervals { min-width: 0; padding: 4px; display: none; grid-template-columns: repeat(4, auto); gap: 2px; }
+.ribbon .ivdd.open #intervals { display: grid; }
+.ribbon #intervals button { border: 0; border-radius: 4px; background: transparent; color: var(--pro-text); font-weight: 600; font-size: 12.5px; padding: 5px 10px; font-family: var(--mono); }
+.ribbon #intervals button:hover { background: var(--pro-hover); }
+.ribbon #intervals button.on { background: var(--pro-on); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
 .menubar .tool { background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--pro-text); font-weight: 500; font-size: 12.5px; padding: 4px 9px; }
 .menubar .tool:hover { background: var(--pro-hover); color: #fff; border-color: transparent; }
 .menubar .tool.on { background: var(--pro-on); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
 .menubar .pill { border-color: var(--pro-line); border-radius: 10px; background: #0f1215; font-size: 11.5px; }
-.menubar .cdterm { font-family: var(--mono); color: #8b95a3; }
+.ribbon .cdterm { font-family: var(--mono); color: #8b95a3; }
 
 @media (max-width: 2200px) { .menubar .lbl { display: none; } .menubar .mob { display: inline; } }
 /* màn hình laptop: thu gọn để thanh menu nằm trên một dòng (đèn kết nối chỉ còn chấm màu, rê chuột để xem) */
@@ -328,7 +300,7 @@ input[type=number], input:not([type]) { cursor: text !important; }
   .menubar .views button { padding: 0 6px; font-size: 12.5px; }
   .menubar .field { font-size: 0; gap: 0; }
   .menubar .field :is(select, input) { font-size: 12.5px; }
-  .menubar #intervals button { padding: 3px 6px; }
+  .ribbon #intervals button { padding: 3px 6px; }
   .menubar { gap: 4px 5px; }
   .menubar #exchange { max-width: 100px; }
   .menubar #symbol { width: 84px; }
@@ -340,7 +312,7 @@ input[type=number], input:not([type]) { cursor: text !important; }
   body { height: 100dvh; min-height: 0; padding-top: env(safe-area-inset-top); }
   .menubar { gap: 4px 6px; padding: 4px 6px; min-height: 0; }
   .brand { font-size: 15px; letter-spacing: .06em; border-right: 0; padding-right: 2px; flex: 1; order: -2; }
-  .menubar > #connPill, .menubar > #installBtn, .menubar > #glossBtn, .menubar > #themeBtn, .menubar > #toolsBtn, .menubar > .alertdd { order: -1; }
+  .menubar > #connPill, .menubar > #installBtn, .menubar > #glossBtn, .menubar > #themeBtn, .menubar > .alertdd { order: -1; }
   .alertdd .menu { position: fixed; top: var(--topH, 42px); left: 6px; right: 6px; min-width: 0; max-height: 70vh; overflow: auto; }
   .menubar > .spacer { display: none; }
   .menubar .lbl { display: none; }
@@ -355,17 +327,14 @@ input[type=number], input:not([type]) { cursor: text !important; }
   #connPill { padding: 3px 6px; }
   .brand { flex: 1 0 auto; }
   .menubar::after { content: ""; order: -1; flex-basis: 100%; height: 0; }
-  /* sổ lệnh và bản đồ thanh khoản: đầu khung một dòng, bằng chiều cao nhau để các dòng giá thẳng hàng */
-  .dom-panel .panel-head, .lmap-panel .panel-head { flex-wrap: nowrap; overflow: hidden; gap: 4px; padding-left: 4px; }
-  .dom-panel .panel-head .title, .lmap-panel .panel-head .title, .dom-panel .max, .tape-panel .max, .lmap-panel .max { display: none; }
+  /* sổ lệnh: đầu khung một dòng */
+  .dom-panel .panel-head, .liq-panel .panel-head { flex-wrap: nowrap; overflow: hidden; gap: 4px; padding-left: 4px; }
+  .dom-panel .panel-head .title, .dom-panel .max, .tape-panel .max, .liq-panel .max { display: none; }
   .panel-head .hint { display: none; }
   .panel-head { flex-wrap: wrap; }
   .workspace { display: flex; flex-direction: row; overflow: hidden; gap: 2px; padding: 2px; }
   .workspace > .panel { display: none; flex: 1 1 0; min-height: 0; min-width: 0; }
   .workspace > .panel.mshow { display: flex; }
-  .workspace > .lmap-panel.mshow { flex: 0 0 32%; }
-  .workspace.nolmap > .lmap-panel.mshow { display: none; }
-  .lmap-panel .panel-head .max, #bottomFold { display: none; }
   .mnav { display: flex; border-top: 2px solid var(--accent); background: var(--bg); padding-bottom: env(safe-area-inset-bottom); flex: none; }
   .mnav button { flex: 1; border: 0; border-radius: 0; background: transparent; color: var(--muted); padding: 5px 2px 6px; font-size: 11px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 1px; }
   .mnav button i { font-style: normal; font-size: 17px; line-height: 1.1; }
@@ -403,11 +372,6 @@ canvas { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: n
 @media (max-width: 900px) { .backtest { grid-auto-rows: max-content; } .btform .formbody { overflow: visible; } }
 
 /* bảng cài đặt Bookmap */
-.hmcfg { width: 340px; max-height: 70vh; overflow: auto; }
-.hmcfg h4 { margin: 10px 6px 4px; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
-.hmcfg .row input[type=number] { width: 72px; }
-.hmcfg .note { margin: 2px 6px 6px; }
-.hmcfg input.reset, .hmcfg select.reset { outline: 2px solid var(--accent); }
 
 /* ---- nhật ký & rủi ro ---- */
 .journal .btform h4 { margin: 4px 0 0; color: var(--accent); font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; }
@@ -834,9 +798,9 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 .hmlegend small { margin-left: 10px; font-family: var(--sans); }
 @media (max-width: 700px) { .hmbox { height: 380px; } }
 
-/* ---- Terminal kiểu Bookmap: khung xám than, chữ thường, nút phẳng, bản đồ chiếm gần hết chỗ ----
+/* ---- Terminal kiểu bàn giao dịch chuyên nghiệp: khung xám than, chữ thường, nút phẳng, biểu đồ chiếm gần hết chỗ ----
    Chỉ áp cho trang Terminal; các trang khác giữ kiểu Bloomberg. Số liệu vẫn dùng font đơn cách. */
-#view-terminal {
+#view-terminal, .ribbon {
   --ui: "Segoe UI", "Inter", Roboto, "Helvetica Neue", Arial, sans-serif;
   --pro-panel: #0c0e11; --pro-head: #191d23; --pro-line: #262b33; --pro-hover: #252b34; --pro-on: #2b3442; --pro-text: #cfd6df;
 }
@@ -880,13 +844,6 @@ button, select, input, .card, .menu, .pill, .kpis > div { border-radius: 0 !impo
 #view-terminal .stab.on b { color: #fff; }
 #view-terminal .stab .x { border: 0; background: transparent; color: #6b7480; padding: 0 2px; font-size: 13px; line-height: 1; }
 #view-terminal .stab .x:hover { color: #fff; }
-#replayBtn { display: none; }
-body.haslaptop #replayBtn:not([hidden]) { display: inline-flex; }
-#view-terminal .replaybar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 8px; background: #1a1f16; border-bottom: 1px solid var(--pro-line); font-family: var(--ui); font-size: 12px; color: var(--pro-text); }
-#view-terminal .replaybar .rpl { color: var(--accent); font-weight: 600; }
-#view-terminal .replaybar :is(button, select, input) { font-family: var(--ui); font-size: 12px; text-transform: none; letter-spacing: 0; padding: 2px 8px; border-radius: 4px; background: #0f1215; border: 1px solid var(--pro-line); }
-#view-terminal .replaybar #rpSeek { flex: 1 1 180px; accent-color: var(--accent); padding: 0; border: 0; background: transparent; }
-#view-terminal .replaybar .rptime { font-family: var(--mono); color: #fff; min-width: 150px; }
 
 /* ---------- trang Tin tức ---------- */
 #view-news .cards { grid-template-columns: minmax(0, 1fr) 340px; }
@@ -985,12 +942,6 @@ body.haslaptop #replayBtn:not([hidden]) { display: inline-flex; }
   .socside { position: static; max-height: 220px; }
 }
 
-/* Bookmap: hai thanh trượt Tương phản / Độ sáng và thang màu, như thanh công cụ của Bookmap */
-.hmsliders { display: inline-flex; align-items: center; gap: 10px; }
-.hmsliders label { display: inline-flex; align-items: center; gap: 5px; }
-.hmsliders input[type=range] { width: 74px; accent-color: #4aa3ff; }
-.heatgrad { display: inline-block; width: 92px; height: 10px; border-radius: 2px; background: linear-gradient(90deg, #060c14, #091e3c 16%, #12569c 34%, #2e92d6 50%, #acd8ec 60%, #f6ee8c 70%, #f8961e 84%, #e4241b 96%, #fff); border: 1px solid var(--line); }
-@media (max-width: 900px) { .heatgrad { display: none; } .hmsliders input[type=range] { width: 56px; } }
 
 /* nút VI / EN góc trên bên phải */
 .langseg button { padding: 4px 8px; font-size: 12px; }
@@ -998,9 +949,6 @@ body.haslaptop #replayBtn:not([hidden]) { display: inline-flex; }
 /* mục Thị trường nằm trong tab Phân tích */
 .atabmk[hidden] { display: none; }
 
-/* công cụ riêng của Terminal (Sàn chung cho Terminal và Đa biểu đồ) chỉ hiện ở đúng tab */
-body:not([data-view="terminal"]) .menubar .termonly { display: none !important; }
-body:not([data-view="terminal"]):not([data-view="multi"]) .menubar .termmulti { display: none !important; }
 /* nút ⚙ gom ngôn ngữ, màu, giải thích, dữ liệu, cài app */
 .geardd #gearBtn { position: relative; font-size: 15px; padding: 2px 9px; }
 .geardd #gearDot { position: absolute; top: 2px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
@@ -1080,4 +1028,105 @@ body:not([data-view="terminal"]):not([data-view="multi"]) .menubar .termmulti { 
   .cftcnews .cfti { grid-template-columns: 64px 1fr; }
   .cftcnews .cfti .cftc { grid-column: 2; justify-self: start; }
   .cftcnews .cfti > span:last-child { grid-column: 1 / -1; }
+}
+
+/* ---------- Terminal v2: ribbon (hàng Trang + nhóm công cụ có chú thích), thanh tiêu đề khung, cột Thanh lý, lưới biểu đồ ---------- */
+.ribbon { --chrome: #1b1d23; --rib-line: #2d3039; flex: none; background: var(--chrome); border-bottom: 1px solid var(--rib-line); font-family: var(--ui); }
+.ribbon .pages { display: flex; align-items: flex-end; gap: 2px; padding: 3px 8px 0; background: #0e0f12; border-bottom: 1px solid var(--rib-line); overflow-x: auto; scrollbar-width: none; }
+.ribbon .pg { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; font-size: 11.5px; color: #9a9da8; background: #15161a; border: 1px solid var(--rib-line); border-bottom: 0; border-radius: 3px 3px 0 0; white-space: nowrap; text-transform: none; letter-spacing: 0; }
+.ribbon .pg:hover { color: #fff; }
+.ribbon .pg.on { color: #fff; background: var(--chrome); border-top: 2px solid var(--accent); }
+.ribbon .pg i { font-style: normal; color: #6b7480; font-size: 13px; line-height: 1; padding: 0 2px; }
+.ribbon .pg i:hover { color: #fff; }
+.ribbon .pg.add { color: var(--accent); background: transparent; border-style: dashed; }
+.ribbon .rib { display: flex; align-items: stretch; padding: 0 6px; overflow-x: auto; scrollbar-width: thin; }
+.ribbon .rg { display: flex; flex-direction: column; justify-content: space-between; gap: 3px; padding: 5px 7px 3px; border-right: 1px solid var(--rib-line); flex: none; }
+.ribbon .rg:last-child { border-right: 0; }
+.ribbon .rg > .row { display: flex; gap: 4px; align-items: center; min-height: 36px; }
+.ribbon .rg .cap { font-size: 9.5px; color: #8b8e99; text-align: center; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.ribbon .field { color: #8b95a3; font-size: 11.5px; font-weight: 500; gap: 5px; text-transform: none; letter-spacing: 0; }
+.ribbon .field :is(select, input) { background: #0f1215; border-color: var(--rib-line); border-radius: 4px; padding: 3px 7px; font-size: 12.5px; }
+.ribbon #symbol { width: 112px; font-family: var(--mono); font-weight: 700; color: var(--accent); text-transform: uppercase; }
+.ribbon #rbQty { width: 76px; font-family: var(--mono); }
+.ribbon .seg { border: 0; background: #0f1215; border-radius: 5px; padding: 2px; gap: 2px; }
+.ribbon .seg button { border: 0; border-radius: 4px; background: transparent; color: var(--pro-text); font-weight: 600; padding: 4px 9px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.ribbon .seg button:hover { background: var(--pro-hover); color: #fff; }
+.ribbon .seg button.on { background: var(--pro-on); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
+.ribbon .ivseg button { font-family: var(--mono); min-width: 34px; padding: 4px 6px; }
+.ribbon #exchange { max-width: 118px; }
+.ribbon .ivbtn { min-width: 0; padding: 4px 6px; background: transparent; border: 1px solid transparent; border-radius: 4px; box-shadow: none; }
+.ribbon .ivbtn:hover { background: var(--pro-hover); }
+.ribbon .ivbtn.on { background: var(--pro-on); box-shadow: inset 0 -2px 0 var(--accent); }
+.ribbon .rb { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 40px; height: 36px; padding: 2px 5px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: #cfd2dc; font-size: 10.5px; font-weight: 500; line-height: 1.1; text-transform: none; letter-spacing: 0; white-space: nowrap; }
+.ribbon .rb i { font-style: normal; font-size: 15px; line-height: 16px; }
+.ribbon .rb:hover { background: var(--pro-hover); color: #fff; border-color: transparent; }
+.ribbon .rb.on { background: var(--pro-on); color: #fff; border-color: #4a4d59; }
+.ribbon .rb.on i { color: var(--accent); }
+.ribbon .rb .lcount { margin-left: 2px; }
+.ribbon .dropdown .menu { top: 100%; margin-top: 4px; }
+.ribbon .menu :is(h4, label, button, select, p, .mh, .li, .hint) { text-transform: none; letter-spacing: 0; font-family: var(--ui); }
+.ribbon .menu h4 { margin: 8px 6px 2px; font-size: 11px; color: #8b95a3; font-weight: 600; }
+.ribbon .menu .note, .ribbon .menu .hint { margin: 2px 6px 4px; font-size: 12px; color: var(--muted); line-height: 1.4; }
+.ribbon .fpmenu { min-width: 300px; }
+.ribbon .fpmenu label { justify-content: space-between; }
+.ribbon .fpmenu select { max-width: 190px; }
+.ribbon .qt { height: 36px; min-width: 56px; padding: 0 10px; border: 0; border-radius: 4px; font-weight: 800; font-size: 12.5px; letter-spacing: .04em; color: #fff; }
+.ribbon .qt.buy { background: var(--buy); } .ribbon .qt.buy:hover { filter: brightness(1.12); }
+.ribbon .qt.sell { background: var(--sell); } .ribbon .qt.sell:hover { filter: brightness(1.12); }
+.ribbon .qt.flat { background: #2b3442; color: #fff; } .ribbon .qt.flat:disabled { opacity: .45; cursor: default; }
+.ribbon #rbAcct { font-family: var(--mono); font-size: 11px; color: #8b95a3; white-space: nowrap; }
+.ribbon #cdTerm { min-width: 6em; }
+.ribbon .lmenu .li { padding: 6px; }
+body.not-terminal .ribbon { display: none; }
+/* thanh tiêu đề khung kiểu bàn giao dịch: nền chuyển sắc, chữ trắng, nút góc phải */
+#view-terminal .panel-head.tbar { background: linear-gradient(#262830, #1c1e24); border-bottom: 1px solid #2d3039; min-height: 28px; padding: 1px 4px 1px 6px; gap: 4px; }
+#view-terminal .panel-head.tbar .title { color: #fff; font-size: 12px; font-weight: 600; }
+#view-terminal .panel-head.tbar .icon { color: #9a9da8; padding: 1px 6px; }
+#view-terminal .panel-head.tbar .icon:hover { color: #fff; background: var(--pro-hover); }
+#view-terminal .symtabs { background: transparent; border-bottom: 0; align-self: stretch; align-items: flex-end; }
+#view-terminal .stab { padding: 3px 10px; border: 1px solid transparent; border-bottom: 0; border-radius: 3px 3px 0 0; }
+#view-terminal .stab.on { background: var(--pro-panel); border-color: #2d3039; border-top: 2px solid var(--accent); }
+/* cột Thanh lý cạnh biểu đồ */
+.liq-panel .dom-wrap canvas { cursor: default; }
+.liq-panel .panel-head select { max-width: 92px; }
+.liqfoot { font-family: var(--ui); font-size: 11px; color: var(--muted); padding: 4px 8px; border-top: 1px solid #2d3039; background: var(--pro-head); line-height: 1.45; }
+.liqfoot b { color: var(--ink); font-weight: 600; }
+.liqfoot .pos { color: var(--buy); } .liqfoot .neg { color: var(--sell); }
+/* lưới 2/4/6 biểu đồ nằm trong khung Biểu đồ */
+.mcroot { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mcroot .mcbar { background: var(--pro-head); border-bottom-color: #2d3039; }
+.ribbon .drawmenu { min-width: 0; padding: 8px; }
+.ribbon .drawmenu .seg button.on { background: var(--accent); color: #000; }
+.ribbon #rbQty { width: 64px; }
+/* màn hình laptop: nút Khung và Mẫu chỉ còn biểu tượng (rê chuột để xem tên), giấu số dư */
+@media (max-width: 1750px) {
+  .ribbon .rg { padding: 4px 5px 2px; }
+  .ribbon .rg .cap { font-size: 9px; }
+  .ribbon #rbAcct { display: none; }
+  .ribbon #panelBtns .rb, .ribbon #layoutBtn { font-size: 0; min-width: 32px; gap: 0; padding: 2px 4px; }
+  .ribbon #panelBtns .rb i, .ribbon #layoutBtn i { font-size: 17px; }
+  .ribbon #exchange { max-width: 104px; }
+  .ribbon .qt { min-width: 50px; padding: 0 8px; }
+}
+/* laptop nhỏ: mọi nút ribbon chỉ còn biểu tượng, giấu đồng hồ nến */
+@media (max-width: 1450px) {
+  .ribbon .rb { font-size: 0; min-width: 32px; gap: 0; padding: 2px 4px; }
+  .ribbon .rb i { font-size: 17px; }
+  .ribbon .rb .lcount { font-size: 11px; }
+  .ribbon #cdTerm { display: none; }
+  .ribbon .ivseg button { padding: 4px 5px; }
+}
+@media (max-width: 900px) {
+  .ribbon .pages { display: none; }
+  .ribbon .rib { padding: 0 2px; }
+  .ribbon .rg { padding: 3px 6px 2px; gap: 1px; }
+  .ribbon .rg > .row { min-height: 32px; }
+  .ribbon .rg .cap { display: none; }
+  .ribbon .rb { min-width: 38px; height: 32px; font-size: 9.5px; }
+  .ribbon .qt { height: 32px; min-width: 52px; padding: 0 8px; }
+  .ribbon .ivseg { display: none; }
+  .ribbon #symbol { width: 92px; }
+  .ribbon .rg.rg-layout, .ribbon .rg.rg-panels, .ribbon #rbAcct { display: none; }
+  .ribbon .dropdown .menu { position: fixed; left: 6px; right: 6px; top: auto; min-width: 0; max-height: 70vh; overflow: auto; }
+  .workspace > .liq-panel.mshow { flex: 0 0 30%; }
 }
