@@ -11,7 +11,7 @@
 // h = {onTrades([{p, q, side, t}]), onLiq([{p, q, side, t}]), onBook(), onStatus(text, ok)}
 // Với lệnh thanh lý, side là phía vị thế bị thanh lý: "long" hoặc "short".
 
-import { getJson, postJson, INTERVALS, niceStep, sleep } from "./util.js?v=202611150124";
+import { getJson, postJson, INTERVALS, niceStep, sleep, barStart, barEnd } from "./util.js?v=202611150608";
 
 // ---------- kết nối WebSocket có tự nối lại ----------
 export function openSocket(url, { onOpen, onMessage, onStatus, ping, pingMs = 20000, name }) {
@@ -191,7 +191,7 @@ const okxInst = symbol => {
   for (const q of ["USDT", "USDC", "USD"]) if (s.endsWith(q)) return `${s.slice(0, -q.length)}-${q}-SWAP`;
   return `${s}-USDT-SWAP`;
 };
-const OKX_BAR = { "1m": "1m", "5m": "5m", "15m": "15m", "1h": "1H", "4h": "4H", "1d": "1Dutc" };
+const OKX_BAR = { "1m": "1m", "5m": "5m", "15m": "15m", "1h": "1H", "4h": "4H", "1d": "1Dutc", "1w": "1Wutc", "1M": "1Mutc" };
 
 const okx = {
   id: "OKX", name: "OKX", hasLiq: true, hasOi: true, oiDays: 30,
@@ -292,7 +292,7 @@ const okx = {
 // ---------- Bybit (linear USDT) ----------
 const BY_REST = "https://api.bybit.com";
 const BY_WS = "wss://stream.bybit.com/v5/public/linear";
-const BY_INT = { "1m": "1", "5m": "5", "15m": "15", "1h": "60", "4h": "240", "1d": "D" };
+const BY_INT = { "1m": "1", "5m": "5", "15m": "15", "1h": "60", "4h": "240", "1d": "D", "1w": "W", "1M": "M" };
 
 const bybit = {
   id: "BYBIT", name: "Bybit", hasLiq: true, hasOi: true, oiDays: 60,
@@ -461,7 +461,7 @@ const sim = {
   },
   _bars(interval, n, symbol = "BTCUSDT") {
     const ms = INTERVALS[interval];
-    if (!(ms <= 3600e3)) return this._gen(interval, n, symbol, true);
+    if (!(ms <= 3600e3)) return this._big(interval, n, symbol);
     const base = this._path(symbol), out = [];
     const need = Math.min(base.length, (n + 1) * Math.round(ms / 60e3));
     let cur = null;
@@ -475,16 +475,30 @@ const sim = {
     const res = out.slice(-n), k = res.length ? this._anchor / res[res.length - 1].c : 1;
     return res.map(({ full, ...b }) => ({ ...b, o: b.o * k, h: b.h * k, l: b.l * k, c: b.c * k }));
   },
+  // khung lớn: một chuỗi 4h dài và một chuỗi ngày dài cố định theo mã; tuần gộp từ 4h, tháng gộp từ ngày (hồ sơ từng nến khớp với nến)
+  _big(interval, n, symbol) {
+    const sub = interval === "1w" ? "4h" : interval === "1M" ? "1d" : interval, N = { "4h": 14400, "1d": 2600 }[sub] || 2000;
+    const key = `${symbol}:${sub}`; this._bigC = this._bigC || new Map();
+    if (!this._bigC.has(key)) this._bigC.set(key, this._gen(sub, N, symbol, false));
+    let src = this._bigC.get(key);
+    if (sub !== interval) {
+      const out = []; let cur = null;
+      for (const b of src) { const t = barStart(b.t, interval); if (!cur || cur.t !== t) { if (cur) out.push(cur); cur = { ...b, t }; } else { cur.h = Math.max(cur.h, b.h); cur.l = Math.min(cur.l, b.l); cur.c = b.c; cur.v += b.v; cur.bv += b.bv; cur.oi = b.oi; } }
+      if (cur) out.push(cur); if (out.length > 1) out.shift(); src = out; // kỳ đầu thiếu
+    }
+    const res = src.slice(-n), k = res.length ? this._anchor / res[res.length - 1].c : 1;
+    return res.map(b => ({ ...b, o: b.o * k, h: b.h * k, l: b.l * k, c: b.c * k }));
+  },
   _gen(interval, n, symbol, anchor) {
     // mỗi mã giả lập một chuỗi giá riêng (BTCUSDT giữ nguyên chuỗi cũ)
     const seed = symbol === "BTCUSDT" ? 0 : [...symbol].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 100003, 7);
     const ms = INTERVALS[interval], r = prng(7 + ms / 1000 + seed), out = [];
     let p = 52000, oi = 80000, t = Math.floor(Date.now() / ms) * ms - (n - 1) * ms;
-    const vol = 0.0035 * Math.sqrt(ms / 60e3) / 3;
+    const vol = Math.min(0.045, 0.0035 * Math.sqrt(ms / 60e3) / 3);
     let regime = 0;
     for (let i = 0; i < n; i++, t += ms) {
       if (r() < 0.01) regime = (r() - 0.5) * vol * 0.6;
-      const o = p, ret = regime + gauss(r) * vol * (r() < 0.03 ? 3 : 1);
+      const o = p, ret = regime + gauss(r) * vol * (r() < 0.03 ? 3 : 1) - (ms >= 14400e3 ? Math.log(p / 52000) * 0.004 * Math.sqrt(ms / 14400e3) : 0); // khung lớn: kéo nhẹ về mức nền cho chuỗi dài không trôi quá xa
       const c = o * Math.exp(ret), h = Math.max(o, c) * (1 + Math.abs(gauss(r)) * vol * 0.6), l = Math.min(o, c) * (1 - Math.abs(gauss(r)) * vol * 0.6);
       const v = 400 * Math.sqrt(ms / 60e3) * Math.exp(gauss(r) * 0.5 + (Math.abs(ret) / vol) * 0.4);
       const bv = v * Math.min(0.95, Math.max(0.05, 0.5 + ret / vol * 0.15 + gauss(r) * 0.05));
@@ -496,7 +510,7 @@ const sim = {
     for (const b of out) { b.o *= k; b.h *= k; b.l *= k; b.c *= k; }
     return out;
   },
-  async klines(symbol, interval, n) { this._anchor = this._price; return this._bars(interval, n, symbol).map(({ oi, ...b }) => b); },
+  async klines(symbol, interval, n) { this._anchor = this._price; n = Math.min(n, { "1w": 340, "1M": 80 }[interval] || n); return this._bars(interval, n, symbol).map(({ oi, ...b }) => b); },
   async oiHistory(symbol, interval, from) {
     const ms = INTERVALS[interval];
     return this._bars(interval, Math.min(20000, Math.ceil((Date.now() - from) / ms) + 1)).map(b => ({ t: b.t + ms, oi: b.oi }));
@@ -631,8 +645,8 @@ export async function lastBarsFailover(primary, symbol, interval) {
 }
 
 // đếm ngược tới lúc đóng nến (nến theo giờ UTC, như sàn); now nên đã trừ lệch đồng hồ so với sàn
-export function candleCountdown(intervalMs, now = Date.now()) {
-  const left = Math.ceil(now / intervalMs) * intervalMs - now || intervalMs, s = Math.ceil(left / 1000);
+export function candleCountdown(intervalMs, now = Date.now(), interval = null) {
+  const left = interval === "1w" || interval === "1M" ? barEnd(now, interval) - now : Math.ceil(now / intervalMs) * intervalMs - now || intervalMs, s = Math.ceil(left / 1000);
   const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), x = s % 60, p = v => String(v).padStart(2, "0");
   return { left, text: d ? `${d}n ${p(h)}:${p(m)}` : h ? `${h}:${p(m)}:${p(x)}` : `${p(m)}:${p(x)}`, soon: left <= Math.min(30e3, intervalMs * 0.1) };
 }

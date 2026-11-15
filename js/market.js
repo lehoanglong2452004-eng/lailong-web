@@ -6,9 +6,9 @@
 //   kèm khối lượng mua/bán chủ động khớp trong cột đó.
 // - Bars: nến của khung đang xem, nến cuối được cập nhật theo từng lệnh khớp, kèm footprint.
 
-import { niceStep, INTERVALS } from "./util.js?v=202611150124";
-import { TapeAggregator, quantile } from "./orderflow.js?v=202611150124";
-import { IcebergTracker } from "./iceberg.js?v=202611150124";
+import { niceStep, INTERVALS, barStart } from "./util.js?v=202611150608";
+import { TapeAggregator, quantile } from "./orderflow.js?v=202611150608";
+import { IcebergTracker } from "./iceberg.js?v=202611150608";
 
 export const COL_MS = 100;    // chụp sổ lệnh mỗi 0,1 giây: đúng nhịp Binance gửi thay đổi sổ lệnh, mịn như Bookmap
 // Lịch sử trong trang khoảng 4 giờ, gộp dần cho nhẹ bộ nhớ: 5 phút gần nhất mỗi cột 0,1 giây; từ 5 tới 20 phút
@@ -155,7 +155,7 @@ export class MarketState {
       if (e) {
         const bar = this._barAt(now);
         if (bar) bar.ofi = (bar.ofi || 0) + e;
-        else if (this.intervalMs) { const bt = Math.floor(now / this.intervalMs) * this.intervalMs; this.ofiPend.set(bt, (this.ofiPend.get(bt) || 0) + e); }
+        else if (this.intervalMs) { const bt = barStart(now, this.interval); this.ofiPend.set(bt, (this.ofiPend.get(bt) || 0) + e); }
       }
     }
     this._pb = [bb[0], bb[1]]; this._pa = [ba[0], ba[1]];
@@ -275,7 +275,7 @@ export class MarketState {
 
   _barAt(t) {
     const n = this.bars.length; if (!n) return null;
-    const bt = Math.floor(t / this.intervalMs) * this.intervalMs;
+    const bt = barStart(t, this.interval);
     for (let i = n - 1; i >= Math.max(0, n - 3); i--) if (this.bars[i].t === bt) return this.bars[i];
     return null;
   }
@@ -283,7 +283,7 @@ export class MarketState {
   _barTrade(tr) {
     if (!this.bars.length || !this.fpStep) return;
     if (this.liveStart === null) this.liveStart = tr.t; // mốc nối giữa dữ liệu lịch sử và trực tiếp
-    const ms = this.intervalMs, bt = Math.floor(tr.t / ms) * ms;
+    const bt = barStart(tr.t, this.interval);
     let b = this.bars[this.bars.length - 1];
     if (bt < b.t) return;
     if (bt > b.t) {

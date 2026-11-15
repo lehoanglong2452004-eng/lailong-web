@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611150124">
-<link rel="stylesheet" href="css/app.css?v=202611150124">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611150608">
+<link rel="stylesheet" href="css/app.css?v=202611150608">
 </head>
 <body>
 <header class="menubar">
@@ -129,6 +129,17 @@
           <div class="li"><button class="tool" id="layersOff">Tắt hết lớp phân tích</button></div>
           </div>
       </div>
+      <div class="dropdown"><button class="rt" id="indBtn" aria-label="Chỉ báo" data-tip="Chỉ báo: VWAP, CVD, COT index, Seasonal, ATR"><i class="fx">ƒx</i><b class="lcount" id="indCount">0</b></button>
+        <div class="menu side layermenu indmenu" id="indMenu">
+          <h4>Chỉ báo</h4>
+          <label><input type="checkbox" data-ind="vwap"> <b>VWAP</b> · giá trung bình theo khối lượng, dải ±1σ</label>
+          <label><input type="checkbox" data-ind="cvd"> <b>CVD</b> · delta mua bán chủ động cộng dồn</label>
+          <label><input type="checkbox" data-ind="cot"> <b>COT index</b> · 26 tuần, vị thế quỹ lớn trên CME</label>
+          <label><input type="checkbox" data-ind="seasonal"> <b>Seasonal</b> · trung bình 5 năm, dự phóng theo mùa</label>
+          <label><input type="checkbox" data-ind="atr"> <b>ATR 14</b> · biên độ dao động trung bình</label>
+          <p class="note">VWAP vẽ ngay trên giá: neo theo ngày ở khung nhỏ, theo tuần ở 1h–4h, theo tháng ở 1D, theo năm ở 1W–1M. Các chỉ báo khác có khung riêng dưới biểu đồ.</p>
+        </div>
+      </div>
     </div>
     <i class="rs"></i>
     <div class="rgrp gridseg" id="gridSeg" data-tip="Số biểu đồ trong khung Biểu đồ. Từ 2 ô trở lên, mỗi ô có mã và khung riêng">
@@ -165,16 +176,30 @@
     <div class="dom-hint" id="chartHint"></div>
   </section>
 
+  <section class="panel prof-panel" id="profPanel">
+    <div class="panel-head tbar">
+      <span class="title" data-g="volume-profile">KL theo giá</span>
+      <div class="spacer"></div>
+      <div class="dropdown pdd"><button class="icon pset" data-tip="Cài đặt khung này">⚙</button><div class="menu right"><div class="mh">KL theo giá</div><p class="note">Khối lượng khớp tại từng mức giá. "Theo biểu đồ" lấy đúng các nến đang thấy trên biểu đồ (cùng khung, kéo hay thu phóng biểu đồ là cột này đổi theo). 4g, 1N, 1T: 4 giờ, 1 ngày, 1 tuần gần nhất. Dòng xanh nhạt là POC (mức giá khớp nhiều nhất), nét đứt cam là giá hiện tại.</p></div></div>
+      <button class="icon minb" data-min="profPanel" data-tip="Thu nhỏ: khung nằm thành nút nhỏ trên thanh trên cùng, bấm để mở lại">─</button>
+      <button class="icon max" data-max="profPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">▢</button>
+      <button class="icon minb" data-min="profPanel" data-tip="Đóng khung này (mở lại ở thanh trên cùng)">✕</button>
+    </div>
+    <div class="chips" id="profChips"></div>
+    <div class="dom-wrap"><canvas id="prof"></canvas></div>
+  </section>
+
   <section class="panel dom-panel" id="domPanel">
     <div class="panel-head tbar">
       <span class="title" data-g="dom">Smart DOM</span>
       <div class="spacer"></div>
-      <div class="dropdown pdd"><button class="icon pset" data-tip="Cài đặt khung này">⚙</button><div class="menu right" id="domSetMenu"><div class="mh">Smart DOM</div><label class="row" data-tip="Gộp nhiều bước giá vào một dòng">Gộp giá <select id="domMult"><option value="1">×1</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option><option value="50">×50</option></select></label><div class="li"><button id="domCenter">◎ Căn giữa giá hiện tại</button></div><div class="li"><button id="domClear">⌫ Xoá số đã khớp, đếm lại từ bây giờ</button></div><div class="mh">Cột</div><div id="domColMenu"></div></div></div>
+      <div class="dropdown pdd"><button class="icon pset" data-tip="Cài đặt khung này">⚙</button><div class="menu right" id="domSetMenu"><div class="mh">Smart DOM</div><label class="row" data-tip="Gộp nhiều bước giá vào một dòng">Gộp giá <select id="domMult"><option value="1">×1</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option><option value="25">×25</option><option value="50">×50</option><option value="100">×100</option></select></label><div class="li"><button id="domCenter">◎ Căn giữa giá hiện tại</button></div><div class="li"><button id="domClear">⌫ Xoá số đã khớp, đếm lại từ bây giờ</button></div><div class="mh">Cột</div><div id="domColMenu"></div></div></div>
       <button class="icon minb" data-min="domPanel" data-tip="Thu nhỏ: khung nằm thành nút nhỏ trên thanh trên cùng, bấm để mở lại">─</button>
       <button class="icon max" data-max="domPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">▢</button>
       <button class="icon minb" data-min="domPanel" data-tip="Đóng khung này (mở lại ở thanh trên cùng)">✕</button>
     </div>
     <div class="chips" id="domChips"></div>
+    <div class="dmmenu" id="dmMenu" role="menu" aria-label="Gộp giá" hidden></div>
     <div class="dom-wrap"><canvas id="dom"></canvas></div>
   </section>
 
@@ -183,7 +208,7 @@
       <span class="title" data-g="smart-tape">Smart Tape</span>
       <div class="ptabs2" id="tapeTabs" role="tablist"><button data-tt="all" class="on">Lệnh khớp</button><button data-tt="big" data-tip="Chỉ lệnh gốc thuộc top 0,5% lớn nhất">Lệnh lớn</button><button data-tt="absorb" data-g="absorption">Hấp thụ</button></div>
       <div class="spacer"></div>
-      <div class="dropdown pdd"><button class="icon pset" data-tip="Cài đặt khung này">⚙</button><div class="menu right"><div class="mh">Smart Tape</div><label class="row" data-g="player-groups">Nhóm người chơi <select id="tapeGroup"><option value="">Mọi nhóm</option><option value="whale">Cá voi</option><option value="mid">Vừa</option><option value="retail">Nhỏ lẻ</option><option value="algo">Lệnh chia đều</option></select></label><label class="row" data-tip="Cửa sổ thời gian của cột KL khớp theo giá bên phải">KL khớp theo giá <select id="tapeWin"><option value="5">5 phút</option><option value="15">15 phút</option><option value="30" selected>30 phút</option><option value="60">60 phút</option></select></label><p class="note">Lăn chuột để xem lại, bấm đúp để về lệnh mới nhất. Rê chuột lên cột bên phải để xem tổng khối lượng tại mỗi giá.</p></div></div>
+      <div class="dropdown pdd"><button class="icon pset" data-tip="Cài đặt khung này">⚙</button><div class="menu right"><div class="mh">Smart Tape</div><label class="row" data-g="player-groups">Nhóm người chơi <select id="tapeGroup"><option value="">Mọi nhóm</option><option value="whale">Cá voi</option><option value="mid">Vừa</option><option value="retail">Nhỏ lẻ</option><option value="algo">Lệnh chia đều</option></select></label><p class="note">Lăn chuột để xem lại, bấm đúp để về lệnh mới nhất. Khối lượng khớp theo giá nằm ở khung KL theo giá riêng.</p></div></div>
       <button class="icon minb" data-min="tapePanel" data-tip="Thu nhỏ: khung nằm thành nút nhỏ trên thanh trên cùng, bấm để mở lại">─</button>
       <button class="icon max" data-max="tapePanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">▢</button>
       <button class="icon minb" data-min="tapePanel" data-tip="Đóng khung này (mở lại ở thanh trên cùng)">✕</button>
@@ -225,6 +250,7 @@
 <nav class="mnav" id="mnav" aria-label="Chọn khung">
   <button data-panel="mainPanel" class="on"><i>▦</i>Biểu đồ</button>
   <button data-panel="domPanel"><i>☰</i>DOM</button>
+  <button data-panel="profPanel"><i>▤</i>KL giá</button>
   <button data-panel="tapePanel"><i>≋</i>Tape</button>
   <button data-panel="wallPanel"><i>▤</i>Nhật ký</button>
 </nav>
@@ -653,6 +679,6 @@
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611150124"></script>
+<script type="module" src="js/app.js?v=202611150608"></script>
 </body>
 </html>

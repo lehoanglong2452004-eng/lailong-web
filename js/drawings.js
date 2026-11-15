@@ -8,6 +8,8 @@
 //   fib    các mức Fibonacci giữa hai điểm      { t1, p1, t2, p2 }
 //   text   ghi chú chữ                          { t, p, text }
 //   avwap  VWAP neo từ một nến tới hiện tại      { t }
+//   brush  nét vẽ tay tự do                      { pts: [[t, p], ...] }
+//   path   đường gấp khúc nhiều điểm, mũi tên ở cuối { pts: [[t, p], ...] }
 // Toạ độ thời gian là mốc ms của nến, đổi ra điểm ảnh qua xOfT nên hình đi theo khi kéo hay phóng biểu đồ.
 // Bấm đúp lên hình để xoá.
 const KEY = "lailong.draw.v1";
@@ -66,6 +68,8 @@ export class Drawings {
       } else if (s.type === "text") {
         const tx = M.xOfT(s.t), ty = M.yOf(s.p), w = String(s.text || "").length * 7 + 10;
         if (x >= tx - 2 && x <= tx + w && y >= ty - 14 && y <= ty + 4) take(0, s);
+      } else if ((s.type === "brush" || s.type === "path") && s.pts) {
+        for (let i = 1; i < s.pts.length; i++) take(segDist(x, y, M.xOfT(s.pts[i - 1][0]), M.yOf(s.pts[i - 1][1]), M.xOfT(s.pts[i][0]), M.yOf(s.pts[i][1])), s);
       } else if (s.type === "avwap") {
         const p = pts.get(s) || [];
         for (let i = 1; i < p.length; i++) take(segDist(x, y, p[i - 1][0], p[i - 1][1], p[i][0], p[i][1]), s);
@@ -118,6 +122,17 @@ export function drawShapes(ctx, shapes, preview, o) {
       const w = ctx.measureText(txt).width + 10;
       ctx.fillStyle = "rgba(0,0,0,0.75)"; ctx.fillRect(x, y - 14, w, 18); ctx.strokeRect(x + 0.5, y - 13.5, w - 1, 17);
       ctx.fillStyle = s.color; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(txt, x + 5, y - 5);
+    } else if ((s.type === "brush" || s.type === "path") && s.pts && s.pts.length) {
+      const line = s.pts.map(([t, p]) => [xOfT(t), yOf(p)]), n = line.length;
+      ctx.lineWidth = s.type === "brush" ? 2 : 1.6; ctx.lineJoin = "round"; ctx.lineCap = "round";
+      ctx.beginPath(); line.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); ctx.lineWidth = 1;
+      if (s.type === "path") {
+        for (const [x, y] of line.slice(0, -1)) { ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill(); }
+        if (n >= 2) { // mũi tên ở điểm cuối
+          const [x1, y1] = line[n - 2], [x2, y2] = line[n - 1], a = Math.atan2(y2 - y1, x2 - x1), L = 10;
+          ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - L * Math.cos(a - 0.4), y2 - L * Math.sin(a - 0.4)); ctx.lineTo(x2 - L * Math.cos(a + 0.4), y2 - L * Math.sin(a + 0.4)); ctx.closePath(); ctx.fill();
+        }
+      }
     } else if (s.type === "avwap" && o.bars) {
       const series = anchoredVwap(o.bars, o.iOfT ? o.iOfT(s.t) : -1), line = series.map(v => [xOfT(v.t), yOf(v.p)]);
       pts.set(s, line); if (!line.length) continue;
