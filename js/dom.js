@@ -6,12 +6,13 @@
 // Kiểu vẽ: nền xám than, dải chờ mua xanh / chờ bán đỏ chạy dọc hai bên cột giá, lệnh chờ lớn bất thường
 // (≥ 4 lần trung vị trong khung nhìn) tô đậm và chữ trắng đậm như "large size highlight" của Jigsaw.
 
-import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202611150124";
-import { T, alpha } from "./theme.js?v=202611150124";
+import { fmtVol, decimalsFor, MONO, fitCanvas, touchRows } from "./util.js?v=202611150608";
+import { T, alpha, chrome, isLight } from "./theme.js?v=202611150608";
 
 export const ROW_H = 18, HDR_H = 24;
 const UI = "'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif";
-const BG = "#0c0e11", PRICE_BG = "#12161b", GRID = "rgba(255,255,255,0.035)", SEP = "#262b33", INK = "#cfd6df", DIM = "#6f7a88";
+// màu nền, chữ theo chế độ màu (Hiện đại nền đen, Cổ điển nền trắng)
+const K = { get BG() { return chrome()["pro-panel"]; }, get PRICE_BG() { return isLight() ? "#f1f3f6" : "#12161b"; }, get GRID() { return isLight() ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.035)"; }, get SEP() { return chrome()["pro-line"]; }, get INK() { return chrome()["pro-text"]; }, get DIM() { return isLight() ? "#7a8594" : "#6f7a88"; }, get HEAD() { return chrome()["pro-head"]; } };
 const BIG_X = 4; // lệnh chờ lớn bất thường: gấp bấy nhiêu lần trung vị các mức trong khung nhìn
 const CHG_MS = 5000;
 
@@ -154,7 +155,7 @@ export class Dom {
 
   _draw() {
     const ctx = this.ctx, w = this.S.w, h = this.S.h;
-    ctx.fillStyle = BG; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = K.BG; ctx.fillRect(0, 0, w, h);
     const C = this.cols; this._C = C;
     this._header(C);
     if (this.center === null || !this.tick) { ctx.fillStyle = T.muted; ctx.font = "13px 'IBM Plex Mono', Consolas, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("Đang chờ sổ lệnh...", w / 2, h / 2); return; }
@@ -187,15 +188,15 @@ export class Dom {
       };
       // hôm nay
       const tv = D.today.get(k);
-      if (C.today && tv) { fill(C.today, tv / maxDay, "rgba(120,140,170,0.28)", false); text(C.today, fmtVol(tv), DIM); }
+      if (C.today && tv) { fill(C.today, tv / maxDay, "rgba(120,140,170,0.28)", false); text(C.today, fmtVol(tv), K.DIM); }
       // giá
       if (C.price) {
         const best = k === D.bestBid || k === D.bestAsk, spread = D.bestBid !== null && D.bestAsk !== null && k > D.bestAsk && k < D.bestBid;
-        ctx.fillStyle = best ? alpha(k === D.bestBid ? T.domBid : T.domAsk, 0.42) : PRICE_BG; ctx.fillRect(C.price.x, y, C.price.w, ROW_H);
+        ctx.fillStyle = best ? alpha(k === D.bestBid ? T.domBid : T.domAsk, 0.42) : K.PRICE_BG; ctx.fillRect(C.price.x, y, C.price.w, ROW_H);
         if (k === lastRow) { // giá khớp gần nhất: ô cam chữ đen đậm, mũi tên chỉ phía vừa khớp
           ctx.fillStyle = T.domPrice; ctx.fillRect(C.price.x + 1, y + 1, C.price.w - 2, ROW_H - 2);
           ctx.font = `bold 11px ${MONO}`; text(C.price, `${price.toFixed(dec)} ${last.side === "buy" ? "▴" : "▾"}`, "#000", "center"); ctx.font = `11px ${MONO}`;
-        } else { ctx.font = `${best ? "bold " : ""}11px ${MONO}`; text(C.price, price.toFixed(dec), best ? "#fff" : spread ? DIM : INK, "center"); ctx.font = `11px ${MONO}`; }
+        } else { ctx.font = `${best ? "bold " : ""}11px ${MONO}`; text(C.price, price.toFixed(dec), best ? chrome().hi : spread ? K.DIM : K.INK, "center"); ctx.font = `11px ${MONO}`; }
       }
       // thay đổi độ sâu
       const ch = D.chg.get(k);
@@ -216,7 +217,7 @@ export class Dom {
           if (!col || !q) return; const big = q >= bigQ;
           fill(col, q / maxQ, alpha(color, big ? 0.75 : 0.32), fromRight);
           if (big) ctx.font = `bold 11px ${MONO}`;
-          text(col, fmtVol(q), big ? T.domBig : INK, fromRight ? "right" : "left"); ctx.font = `11px ${MONO}`;
+          text(col, fmtVol(q), big ? T.domBig : K.INK, fromRight ? "right" : "left"); ctx.font = `11px ${MONO}`;
         };
         side(C.bid, e.bid, T.domBid, true); side(C.ask, e.ask, T.domAsk, false);
       }
@@ -247,17 +248,17 @@ export class Dom {
       // tổng lệnh chờ cộng dồn
       const cu = D.cum.get(k);
       if (C.cum && cu && maxCum) { fill(C.cum, cu.q / maxCum, alpha(cu.side === "bid" ? T.up : T.down, 0.16), cu.side === "bid"); text(C.cum, fmtVol(cu.q), T.muted); }
-      if (cu && cu.side === "bid" && C.cumBid) text(C.cumBid, fmtVol(cu.q), DIM);
-      if (cu && cu.side === "ask" && C.cumAsk) text(C.cumAsk, fmtVol(cu.q), DIM, "left");
+      if (cu && cu.side === "bid" && C.cumBid) text(C.cumBid, fmtVol(cu.q), K.DIM);
+      if (cu && cu.side === "ask" && C.cumAsk) text(C.cumAsk, fmtVol(cu.q), K.DIM, "left");
       if (C.walls) {
         const wl = D.wallNow.get(k), sc = D.spoof.get(k);
         if (wl) { ctx.fillStyle = alpha("#f5c542", 0.35); ctx.fillRect(C.walls.x + 2, y + 2, C.walls.w - 4, ROW_H - 4); text(C.walls, `${((Date.now() - wl.t0) / 1000).toFixed(0)}s`, T.text, sc ? "left" : "right"); }
         if (sc) text(C.walls, `G×${sc}`, "#ff9f1a");
       }
-      ctx.strokeStyle = GRID; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, y + ROW_H - 0.5); ctx.lineTo(w, y + ROW_H - 0.5); ctx.stroke();
+      ctx.strokeStyle = K.GRID; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, y + ROW_H - 0.5); ctx.lineTo(w, y + ROW_H - 0.5); ctx.stroke();
     }
     // vạch phân cách cột và đường chia giá mua / bán
-    ctx.strokeStyle = SEP; ctx.lineWidth = 1; ctx.beginPath();
+    ctx.strokeStyle = K.SEP; ctx.lineWidth = 1; ctx.beginPath();
     for (const c of Object.values(C)) { if (!c.x) continue; ctx.moveTo(Math.round(c.x) + 0.5, HDR_H); ctx.lineTo(Math.round(c.x) + 0.5, h); }
     ctx.stroke();
     if (D.bestAsk !== null) { const y = this._yOf(D.bestAsk + 1) + 0.5; ctx.strokeStyle = "rgba(255,255,255,0.35)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
@@ -265,18 +266,18 @@ export class Dom {
 
   _header(C) {
     const ctx = this.ctx;
-    ctx.fillStyle = "#191d23"; ctx.fillRect(0, 0, this.S.w, HDR_H);
+    ctx.fillStyle = K.HEAD; ctx.fillRect(0, 0, this.S.w, HDR_H);
     ctx.font = `600 ${this.S.w < 520 ? 10.5 : 11.5}px ${UI}`; ctx.textBaseline = "middle"; ctx.textAlign = "center";
-    const tint = { bid: T.domBid, cumBid: T.domBid, bidChg: T.domBid, sells: T.domAsk, ask: T.domAsk, cumAsk: T.domAsk, askChg: T.domAsk, buys: T.domBid, price: INK };
+    const tint = { bid: T.domBid, cumBid: T.domBid, bidChg: T.domBid, sells: T.domAsk, ask: T.domAsk, cumAsk: T.domAsk, askChg: T.domAsk, buys: T.domBid, price: K.INK };
     for (const c of Object.values(C)) {
-      ctx.fillStyle = tint[c.def.id] || "#8b95a3"; ctx.save(); ctx.beginPath(); ctx.rect(c.x, 0, c.w, HDR_H); ctx.clip();
+      ctx.fillStyle = tint[c.def.id] || chrome().dim; ctx.save(); ctx.beginPath(); ctx.rect(c.x, 0, c.w, HDR_H); ctx.clip();
       ctx.fillText(c.def.label, c.x + c.w / 2, HDR_H / 2); ctx.restore();
-      if (c.x) { ctx.fillStyle = SEP; ctx.fillRect(Math.round(c.x), 4, 1, HDR_H - 8); }
+      if (c.x) { ctx.fillStyle = K.SEP; ctx.fillRect(Math.round(c.x), 4, 1, HDR_H - 8); }
     }
     // áp lực 10 mức gần nhất: vạch màu dưới tiêu đề (xanh dài = bên chờ mua dày hơn)
     const bi = this._D && this._D.bookImb;
     if (bi != null) { const w = this.S.w, mid = w / 2; ctx.fillStyle = alpha(bi >= 0 ? T.up : T.down, 0.7); ctx.fillRect(bi >= 0 ? mid : mid + bi * mid, HDR_H - 2, Math.abs(bi) * mid, 2); }
-    ctx.strokeStyle = SEP; ctx.beginPath(); ctx.moveTo(0, HDR_H - 0.5); ctx.lineTo(this.S.w, HDR_H - 0.5); ctx.stroke();
+    ctx.strokeStyle = K.SEP; ctx.beginPath(); ctx.moveTo(0, HDR_H - 0.5); ctx.lineTo(this.S.w, HDR_H - 0.5); ctx.stroke();
   }
 
   hitTest(x, y) {

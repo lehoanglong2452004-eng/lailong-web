@@ -6,9 +6,9 @@
 // Ba chế độ: Lệnh khớp (mọi lệnh), Lệnh lớn (top 0,5%), Hấp thụ (iceberg giữ giá và nến hấp thụ).
 // Bên phải: khối lượng đã khớp tại mỗi mức giá trong 5 / 15 / 30 / 60 phút gần nhất, ô cam là giá hiện tại.
 
-import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202611150124";
-import { T, alpha } from "./theme.js?v=202611150124";
-import { GROUPS, playerGroup } from "./flowtools.js?v=202611150124";
+import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202611150608";
+import { T, alpha, chrome, isLight } from "./theme.js?v=202611150608";
+import { GROUPS, playerGroup } from "./flowtools.js?v=202611150608";
 
 const GROUP = Object.fromEntries(GROUPS.map(g => [g.id, g]));
 const UI = "'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif";
@@ -122,7 +122,7 @@ export class Tape {
     return parts.join(" · ");
   }
 
-  get histW() { return this.S.w >= 380 ? Math.round(this.S.w * 0.42) : 0; }
+  get histW() { return 0; } // KL khớp theo giá đã tách thành ô riêng (KL theo giá)
   get cols() {
     const W = this.S.w - this.histW, tw = COLS.reduce((s, c) => s + c[2], 0); let x = 0; const out = [];
     for (const c of COLS) { const w = W * c[2] / tw; out.push({ id: c[0], label: c[1], tip: c[3], x, w }); x += w; }
@@ -132,9 +132,9 @@ export class Tape {
   _draw() {
     const ctx = this.ctx, w = this.S.w, h = this.S.h, C = this.cols, HW = this.histW, W = w - HW; this._C = C;
     ctx.fillStyle = T.bg; ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#191d23"; ctx.fillRect(0, 0, W, HDR_H);
+    ctx.fillStyle = chrome()["pro-head"]; ctx.fillRect(0, 0, W, HDR_H);
     const small = W < 300, font = small ? 10.5 : 11.5;
-    ctx.font = `600 ${small ? 10.5 : 11.5}px ${UI}`; ctx.textBaseline = "middle"; ctx.fillStyle = "#8b95a3";
+    ctx.font = `600 ${small ? 10.5 : 11.5}px ${UI}`; ctx.textBaseline = "middle"; ctx.fillStyle = chrome().dim;
     for (const c of C) { ctx.textAlign = c.id === "note" || c.id === "side" ? "left" : "right"; ctx.fillText(c.label, c.id === "note" || c.id === "side" ? c.x + 4 : c.x + c.w - 4, HDR_H / 2); }
     const data = this._rowsData(), rows = Math.floor((h - HDR_H) / ROW_H), dec = decimalsFor(this.m.tick || 0.01);
     this.scroll = Math.max(0, Math.min(this.scroll, Math.max(0, data.length - rows)));
@@ -158,46 +158,16 @@ export class Tape {
       const nc = C.find(c => c.id === "note");
       if (note || grp) {
         ctx.save(); ctx.beginPath(); ctx.rect(nc.x, y, nc.w, ROW_H); ctx.clip(); ctx.font = `${font - 0.5}px ${UI}`; ctx.textAlign = "left";
-        ctx.fillStyle = p.ice ? "#4aa3ff" : note.startsWith("hấp thụ") ? "#ff9f1c" : "#b9c2ce"; ctx.fillText(note || (grp && grp.id === "whale" ? grp.short : ""), nc.x + 4, cy + 0.5); ctx.restore();
+        ctx.fillStyle = p.ice ? "#4aa3ff" : note.startsWith("hấp thụ") ? "#ff9f1c" : isLight() ? "#4f5a68" : "#b9c2ce"; ctx.fillText(note || (grp && grp.id === "whale" ? grp.short : ""), nc.x + 4, cy + 0.5); ctx.restore();
       }
     }
     if (!data.length) { ctx.fillStyle = T.muted; ctx.textAlign = "center"; ctx.font = `12px ${UI}`; ctx.fillText(this.mode === "absorb" ? "Chưa thấy lệnh băng chìm hay nến hấp thụ nào" : "Đang chờ lệnh khớp...", W / 2, h / 2); }
     ctx.strokeStyle = T.line; ctx.beginPath(); ctx.moveTo(0, HDR_H - 0.5); ctx.lineTo(W, HDR_H - 0.5); ctx.stroke();
     if (this.scroll > 0) { ctx.fillStyle = alpha(T.accent, 0.9); ctx.fillRect(0, HDR_H, W, 3); }
-    if (HW) this._hist(W, HW, h, dec);
-  }
-
-  // cột phải: khối lượng khớp theo giá trong cửa sổ đã chọn, giá hiện tại tô cam
-  _hist(x0, HW, h, dec) {
-    const ctx = this.ctx, tk = this.m.tick; this._H = null;
-    ctx.fillStyle = "#0f1215"; ctx.fillRect(x0, 0, HW, h);
-    ctx.strokeStyle = T.line; ctx.beginPath(); ctx.moveTo(x0 + 0.5, 0); ctx.lineTo(x0 + 0.5, h); ctx.stroke();
-    ctx.font = `600 11.5px ${UI}`; ctx.fillStyle = "#cfd6df"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.fillText(`KL khớp theo giá · ${this.winMin} phút`, x0 + 6, HDR_H / 2);
-    if (!tk) return;
-    const rowH = 15, n = Math.max(3, Math.floor((h - HDR_H - 6) / rowH)), cur = this.m.last ? Math.round(this.m.last.p / tk) : null;
-    const H = histRows(this.pv.window(this.winMin), cur, n); if (!H.list.length) { ctx.fillStyle = T.muted; ctx.font = `11px ${UI}`; ctx.fillText("Đang gom lệnh khớp...", x0 + 6, HDR_H + 20); return; }
-    const labW = 58, bx = x0 + labW + 4, bw = HW - labW - 10; let mx = 0; for (const r of H.list) mx = Math.max(mx, r.s + r.b);
-    this._H = { x0, rowH, top: HDR_H + 4, H, tk, dec };
-    ctx.font = `10.5px ${MONO}`;
-    H.list.forEach((r, i) => {
-      const y = HDR_H + 4 + i * rowH, tot = r.s + r.b, isCur = i === H.cur, p = r.g * H.g * tk;
-      ctx.fillStyle = isCur ? "#ff9f1c" : "#8b95a3"; ctx.textAlign = "right"; ctx.fillText(p.toFixed(dec), x0 + labW, y + rowH / 2);
-      if (!tot || !mx) return;
-      const ww = Math.max(1, tot / mx * bw);
-      ctx.fillStyle = isCur ? "#ff9f1c" : alpha(r.b >= r.s ? T.tapeBuy : T.tapeSell, 0.8); ctx.fillRect(bx, y + 2, ww, rowH - 4);
-      if (this.hover && this.hover.hist === i) { ctx.strokeStyle = "#fff"; ctx.strokeRect(bx + 0.5, y + 2.5, ww - 1, rowH - 5); }
-    });
   }
 
   hitTest(x, y) {
     const C = this._C; if (!C) return null;
-    const Hh = this._H;
-    if (Hh && x >= Hh.x0) {
-      const i = Math.floor((y - Hh.top) / Hh.rowH), r = Hh.H.list[i]; if (!r) return `KL khớp theo giá trong ${this.winMin} phút gần nhất. Đổi cửa sổ trong ⚙ của khung.`;
-      const p = r.g * Hh.H.g * Hh.tk;
-      return `Mức giá ${p.toFixed(Hh.dec)}${Hh.H.g > 1 ? ` – ${(p + (Hh.H.g - 1) * Hh.tk).toFixed(Hh.dec)}` : ""} / Tổng KL: ${fmtVol(r.s + r.b)} trong ${this.winMin} phút · mua chủ động ${fmtVol(r.b)} · bán chủ động ${fmtVol(r.s)}${r.s + r.b ? ` (${Math.round(r.b / (r.s + r.b) * 100)}% mua)` : ""}.`;
-    }
     const col = C.find(c => x >= c.x && x < c.x + c.w);
     if (y < HDR_H) return col ? `${col.label}: ${col.tip}` : null;
     const p = this._data && this._data[Math.floor((y - HDR_H) / ROW_H) + this.scroll]; if (!p) return null;
@@ -217,12 +187,6 @@ export class Tape {
   _bind() {
     this.cv.addEventListener("wheel", e => { e.preventDefault(); this.scroll = Math.max(0, this.scroll + (e.deltaY > 0 ? 3 : -3)); this.dirty = true; }, { passive: false });
     this.cv.addEventListener("dblclick", () => { this.scroll = 0; this.dirty = true; });
-    this.cv.addEventListener("mousemove", e => {
-      const r = this.cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, Hh = this._H;
-      const hi = Hh && x >= Hh.x0 ? Math.floor((y - Hh.top) / Hh.rowH) : null;
-      if ((this.hover && this.hover.hist) !== hi) { this.hover = hi == null ? null : { hist: hi }; this.dirty = true; }
-    });
-    this.cv.addEventListener("mouseleave", () => { this.hover = null; this.dirty = true; });
     touchRows(this.cv, ROW_H, n => { this.scroll = Math.max(0, this.scroll - n); this.dirty = true; });
   }
 }

@@ -59,8 +59,22 @@ export function fmtPct(v, d = 2) {
 }
 
 export const INTERVALS = {
-  "1m": 60e3, "5m": 300e3, "15m": 900e3, "1h": 3600e3, "4h": 14400e3, "1d": 86400e3,
+  "1m": 60e3, "5m": 300e3, "15m": 900e3, "1h": 3600e3, "4h": 14400e3, "1d": 86400e3, "1w": 604800e3, "1M": 2592000e3,
 };
+// tên hiện trên nút: khung ngày, tuần, tháng viết hoa (1M là tháng, 1m là phút)
+export const IV_LABEL = { "1d": "1D", "1w": "1W", "1M": "1M" };
+export const ivLabel = i => IV_LABEL[i] || i;
+// mở nến theo lịch như sàn: tuần bắt đầu thứ Hai 00:00 UTC, tháng bắt đầu ngày 1 (UTC); khung khác chia đều theo ms
+const WEEK = 604800e3, MON = 4 * 864e5;
+export function barStart(t, interval) {
+  if (interval === "1w") return Math.floor((t - MON) / WEEK) * WEEK + MON;
+  if (interval === "1M") { const d = new Date(t); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1); }
+  const ms = INTERVALS[interval] || 60e3; return Math.floor(t / ms) * ms;
+}
+export function barEnd(t, interval) {
+  if (interval === "1M") { const d = new Date(barStart(t, interval)); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1); }
+  return barStart(t, interval) + (INTERVALS[interval] || 60e3);
+}
 
 export const MONO = "'IBM Plex Mono', Consolas, 'Cascadia Mono', Menlo, monospace";
 
