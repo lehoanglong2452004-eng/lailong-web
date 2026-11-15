@@ -1,6 +1,6 @@
 // Chỉ báo của nút ƒx trên thanh công cụ dọc: VWAP, CVD, COT index, Seasonal, ATR; và hồ sơ khối lượng từng nến cho khung tuần, tháng.
 // Hàm thuần, không đụng tới trang: dễ kiểm thử.
-import { barStart } from "./util.js?v=202611150608";
+import { barStart } from "./util.js?v=202611150616";
 
 export const IND_KEYS = ["vwap", "cvd", "cot", "seasonal", "atr"];
 export const IND_NAMES = { vwap: "VWAP", cvd: "CVD", cot: "COT index", seasonal: "Seasonal", atr: "ATR" };

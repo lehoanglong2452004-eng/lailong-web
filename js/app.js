@@ -1,62 +1,61 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611150608";
-import { MarketState } from "./market.js?v=202611150608";
-import { FlowChart } from "./flowchart.js?v=202611150608";
-import { Dom } from "./dom.js?v=202611150608";
-import { srLevels, abnormalVolume, liquidationMap, summary, isDeltaApprox } from "./analytics.js?v=202611150608";
-import { initBacktest } from "./backtestview.js?v=202611150608";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611150608";
-import { absorption, clusterSearch } from "./orderflow.js?v=202611150608";
-import { Tape } from "./tape.js?v=202611150608";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611150608";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611150608";
-import { Alerts } from "./alerts.js?v=202611150608";
-import { setVenue } from "./venue.js?v=202611150608";
-import { initNews } from "./newsview.js?v=202611150608";
-import { initSocial } from "./socialview.js?v=202611150608";
-import { initMarkets } from "./marketsview.js?v=202611150608";
-import { initTgBot } from "./tgbot.js?v=202611150608";
-import { initInst } from "./instview.js?v=202611150608";
-import { setFresh, tickFresh } from "./fresh.js?v=202611150608";
-import { initRadar } from "./radarview.js?v=202611150608";
-import { Drawings } from "./drawings.js?v=202611150608";
-import { Layout, NAMES as PANEL_NAMES } from "./layout.js?v=202611150608";
-import { MultiChart } from "./multichart.js?v=202611150608";
-import { DOM_COLS } from "./dom.js?v=202611150608";
-import { initFractal } from "./fractalview.js?v=202611150608";
-import { initJournal } from "./journalview.js?v=202611150608";
-import { installHealth, clockSkew } from "./health.js?v=202611150608";
-import { initHealth } from "./healthview.js?v=202611150608";
-import { initFlows } from "./flowsview.js?v=202611150608";
-import { initSentiment } from "./sentimentview.js?v=202611150608";
-import { initPerf } from "./perfview.js?v=202611150608";
-import { initShock } from "./shockview.js?v=202611150608";
-import { initCompass } from "./compassview.js?v=202611150608";
-import { initConsensus } from "./consensusview.js?v=202611150608";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202611150608";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611150608";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611150608";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611150608";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611150608";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202611150608";
-import { T, THEMES, COLOR_GROUPS, DEFAULT_THEME, applyTheme, loadTheme, saveTheme, resetTheme, cleanTheme, alpha } from "./theme.js?v=202611150608";
-import { mountLang } from "./lang.js?v=202611150608";
-import { initI18n } from "./i18n.js?v=202611150608";
-import { ProfPanel, PROF_MODES, PROF_SRC } from "./profpanel.js?v=202611150608";
-import { IND_KEYS, cotIndex, seasonal, candleProfiles, SUB_IV } from "./indicators.js?v=202611150608";
-import { linkOf } from "./consensus.js?v=202611150608";
-import { zoneStep, niceStep, bookZones, historyZones, mergeZones, loadWallHist, saveWallHist, trimWallHist } from "./zones.js?v=202611150608";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, binanceBudget, pad2, ivLabel } from "./util.js?v=202611150608";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611150616";
+import { MarketState } from "./market.js?v=202611150616";
+import { FlowChart } from "./flowchart.js?v=202611150616";
+import { Dom } from "./dom.js?v=202611150616";
+import { srLevels, abnormalVolume, liquidationMap, summary, isDeltaApprox } from "./analytics.js?v=202611150616";
+import { initBacktest } from "./backtestview.js?v=202611150616";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611150616";
+import { absorption, clusterSearch } from "./orderflow.js?v=202611150616";
+import { Tape } from "./tape.js?v=202611150616";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611150616";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611150616";
+import { Alerts } from "./alerts.js?v=202611150616";
+import { setVenue } from "./venue.js?v=202611150616";
+import { initNews } from "./newsview.js?v=202611150616";
+import { initSocial } from "./socialview.js?v=202611150616";
+import { initMarkets } from "./marketsview.js?v=202611150616";
+import { initTgBot } from "./tgbot.js?v=202611150616";
+import { initInst } from "./instview.js?v=202611150616";
+import { setFresh, tickFresh } from "./fresh.js?v=202611150616";
+import { initRadar } from "./radarview.js?v=202611150616";
+import { Drawings } from "./drawings.js?v=202611150616";
+import { Layout, NAMES as PANEL_NAMES } from "./layout.js?v=202611150616";
+import { MultiChart } from "./multichart.js?v=202611150616";
+import { DOM_COLS } from "./dom.js?v=202611150616";
+import { initFractal } from "./fractalview.js?v=202611150616";
+import { initJournal } from "./journalview.js?v=202611150616";
+import { installHealth, clockSkew } from "./health.js?v=202611150616";
+import { initHealth } from "./healthview.js?v=202611150616";
+import { initFlows } from "./flowsview.js?v=202611150616";
+import { initSentiment } from "./sentimentview.js?v=202611150616";
+import { initPerf } from "./perfview.js?v=202611150616";
+import { initShock } from "./shockview.js?v=202611150616";
+import { initCompass } from "./compassview.js?v=202611150616";
+import { initConsensus } from "./consensusview.js?v=202611150616";
+import { initBackup, isKept } from "./backup.js?v=202611150616";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611150616";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611150616";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611150616";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611150616";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202611150616";
+import { T, THEMES, COLOR_GROUPS, DEFAULT_THEME, applyTheme, loadTheme, saveTheme, resetTheme, cleanTheme, alpha } from "./theme.js?v=202611150616";
+import { mountLang } from "./lang.js?v=202611150616";
+import { initI18n } from "./i18n.js?v=202611150616";
+import { ProfPanel, PROF_MODES, PROF_SRC } from "./profpanel.js?v=202611150616";
+import { IND_KEYS, cotIndex, seasonal, candleProfiles, SUB_IV } from "./indicators.js?v=202611150616";
+import { linkOf } from "./consensus.js?v=202611150616";
+import { zoneStep, niceStep, bookZones, historyZones, mergeZones, loadWallHist, saveWallHist, trimWallHist } from "./zones.js?v=202611150616";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, binanceBudget, pad2, ivLabel } from "./util.js?v=202611150616";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
 // Tuỳ chỉnh (bố cục, cột, khung, màu, cài đặt biểu đồ…) chỉ giữ trong lúc tab còn mở (sessionStorage).
 // Đóng tab rồi mở lại là về mặc định. Chỉ giữ lâu dài: nhật ký, màu bro bấm "Lưu", báo cáo hiệu suất,
 // chiến lược đang forward test và mã Telegram (danh sách trong backup.js).
-const KEEP = new Set(KEEP_KEYS);
-try { for (const k of Object.keys(localStorage)) if (k.startsWith("lailong.") && !KEEP.has(k)) localStorage.removeItem(k); } catch { /* bỏ qua */ }
+try { for (const k of Object.keys(localStorage)) if (k.startsWith("lailong.") && !isKept(k)) localStorage.removeItem(k); } catch { /* bỏ qua */ }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 loadTheme();
 
@@ -103,10 +102,10 @@ const dom = new Dom($("dom"), market);
 const tape = new Tape($("tape"), market);
 // ô KL theo giá: mặc định theo vùng đang xem trên biểu đồ; 4g · 1N · 1T tải nến nhỏ của khoảng đó
 const prof = new ProfPanel($("prof"));
-let profMode = (() => { try { const m = localStorage.getItem("lailong.profMode"); return PROF_MODES.some(x => x[0] === m) ? m : "chart"; } catch { return "chart"; } })();
+let profMode = (() => { try { const m = sessionStorage.getItem("lailong.profMode"); return PROF_MODES.some(x => x[0] === m) ? m : "chart"; } catch { return "chart"; } })();
 const profSrc = new Map(); let profSig = "", profVis = null; // profVis: số nến tính từ cuối của vùng đang xem lần gần nhất biểu đồ hiện trên màn hình
 function renderProfChips() { $("profChips").innerHTML = PROF_MODES.map(([id, name]) => `<button class="chip${id === profMode ? " on" : ""}" data-pm="${id}">${name}</button>`).join(""); }
-$("profChips").onclick = e => { const b = e.target.closest("[data-pm]"); if (!b) return; profMode = b.dataset.pm; try { localStorage.setItem("lailong.profMode", profMode); } catch { /* bỏ qua */ } renderProfChips(); profSig = ""; updateProf(); };
+$("profChips").onclick = e => { const b = e.target.closest("[data-pm]"); if (!b) return; profMode = b.dataset.pm; try { sessionStorage.setItem("lailong.profMode", profMode); } catch { /* bỏ qua */ } renderProfChips(); profSig = ""; updateProf(); };
 function updateProf() {
   const p = market.last ? market.last.p : market.book.mid(); prof.setPrice(p);
   if (!$("profPanel").offsetWidth) return;
@@ -878,7 +877,7 @@ $("layerBtn").onclick = e => { e.stopPropagation(); const d = $("layerBtn").pare
 $("layerMenu").onclick = e => e.stopPropagation();
 // ---------- chỉ báo nút ƒx: lựa chọn lưu trên máy ----------
 const IND_SAVE = "lailong.ind";
-flow.ind = (() => { try { const o = JSON.parse(localStorage.getItem(IND_SAVE) || "{}"); return Object.fromEntries(IND_KEYS.map(k => [k, !!o[k]])); } catch { return {}; } })();
+flow.ind = (() => { try { const o = JSON.parse(sessionStorage.getItem(IND_SAVE) || "{}"); return Object.fromEntries(IND_KEYS.map(k => [k, !!o[k]])); } catch { return {}; } })();
 function renderInd() {
   for (const b of document.querySelectorAll("[data-ind]")) b.checked = !!flow.ind[b.dataset.ind];
   const n = IND_KEYS.filter(k => flow.ind[k]).length; $("indCount").textContent = n; $("indCount").classList.toggle("on", n > 0); $("indBtn").classList.toggle("on", n > 0);
@@ -887,7 +886,7 @@ $("indBtn").onclick = e => { e.stopPropagation(); const d = $("indBtn").parentEl
 $("indMenu").onclick = e => e.stopPropagation();
 $("indMenu").onchange = e => {
   const k = e.target.dataset.ind; if (!k) return;
-  flow.ind = { ...flow.ind, [k]: e.target.checked }; try { localStorage.setItem(IND_SAVE, JSON.stringify(flow.ind)); } catch { /* bỏ qua */ }
+  flow.ind = { ...flow.ind, [k]: e.target.checked }; try { sessionStorage.setItem(IND_SAVE, JSON.stringify(flow.ind)); } catch { /* bỏ qua */ }
   renderInd(); loadIndData(); flow.dirty = true;
 };
 let cotReq = null; const seasReq = new Map();

@@ -1,6 +1,6 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: sao lưu và khôi phục toàn bộ dữ liệu lâu dài của app trong một file JSON, để chuyển máy hoặc cất lên Drive.
-// Gồm: nhật ký (kèm khoá rủi ro), tài khoản giả lập, bố cục đã lưu, báo cáo hiệu suất, các chiến lược đang forward test,
+// Gồm: nhật ký (kèm khoá rủi ro), tài khoản giả lập, bố cục đã lưu, báo cáo hiệu suất, các chiến lược đang forward test, nhật ký tường lớn,
 // sổ tín hiệu ghi trực tiếp và kết quả chấm điểm tín hiệu.
 // Không gồm mã Telegram và khoá API: file sao lưu có thể nằm trên Drive, nên bí mật phải nhập lại trên máy mới.
 
@@ -13,6 +13,11 @@ export const KEEP_KEYS = [
 ];
 export const SECRET_KEYS = new Set(["lailong.telegram"]);
 export const BACKUP_KEYS = KEEP_KEYS.filter(k => !SECRET_KEYS.has(k));
+// khoá theo từng mã, giữ lâu dài và có trong bản sao lưu: nhật ký tường lớn (vùng chờ khung lớn dựa vào đây)
+export const KEEP_PREFIXES = ["lailong.wallhist."];
+const byPrefix = k => KEEP_PREFIXES.some(p => k.startsWith(p));
+export const isKept = k => KEEP_KEYS.includes(k) || byPrefix(k);
+const storeKeys = s => { const out = []; try { for (let i = 0; i < s.length; i++) out.push(s.key(i)); } catch { /* bỏ qua */ } return out; };
 const NAMES = {
   "lailong.journal.v1": "nhật ký giao dịch", "lailong.paper.v1": "tài khoản giả lập", "lailong.layout.presets": "bố cục đã lưu",
   "lailong.multi.presets": "bố cục đa biểu đồ", "lailong.gexhist.v1": "lịch sử GEX theo giờ", "lailong.perf.v1": "báo cáo hiệu suất", "lailong.forward.v1": "chiến lược forward test",
@@ -25,19 +30,20 @@ const NAMES = {
 export function packBackup(storage, now = Date.now()) {
   const data = {};
   for (const k of BACKUP_KEYS) { const v = storage.getItem(k); if (v != null) data[k] = v; }
+  for (const k of storeKeys(storage).filter(byPrefix).sort()) { const v = storage.getItem(k); if (v != null) data[k] = v; }
   return { app: "lailong", kind: "backup", v: 1, at: now, data };
 }
 
 // trả về danh sách phần đã nạp; ném lỗi nếu file không phải bản sao lưu Lai Long
 export function applyBackup(obj, storage) {
   if (!obj || obj.app !== "lailong" || obj.kind !== "backup" || !obj.data || typeof obj.data !== "object") throw new Error("File này không phải bản sao lưu Lai Long");
-  const done = BACKUP_KEYS.filter(k => typeof obj.data[k] === "string");
+  const done = [...BACKUP_KEYS, ...Object.keys(obj.data).filter(byPrefix)].filter(k => typeof obj.data[k] === "string");
   for (const k of done) JSON.parse(obj.data[k]); // phần nào hỏng thì dừng trước khi ghi đè bất cứ thứ gì
   for (const k of done) storage.setItem(k, obj.data[k]);
   return done;
 }
 
-export const backupSummary = keys => keys.map(k => NAMES[k]).filter(Boolean);
+export const backupSummary = keys => [...new Set(keys.map(k => NAMES[k] || (byPrefix(k) ? "nhật ký tường lớn" : null)).filter(Boolean))];
 
 export function initBackup({ $, toast }) {
   const stamp = () => new Date().toISOString().slice(0, 10);
