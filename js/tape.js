@@ -6,9 +6,9 @@
 // Ba chế độ: Lệnh khớp (mọi lệnh), Lệnh lớn (top 0,5%), Hấp thụ (iceberg giữ giá và nến hấp thụ).
 // Bên phải: khối lượng đã khớp tại mỗi mức giá trong 5 / 15 / 30 / 60 phút gần nhất, ô cam là giá hiện tại.
 
-import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202611142030";
-import { T, alpha } from "./theme.js?v=202611142030";
-import { GROUPS, playerGroup } from "./flowtools.js?v=202611142030";
+import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202611150124";
+import { T, alpha } from "./theme.js?v=202611150124";
+import { GROUPS, playerGroup } from "./flowtools.js?v=202611150124";
 
 const GROUP = Object.fromEntries(GROUPS.map(g => [g.id, g]));
 const UI = "'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif";
@@ -142,7 +142,7 @@ export class Tape {
     const big = this.m.bigPrint, iceAt = this._iceAt();
     for (let r = 0; r < rows; r++) {
       const p = data[r + this.scroll]; if (!p) break;
-      const y = HDR_H + r * ROW_H, cy = y + ROW_H / 2, buy = p.side === "buy", col = buy ? T.up : T.down, isBig = p.q >= big;
+      const y = HDR_H + r * ROW_H, cy = y + ROW_H / 2, buy = p.side === "buy", col = buy ? T.tapeBuy : T.tapeSell, isBig = p.q >= big;
       if (isBig) { ctx.fillStyle = alpha(col, 0.22); ctx.fillRect(0, y, W, ROW_H); }
       else if (r % 2) { ctx.fillStyle = alpha(T.text, 0.025); ctx.fillRect(0, y, W, ROW_H); }
       const note = this._note(p, iceAt), grp = !p.ice && !p.abs && isFinite(this.m.midPrint) ? GROUP[playerGroup(p.q, big, this.m.midPrint)] : null;
@@ -185,7 +185,7 @@ export class Tape {
       ctx.fillStyle = isCur ? "#ff9f1c" : "#8b95a3"; ctx.textAlign = "right"; ctx.fillText(p.toFixed(dec), x0 + labW, y + rowH / 2);
       if (!tot || !mx) return;
       const ww = Math.max(1, tot / mx * bw);
-      ctx.fillStyle = isCur ? "#ff9f1c" : alpha(r.b >= r.s ? T.up : T.down, 0.8); ctx.fillRect(bx, y + 2, ww, rowH - 4);
+      ctx.fillStyle = isCur ? "#ff9f1c" : alpha(r.b >= r.s ? T.tapeBuy : T.tapeSell, 0.8); ctx.fillRect(bx, y + 2, ww, rowH - 4);
       if (this.hover && this.hover.hist === i) { ctx.strokeStyle = "#fff"; ctx.strokeRect(bx + 0.5, y + 2.5, ww - 1, rowH - 5); }
     });
   }

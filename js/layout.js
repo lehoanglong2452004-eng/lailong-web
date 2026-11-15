@@ -7,7 +7,7 @@
 const KEY = "lailong.layout.v2", PRESETS = "lailong.layout.presets";
 const GAP = 5, MIN = 110;
 
-export const NAMES = { mainPanel: "Biểu đồ", liqPanel: "Thanh lý", domPanel: "Smart DOM", tapePanel: "Smart Tape", wallPanel: "Nhật ký tường", orderPanel: "Lệnh giả lập" };
+export const NAMES = { mainPanel: "Biểu đồ", domPanel: "Smart DOM", tapePanel: "Smart Tape", wallPanel: "Nhật ký tường" };
 
 // bố cục mặc định giống bản cũ: biểu đồ co giãn, ba khung bên phải giữ độ rộng cố định
 export function defaultTree(w = {}) {
@@ -90,9 +90,10 @@ export function computeRects(n, box, hidden = new Set(), out = { panels: {}, spl
 
 export class Layout {
   // key: chỗ lưu trong phiên; tree: hàm dựng bố cục mặc định; hiddenDefault: các khung thu nhỏ sẵn khi mở
-  // dock: false thì không có thanh "Đã thu nhỏ" (mở lại khung bằng nút riêng của trang, ví dụ nhóm Khung trên ribbon)
-  constructor(ws, ids, { legacy = {}, onChange = () => {}, key = KEY, tree = defaultTree, hiddenDefault = [], names = NAMES, presets = PRESETS, dock = true } = {}) {
-    this.ws = ws; this.ids = ids; this.onChange = onChange; this.legacy = legacy; this.useDock = dock;
+  // dock: false thì không có thanh "Đã thu nhỏ" (trang tự hiện nút mở lại, ví dụ trên thanh trên cùng)
+  // inset: hàm trả { left } điểm ảnh chừa bên trái (thanh công cụ dọc nằm trong cùng vùng làm việc)
+  constructor(ws, ids, { legacy = {}, onChange = () => {}, key = KEY, tree = defaultTree, hiddenDefault = [], names = NAMES, presets = PRESETS, dock = true, inset = null } = {}) {
+    this.ws = ws; this.ids = ids; this.onChange = onChange; this.legacy = legacy; this.useDock = dock; this.inset = inset;
     this.key = key; this.makeTree = () => tree(legacy); this.hiddenDefault = hiddenDefault; this.names = names; this.presetsKey = presets;
     this.mq = matchMedia("(min-width: 901px)");
     let saved = null;
@@ -135,8 +136,8 @@ export class Layout {
       for (const id of this.ids) { const p = document.getElementById(id); p.style.cssText = ""; p.classList.remove("minimized"); }
       this.dock.hidden = true; return;
     }
-    const pad = 4, dockH = this.useDock && this.hidden.size ? 30 : 0;
-    const box = { x: pad, y: pad, w: ws.clientWidth - pad * 2, h: ws.clientHeight - pad * 2 - dockH };
+    const pad = 4, dockH = this.useDock && this.hidden.size ? 30 : 0, left = this.inset ? (this.inset().left || 0) : 0;
+    const box = { x: pad + left, y: pad, w: ws.clientWidth - pad * 2 - left, h: ws.clientHeight - pad * 2 - dockH };
     const { panels, splits } = computeRects(this.tree, box, this.hidden);
     for (const id of this.ids) {
       const p = document.getElementById(id), r = panels[id];

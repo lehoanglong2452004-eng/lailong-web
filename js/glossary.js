@@ -539,7 +539,7 @@ export const GLOSSARY = [
   {
     id: "dom-chart", group: "Order flow nâng cao", term: "Depth Of Market trên biểu đồ",
     short: "Sổ lệnh vẽ thẳng lên mép phải biểu đồ nến và footprint: thanh đỏ là lệnh chờ bán, xanh là lệnh chờ mua, đường chấm mảnh là tổng cộng dồn.",
-    body: "<p>Như chỉ báo Depth Of Market của ATAS. Mỗi dòng là một mức giá (tự gộp nhiều bước giá khi thu nhỏ để dòng không thấp hơn 11 điểm ảnh), thanh càng dài lệnh chờ càng lớn, số ở mép phải là khối lượng.</p><ul><li><b>Thanh sáng:</b> lệnh chờ tại mức đó.</li><li><b>Đường chấm mảnh:</b> lệnh chờ cộng dồn từ giá tốt nhất tới mức đó, cho biết giá phải ăn qua bao nhiêu để tới đây.</li><li><b>Góc dưới phải:</b> tổng chờ mua và chờ bán trong khung nhìn.</li></ul><p>Bật/tắt trong <b>Lớp hiển thị</b> hoặc nút trên thanh công cụ bên trái khi xem Footprint.</p>"
+    body: "<p>Sổ lệnh vẽ ngay trên biểu đồ. Mỗi dòng là một mức giá (tự gộp nhiều bước giá khi thu nhỏ để dòng không thấp hơn 11 điểm ảnh), thanh càng dài lệnh chờ càng lớn, số ở mép phải là khối lượng.</p><ul><li><b>Thanh sáng:</b> lệnh chờ tại mức đó.</li><li><b>Đường chấm mảnh:</b> lệnh chờ cộng dồn từ giá tốt nhất tới mức đó, cho biết giá phải ăn qua bao nhiêu để tới đây.</li><li><b>Góc dưới phải:</b> tổng chờ mua và chờ bán trong khung nhìn.</li></ul><p>Bật/tắt trong <b>Lớp hiển thị</b> hoặc nút trên thanh công cụ bên trái khi xem Footprint.</p>"
   },
   {
     id: "smart-tape", group: "Order flow nâng cao", term: "Smart Tape (băng lệnh thông minh)",
@@ -619,12 +619,12 @@ export const GLOSSARY = [
   {
     id: "fp-modes", group: "Footprint", term: "Chế độ ô footprint",
     short: "Cùng một nến, đọc theo nhiều cách: mua × bán, delta, tổng khối lượng, thanh mua/bán, hồ sơ trong nến, tỷ lệ chéo. Tô màu theo khối lượng, delta hoặc chỉ ô mất cân bằng.",
-    body: "<p><b>Mua × Bán</b>: bên trái là bán chủ động (khớp vào giá chờ mua), bên phải là mua chủ động. <b>Mua × Bán + tổng</b>: thêm tổng khối lượng ở giữa. <b>Delta</b>: mua trừ bán ở từng mức, thấy ngay mức nào một phe áp đảo. <b>Khối lượng</b>: chỉ tổng, dễ thấy nơi giao dịch dày. <b>Thanh mua/bán</b>: thanh ngang từ giữa ô, trái là bán, phải là mua, hợp khi phóng nhỏ. <b>Hồ sơ trong nến</b>: hồ sơ khối lượng riêng từng nến, thấy nến có hình P, b hay cân bằng. <b>Tỷ lệ chéo</b>: mua ở dòng này chia bán ở dòng ngay dưới (cách ATAS tính mất cân bằng), từ 3× trở lên là in đậm.</p><p><b>Tô màu</b>: theo khối lượng (đậm là dày), theo delta (đậm là một phe áp đảo mạnh), chỉ mất cân bằng (chỉ tô ô từ 3× trở lên), theo nến.</p>",
+    body: "<p><b>Mua × Bán</b>: bên trái là bán chủ động (khớp vào giá chờ mua), bên phải là mua chủ động. <b>Mua × Bán + tổng</b>: thêm tổng khối lượng ở giữa. <b>Delta</b>: mua trừ bán ở từng mức, thấy ngay mức nào một phe áp đảo. <b>Khối lượng</b>: chỉ tổng, dễ thấy nơi giao dịch dày. <b>Thanh mua/bán</b>: thanh ngang từ giữa ô, trái là bán, phải là mua, hợp khi phóng nhỏ. <b>Hồ sơ trong nến</b>: hồ sơ khối lượng riêng từng nến, thấy nến có hình P, b hay cân bằng. <b>Tỷ lệ chéo</b>: mua ở dòng này chia bán ở dòng ngay dưới (cách tính mất cân bằng theo đường chéo), từ 3× trở lên là in đậm.</p><p><b>Tô màu</b>: theo khối lượng (đậm là dày), theo delta (đậm là một phe áp đảo mạnh), chỉ mất cân bằng (chỉ tô ô từ 3× trở lên), theo nến.</p>",
   },
   {
     id: "fp-stats", group: "Footprint", term: "Bảng thống kê cụm (Cluster Statistic)",
     short: "Các dòng dưới biểu đồ footprint: khối lượng, delta, delta %, delta cao nhất và thấp nhất trong nến, số lệnh, khối lượng mỗi lệnh. Ô càng đậm là càng lớn so với các nến đang xem.",
-    body: "<p>Giống Cluster Statistic của ATAS. Cách đọc hay dùng:</p><ul><li><b>Delta %</b> trên ±20% là một phe áp đảo rõ trong nến.</li><li><b>Δ cao nhất</b> lớn nhưng delta đóng nến nhỏ hoặc âm: phe mua đã đẩy mạnh rồi bị đẩy lùi (thường ở đỉnh). Ngược lại với <b>Δ thấp nhất</b> ở đáy.</li><li><b>KL/lệnh</b> tăng vọt: lệnh lớn đang vào. Nhiều lệnh mà mỗi lệnh nhỏ: nhỏ lẻ.</li></ul><p>Δ cao nhất/thấp nhất chỉ có ở nến dựng từ từng lệnh khớp thật (Binance tải được khoảng 400 nến gần nhất, cộng các nến từ lúc mở trang).</p>",
+    body: "<p>Bảng số liệu tóm tắt từng nến. Cách đọc hay dùng:</p><ul><li><b>Delta %</b> trên ±20% là một phe áp đảo rõ trong nến.</li><li><b>Δ cao nhất</b> lớn nhưng delta đóng nến nhỏ hoặc âm: phe mua đã đẩy mạnh rồi bị đẩy lùi (thường ở đỉnh). Ngược lại với <b>Δ thấp nhất</b> ở đáy.</li><li><b>KL/lệnh</b> tăng vọt: lệnh lớn đang vào. Nhiều lệnh mà mỗi lệnh nhỏ: nhỏ lẻ.</li></ul><p>Δ cao nhất/thấp nhất chỉ có ở nến dựng từ từng lệnh khớp thật (Binance tải được khoảng 400 nến gần nhất, cộng các nến từ lúc mở trang).</p>",
   },
   {
     id: "fp-auction", group: "Footprint", term: "Đấu giá chưa xong và kiệt sức",
@@ -639,7 +639,7 @@ export const GLOSSARY = [
   {
     id: "stacked-imbalance", group: "Order flow nâng cao", term: "Mất cân bằng xếp chồng (stacked imbalance)",
     short: "Từ 3 ô footprint liền nhau trở lên mà mua chủ động gấp 3 lần bán (theo đường chéo) hoặc ngược lại. Vùng này hay thành hỗ trợ/kháng cự.",
-    body: "<p>Cách so giống ATAS và Sierra Chart: mua chủ động ở giá P so với bán chủ động ở giá ngay dưới (P − 1 dòng), vì người mua chủ động khớp vào giá bán (ask) còn người bán chủ động khớp vào giá mua (bid). Ô nào gấp 3 lần trở lên được tô viền: xanh là mua lấn át, đỏ là bán lấn át.</p><p>Khi có từ 3 ô cùng phía liền nhau, hệ thống vẽ một <b>dải</b> kéo sang phải: dải xanh là vùng phe mua đã đẩy mạnh (thường đỡ giá khi quay lại), dải đỏ là vùng phe bán đẩy mạnh. Dải dừng lại khi có nến đóng cửa xuyên qua.</p><p>Chỉ có cho nến có footprint thật (từ lúc mở trang, hoặc tải lại lệnh khớp với Binance).</p>"
+    body: "<p>Cách so theo đường chéo: mua chủ động ở giá P so với bán chủ động ở giá ngay dưới (P − 1 dòng), vì người mua chủ động khớp vào giá bán (ask) còn người bán chủ động khớp vào giá mua (bid). Ô nào gấp 3 lần trở lên được tô viền: xanh là mua lấn át, đỏ là bán lấn át.</p><p>Khi có từ 3 ô cùng phía liền nhau, hệ thống vẽ một <b>dải</b> kéo sang phải: dải xanh là vùng phe mua đã đẩy mạnh (thường đỡ giá khi quay lại), dải đỏ là vùng phe bán đẩy mạnh. Dải dừng lại khi có nến đóng cửa xuyên qua.</p><p>Chỉ có cho nến có footprint thật (từ lúc mở trang, hoặc tải lại lệnh khớp với Binance).</p>"
   },
   {
     id: "journal", group: "Công cụ", term: "Nhật ký giao dịch",
