@@ -9,7 +9,7 @@ export const KEEP_KEYS = [
   "lailong.journal.v1", "lailong.paper.v1", "lailong.layout.presets", "lailong.multi.presets",
   "lailong.perf.v1", "lailong.forward.v1", "lailong.forward.v1.at", "lailong.telegram",
   "lailong.events.v1", "lailong.verified", "lailong.shock.sent", "lailong.compass", "lailong.consensus",
-  "lailong.newsdigest", "lailong.optbrief", "lailong.gexhist.v1",
+  "lailong.newsdigest", "lailong.optbrief", "lailong.gexhist.v1", "lailong.theme.saved",
 ];
 export const SECRET_KEYS = new Set(["lailong.telegram"]);
 export const BACKUP_KEYS = KEEP_KEYS.filter(k => !SECRET_KEYS.has(k));

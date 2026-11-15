@@ -28,7 +28,7 @@ export const SOURCES = [
   { id: "d-flows", name: "Dòng tiền ETF và stablecoin", kind: "eod", feeds: "Tab Phân tích (Farside, DefiLlama)", file: "data/flows.json", live: true, expect: 3 * 36e5 },
   { id: "laptop", name: "Máy chủ laptop: nến hợp đồng tương lai", kind: "delay", feeds: "Radar vàng, dầu, ES, NQ… (Yahoo, trễ ~15 phút); chỉ có trên bản laptop", match: /\/api\/bars/, expect: 600e3 },
   { id: "hist", name: "Kho lịch sử data.binance.vision", kind: "eod", feeds: "Tab Tín hiệu: lệnh khớp, cá voi, OI, long/short, độ sâu sổ lệnh nhiều năm (tải miễn phí về laptop); chỉ có trên bản laptop", match: /\/api\/hist\//, expect: 0 },
-  { id: "cme", name: "Sổ lệnh và tape CME (vàng, dầu, ES, NQ)", kind: "none", feeds: "Chưa có: cần nguồn trả phí (Rithmic, CQG, Databento…). Hiện chỉ có nến trễ 15 phút", expect: 0 },
+  { id: "cme", name: "Sổ lệnh và tape CME (vàng, dầu, ES, NQ)", kind: "none", feeds: "Chưa có: cần nguồn dữ liệu trả phí (Rithmic, Databento…). Hiện chỉ có nến trễ 15 phút", expect: 0 },
 ];
 
 const state = new Map(SOURCES.map(s => [s.id, { ok: 0, fail: 0, last: 0, lastOk: 0, err: "", rtt: [], lag: [], msgs: 0, socks: 0, age: null, ageT: 0 }]));

@@ -2,10 +2,10 @@
 // Lai Long Web: thẻ Tâm lý thị trường với hai kim (Crypto, Chứng khoán Mỹ). Cách chấm điểm ở sentiment.js.
 // Dữ liệu: vol.json và flows.json (máy chủ GitHub lấy lại mỗi 10 phút và mỗi giờ), Binance và alternative.me lấy thẳng
 // trong trình duyệt. Làm mới mỗi 5 phút khi đang mở tab.
-import { getJson, liveJson } from "./util.js?v=202611142030";
-import { freshTag } from "./fresh.js?v=202611142030";
-import { usParts, cryptoParts, gaugeRead, gaugeSvg } from "./sentiment.js?v=202611142030";
-import { marketStatus, vnTime } from "./sessions.js?v=202611142030";
+import { getJson, liveJson } from "./util.js?v=202611150124";
+import { freshTag } from "./fresh.js?v=202611150124";
+import { usParts, cryptoParts, gaugeRead, gaugeSvg } from "./sentiment.js?v=202611150124";
+import { marketStatus, vnTime } from "./sessions.js?v=202611150124";
 
 const FAPI = "https://fapi.binance.com", D = 864e5;
 

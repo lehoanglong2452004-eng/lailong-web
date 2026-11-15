@@ -4,14 +4,14 @@
 //   đổi chỗ, kéo đường chia để đổi cỡ, nút – để thu nhỏ). Nhóm A/B hiện bằng vạch màu bên trái mỗi ô.
 //   Điện thoại: một biểu đồ mỗi màn hình, bấm tab hoặc vuốt tiêu đề để đổi ô; xoay ngang thì hiện 2 ô cạnh nhau.
 //   Mọi tuỳ chỉnh chỉ giữ trong lúc tab còn mở.
-import { FlowChart } from "./flowchart.js?v=202611142030";
-import { Layout } from "./layout.js?v=202611142030";
-import { deltaOf, footprintStep } from "./market.js?v=202611142030";
-import { INTERVALS, niceStep } from "./util.js?v=202611142030";
-import { analyze } from "./radar.js?v=202611142030";
-import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202611142030";
-import { clockSkew } from "./health.js?v=202611142030";
-import { approxFootprint, approxBar } from "./fphistory.js?v=202611142030";
+import { FlowChart } from "./flowchart.js?v=202611150124";
+import { Layout } from "./layout.js?v=202611150124";
+import { deltaOf, footprintStep } from "./market.js?v=202611150124";
+import { INTERVALS, niceStep } from "./util.js?v=202611150124";
+import { analyze } from "./radar.js?v=202611150124";
+import { EXCHANGES, lastBarsFailover, candleCountdown } from "./exchanges.js?v=202611150124";
+import { clockSkew } from "./health.js?v=202611150124";
+import { approxFootprint, approxBar } from "./fphistory.js?v=202611150124";
 
 const MAX = 6, KEY = "lailong.multi.v2", POLL = 3000;
 const IDS = Array.from({ length: MAX }, (_, i) => "mc" + i);
@@ -108,7 +108,7 @@ export class MultiChart {
     this.ws = root.querySelector("#mcws");
     this.charts = IDS.map(id => {
       const c = new FlowChart(document.getElementById(id + "c"), { emptyText: "Đang tải nến..." });
-      c.pane = "delta";
+      c.pane = "";
       c.show.radar = true;
       for (const k of ["cvd", "oi", "liq", "liqMap", "absorb", "big", "cluster", "algo", "spoof", "score", "levels", "zones"]) c.show[k] = false;
       return c;

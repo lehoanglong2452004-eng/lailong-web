@@ -1,59 +1,56 @@
 // © 2026 Lai Long Desk. Bảo lưu mọi quyền. Không sao chép, chỉnh sửa hay dùng lại khi chưa được phép.
 // Lai Long Web: ghép dữ liệu, biểu đồ, phân tích và backtest thành một trang phân tích thuần giá và khối lượng.
 
-import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611142030";
-import { MarketState } from "./market.js?v=202611142030";
-import { FlowChart } from "./flowchart.js?v=202611142030";
-import { LiqColumn, liqSummary, liqRead } from "./liqcol.js?v=202611142030";
-import { Dom } from "./dom.js?v=202611142030";
-import { srLevels, abnormalVolume, liquidationMap, summary, isDeltaApprox } from "./analytics.js?v=202611142030";
-import { initBacktest } from "./backtestview.js?v=202611142030";
-import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611142030";
-import { absorption, clusterSearch } from "./orderflow.js?v=202611142030";
-import { Tape } from "./tape.js?v=202611142030";
-import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611142030";
-import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611142030";
-import { Alerts } from "./alerts.js?v=202611142030";
-import { setVenue } from "./venue.js?v=202611142030";
-import { initNews } from "./newsview.js?v=202611142030";
-import { initSocial } from "./socialview.js?v=202611142030";
-import { initMarkets } from "./marketsview.js?v=202611142030";
-import { initTgBot } from "./tgbot.js?v=202611142030";
-import { initInst } from "./instview.js?v=202611142030";
-import { setFresh, tickFresh } from "./fresh.js?v=202611142030";
-import { initRadar } from "./radarview.js?v=202611142030";
-import { Drawings } from "./drawings.js?v=202611142030";
-import { Layout, NAMES as PANEL_NAMES } from "./layout.js?v=202611142030";
-import { PaperBroker } from "./paper.js?v=202611142030";
-import { OrderLines } from "./orderlines.js?v=202611142030";
-import { MultiChart } from "./multichart.js?v=202611142030";
-import { DOM_COLS } from "./dom.js?v=202611142030";
-import { initFractal } from "./fractalview.js?v=202611142030";
-import { initJournal } from "./journalview.js?v=202611142030";
-import { installHealth, clockSkew } from "./health.js?v=202611142030";
-import { initHealth } from "./healthview.js?v=202611142030";
-import { initFlows } from "./flowsview.js?v=202611142030";
-import { initSentiment } from "./sentimentview.js?v=202611142030";
-import { initPerf } from "./perfview.js?v=202611142030";
-import { initShock } from "./shockview.js?v=202611142030";
-import { initCompass } from "./compassview.js?v=202611142030";
-import { initConsensus } from "./consensusview.js?v=202611142030";
-import { initBackup, KEEP_KEYS } from "./backup.js?v=202611142030";
-import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611142030";
-import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611142030";
-import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611142030";
-import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611142030";
-import { GLOSSARY, GROUPS } from "./glossary.js?v=202611142030";
-import { T, THEMES, EDITABLE, applyTheme, loadTheme, alpha } from "./theme.js?v=202611142030";
-import { mountLang } from "./lang.js?v=202611142030";
-import { initI18n } from "./i18n.js?v=202611142030";
-import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, binanceBudget, pad2 } from "./util.js?v=202611142030";
+import { EXCHANGES, attachOi, attachFunding, inferTick, candleCountdown } from "./exchanges.js?v=202611150124";
+import { MarketState } from "./market.js?v=202611150124";
+import { FlowChart } from "./flowchart.js?v=202611150124";
+import { Dom } from "./dom.js?v=202611150124";
+import { srLevels, abnormalVolume, liquidationMap, summary, isDeltaApprox } from "./analytics.js?v=202611150124";
+import { initBacktest } from "./backtestview.js?v=202611150124";
+import { approxFootprint, exactFootprintBinance } from "./fphistory.js?v=202611150124";
+import { absorption, clusterSearch } from "./orderflow.js?v=202611150124";
+import { Tape } from "./tape.js?v=202611150124";
+import { vpin, percentileOf, groupFlow, algoRuns, signalScore, SCORE_PARTS, atrSeries } from "./flowtools.js?v=202611150124";
+import { WallTracker, WALL_KIND, wallStats } from "./walls.js?v=202611150124";
+import { Alerts } from "./alerts.js?v=202611150124";
+import { setVenue } from "./venue.js?v=202611150124";
+import { initNews } from "./newsview.js?v=202611150124";
+import { initSocial } from "./socialview.js?v=202611150124";
+import { initMarkets } from "./marketsview.js?v=202611150124";
+import { initTgBot } from "./tgbot.js?v=202611150124";
+import { initInst } from "./instview.js?v=202611150124";
+import { setFresh, tickFresh } from "./fresh.js?v=202611150124";
+import { initRadar } from "./radarview.js?v=202611150124";
+import { Drawings } from "./drawings.js?v=202611150124";
+import { Layout, NAMES as PANEL_NAMES } from "./layout.js?v=202611150124";
+import { MultiChart } from "./multichart.js?v=202611150124";
+import { DOM_COLS } from "./dom.js?v=202611150124";
+import { initFractal } from "./fractalview.js?v=202611150124";
+import { initJournal } from "./journalview.js?v=202611150124";
+import { installHealth, clockSkew } from "./health.js?v=202611150124";
+import { initHealth } from "./healthview.js?v=202611150124";
+import { initFlows } from "./flowsview.js?v=202611150124";
+import { initSentiment } from "./sentimentview.js?v=202611150124";
+import { initPerf } from "./perfview.js?v=202611150124";
+import { initShock } from "./shockview.js?v=202611150124";
+import { initCompass } from "./compassview.js?v=202611150124";
+import { initConsensus } from "./consensusview.js?v=202611150124";
+import { initBackup, KEEP_KEYS } from "./backup.js?v=202611150124";
+import { initSignals, isVerified, VERIFIED_KEY } from "./signalsview.js?v=202611150124";
+import { logEvent, fromWall, fromIce, fromBig } from "./eventlog.js?v=202611150124";
+import { liveZones, BUCKETS, bucketOf, KINDS as LEVEL_KINDS, CONFL_MIN } from "./levels.js?v=202611150124";
+import { fromDeribit, pick as gexPick, levels as gexLevels } from "./gex.js?v=202611150124";
+import { GLOSSARY, GROUPS } from "./glossary.js?v=202611150124";
+import { T, THEMES, COLOR_GROUPS, DEFAULT_THEME, applyTheme, loadTheme, saveTheme, resetTheme, cleanTheme, alpha } from "./theme.js?v=202611150124";
+import { mountLang } from "./lang.js?v=202611150124";
+import { initI18n } from "./i18n.js?v=202611150124";
+import { fmtVol, fmtUsd, fmtPct, fmtTime, fmtDate, decimalsFor, INTERVALS, getJson, binanceBudget, pad2 } from "./util.js?v=202611150124";
 
 const $ = id => document.getElementById(id);
 installHealth(); // ghi lại mọi lần gọi dữ liệu ra ngoài cho trang Sức khoẻ dữ liệu
 // Tuỳ chỉnh (bố cục, cột, khung, màu, cài đặt biểu đồ…) chỉ giữ trong lúc tab còn mở (sessionStorage).
-// Đóng tab rồi mở lại là về mặc định. Chỉ giữ lâu dài: nhật ký, tài khoản giả lập, bố cục bro tự bấm "Lưu",
-// báo cáo hiệu suất, chiến lược đang forward test và mã Telegram (danh sách trong backup.js).
+// Đóng tab rồi mở lại là về mặc định. Chỉ giữ lâu dài: nhật ký, màu bro bấm "Lưu", báo cáo hiệu suất,
+// chiến lược đang forward test và mã Telegram (danh sách trong backup.js).
 const KEEP = new Set(KEEP_KEYS);
 try { for (const k of Object.keys(localStorage)) if (k.startsWith("lailong.") && !KEEP.has(k)) localStorage.removeItem(k); } catch { /* bỏ qua */ }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -101,19 +98,15 @@ setInterval(() => { if (flow.show.depth && !document.hidden && S.grid === 1) flo
 const dom = new Dom($("dom"), market);
 const tape = new Tape($("tape"), market);
 const walls = new WallTracker(); dom.walls = walls; flow.walls = walls; // vùng lệnh chờ lớn đang đứng vẽ lên footprint
-// cột Thanh lý đứng cạnh biểu đồ, cùng thang giá; vẽ lại mỗi khi biểu đồ vẽ
-const liqcol = new LiqColumn($("liqcol"), { flow, market });
-const redrawAll = () => { flow.dirty = dom.dirty = tape.dirty = liqcol.dirty = true; };
-flow.opts.onDraw = () => { liqcol.dirty = true; };
+const redrawAll = () => { flow.dirty = dom.dirty = tape.dirty = true; };
 flow.prints = () => [market.histPrints, market.prints];
 flow.opts.onRange = () => {};
 
 // ---------- tải dữ liệu một mã ----------
 let conn = null, loadToken = 0, analysis = null, fpState = null;
-// trạng thái phát lại, đo nhịp sổ lệnh và độ trễ cho thanh trạng thái, tab đang mở của khung DOM
+// trạng thái phát lại, đo nhịp sổ lệnh và độ trễ cho thanh trạng thái
 const RP = { on: false, end: 0, play: false, speed: 1, timer: null, picking: false };
 const sb = { bookT: 0, bookGap: null, lat: null };
-let domTab = "book";
 // thẻ các mã đã mở gần đây, như hàng thẻ mã của Bookmap (nhớ trong phiên)
 const TABS_KEY = "lailong.symtabs";
 let symTabs = (() => { try { return JSON.parse(sessionStorage.getItem(TABS_KEY) || "[]"); } catch { return []; } })();
@@ -139,7 +132,7 @@ async function load() {
   market.reset({ symbol: S.symbol, exchange: S.ex, interval: S.interval });
   draw.sym = S.symbol;
   alPrevP = null;
-  dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; scores = null; algo = []; walls.reset(); conflZones = []; liqcol.setData([]); flow.setOverlays({ confl: [], spoofs: walls.events, algoRuns: [], scores: [], vpinVals: null, groupVals: null }); tape.reset(); renderSignals(); renderTab();
+  dom.reset(); flow.setData([], {}); flow.fpProgress = ""; flow.ranges = []; analysis = null; fpState = null; absorb = []; clusters = null; scores = null; algo = []; walls.reset(); conflZones = []; flow.setOverlays({ confl: [], spoofs: walls.events, algoRuns: [], scores: [], vpinVals: null, groupVals: null }); tape.reset(); renderSignals(); renderTab();
   setConn("Đang tải dữ liệu", null);
   let info = { tick: 0, ctVal: 1 };
   try { info = await ex().info(S.symbol); } catch (e) { log(`Không lấy được thông tin mã: ${e.message}`); }
@@ -155,7 +148,7 @@ async function load() {
   const c0 = ex().connect(S.symbol, info, pBook, {
     onBook,
     onTrades: list => {
-      if (token !== loadToken) return; market.onTrades(list); paperTrades(list); tape.addTrades(list);
+      if (token !== loadToken) return; market.onTrades(list); tape.addTrades(list);
       const t = list[list.length - 1]; if (t) { const l = Date.now() + clockSkew() - t.t; sb.lat = sb.lat == null ? l : sb.lat * 0.9 + l * 0.1; }
     },
     onLiq: list => { if (token !== loadToken) return; market.onLiq(list); },
@@ -214,7 +207,6 @@ function recompute() {
   const liqMap = bars.some(b => b.oi != null) ? liquidationMap(bars) : null;
   analysis = { levels, zones, zonesAll, liqMap, sum: summary(bars, market.intervalMs) };
   flow.setOverlays({ levels, zones, liqMap, marks: priceMarks(bars) });
-  liqcol.setData(bars, $("liqModel").value);
   recomputeFlow();
   renderSignals();
   updateConfl();
@@ -511,7 +503,7 @@ anTab(); nTab();
 
 // ---------- trang Backtest ----------
 const btChart = new FlowChart($("btChart"), { emptyText: "Bấm \"Chạy backtest\" để xem điểm vào/ra lệnh trên biểu đồ" });
-btChart.show = { ...btChart.show, liq: false, liqMap: false, cvd: false, oi: false, profile: false };
+btChart.show = { ...btChart.show, liq: false, liqMap: false, profile: false };
 // ---------- chú thích khi rê chuột ----------
 const tipEl = $("tip");
 const fractal = initFractal({ $, S, ex, esc, table, log });
@@ -521,7 +513,7 @@ const journal = initJournal({ $, S, esc, table, market, toast, events: () => new
   if (alerts.cfg.disc) alerts.fire("disc-" + kind, text, "down", true, { html, toast: showToast });
 }, onLock: lk => {
   const bar = $("riskLockBar"); bar.hidden = !lk;
-  if (lk) bar.textContent = `ĐANG KHOÁ GIAO DỊCH tới ${fmtDate(lk.until)}: ${lk.why}. Lệnh giả lập mới bị chặn, chỉ được đóng bớt vị thế.`;
+  if (lk) bar.textContent = `ĐANG KHOÁ GIAO DỊCH tới ${fmtDate(lk.until)}: ${lk.why}.`;
 } });
 const perfView = initPerf({ $, esc, toast, journal });
 const compassView = initCompass({ $, esc, toast, alerts, journal, events: () => newsView.events() });
@@ -582,13 +574,6 @@ async function updateConfl() {
   } finally { conflBusy = false; }
 }
 const signalsView = initSignals({ $, esc, S, toast, alerts, liveSources });
-// khoá rủi ro: chặn lệnh giả lập làm tăng vị thế, vẫn cho đóng bớt
-const lockBlocks = (side, qty) => {
-  const lk = journal.lock(); if (!lk) return false;
-  const pv = paper.positionView(pkey()), reduce = pv.qty && (side === "sell") === (pv.qty > 0) && qty <= Math.abs(pv.qty) + 1e-12;
-  if (reduce) return false;
-  toast(`Đang khoá giao dịch tới ${fmtDate(lk.until)}: ${lk.why}`, true); return true;
-};
 // nhấp đúp vào ô thông số (Backtest, FRACTAL) để trả về giá trị mặc định
 document.addEventListener("dblclick", e => {
   const el = e.target.closest(".btform input[type=number], .btform input[type=text], .btform select"); if (!el) return;
@@ -596,7 +581,7 @@ document.addEventListener("dblclick", e => {
   el.dispatchEvent(new Event("change", { bubbles: true }));
   el.classList.add("reset"); setTimeout(() => el.classList.remove("reset"), 500);
 });
-const CANVAS_TIP = { flow, dom, tape, liqcol, btChart, ...fractal.tips, ...backtest.tips, ...multiChart.tips };
+const CANVAS_TIP = { flow, dom, tape, btChart, ...fractal.tips, ...backtest.tips, ...multiChart.tips };
 let tipFrame = 0, lastMove = null;
 function showTip(html, x, y) {
   tipEl.innerHTML = html; tipEl.hidden = false;
@@ -614,7 +599,7 @@ function tipFor(e) {
     const c = CANVAS_TIP[t.id];
     if (c.drag) return hideTip();
     const r = t.getBoundingClientRect(), s = c.hitTest(e.clientX - r.left, e.clientY - r.top);
-    return s ? showTip(esc(s), e.clientX, e.clientY) : hideTip();
+    return s ? showTip(esc(s).replace(/\n/g, "<br>"), e.clientX, e.clientY) : hideTip();
   }
   const el = t.closest("[data-g],[data-tip]");
   if (!el) return hideTip();
@@ -670,31 +655,58 @@ document.addEventListener("click", e => {
   if (el) { e.preventDefault(); openGloss(el.dataset.g); }
 });
 
-// ---------- màu giao diện ----------
+// ---------- màu sắc: hộp thoại theo nhóm, xem trước ngay, Lưu thì giữ lâu dài ----------
+// Mỗi dòng: tên, ô màu, mã hex. Bấm ô màu mở bảng màu (ô màu sẵn, ô nhập mã, bảng màu của máy).
+const SWATCHES = ["#ffffff", "#c8d0dc", "#8a93a6", "#4a5266", "#1d222c", "#0b0d12", "#ffd23f", "#ffd166", "#ff9f1c", "#f0b429", "#6b5a12", "#e5484d",
+  "#ff5a5f", "#b8323a", "#ff4fa0", "#a78bfa", "#4dd0e1", "#3e8ed0", "#1d3a66", "#14995a", "#1fb57a", "#2fd18b", "#7dffb2", "#9be15d"];
+let themeSnap = null, palKey = null;
+const hexOk = v => /^#[0-9a-f]{6}$/i.test(v);
 function renderThemePanel() {
   $("themePresets").innerHTML = Object.entries(THEMES).map(([id, t]) => `<button data-preset="${id}"><i style="background:${t.bg}"></i><i style="background:${t.text}"></i><i style="background:${t.accent}"></i><i style="background:${t.up}"></i><i style="background:${t.down}"></i> ${esc(t.name)}</button>`).join("");
-  $("themeColors").innerHTML = EDITABLE.map(([k, label]) => `<label for="c-${k}">${esc(label)}</label><input type="color" id="c-${k}" data-color="${k}" value="${T[k]}">`).join("");
+  $("themeColors").innerHTML = COLOR_GROUPS.map(([g, rows]) => `<div class="cgrp"><h5>${esc(g)}</h5>${rows.map(([k, label]) =>
+    `<div class="crow${palKey === k ? " on" : ""}" data-ck="${k}"><span class="cl">${esc(label)}</span><button class="csw" data-ck="${k}" style="background:${T[k]}" aria-label="${esc(label)}"></button><input class="chex" data-hex="${k}" value="${T[k]}" maxlength="7" spellcheck="false" aria-label="${esc(label)}"></div>`).join("")}</div>`).join("");
 }
-renderThemePanel();
-$("themeBtn").onclick = () => { gearClose(); const p = $("themePanel"); p.hidden = !p.hidden; $("themeBtn").classList.toggle("on", !p.hidden); };
-$("themeClose").onclick = () => { $("themePanel").hidden = true; $("themeBtn").classList.remove("on"); };
-$("themePresets").onclick = e => { const b = e.target.closest("[data-preset]"); if (b) { applyTheme({ ...THEMES[b.dataset.preset] }); renderThemePanel(); } };
-$("themeColors").oninput = e => {
-  const k = e.target.dataset.color; if (!k) return;
-  const patch = { [k]: e.target.value };
-  if (k === "panel") patch.panel2 = mix(e.target.value, "#ffffff", 0.06);
-  if (k === "bg") patch.grid = mix(e.target.value, "#ffffff", 0.08);
+function paintPalette() {
+  const p = $("themePal"); if (!palKey) { p.hidden = true; return; }
+  const v = T[palKey], label = COLOR_GROUPS.flatMap(g => g[1]).find(r => r[0] === palKey);
+  p.innerHTML = `<div class="ph"><b>${esc(label ? label[1] : palKey)}</b><button class="icon" data-pal="x" aria-label="Đóng">✕</button></div>` +
+    `<div class="pgrid">${SWATCHES.map(c => `<button data-sw="${c}" class="${c.toLowerCase() === v.toLowerCase() ? "on" : ""}" style="background:${c}" aria-label="${c}"></button>`).join("")}</div>` +
+    `<div class="prow"><i style="background:${v}"></i><input id="palHex" value="${v}" maxlength="7" spellcheck="false" aria-label="Mã màu"><input type="color" id="palNative" value="${v}" data-tip="Bảng màu của máy"></div>`;
+  p.hidden = false;
+  const row = $("themeColors").querySelector(`.crow[data-ck="${palKey}"]`), box = $("themePanel").getBoundingClientRect();
+  if (row) { const r = row.getBoundingClientRect(); p.style.top = Math.max(8, Math.min(innerHeight - 260, r.top)) + "px"; p.style.left = (box.right + 246 <= innerWidth ? box.right + 10 : Math.max(8, box.left - 236)) + "px"; } // bảng màu bật ra cạnh hộp thoại, không che dòng màu
+}
+function setColor(k, v) {
+  if (!hexOk(v)) return;
+  const patch = { [k]: v.toLowerCase() };
+  if (k === "panel") patch.panel2 = mix(v, "#ffffff", 0.06);
+  if (k === "bg") patch.grid = mix(v, "#ffffff", 0.08);
   applyTheme(patch);
-};
+  const row = $("themeColors").querySelector(`.crow[data-ck="${k}"]`);
+  if (row) { row.querySelector(".csw").style.background = v; const h = row.querySelector(".chex"); if (document.activeElement !== h) h.value = v.toLowerCase(); }
+  if (palKey === k) paintPalette();
+}
+const themeOpen = () => { themeSnap = { ...T }; palKey = null; renderThemePanel(); paintPalette(); $("themePanel").hidden = false; $("themeBtn").classList.add("on"); };
+const themeHide = () => { palKey = null; paintPalette(); $("themePanel").hidden = true; $("themeBtn").classList.remove("on"); };
+const themeCancel = () => { if (themeSnap) applyTheme(cleanTheme(themeSnap)); themeSnap = null; themeHide(); };
+$("themeBtn").onclick = () => { gearClose(); if ($("themePanel").hidden) themeOpen(); else themeCancel(); };
+$("themeClose").onclick = themeCancel;
+$("themeCancel").onclick = themeCancel;
+$("themeSave").onclick = () => { saveTheme(); themeSnap = null; themeHide(); toast("Đã lưu màu. Mở lại trang vẫn giữ màu này"); };
+$("themeReset").onclick = () => { resetTheme(); palKey = null; renderThemePanel(); paintPalette(); toast("Đã về màu mặc định. Bấm Lưu để giữ, Hủy để quay lại màu cũ"); };
+$("themePresets").onclick = e => { const b = e.target.closest("[data-preset]"); if (b) { applyTheme({ ...THEMES[b.dataset.preset] }); renderThemePanel(); paintPalette(); } };
+$("themeColors").onclick = e => { const b = e.target.closest(".csw"); if (!b) return; palKey = palKey === b.dataset.ck ? null : b.dataset.ck; for (const r of $("themeColors").querySelectorAll(".crow")) r.classList.toggle("on", r.dataset.ck === palKey); paintPalette(); };
+$("themeColors").oninput = e => { const k = e.target.dataset.hex; if (!k) return; let v = e.target.value.trim(); if (!v.startsWith("#")) v = "#" + v; if (hexOk(v)) setColor(k, v); };
+$("themePal").onclick = e => { if (e.target.closest("[data-pal]")) { palKey = null; paintPalette(); renderThemePanel(); return; } const b = e.target.closest("[data-sw]"); if (b) setColor(palKey, b.dataset.sw); };
+$("themePal").oninput = e => { if (e.target.id === "palNative") setColor(palKey, e.target.value); else if (e.target.id === "palHex") { let v = e.target.value.trim(); if (!v.startsWith("#")) v = "#" + v; if (hexOk(v)) { applyTheme({ [palKey]: v.toLowerCase() }); const row = $("themeColors").querySelector(`.crow[data-ck="${palKey}"]`); if (row) { row.querySelector(".csw").style.background = v; row.querySelector(".chex").value = v.toLowerCase(); } } } };
 function mix(a, b, f) {
   const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), x = p(a), y = p(b);
   return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * f).toString(16).padStart(2, "0")).join("");
 }
 window.addEventListener("lailong-theme", () => {
-  flow.dirty = dom.dirty = tape.dirty = liqcol.dirty = btChart.dirty = true;
+  flow.dirty = dom.dirty = tape.dirty = btChart.dirty = true;
   backtest.redraw();
-});
-
+}); void DEFAULT_THEME;
 
 // ---------- phóng to một khung ----------
 const ws = $("view-terminal");
@@ -705,13 +717,13 @@ function setMax(id) {
   redrawAll();
 }
 for (const b of document.querySelectorAll("[data-max]")) b.onclick = () => setMax(b.dataset.max);
-// chiều cao thanh menu + ribbon, cho các ngăn cố định (giải thích, màu, khung phóng to) không bị che
-const topH = () => document.documentElement.style.setProperty("--topH", ($("ribbon").hidden ? 0 : $("ribbon").getBoundingClientRect().height) + document.querySelector(".menubar").getBoundingClientRect().height + "px");
-new ResizeObserver(topH).observe(document.querySelector(".menubar")); new ResizeObserver(topH).observe($("ribbon"));
+// chiều cao thanh trên cùng, cho các ngăn cố định (giải thích, màu, khung phóng to) không bị che
+const topH = () => document.documentElement.style.setProperty("--topH", document.querySelector(".menubar").getBoundingClientRect().height + "px");
+new ResizeObserver(topH).observe(document.querySelector(".menubar"));
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   if (!$("glossary").hidden) return closeGloss();
-  if (!$("themePanel").hidden) { $("themePanel").hidden = true; $("themeBtn").classList.remove("on"); return; }
+  if (!$("themePanel").hidden) { if (palKey) { palKey = null; paintPalette(); renderThemePanel(); } else themeCancel(); return; }
   setMax(null);
 });
 
@@ -729,12 +741,13 @@ function setView(v) {
   if (DROPPED_VIEWS.has(v) || !$("view-" + v)) v = "terminal";
   S.view = v; persist();
   for (const b of $("views").querySelectorAll("[data-view]")) b.classList.toggle("on", b.dataset.view === v);
-  if (v === "terminal") $("rgTools").append(alertDD, gearDD); else $("fullscreenBtn").before(alertDD, gearDD); // Cảnh báo, Cài đặt nằm trong nhóm Công cụ của ribbon khi ở Terminal
-  renderPages();
+  if (v === "terminal") $("railTools").append(alertDD); else gearDD.before(alertDD); // chuông Cảnh báo nằm trên thanh công cụ bên trái khi ở Orderflow
+  alertDD.classList.toggle("inrail", v === "terminal");
+  if (tiles) renderMinDock();
   for (const id of ["terminal", "radar", "signals", "news", "analysis", "backtest", "fractal", "journal", "health"]) $("view-" + id).hidden = id !== v;
-  document.body.classList.toggle("not-terminal", v !== "terminal"); document.body.dataset.view = v; // ribbon Terminal chỉ hiện ở Terminal
-  $("ribbon").hidden = v !== "terminal"; topH();
-  flow.dirty = btChart.dirty = dom.dirty = liqcol.dirty = true;
+  document.body.classList.toggle("not-terminal", v !== "terminal"); document.body.dataset.view = v; // ô mã, khung thời gian chỉ hiện ở Orderflow
+  topH();
+  flow.dirty = btChart.dirty = dom.dirty = true;
   if (v === "signals") signalsView.show(); else signalsView.hide();
   if (v === "news") { if (nTabCur === "social") socialView.render(); else newsView.render(); }
   if (v === "analysis") { instView.show(); flowsView.show(); sentView.show(); } else { instView.hide(); flowsView.hide(); sentView.hide(); }
@@ -744,26 +757,6 @@ function setView(v) {
   if (v === "radar") radarView.show(); else radarView.hide();
   if (v === "terminal" && S.grid > 1) multiChart.show(); else multiChart.hide();
 }
-// ---------- cột Thanh lý cạnh biểu đồ ----------
-$("liqModel").onchange = () => liqcol.setData(market.bars, $("liqModel").value);
-// chân khung: thanh lý thật 1 giờ qua và cụm ước tính lớn nhất mỗi phía
-let liqFootSig = "";
-function renderLiqFoot() {
-  const el = $("liqFoot"); if (!el || (tiles && tiles.isMin("liqPanel"))) return;
-  const price = market.last ? market.last.p : null, dec = decimalsFor(market.tick || 0.01);
-  const sm = liqSummary(market.liqs || []), rd = liqRead(liqcol.tiers, price);
-  const big = rd && rd.big;
-  const sig = `${Math.round(sm.long)}|${Math.round(sm.short)}|${sm.n}|${rd ? rd.fuel : ""}|${big ? big.price + "|" + big.lev + "|" + big.dist.toFixed(1) : ""}`;
-  if (sig === liqFootSig) return; liqFootSig = sig;
-  // ba dòng như bản phác họa: thanh lý thật 1 giờ, cụm ước tính lớn nhất, nhiên liệu nằm phía nào
-  const fuel = !rd || !rd.fuel ? "" : rd.fuel === "below" ? `<b class="neg">Nhiên liệu nằm dưới giá</b>` : rd.fuel === "above" ? `<b class="pos">Nhiên liệu nằm trên giá</b>` : `<b>Hai phía cân nhau</b>`;
-  const tip = !rd || !rd.fuel ? "" : rd.fuel === "below" ? "Cụm long bị thanh lý nằm dưới giá lớn hơn: giá dễ bị kéo xuống quét" : rd.fuel === "above" ? "Cụm short bị thanh lý nằm trên giá lớn hơn: giá dễ bị kéo lên quét" : "Tiền thanh lý ước tính hai phía gần bằng nhau";
-  el.innerHTML = `<div data-g="liquidation">1 giờ <span class="muted">long</span> <b class="neg">${fmtUsd(sm.long)}</b> · <span class="muted">short</span> <b class="pos">${fmtUsd(sm.short)}</b></div>` +
-    (big ? `<div data-g="liq-col">Cụm lớn nhất <b>${big.price.toFixed(dec)}</b> ${big.side}${big.lev ? " " + big.lev + "x" : ""} <span class="muted">· cách ${big.dist.toFixed(1).replace(".", ",")}%</span></div>` : "") +
-    (fuel ? `<div data-tip="${tip}">${fuel}</div>` : "");
-}
-setInterval(() => { if (S.view === "terminal" && !document.hidden) { renderLiqFoot(); if (market.last) liqcol.dirty = true; } }, 1000);
-
 // ---------- lưới 1/2/4/6 biểu đồ trong khung Biểu đồ ----------
 function setGrid(n) {
   n = [1, 2, 4, 6].includes(+n) ? +n : 1; S.grid = n; persist();
@@ -771,7 +764,6 @@ function setGrid(n) {
   const one = n === 1;
   if (!one && RP.on) replayStop();
   $("chartBody").hidden = !one; $("mcRoot").hidden = one; $("chartHint").hidden = !one; $("toolRail").hidden = !one;
-  liqcol.dirty = true;
   if (one) { multiChart.hide(); flow.dirty = true; }
   else if (S.view === "terminal") { multiChart.setCount(n); multiChart.show(); }
   else multiChart.setCount(n);
@@ -785,7 +777,7 @@ $("exchange").onchange = () => { S.ex = $("exchange").value; loadSymbols(); load
 $("symbol").addEventListener("change", () => { const v = $("symbol").value.trim().toUpperCase(); if (v && v !== S.symbol) { S.symbol = v; load(); if (S.view === "signals") signalsView.show(); } });
 $("symbol").addEventListener("keydown", e => { if (e.key === "Enter") $("symbol").blur(); });
 // khung thời gian: một ô, bấm vào thì thả danh sách các khung
-const IV_QUICK = ["1m", "5m", "15m", "1h", "4h"].filter(i => INTERVALS[i]); // các khung hay dùng đặt sẵn trên ribbon, khung khác trong ▾
+const IV_QUICK = ["1m", "5m", "15m", "1h", "4h"].filter(i => INTERVALS[i]); // các khung hay dùng đặt sẵn trên thanh trên cùng, khung khác trong "Khác"
 const ivPaint = () => { $("ivBtn").innerHTML = `${IV_QUICK.includes(S.interval) ? "Khác" : S.interval} <small>▾</small>`; $("ivBtn").classList.toggle("on", !IV_QUICK.includes(S.interval)); for (const x of $("intervals").children) x.classList.toggle("on", x.dataset.i === S.interval); for (const x of $("ivSeg").children) x.classList.toggle("on", x.dataset.i === S.interval); };
 $("intervals").innerHTML = Object.keys(INTERVALS).map(i => `<button data-i="${i}">${i}</button>`).join("");
 $("ivSeg").innerHTML = IV_QUICK.map(i => `<button data-i="${i}">${i}</button>`).join("");
@@ -813,58 +805,37 @@ $("gearHealth").onclick = () => { gearClose(); setView("health"); };
 $("gearBackup").onclick = () => { gearClose(); setView("health"); const c = $("backupCard"); if (c) c.scrollIntoView({ block: "start", behavior: "smooth" }); };
 $("views").onclick = e => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); };
 const alertDD = $("alertBtn").parentElement, gearDD = $("gearBtn").parentElement;
-$("layerBtn").onclick = e => { e.stopPropagation(); $("layerBtn").parentElement.classList.toggle("open"); };
+$("layerBtn").onclick = e => { e.stopPropagation(); const d = $("layerBtn").parentElement, was = d.classList.contains("open"); document.querySelectorAll(".dropdown.open").forEach(x => x.classList.remove("open")); if (!was) d.classList.add("open"); };
+$("layerMenu").onclick = e => e.stopPropagation();
 document.addEventListener("click", e => { if (!e.target.closest(".dropdown")) document.querySelectorAll(".dropdown.open").forEach(d => d.classList.remove("open")); });
-// lớp hiển thị: lớp phân tích mặc định tắt hết, bật trong nút Lớp trên ribbon.
-// Phần lõi (vùng lệnh chờ, mất cân bằng, hồ sơ khối lượng, dòng số dưới nến, Depth Of Market) không tính vào số lớp đang bật.
-const CORE_LAYERS = new Set(["stats", "statsFull", "delta", "depth", "walls", "imb", "profile"]);
+// lớp hiển thị: lớp phân tích mặc định tắt hết, bật trong nút Lớp trên thanh bên trái.
+// Phần lõi (vạch lệnh chờ lớn, mất cân bằng, hồ sơ khối lượng, dòng số dưới nến, Depth Of Market) không tính vào số lớp đang bật.
+const CORE_LAYERS = new Set(["stats", "depth", "walls", "imb", "profile"]);
 const LAYER_BOX = {};
 function renderLayerCount() {
   const n = Object.keys(LAYER_BOX).filter(k => !CORE_LAYERS.has(k) && LAYER_BOX[k].checked).length;
   $("layerCount").textContent = n; $("layerCount").classList.toggle("on", n > 0);
 }
-// nút Footprint / Nến / Hồ sơ trên ribbon
+// nút Footprint / Nến / Hồ sơ trên thanh bên trái
 function paintChartBtns() {
   const fp = flow.type === "box"; $("fpBtn").classList.toggle("on", fp); $("candleBtn").classList.toggle("on", !fp);
   $("profBtn").classList.toggle("on", !!(LAYER_BOX.profile && LAYER_BOX.profile.checked));
 }
 
-// ---------- thanh công cụ bên trái biểu đồ: con trỏ, vẽ, order flow ----------
+// ---------- thanh công cụ bên trái: 6 công cụ vẽ ----------
 const draw = new Drawings(); draw.sym = S.symbol; flow.drawings = draw; draw.magnet = false;
-// id, tên (chú thích khi rê chuột), nét vẽ biểu tượng 24×24 hoặc chữ; toggle: bật/tắt chứ không phải công cụ đang cầm
+// id, tên (chú thích khi rê chuột), nét vẽ biểu tượng 24×24 hoặc chữ. Bấm lại công cụ đang cầm (hoặc Esc) để về chữ thập.
 const RAIL = [
-  { id: "cross", name: "Chữ thập: rê chuột xem giá và thời gian, kéo để di chuyển biểu đồ", d: "M12 3v18M3 12h18" },
-  { id: "cursor", name: "Con trỏ thường, không vẽ chữ thập", d: "M6 3l11 10-5 .6 3 6.4-2.4 1-3-6.4L6 18z" },
-  { sep: "Vẽ" },
   { id: "trend", name: "Đường xu hướng: kéo từ điểm đầu tới điểm cuối (hoặc bấm hai điểm)", d: "M4 19L20 5" },
   { id: "line", name: "Đường ngang tại một giá: bấm vào biểu đồ", d: "M3 12h18" },
   { id: "rect", name: "Hình chữ nhật: kéo chéo để đánh dấu một vùng giá trong một khoảng thời gian", d: "M4 7h16v10H4z" },
   { id: "vline", name: "Đường dọc tại một thời điểm: bấm vào biểu đồ", d: "M12 3v18M9 6l3-3 3 3" },
-  { id: "fib", name: "Fibonacci: kéo từ đáy lên đỉnh (hoặc đỉnh xuống đáy) để vẽ các mức hồi 23,6% · 38,2% · 50% · 61,8% · 78,6%", txt: "Fib" },
+  { id: "fib", name: "Fibonacci: kéo từ đáy lên đỉnh (hoặc đỉnh xuống đáy) để vẽ các mức hồi 23,6% · 38,2% · 50% · 61,8% · 78,6%", txt: "FIB" },
   { id: "measure", name: "Thước đo: kéo để xem chênh giá, %, số nến, thời gian, khối lượng. Không cần chọn công cụ: giữ Alt rồi kéo", d: "M3 17L17 3l4 4L7 21zM7 13l2 2M10 10l2 2M13 7l2 2" },
-  { id: "text", name: "Ghi chú chữ: bấm vào biểu đồ rồi gõ nội dung", txt: "T" },
-  { id: "alert", name: "Cảnh báo giá: bấm vào một mức giá trên biểu đồ để được báo khi giá chạm (cách báo chỉnh trong nút Cảnh báo)", d: "M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" },
-  { id: "magnet", name: "Nam châm: điểm vẽ tự hút vào giá mở, cao, thấp, đóng của nến gần nhất", d: "M6 3v9a6 6 0 0 0 12 0V3h-4v9a2 2 0 0 1-4 0V3zM6 7h4M14 7h4", toggle: true },
-  { sep: "Order flow" },
-  { id: "range", name: "Σ Hồ sơ khối lượng một vùng: kéo ngang trên biểu đồ để chọn các nến (chuột phải lên vùng để xoá). Không cần chọn công cụ: giữ Shift rồi kéo", txt: "Σ", toggle: true },
-  { id: "delta", name: "Δ Thêm dòng Delta và Delta cộng dồn dưới mỗi nến", txt: "Δ", toggle: true },
-  { id: "avwap", name: "VWAP neo: bấm vào một nến để vẽ VWAP tính từ nến đó tới hiện tại", d: "M12 3v4M8 7h8M12 7v13M5 14a7 7 0 0 0 14 0" },
-  { id: "cluster", name: "Tìm cụm khối lượng lớn bất thường trong footprint (ngưỡng chỉnh ở nút Cụm KL trên ribbon)", d: "M4 4h7v7H4zM13 13h7v7h-7zM13 4h7v7h-7z", toggle: true },
-  { id: "imb", name: "Mất cân bằng xếp chồng ≥ 3 tầng: vạch nét đứt kéo sang phải tới khi giá quay lại test", txt: "≋", toggle: true },
-  { sep: "" },
-  { id: "clear", name: "Xoá mọi hình đã vẽ của mã này", d: "M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6" },
 ];
 let tool = "cross";
-function railOn(id) {
-  if (id === "magnet") return !!draw.magnet;
-  if (id === "delta") return !!(LAYER_BOX.statsFull && LAYER_BOX.statsFull.checked);
-  if (id === "imb") return !!(LAYER_BOX.imb && LAYER_BOX.imb.checked);
-  if (id === "cluster") return CL.on;
-  if (id === "range") return flow.selecting;
-  return tool === id;
-}
 function renderRail() {
-  $("toolRail").innerHTML = RAIL.map(r => r.sep != null ? `<div class="rsep">${esc(r.sep)}</div>` : `<button class="rt${railOn(r.id) ? " on" : ""}${r.id === "clear" ? " rclear" : ""}" data-rl="${r.id}" aria-pressed="${railOn(r.id)}" aria-label="${esc(r.name)}" data-tip="${esc(r.name)}">${r.txt ? `<b>${esc(r.txt)}</b>` : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${r.d}"/></svg>`}</button>`).join("");
+  $("toolRail").innerHTML = RAIL.map(r => `<button class="rt${tool === r.id ? " on" : ""}" data-rl="${r.id}" aria-pressed="${tool === r.id}" aria-label="${esc(r.name)}" data-tip="${esc(r.name)}">${r.txt ? `<b>${esc(r.txt)}</b>` : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${r.d}"/></svg>`}</button>`).join("");
   renderLayerCount();
 }
 function railToast(text) {
@@ -874,7 +845,6 @@ function railToast(text) {
 const TOOL_HINT = {
   trend: "Kéo từ điểm đầu tới điểm cuối của đường xu hướng", line: "Bấm vào mức giá cần kẻ đường ngang", rect: "Kéo chéo để vẽ hình chữ nhật",
   vline: "Bấm vào thời điểm cần kẻ đường dọc", fib: "Kéo từ đáy lên đỉnh (hoặc đỉnh xuống đáy) để vẽ Fibonacci", measure: "Kéo để đo. Lần sau chỉ cần giữ Alt rồi kéo",
-  text: "Bấm vào chỗ cần ghi chú", alert: "Bấm vào mức giá cần cảnh báo", avwap: "Bấm vào nến làm điểm neo VWAP",
 };
 function setTool(t) {
   tool = t || "cross"; draw.pending = null; draw.preview = null;
@@ -886,19 +856,13 @@ function setTool(t) {
 $("toolRail").onclick = e => {
   const b = e.target.closest("[data-rl]"); if (!b) return;
   const id = b.dataset.rl;
-  if (id === "magnet") { draw.magnet = !draw.magnet; railToast(draw.magnet ? "Nam châm bật: điểm vẽ hút vào giá mở, cao, thấp, đóng của nến" : "Nam châm tắt"); renderRail(); return; }
-  if (id === "delta" || id === "imb") {
-    const cb = LAYER_BOX[id === "delta" ? "statsFull" : "imb"]; cb.checked = !cb.checked; cb.onchange();
-    railToast(id === "delta" ? (cb.checked ? "Đã thêm dòng Delta và Delta cộng dồn dưới nến" : "Đã bỏ dòng Delta dưới nến") : (cb.checked ? "Đã bật mất cân bằng xếp chồng" : "Đã tắt mất cân bằng xếp chồng")); return;
-  }
-  if (id === "cluster") { $("clOn").checked = !$("clOn").checked; clUpdate(); railToast(CL.on ? "Đang tìm cụm khối lượng lớn bất thường (đổi ngưỡng ở nút Cụm KL trên ribbon)" : "Đã tắt tìm cụm"); return; }
-  if (id === "range") {
-    flow.selecting = !flow.selecting; setTool("cross");
-    railToast(flow.selecting ? "Kéo ngang trên biểu đồ để chọn các nến, hồ sơ khối lượng của vùng hiện ngay. Chuột phải lên vùng để xoá" : "Đã tắt chọn vùng"); return;
-  }
-  if (id === "clear") { if (!draw.list().length) { railToast("Chưa có hình nào để xoá"); return; } if (confirm(`Xoá mọi hình đã vẽ của ${S.symbol}?`)) { draw.clear(); flow.measure = null; flow.dirty = true; } return; }
   if (flow.selecting) flow.selecting = false;
-  setTool(tool === id && id !== "cross" ? "cross" : id);
+  setTool(tool === id ? "cross" : id);
+};
+$("drawClear").onclick = () => {
+  $("fpMenu").parentElement.classList.remove("open");
+  if (!draw.list().length) { railToast("Chưa có hình nào để xoá"); return; }
+  if (confirm(`Xoá mọi hình đã vẽ của ${S.symbol}?`)) { draw.clear(); flow.measure = null; flow.dirty = true; }
 };
 for (const cb of document.querySelectorAll("[data-layer]")) {
   LAYER_BOX[cb.dataset.layer] = cb;
@@ -955,7 +919,7 @@ for (const cb of document.querySelectorAll("[data-layer]")) {
     if (!start) return;
     const s = start; start = null; const P = at(e);
     if (Math.hypot(P.x - s.x, P.y - s.y) > 4) { finish(s.type, s.a, P); return; }
-    if (s.alt) { flow.measure = null; flow.dirty = true; if (flow.ol && flow.ol.onPlace) flow.ol.onPlace(flow.ol.snap(flow.pAt(s.y))); return; } // Alt + bấm (không kéo): đặt nhanh lệnh limit như trước
+    if (s.alt) { flow.measure = null; flow.dirty = true; return; } // Alt + bấm mà không kéo: không làm gì
     draw.pending = { type: s.type, a: s.a }; // bấm một lần: chờ bấm điểm thứ hai
     railToast("Bấm điểm thứ hai trên biểu đồ · Esc để huỷ");
   }, true);
@@ -969,9 +933,9 @@ $("layersOff").onclick = () => { for (const [k, cb] of Object.entries(LAYER_BOX)
 $("rowSize").onchange = () => { flow.rowMult = $("rowSize").value; flow.dirty = true; };
 { // chế độ ô và cách tô màu của footprint, nhớ trong phiên
   let fp = {}; try { fp = JSON.parse(sessionStorage.getItem("lailong.fp") || "{}"); } catch { /* bỏ qua */ }
-  if (fp.mode) $("fpMode").value = fp.mode; if (fp.color) $("fpColor").value = fp.color; if (fp.vol) $("volStyle").value = fp.vol;
-  const apply = () => { flow.fpMode = $("fpMode").value; flow.fpColor = $("fpColor").value; flow.volStyle = $("volStyle").value; flow.dirty = true; try { sessionStorage.setItem("lailong.fp", JSON.stringify({ mode: flow.fpMode, color: flow.fpColor, vol: flow.volStyle })); } catch { /* bỏ qua */ } };
-  $("fpMode").onchange = $("fpColor").onchange = $("volStyle").onchange = apply; apply();
+  if (fp.mode) $("fpMode").value = fp.mode; if (fp.color && [...$("fpColor").options].some(o => o.value === fp.color)) $("fpColor").value = fp.color;
+  const apply = () => { flow.fpMode = $("fpMode").value; flow.fpColor = $("fpColor").value; flow.dirty = true; try { sessionStorage.setItem("lailong.fp", JSON.stringify({ mode: flow.fpMode, color: flow.fpColor })); } catch { /* bỏ qua */ } };
+  $("fpMode").onchange = $("fpColor").onchange = apply; apply();
 }
 $("domMult").onchange = () => dom.setMult(+$("domMult").value);
 $("domCenter").onclick = () => dom.recenter();
@@ -979,15 +943,15 @@ $("fullscreenBtn").onclick = () => { if (document.fullscreenElement) document.ex
 
 // ---------- công cụ order flow ----------
 $("paneMode").onchange = () => { flow.pane = $("paneMode").value; if (flow.pane === "groups") recomputePrints(); flow.dirty = true; };
-$("clusterBtn").onclick = e => { e.stopPropagation(); $("clusterBtn").parentElement.classList.toggle("open"); };
-const clUpdate = () => { CL.on = $("clOn").checked; CL.metric = $("clMetric").value; CL.top = +$("clTop").value; CL.min = +$("clMin").value || 0; $("clusterBtn").classList.toggle("on", CL.on); recomputeFlow(); renderRail(); };
+flow.pane = $("paneMode").value;
+const clUpdate = () => { CL.on = $("clOn").checked; CL.metric = $("clMetric").value; CL.top = +$("clTop").value; CL.min = +$("clMin").value || 0; recomputeFlow(); renderLayerCount(); };
 for (const id of ["clOn", "clMetric", "clTop", "clMin"]) $(id).onchange = clUpdate;
 // cột Smart DOM, nhớ trên trình duyệt
 // điện thoại chưa chọn cột: mặc định ít cột cho vừa màn hình nhỏ (đổi trong "Cột ▾")
 // bản bố trí mới (bậc thang kiểu DOM chuyên nghiệp) dùng khoá mới để ai cũng thấy mặc định mới một lần
 const domColsSaved = (() => {
   try { return JSON.parse(sessionStorage.getItem("lailong.domcols4") || "null"); } catch { return null; }
-})() || (matchMedia("(max-width: 600px)").matches ? ["bid", "ask", "note"] : null);
+})() || (matchMedia("(max-width: 600px)").matches ? ["bid", "ask", "bidChg", "askChg"] : null);
 $("domColMenu").innerHTML = DOM_COLS.filter(c => c.id !== "price").map(c => `<label data-tip="${esc(c.tip)}"><input type="checkbox" data-domcol="${c.id}" ${domColsSaved ? (domColsSaved.includes(c.id) ? "checked" : "") : c.off ? "" : "checked"}> ${esc(c.menu || c.label)}</label>`).join("");
 const domColUpdate = () => { const ids = [...document.querySelectorAll("[data-domcol]")].filter(x => x.checked).map(x => x.dataset.domcol); dom.setColumns(ids); try { sessionStorage.setItem("lailong.domcols4", JSON.stringify(ids)); } catch { /* bỏ qua */ } };
 $("domColMenu").onchange = domColUpdate; domColUpdate();
@@ -997,154 +961,26 @@ $("tapeSmart").onclick = () => { tape.smart = !tape.smart; $("tapeSmart").classL
 $("tapeTabs").onclick = e => { const b = e.target.closest("[data-tt]"); if (!b) return; tape.mode = b.dataset.tt; tape.scroll = 0; for (const x of $("tapeTabs").children) x.classList.toggle("on", x === b); tape.dirty = true; };
 $("tapeWin").onchange = () => { tape.winMin = +$("tapeWin").value; tape.dirty = true; };
 $("tapeMin").oninput = () => { tape.minQ = +$("tapeMin").value || 0; tape.dirty = true; };
-// ---------- lệnh giả lập: khung đặt lệnh và đường lệnh kéo được trên biểu đồ ----------
-const paper = new PaperBroker(() => schedulePaper());
-const pkey = () => `${S.ex}:${S.symbol}`;
-let paperTimer = null, ptType = "market";
-function schedulePaper() { if (!paperTimer) paperTimer = setTimeout(() => { paperTimer = null; renderPaper(); }, 150); }
-function paperTrades(list) {
-  const k = pkey(); if (!paper.openOrders(k).length && !paper.pos(k).qty) return;
-  paper.onTrades(k, list); paper.checkBrackets(k, market.book); schedulePaper();
-}
-const olOpts = plotH => ({
-  tick: () => market.tick, plotH,
-  onDrag: (kind, id, price) => kind === "order" ? paper.modify(id, price, market.book) : paper.setBracket(pkey(), kind, price),
-  onCancel: (kind, id) => kind === "order" ? paper.cancel(id) : paper.setBracket(pkey(), kind, null),
-  onPlace: price => {
-    const qty = +$("ptQty").value, mid = market.book.mid();
-    if (!(qty > 0)) { toast("Nhập khối lượng trong khung Lệnh giả lập trước", true); if (tiles.isMin("orderPanel")) tiles.restore("orderPanel"); return; }
-    const side = mid != null && price > mid ? "sell" : "buy";
-    if (lockBlocks(side, qty)) return;
-    const r = paper.place({ key: pkey(), side, type: "limit", qty, price, lev: +$("ptLev").value }, market.book);
-    if (r.error) toast(r.error, true);
-  },
-});
-flow.ol = new OrderLines(flow, $("flow"), olOpts(L => L.priceH));
-for (const c of [flow]) { const h = c.hitTest.bind(c); c.hitTest = (x, y) => c.ol.hitTest(x, y) || h(x, y); }
-function renderPaper() {
-  const k = pkey(), pv = paper.positionView(k), orders = paper.openOrders(k), a = paper.account(), dec = decimalsFor(market.tick || 0.01);
-  flow.ol.set(orders, pv);
-  dom.orders = orders; dom.posQty = pv.qty; dom.posAvg = pv.qty ? pv.avg : null; dom.dirty = true;
-  $("domOrdN").textContent = orders.length;
-  $("domFoot").innerHTML = `<span class="dfpos">${pv.qty ? `Vị thế <b class="${pv.qty > 0 ? "pos" : "neg"}">${pv.qty > 0 ? "+" : "−"}${+Math.abs(pv.qty).toFixed(6)} ${esc(coin())}</b> · ${pv.upnl >= 0 ? "lãi" : "lỗ"} <b class="${pv.upnl >= 0 ? "pos" : "neg"}">${pv.upnl >= 0 ? "+" : "−"}${Math.abs(pv.upnl).toFixed(2)} $</b>` : `Chưa có vị thế ${esc(S.symbol)}`}</span><span class="spacer"></span><button class="qt buy" data-q="buy" data-tip="Mua market theo ô KL trên ribbon. Phím B">MUA</button><button class="qt sell" data-q="sell" data-tip="Bán market theo ô KL trên ribbon. Phím S">BÁN</button><button class="qt flat" data-q="flat" data-tip="Đóng toàn bộ vị thế. Phím F"${pv.qty ? "" : " disabled"}>ĐÓNG</button>`;
-  renderDomList(); renderAcctTop();
-  $("ptAcct").textContent = `Vốn ${a.equity.toFixed(2)} · khả dụng ${a.available.toFixed(2)} USDT`;
-  $("rbAcct").innerHTML = `${a.equity.toFixed(0)} USDT` + (pv.qty ? ` · <b class="${pv.qty > 0 ? "pos" : "neg"}">${pv.qty > 0 ? "LONG" : "SHORT"} ${+Math.abs(pv.qty).toFixed(4)}</b> <span class="${pv.upnl >= 0 ? "pos" : "neg"}">${pv.upnl >= 0 ? "+" : ""}${pv.upnl.toFixed(2)}</span>` : "");
-  $("rbFlat").disabled = !pv.qty;
-  $("ptPos").innerHTML = pv.qty ? `<div class="ptpos"><b class="${pv.qty > 0 ? "up" : "dn"}">${pv.qty > 0 ? "LONG" : "SHORT"} ${+Math.abs(pv.qty).toFixed(6)} ${esc(coin())}</b> @ ${pv.avg.toFixed(dec)} · x${pv.lev}<br>
-    Lãi/lỗ <b class="${pv.upnl >= 0 ? "up" : "dn"}">${pv.upnl >= 0 ? "+" : ""}${pv.upnl.toFixed(2)} USDT</b> · thanh lý ${pv.liq.toFixed(dec)}<br>
-    SL ${pv.sl != null ? pv.sl.toFixed(dec) : "–"} · TP ${pv.tp != null ? pv.tp.toFixed(dec) : "–"}
-    <div class="ptrow"><button data-pa="close">Đóng vị thế</button><button data-pa="sl" data-tip="Đặt SL theo ô SL ở trên">Đặt SL</button><button data-pa="tp" data-tip="Đặt TP theo ô TP ở trên">Đặt TP</button></div></div>` : `<div class="muted">Chưa có vị thế ${esc(S.symbol)}.</div>`;
-  $("ptOrders").innerHTML = orders.length ? `<table><tbody>${orders.map(o => `<tr><td class="${o.side === "buy" ? "pos" : "neg"}">${o.side === "buy" ? "MUA" : "BÁN"}</td><td>${+o.remaining.toFixed(6)}</td><td>@ ${o.price.toFixed(dec)}</td><td><button class="icon" data-pc="${o.id}" data-tip="Huỷ lệnh">✕</button></td></tr>`).join("")}</tbody></table>` : "";
-  const fills = paper.s.fills.filter(f => f.key === k).slice(0, 5);
-  $("ptFills").innerHTML = fills.length ? `<div class="mh">Khớp gần đây</div><table><tbody>${fills.map(f => `<tr><td>${fmtTime(f.t)}</td><td class="${f.side === "buy" ? "pos" : "neg"}">${f.side === "buy" ? "MUA" : "BÁN"}</td><td>${+f.qty.toFixed(6)}</td><td>@ ${f.price.toFixed(dec)}</td></tr>`).join("")}</tbody></table>` : "";
-}
-$("ptType").onclick = e => { const b = e.target.closest("[data-pt]"); if (!b) return; ptType = b.dataset.pt; for (const x of $("ptType").children) x.classList.toggle("on", x === b); $("ptPriceBox").hidden = ptType !== "limit"; if (ptType === "limit" && !$("ptPrice").value) { const m = market.book.mid(); if (m != null) $("ptPrice").value = (Math.round(m / (market.tick || 1)) * (market.tick || 1)).toFixed(decimalsFor(market.tick || 0.01)); } };
-const ptPlace = side => {
-  if (lockBlocks(side, +$("ptQty").value)) return;
-  const r = paper.place({ key: pkey(), side, type: ptType, qty: +$("ptQty").value, price: +$("ptPrice").value, lev: +$("ptLev").value, sl: $("ptSl").value || null, tp: $("ptTp").value || null }, market.book);
-  if (r.error) toast(r.error, true);
-};
-$("ptBuy").onclick = () => ptPlace("buy"); $("ptSell").onclick = () => ptPlace("sell");
-$("ptReset").onclick = () => { if (confirm("Đặt lại tài khoản giả lập về 10.000 USDT? Mọi lệnh và vị thế giả lập sẽ bị xoá.")) paper.reset(); };
-$("ptOrders").onclick = e => { const b = e.target.closest("[data-pc]"); if (b) paper.cancel(b.dataset.pc); };
-$("ptPos").onclick = e => {
-  const b = e.target.closest("[data-pa]"); if (!b) return;
-  if (b.dataset.pa === "close") paper.closePosition(pkey(), market.book);
-  else { const v = +$(b.dataset.pa === "sl" ? "ptSl" : "ptTp").value; if (v > 0) paper.setBracket(pkey(), b.dataset.pa, v); else toast("Nhập giá vào ô " + b.dataset.pa.toUpperCase(), true); }
-};
-setInterval(() => { const k = pkey(); if (paper.openOrders(k).length) paper.onBook(k, market.book); if (paper.pos(k).qty) { const m = market.book.mid(); if (m != null) paper.pos(k).mark = market.last ? market.last.p : m; schedulePaper(); } }, 1000);
-// giao dịch nhanh trên ribbon: lệnh market theo ô KL, phím B / S / F khi không gõ trong ô nhập
-const quick = side => {
-  const qty = +$("rbQty").value || +$("ptQty").value;
-  if (!(qty > 0)) { toast("Nhập khối lượng ở ô KL cạnh nút MUA / BÁN", true); $("rbQty").focus(); return; }
-  if (lockBlocks(side, qty)) return;
-  const r = paper.place({ key: pkey(), side, type: "market", qty, lev: +$("ptLev").value || 10 }, market.book);
-  if (r.error) toast(r.error, true); else toast(`${side === "buy" ? "MUA" : "BÁN"} market ${qty} ${coin()} (giả lập)`);
-};
-const quickFlat = () => { if (!paper.pos(pkey()).qty) { toast("Chưa có vị thế để đóng"); return; } paper.closePosition(pkey(), market.book); toast("Đã đóng vị thế (giả lập)"); };
-$("rbBuy").onclick = () => quick("buy"); $("rbSell").onclick = () => quick("sell"); $("rbFlat").onclick = quickFlat;
-if (!$("rbQty").value && $("ptQty").value) $("rbQty").value = $("ptQty").value;
-$("rbQty").onchange = () => { if (+$("rbQty").value > 0) $("ptQty").value = $("rbQty").value; };
-document.addEventListener("keydown", e => {
-  if (S.view !== "terminal" || e.ctrlKey || e.metaKey || e.altKey || e.target.closest("input, select, textarea, [contenteditable]")) return;
-  const k = e.key.toLowerCase();
-  if (k === "b") quick("buy"); else if (k === "s") quick("sell"); else if (k === "f") quickFlat(); else return;
-  e.preventDefault();
-});
-renderPaper();
-
-// bố cục lưới ghép: kéo tiêu đề khung để đổi chỗ, nút — để thu nhỏ, menu Bố cục để lưu / về mặc định
-// mặc định: biểu đồ, cột Thanh lý sát bên, bên phải là Smart DOM trên Smart Tape. Nhật ký tường và lệnh giả lập thu nhỏ sẵn.
+// bố cục lưới ghép: kéo tiêu đề khung để đổi chỗ. Nút ─ thu nhỏ, ✕ đóng: khung thành nút nhỏ "Đã thu nhỏ" trên thanh trên cùng.
+// mặc định: biểu đồ bên trái, cột phải là Smart DOM trên Smart Tape; Nhật ký tường thu nhỏ sẵn.
 let tiles = null;
-// độ rộng mặc định theo màn hình: cột Thanh lý khoảng 12%, cột Smart DOM + Smart Tape khoảng 27% bề ngang
-tiles = new Layout(ws, ["mainPanel", "liqPanel", "domPanel", "tapePanel", "wallPanel", "orderPanel"], {
-  key: "lailong.layout.v5", dock: false,
-  tree: () => ({ dir: "row", flex: 0, kids: ["mainPanel", "liqPanel", { dir: "col", flex: 0, kids: ["domPanel", "tapePanel", "wallPanel", "orderPanel"], size: [0, Math.max(300, Math.round(innerHeight * 0.36)), 260, 380] }], size: [0, Math.max(170, Math.round(innerWidth * 0.12)), Math.max(380, Math.round(innerWidth * 0.27))] }),
-  hiddenDefault: ["wallPanel", "orderPanel"],
-  onChange: () => { if (!tiles) return; redrawAll(); paintPanelBtns(); paintPins(); },
+const railW = () => { const r = $("sideRail"); return r && getComputedStyle(r).position === "absolute" ? r.offsetWidth + 2 : 0; };
+tiles = new Layout(ws, ["mainPanel", "domPanel", "tapePanel", "wallPanel"], {
+  key: "lailong.layout.v6", dock: false, inset: () => ({ left: railW() }),
+  tree: () => ({ dir: "row", flex: 0, kids: ["mainPanel", { dir: "col", flex: 0, kids: ["domPanel", "tapePanel", "wallPanel"], size: [0, Math.max(300, Math.round(innerHeight * 0.38)), 260] }], size: [0, Math.max(380, Math.round(innerWidth * 0.27))] }),
+  hiddenDefault: ["wallPanel"],
+  onChange: () => { if (!tiles) return; redrawAll(); renderMinDock(); },
 });
-// nút Khung trên ribbon: bật / tắt từng khung
-function paintPanelBtns() { for (const b of $("panelBtns").children) b.classList.toggle("on", !tiles.isMin(b.dataset.tg)); }
-$("panelBtns").onclick = e => { const b = e.target.closest("[data-tg]"); if (!b) return; const id = b.dataset.tg; if (tiles.isMin(id)) tiles.restore(id); else tiles.minimize(id); paintPanelBtns(); };
-// các trang làm việc trên thanh trên cùng: hai trang dựng sẵn và các bố cục bro tự lưu ("+")
-let pageCur = ""; try { pageCur = sessionStorage.getItem("lailong.page") || ""; } catch { /* bỏ qua */ }
-const PAGES = [["", "Trang 1 · Order flow", "Một biểu đồ footprint, cột Thanh lý, Smart DOM và Smart Tape"], ["@g4", "Trang 2 · 4 biểu đồ", "Bốn biểu đồ, mỗi ô một mã và khung riêng, cạnh Smart DOM và Smart Tape"]];
-function renderPages() {
-  if (!tiles) return;
-  const pr = Object.keys(tiles.presets()), term = S.view === "terminal";
-  if (pageCur && !pageCur.startsWith("@") && !pr.includes(pageCur)) pageCur = "";
-  $("pages").innerHTML = PAGES.map(([id, name, tip]) => `<button class="pg${term && pageCur === id ? " on" : ""}" data-pg="${id}" data-tip="${esc(tip)}">${esc(name)}</button>`).join("") +
-    pr.map((n, i) => `<button class="pg${term && n === pageCur ? " on" : ""}" data-pg="${esc(n)}">Trang ${i + 3} · ${esc(n)}<i data-pgx="${esc(n)}" data-tip="Xoá trang này">×</i></button>`).join("");
+// nút nhỏ trên thanh trên cùng cho các khung đang thu nhỏ / đã đóng: bấm để mở lại đúng chỗ cũ
+function renderMinDock() {
+  const el = $("minDock"), ids = tiles.ids.filter(id => tiles.isMin(id)), show = ids.length && S.view === "terminal";
+  el.hidden = !show; if (!show) return;
+  el.innerHTML = `<span class="md-l">Đã thu nhỏ:</span>` + ids.map(id => `<button data-restore="${id}" data-tip="Mở lại khung ${esc(PANEL_NAMES[id] || id)}">▣ ${esc(PANEL_NAMES[id] || id)}</button>`).join("");
 }
-function openPage(id) {
-  if (id === pageCur) { if (S.view !== "terminal") setView("terminal"); return; } // quay lại trang đang mở: giữ nguyên bố cục bro đã chỉnh
-  pageCur = id; try { sessionStorage.setItem("lailong.page", pageCur); } catch { /* bỏ qua */ }
-  if (S.view !== "terminal") setView("terminal");
-  if (id === "") { tiles.reset(); setGrid(1); }
-  else if (id === "@g4") { tiles.reset(); tiles.minimize("liqPanel"); setGrid(4); } // cột Thanh lý đi cùng biểu đồ 1 ô
-  else { const x = tiles.loadPreset(id); setGrid(x && x.grid ? x.grid : 1); }
-  renderPages(); paintPanelBtns(); paintPins();
-}
-$("pages").onclick = e => {
-  const x = e.target.closest("[data-pgx]");
-  if (x) { e.stopPropagation(); if (confirm(`Xoá trang "${x.dataset.pgx}"?`)) { tiles.deletePreset(x.dataset.pgx); if (pageCur === x.dataset.pgx) pageCur = ""; renderPages(); } return; }
-  const b = e.target.closest("[data-pg]"); if (b) openPage(b.dataset.pg);
-};
-$("pageAdd").onclick = () => {
-  const name = (prompt("Đặt tên trang làm việc (ví dụ: Scalp, Swing). Trang lưu các khung đang mở, vị trí và số biểu đồ") || "").trim().slice(0, 24); if (!name) return;
-  if (S.view !== "terminal") setView("terminal");
-  tiles.savePreset(name, { grid: S.grid }); pageCur = name; try { sessionStorage.setItem("lailong.page", pageCur); } catch { /* bỏ qua */ }
-  renderPages(); toast(`Đã lưu trang "${name}"`);
-};
-// ghim khung: không kéo đổi chỗ được
-function paintPins() { if (!tiles) return; for (const b of document.querySelectorAll("[data-pin]")) { const on = tiles.isPinned(b.dataset.pin); b.classList.toggle("on", on); b.closest(".panel").classList.toggle("pinned", on); } }
-for (const b of document.querySelectorAll("[data-pin]")) b.onclick = e => { e.stopPropagation(); const on = tiles.togglePin(b.dataset.pin); paintPins(); toast(on ? `Đã ghim khung ${PANEL_NAMES[b.dataset.pin]}: không kéo đổi chỗ được` : `Đã bỏ ghim khung ${PANEL_NAMES[b.dataset.pin]}`); };
+$("minDock").onclick = e => { const b = e.target.closest("[data-restore]"); if (b) { tiles.restore(b.dataset.restore); mShow(b.dataset.restore); } };
 // nút ⚙ trên tiêu đề khung: mở menu cài đặt của khung đó
 for (const b of document.querySelectorAll(".pset")) b.onclick = e => { e.stopPropagation(); const d = b.parentElement, was = d.classList.contains("open"); document.querySelectorAll(".dropdown.open").forEach(x => x.classList.remove("open")); if (!was) d.classList.add("open"); };
-renderPages(); paintPanelBtns();
 for (const b of document.querySelectorAll("[data-min]")) b.onclick = e => { e.stopPropagation(); setMax(null); tiles.minimize(b.dataset.min); };
-function renderLayoutMenu() {
-  const pr = Object.keys(tiles.presets()), mins = tiles.ids.filter(id => tiles.isMin(id));
-  $("layoutMenu").innerHTML = `<div class="mh">Bố cục</div>
-    <div class="li"><button data-lay="reset">↺ Về mặc định</button></div>
-    <div class="li"><button data-lay="save">＋ Lưu bố cục đang dùng…</button></div>
-    ${pr.length ? `<div class="mh">Đã lưu</div>` + pr.map(n => `<div class="li"><button data-lay="load" data-n="${esc(n)}">${esc(n)}</button><button class="icon" data-lay="del" data-n="${esc(n)}" data-tip="Xoá bố cục này">✕</button></div>`).join("") : ""}
-    ${mins.length ? `<div class="mh">Đang thu nhỏ</div>` + mins.map(id => `<div class="li"><button data-lay="restore" data-n="${id}">▣ ${PANEL_NAMES[id]}</button></div>`).join("") : ""}
-    <div class="hint">Kéo tiêu đề một khung thả lên khung khác: mép trái, phải, trên, dưới để ghép cạnh; giữa để đổi chỗ. Kéo đường chia để đổi kích thước. Nút — thu nhỏ, ⤢ phóng to.</div>`;
-}
-$("layoutBtn").onclick = e => { e.stopPropagation(); const d = $("layoutBtn").parentElement; d.classList.toggle("open"); if (d.classList.contains("open")) renderLayoutMenu(); };
-$("layoutMenu").onclick = e => {
-  const b = e.target.closest("[data-lay]"); if (!b) return;
-  e.stopPropagation();
-  const a = b.dataset.lay, n = b.dataset.n;
-  if (a === "reset") tiles.reset();
-  else if (a === "save") { const name = (prompt("Đặt tên cho bố cục này (ví dụ: Scalp, Swing)") || "").trim().slice(0, 24); if (name) { tiles.savePreset(name, { grid: S.grid }); pageCur = name; } }
-  else if (a === "load") { const x = tiles.loadPreset(n); pageCur = n; setGrid(x && x.grid ? x.grid : 1); }
-  else if (a === "del") { tiles.deletePreset(n); if (pageCur === n) pageCur = ""; }
-  else if (a === "restore") tiles.restore(n);
-  renderLayoutMenu(); renderPages(); paintPanelBtns();
-};
 // điện thoại: thanh dưới cùng chọn khung đang xem
 const mShow = id => {
   for (const b of $("mnav").children) b.classList.toggle("on", b.dataset.panel === id);
@@ -1162,37 +998,15 @@ addEventListener("appinstalled", () => { installEv = null; installShow(false); }
 $("installBtn").onclick = async () => { gearClose(); if (!installEv) return; installEv.prompt(); await installEv.userChoice.catch(() => {}); installEv = null; installShow(false); };
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 $("tapeGroup").onchange = () => { tape.group = $("tapeGroup").value; tape.dirty = true; };
-// ---------- nút Footprint / Nến / Hồ sơ trên ribbon ----------
+// ---------- nút Footprint / Nến / Hồ sơ trên thanh bên trái ----------
 const chartSetDD = $("fpMenu").parentElement;
 $("fpBtn").onclick = e => { e.stopPropagation(); if (flow.type === "box") { const was = chartSetDD.classList.contains("open"); document.querySelectorAll(".dropdown.open").forEach(x => x.classList.remove("open")); if (!was) chartSetDD.classList.add("open"); } else { flow.setType("box"); paintChartBtns(); } };
 $("candleBtn").onclick = () => { flow.setType("candle"); paintChartBtns(); };
 $("profBtn").onclick = () => { const cb = LAYER_BOX.profile; cb.checked = !cb.checked; cb.onchange(); };
 $("fpMenu").onclick = e => e.stopPropagation();
-$("symAdd").onclick = () => { const el = $("symbol"); el.focus(); el.select(); toast("Gõ mã mới vào ô Mã trên ribbon rồi Enter: mã đó mở thành một thẻ mới"); };
+$("symAdd").onclick = () => { const el = $("symbol"); el.focus(); el.select(); toast("Gõ mã mới vào ô mã trên thanh trên cùng rồi Enter: mã đó mở thành một thẻ mới"); };
 
-// ---------- Smart DOM: tab Sổ lệnh / Lệnh chờ / Vị thế, dòng chip, bấm để đặt lệnh ----------
-$("domTabs").onclick = e => { const b = e.target.closest("[data-dt]"); if (!b) return; domTab = b.dataset.dt; for (const x of $("domTabs").children) x.classList.toggle("on", x === b); $("domList").hidden = domTab === "book"; renderDomList(); };
-function renderDomList() {
-  if (domTab === "book") return;
-  const k = pkey(), dec = decimalsFor(market.tick || 0.01), orders = paper.openOrders(k), pv = paper.positionView(k);
-  $("domList").innerHTML = domTab === "orders"
-    ? (orders.length ? `<table><thead><tr><th>Phía</th><th>Giá</th><th>KL</th><th>Còn chờ</th><th></th></tr></thead><tbody>${orders.map(o => `<tr><td class="${o.side === "buy" ? "pos" : "neg"}">${o.side === "buy" ? "MUA" : "BÁN"}</td><td>${o.price.toFixed(dec)}</td><td>${+o.qty.toFixed(6)}</td><td>${+o.remaining.toFixed(6)}</td><td><button class="icon" data-pc="${o.id}" data-tip="Huỷ lệnh">✕</button></td></tr>`).join("")}</tbody></table><div class="li"><button data-pcall>Huỷ tất cả lệnh chờ ${esc(S.symbol)}</button></div>` : `<div class="empty">Chưa có lệnh chờ ${esc(S.symbol)}. Ở tab Sổ lệnh, bấm vào cột Bid để đặt chờ mua, cột Ask để đặt chờ bán.</div>`)
-    : (pv.qty ? `<table><tbody><tr><td>Vị thế</td><td class="${pv.qty > 0 ? "pos" : "neg"}"><b>${pv.qty > 0 ? "LONG" : "SHORT"} ${+Math.abs(pv.qty).toFixed(6)} ${esc(coin())}</b></td></tr><tr><td>Giá vào</td><td>${pv.avg.toFixed(dec)} · x${pv.lev}</td></tr><tr><td>Lãi / lỗ</td><td class="${pv.upnl >= 0 ? "pos" : "neg"}">${pv.upnl >= 0 ? "+" : ""}${pv.upnl.toFixed(2)} USDT</td></tr><tr><td>Giá thanh lý</td><td>${pv.liq.toFixed(dec)}</td></tr><tr><td>SL · TP</td><td>${pv.sl != null ? pv.sl.toFixed(dec) : "–"} · ${pv.tp != null ? pv.tp.toFixed(dec) : "–"}</td></tr></tbody></table><p class="note">Kéo đường SL, TP trên biểu đồ để sửa. Đóng vị thế bằng nút ĐÓNG bên dưới hoặc phím F.</p>` : `<div class="empty">Chưa có vị thế ${esc(S.symbol)}.</div>`);
-}
-$("domList").onclick = e => { const b = e.target.closest("[data-pc]"); if (b) paper.cancel(b.dataset.pc); if (e.target.closest("[data-pcall]")) paper.cancelAll(pkey()); };
-$("domFoot").onclick = e => { const b = e.target.closest("[data-q]"); if (!b || b.disabled) return; if (b.dataset.q === "flat") quickFlat(); else quick(b.dataset.q); };
-dom.onTrade = (side, price) => {
-  const qty = +$("rbQty").value || +$("ptQty").value, dec = decimalsFor(dom.tick || market.tick || 0.01);
-  if (!(qty > 0)) { toast("Nhập khối lượng ở ô KL cạnh nút MUA / BÁN trên ribbon trước", true); $("rbQty").focus(); return; }
-  if (lockBlocks(side, qty)) return;
-  const r = paper.place({ key: pkey(), side, type: "limit", qty, price, lev: +$("ptLev").value || 10 }, market.book);
-  if (r.error) toast(r.error, true); else toast(`Đặt chờ ${side === "buy" ? "MUA" : "BÁN"} ${qty} ${coin()} tại ${price.toFixed(dec)} (giả lập)`);
-};
-dom.onCancel = (price, step) => {
-  const os = paper.openOrders(pkey()).filter(o => Math.abs(o.price - price) < step / 2 + 1e-12);
-  if (!os.length) { toast("Không có lệnh chờ nào ở dòng giá này"); return; }
-  for (const o of os) paper.cancel(o.id); toast(`Đã huỷ ${os.length} lệnh chờ tại ${price.toFixed(decimalsFor(step))}`);
-};
+// ---------- Smart DOM: dòng chip trên cùng ----------
 const MULTS_DOM = [1, 2, 5, 10, 50];
 let domChipSig = "";
 function renderDomChips() {
@@ -1207,15 +1021,6 @@ function renderDomChips() {
 }
 $("domChips").onclick = e => { if (!e.target.closest("[data-dm]")) return; const i = MULTS_DOM.indexOf(dom.mult), m = MULTS_DOM[(i + 1) % MULTS_DOM.length]; $("domMult").value = m; dom.setMult(m); domChipSig = ""; renderDomChips(); };
 $("domMult").addEventListener("change", () => { domChipSig = ""; });
-
-// ---------- tài khoản giả lập trên thanh trên cùng: số dư và lãi / lỗ hôm nay ----------
-function renderAcctTop() {
-  const a = paper.account(), d = new Date(), day = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-  if (!paper.s.day || paper.s.day.d !== day) { paper.s.day = { d: day, eq: a.equity }; paper.save(); }
-  const ch = a.equity - paper.s.day.eq;
-  $("acctTop").innerHTML = `Giả lập <b>${Math.round(a.equity).toLocaleString("vi-VN")} USDT</b> · <b class="${ch >= 0 ? "pos" : "neg"}">${ch >= 0 ? "+" : "−"}${Math.abs(ch).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} $</b> hôm nay`;
-}
-renderAcctTop();
 
 // ---------- thanh trạng thái dưới cùng: kết nối, độ trễ, nhịp sổ lệnh, số lệnh khớp, giờ Việt Nam ----------
 const tapeChips = () => {
@@ -1237,7 +1042,7 @@ setInterval(() => {
 }, 1000);
 
 // ---------- Phát lại: chạy lại từng nến từ một điểm trong quá khứ (sổ lệnh và băng lệnh vẫn trực tiếp) ----------
-function replayApply() { flow.bars = market.bars.slice(0, RP.end + 1); flow.refresh(); flow.replay = true; flow.dirty = true; liqcol.dirty = true; renderReplayBar(); }
+function replayApply() { flow.bars = market.bars.slice(0, RP.end + 1); flow.refresh(); flow.replay = true; flow.dirty = true; renderReplayBar(); }
 function replayStart() {
   if (S.grid !== 1) setGrid(1);
   if (market.bars.length < 30) { toast("Chưa đủ nến để phát lại", true); return; }
@@ -1274,7 +1079,7 @@ $("flow").addEventListener("mousedown", e => { // đang chọn điểm phát l�
   RP.end = Math.max(20, Math.min(market.bars.length - 2, flow.iAt(x))); RP.picking = false; replayApply(); railToast("Bấm ▶ để chạy, ⏭ để đi từng nến");
 }, true);
 
-renderRail(); paintChartBtns(); paintPins(); setGrid(S.grid); setView(S.view);
+renderRail(); paintChartBtns(); setGrid(S.grid); setView(S.view); renderMinDock();
 loadSymbols(); load();
-window.lailong = { market, flow, dom, tape, walls, liqcol, S, alpha, paper, alerts, tiles, RP, draw }; // tiện kiểm tra trong DevTools
+window.lailong = { market, flow, dom, tape, walls, S, alpha, alerts, tiles, RP, draw }; // tiện kiểm tra trong DevTools
 setInterval(() => tickFresh(), 1000); // chữ "N trước" và trạng thái đỏ của các nhãn dữ liệu

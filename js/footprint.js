@@ -15,10 +15,10 @@ export const FP_MODES = {
   bavol: { name: "Mua × Bán + tổng", tip: "Ba cột: bán chủ động, tổng khối lượng, mua chủ động" },
   histo: { name: "Thanh mua/bán", tip: "Thanh ngang trong nến: bên trái là bán chủ động, bên phải là mua chủ động, dài theo khối lượng" },
   profile: { name: "Hồ sơ trong nến", tip: "Hồ sơ khối lượng của riêng từng nến, màu theo delta của dòng; viền vàng là POC của nến" },
-  ratio: { name: "Tỷ lệ chéo", tip: "Tỷ lệ mua chủ động ở dòng này so với bán chủ động ở dòng ngay dưới (đường chéo như ATAS); số lớn là phe đó áp đảo" },
+  ratio: { name: "Tỷ lệ chéo", tip: "Tỷ lệ mua chủ động ở dòng này so với bán chủ động ở dòng ngay dưới (so theo đường chéo); số lớn là phe đó áp đảo" },
 };
 export const FP_COLORS = {
-  side: { name: "Mua/bán (ATAS)", tip: "Ô xanh khi mua chủ động nhiều hơn, đỏ khi bán nhiều hơn; càng đậm càng nhiều khối lượng. Viền trắng là POC của nến" },
+  side: { name: "Mua/bán theo phe", tip: "Ô xanh khi mua chủ động nhiều hơn, đỏ khi bán nhiều hơn; càng đậm càng nhiều khối lượng. Viền trắng là POC của nến" },
   volume: { name: "Theo khối lượng", tip: "Ô càng đậm là khối lượng càng lớn; màu xanh/đỏ theo phe chiếm ưu thế" },
   delta: { name: "Theo delta", tip: "Ô càng đậm là delta của ô càng lớn; xanh là mua áp đảo, đỏ là bán áp đảo" },
   imbalance: { name: "Chỉ mất cân bằng", tip: "Chỉ tô ô có mất cân bằng chéo từ 3 lần trở lên" },

@@ -16,21 +16,27 @@
 <meta name="apple-mobile-web-app-title" content="Lai Long">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/ibm-plex-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts/fonts.css?v=202611142030">
-<link rel="stylesheet" href="css/app.css?v=202611142030">
+<link rel="stylesheet" href="fonts/fonts.css?v=202611150124">
+<link rel="stylesheet" href="css/app.css?v=202611150124">
 </head>
 <body>
 <header class="menubar">
   <div class="brand" data-tip="© 2026 Lai Long Desk. Bảo lưu mọi quyền.">LAI LONG <span>DESK</span></div>
-  <nav class="views ptabs" id="views" aria-label="Trang làm việc">
-    <span class="ptabs-pages" id="pages"></span>
+  <nav class="views ptabs" id="views" aria-label="Mục chính">
+    <button data-view="terminal" data-tip="Footprint, vạch lệnh chờ lớn, Smart DOM và Smart Tape">Orderflow</button>
     <button data-view="news" data-tip="Lịch kinh tế có số thực tế, tin tức cập nhật vài phút một lần, báo động khi chỉ số biến động bất thường">Tin tức</button>
     <button data-view="analysis" data-tip="Xu hướng, động lượng, biến động, hấp thụ, hỗ trợ/kháng cự theo nhiều khung">Phân tích</button>
-    <button class="padd" id="pageAdd" data-tip="Lưu bố cục Terminal đang dùng (các khung, số biểu đồ) thành một trang mới">+</button>
   </nav>
+  <div class="mktbar" id="mktBar">
+    <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off" aria-label="Mã" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm, Enter để mở">
+    <select id="exchange" aria-label="Sàn" data-tip="Sàn lấy dữ liệu. Giả lập: dữ liệu ngẫu nhiên để thử giao diện"></select>
+    <span class="vs"></span>
+    <div class="seg ivseg" id="ivSeg" aria-label="Khung thời gian"></div>
+    <div class="dropdown ivdd"><button id="ivBtn" class="tool ivbtn" aria-label="Khung thời gian khác"></button><div class="menu ivmenu" id="intervals"></div></div>
+  </div>
   <datalist id="symbolList"></datalist>
   <div class="spacer"></div>
-  <div class="acct" id="acctTop" data-g="paper-trading"></div>
+  <div class="mindock" id="minDock" hidden></div>
   <div class="pill evpill" id="evPill" hidden></div>
   <div class="pill" id="connPill" data-tip="Trạng thái kết nối dữ liệu trực tiếp với sàn"><i></i><span>Đang kết nối</span></div>
   <div class="dropdown alertdd">
@@ -82,41 +88,26 @@
   <button id="fullscreenBtn" class="icon" data-tip="Toàn màn hình (Esc để thoát)">⛶</button>
 </header>
 
-<!-- ============ TERMINAL ============ -->
-<div class="ribbon" id="ribbon">
-  <div class="rib">
-    <div class="rg"><div class="row">
-        <label class="field" data-tip="Mã hợp đồng tương lai, ví dụ BTCUSDT. Gõ để tìm">Mã <input id="symbol" list="symbolList" value="BTCUSDT" spellcheck="false" autocomplete="off"></label>
-        <label class="field" data-tip="Sàn lấy dữ liệu. Giả lập: dữ liệu ngẫu nhiên để thử giao diện">Sàn <select id="exchange"></select></label>
-      </div><div class="cap">Mã · Sàn</div></div>
-    <div class="rg"><div class="row">
-        <div class="seg ivseg" id="ivSeg"></div>
-        <div class="dropdown ivdd"><button id="ivBtn" class="tool ivbtn" aria-label="Khung thời gian của mỗi nến"></button><div class="menu ivmenu" id="intervals"></div></div>
-        <span id="cdTerm" class="cdterm" data-tip="Thời gian còn lại tới lúc đóng nến của khung đang xem (giờ sàn). Chuyển màu khi sắp đóng"></span>
-      </div><div class="cap">Khung thời gian</div></div>
-    <div class="rg"><div class="row">
-        <button id="fpBtn" class="rb" data-g="fp-modes" data-tip="Footprint: khối lượng bán chủ động × mua chủ động tại từng mức giá trong mỗi nến. Đang bật thì bấm lần nữa để mở cài đặt ô"><i>▦</i>Footprint</button>
-        <div class="dropdown"><button id="clusterBtn" class="rb" data-g="cluster-search"><i>▮</i>Cụm KL</button>
-          <div class="menu" id="clusterMenu">
-          <label><input type="checkbox" id="clOn"> Bật tìm cụm khối lượng</label>
-          <label class="row">Đo theo <select id="clMetric"><option value="volume">Tổng khối lượng</option><option value="delta">Delta |mua − bán|</option><option value="buy">Mua chủ động</option><option value="sell">Bán chủ động</option></select></label>
-          <label class="row">Ngưỡng <select id="clTop"><option value="0.001">Top 0,1%</option><option value="0.005" selected>Top 0,5%</option><option value="0.01">Top 1%</option><option value="0.02">Top 2%</option></select></label>
-          <label class="row">Hoặc tối thiểu <input type="number" id="clMin" min="0" step="any" placeholder="tự động" style="width:90px"></label>
-        </div>
-        </div>
-        <button id="candleBtn" class="rb" data-tip="Biểu đồ nến thường, không có ô footprint. Bấm Footprint để quay lại"><i>┃</i>Nến</button>
-        <button id="profBtn" class="rb" data-g="volume-profile" data-tip="Bật / tắt hồ sơ khối lượng của vùng đang xem, nằm sát trục giá bên phải (thanh cam là mức giá khớp nhiều nhất)"><i>◧</i>Hồ sơ</button>
-        <div class="dropdown"><button id="layerBtn" class="rb" data-tip="Bật/tắt các lớp dữ liệu vẽ trên biểu đồ"><i>☰</i>Lớp <b class="lcount" id="layerCount">0</b></button>
-          <div class="menu layermenu" id="layerMenu">
-          <p class="note">Bấm một công cụ ở thanh bên trái biểu đồ, lớp mà công cụ đó cần sẽ tự bật. Mặc định bật: vùng lệnh chờ lớn, mất cân bằng xếp chồng, hồ sơ khối lượng. Thanh bên trái biểu đồ là công cụ vẽ và công cụ order flow.</p>
+<!-- ============ ORDERFLOW ============ -->
+<main class="view workspace" id="view-terminal">
+  <aside class="siderail" id="sideRail" aria-label="Công cụ">
+    <div class="rgrp" id="toolRail" role="toolbar" aria-label="Công cụ vẽ" aria-orientation="vertical"></div>
+    <i class="rs"></i>
+    <div class="rgrp" id="chartBtns">
+      <button class="rt" id="fpBtn" data-g="fp-modes" data-tip="Footprint: khối lượng bán chủ động × mua chủ động tại từng mức giá trong mỗi nến. Đang bật thì bấm lần nữa để chỉnh ô"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v4H4zM13 4h7v4h-7zM4 10h7v4H4zM13 10h7v4h-7zM4 16h7v4H4zM13 16h7v4h-7z"/></svg></button>
+      <button class="rt" id="candleBtn" data-tip="Biểu đồ nến thường, không có ô footprint. Bấm Footprint để quay lại"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M8 7h8v10H8z"/></svg></button>
+      <button class="rt" id="profBtn" data-g="volume-profile" data-tip="Bật / tắt hồ sơ khối lượng của vùng đang xem, nằm sát trục giá bên phải"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6M4 8h12M4 12h16M4 16h9M4 20h5"/></svg></button>
+      <div class="dropdown"><button class="rt" id="layerBtn" data-tip="Lớp dữ liệu trên biểu đồ: vạch lệnh chờ lớn, mất cân bằng xếp chồng, hồ sơ khối lượng, tìm cụm khối lượng…"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18M3 17h18M3 12h10"/></svg><b class="lcount" id="layerCount">0</b></button>
+          <div class="menu side layermenu" id="layerMenu">
+          <p class="note">Mặc định chỉ bật vạch lệnh chờ lớn và dòng Mua · Bán · Delta dưới nến, các lớp khác bật khi cần.</p>
           <h4>Lớp phân tích</h4>
-          <label data-g="rest-liq"><input type="checkbox" data-layer="walls" checked> Vùng lệnh chờ lớn đang đứng (từ sổ lệnh thật)</label>
+          <label data-g="rest-liq"><input type="checkbox" data-layer="walls" checked> Vạch lệnh chờ lớn (từ sổ lệnh thật)</label>
           <label data-g="sr-level"><input type="checkbox" data-layer="levels"> Hỗ trợ / kháng cự đã test</label>
           <label data-g="abnormal-volume"><input type="checkbox" data-layer="zones"> Vùng khối lượng bất thường</label>
           <label data-g="confluence"><input type="checkbox" data-layer="confl"> Vùng hợp lưu (từ 3 điểm)</label>
           <label data-g="liquidation"><input type="checkbox" data-layer="liq"> Lệnh thanh lý thật</label>
           <label data-g="liq-map"><input type="checkbox" data-layer="liqMap"> Bản đồ thanh lý ước tính</label>
-          <label data-g="stacked-imbalance"><input type="checkbox" data-layer="imb" checked> Mất cân bằng xếp chồng</label>
+          <label data-g="stacked-imbalance"><input type="checkbox" data-layer="imb"> Mất cân bằng xếp chồng</label>
           <label data-g="fp-auction"><input type="checkbox" data-layer="auction"> Đấu giá chưa xong, kiệt sức</label>
           <label data-g="fp-diverg"><input type="checkbox" data-layer="diverg"> Phân kỳ delta</label>
           <label data-g="absorption"><input type="checkbox" data-layer="absorb"> Chỉ báo hấp thụ</label>
@@ -124,65 +115,49 @@
           <label data-g="signal-score"><input type="checkbox" data-layer="score"> Điểm tín hiệu ≥ 60</label>
           <label data-g="algo-twap"><input type="checkbox" data-layer="algo"> Dấu vết lệnh chia đều</label>
           <label data-g="spoofing"><input type="checkbox" data-layer="spoof"> Tường giả bị rút</label>
-          <label data-g="volume-profile"><input type="checkbox" data-layer="profile" checked> Hồ sơ khối lượng vùng đang xem</label>
+          <label data-g="volume-profile"><input type="checkbox" data-layer="profile"> Hồ sơ khối lượng vùng đang xem</label>
           <label data-g="range-profile"><input type="checkbox" data-layer="dayProfile"> Hồ sơ khối lượng từng ngày</label>
           
           <h4>Phần lõi của biểu đồ</h4>
-          <label data-g="fp-stats"><input type="checkbox" data-layer="stats" checked> Dòng Khối lượng dưới mỗi nến</label>
-          <label data-g="fp-stats"><input type="checkbox" data-layer="statsFull"> Thêm dòng Delta và Delta cộng dồn dưới nến</label>
-          <label data-g="delta"><input type="checkbox" data-layer="delta"> Ô Delta (thanh delta từng nến)</label>
+          <label data-g="fp-stats"><input type="checkbox" data-layer="stats" checked> Dòng Mua · Bán · Delta dưới mỗi nến</label>
           <label data-g="dom-chart"><input type="checkbox" data-layer="depth"> Depth Of Market: sổ lệnh trên biểu đồ</label>
+          <h4 data-g="cluster-search">Tìm cụm khối lượng</h4>
+          <label><input type="checkbox" id="clOn"> Bật tìm cụm khối lượng lớn bất thường</label>
+          <label class="row">Đo theo <select id="clMetric"><option value="volume">Tổng khối lượng</option><option value="delta">Delta |mua − bán|</option><option value="buy">Mua chủ động</option><option value="sell">Bán chủ động</option></select></label>
+          <label class="row">Ngưỡng <select id="clTop"><option value="0.001">Top 0,1%</option><option value="0.005" selected>Top 0,5%</option><option value="0.01">Top 1%</option><option value="0.02">Top 2%</option></select></label>
+          <label class="row">Hoặc tối thiểu <input type="number" id="clMin" min="0" step="any" placeholder="tự động" style="width:90px"></label>
           <div class="li"><button class="tool" id="layersOff">Tắt hết lớp phân tích</button></div>
           </div>
-        </div>
-      </div><div class="cap">Biểu đồ</div></div>
-    <div class="rg rg-layout"><div class="row">
-        <div class="seg gridseg" id="gridSeg" data-tip="Số biểu đồ trong khung Biểu đồ. Từ 2 ô trở lên, mỗi ô có mã và khung riêng">
-          <button data-n="1" class="on"><i>▢</i>1</button><button data-n="2"><i>▯▯</i>2</button><button data-n="4"><i>▦</i>4</button><button data-n="6"><i>▦▦</i>6</button>
-        </div>
-        <div class="dropdown layoutdd"><button id="layoutBtn" class="rb" data-tip="Bố cục Terminal: kéo tiêu đề khung để đổi chỗ, kéo đường chia để đổi kích thước"><i>⊞</i>Mẫu</button><div class="menu right" id="layoutMenu"></div></div>
-      </div><div class="cap">Bố cục</div></div>
-    <div class="rg rg-panels"><div class="row" id="panelBtns">
-        <button class="rb" data-tg="domPanel" data-tip="Bật / tắt khung Smart DOM"><i>☰</i>DOM</button>
-        <button class="rb" data-tg="tapePanel" data-tip="Bật / tắt khung Smart Tape"><i>≡</i>Tape</button>
-        <button class="rb" data-tg="liqPanel" data-tip="Bật / tắt cột Thanh lý cạnh biểu đồ"><i>🔥</i>Thanh lý</button>
-        <button class="rb" data-tg="orderPanel" data-tip="Bật / tắt khung Lệnh giả lập"><i>📋</i>Lệnh</button>
-        <button class="rb" data-tg="wallPanel" data-tip="Bật / tắt Nhật ký tường lệnh chờ"><i>▤</i>Nhật ký</button>
-      </div><div class="cap">Khung</div></div>
-    <div class="rg rg-tools"><div class="row" id="rgTools">
-        <button class="rb" id="replayBtn" data-tip="Phát lại: chạy lại từng nến từ một điểm trong quá khứ để luyện đọc order flow. Sổ lệnh và băng lệnh vẫn là trực tiếp"><i>⟲</i>Phát lại</button>
-      </div><div class="cap">Công cụ</div></div>
-    <div class="spacer"></div>
-    <div class="rg last"><div class="row">
-        <button class="qt buy" id="rbBuy" data-tip="Mua market theo khối lượng bên cạnh (tài khoản giả lập). Phím B">MUA</button>
-        <button class="qt sell" id="rbSell" data-tip="Bán market theo khối lượng bên cạnh (tài khoản giả lập). Phím S">BÁN</button>
-        <button class="qt flat" id="rbFlat" data-tip="Đóng toàn bộ vị thế của mã này. Phím F">ĐÓNG</button>
-        <label class="field" data-tip="Khối lượng mỗi lệnh nhanh (đơn vị coin)">KL <input type="number" id="rbQty" min="0" step="any" placeholder="0.01"></label>
-        <small class="muted" id="rbAcct"></small>
-      </div><div class="cap">Giao dịch nhanh · giả lập</div></div>
-  </div>
-</div>
-<main class="view workspace" id="view-terminal">
+      </div>
+    </div>
+    <i class="rs"></i>
+    <div class="rgrp gridseg" id="gridSeg" data-tip="Số biểu đồ trong khung Biểu đồ. Từ 2 ô trở lên, mỗi ô có mã và khung riêng">
+      <button class="rt" data-n="1" data-tip="Một biểu đồ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/></svg></button><button class="rt" data-n="2" data-tip="Hai biểu đồ cạnh nhau"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v16H4zM13 4h7v16h-7z"/></svg></button><button class="rt" data-n="4" data-tip="Bốn biểu đồ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg></button>
+    </div>
+    <i class="rs"></i>
+    <div class="rgrp" id="railTools">
+      <button class="rt" id="replayBtn" data-tip="Phát lại: chạy lại từng nến từ một điểm trong quá khứ để luyện đọc order flow. Sổ lệnh và băng lệnh vẫn là trực tiếp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.1-5M4 3v5h5"/></svg></button>
+    </div>
+  </aside>
   <section class="panel chart-panel" id="mainPanel">
     <div class="panel-head tbar">
       <span class="title">Biểu đồ</span>
       <div class="symtabs" id="symTabs" role="tablist" aria-label="Các mã đã mở"></div>
-      <button class="tabadd" id="symAdd" data-tip="Mở thêm một mã: gõ mã ở ô Mã trên ribbon, mỗi mã là một thẻ">+</button>
+      <button class="tabadd" id="symAdd" data-tip="Mở thêm một mã: gõ mã ở ô mã trên thanh trên cùng, mỗi mã là một thẻ">+</button>
       <div class="spacer"></div>
-      <div class="dropdown pdd"><button class="icon pset" data-tip="Cài đặt khung này">⚙</button><div class="menu right fpmenu" id="fpMenu">
-            <div class="mh">Cài đặt biểu đồ</div><p class="note">Cách hiện từng ô footprint và các khung dưới biểu đồ.</p>
+      <div class="dropdown pdd"><button class="icon pset" data-tip="Cài đặt biểu đồ">⚙</button><div class="menu right fpmenu" id="fpMenu">
+            <div class="mh">Cài đặt biểu đồ</div><p class="note">Cách hiện từng ô footprint và khung dưới khối lượng.</p>
             <label class="row">Ô footprint <select id="fpMode"><option value="bidask">Mua × Bán</option><option value="bavol">Mua × Bán + tổng</option><option value="delta">Delta</option><option value="volume">Khối lượng</option><option value="histo">Thanh mua/bán</option><option value="profile">Hồ sơ trong nến</option><option value="ratio">Tỷ lệ chéo</option></select></label>
-            <label class="row">Tô màu <select id="fpColor"><option value="split" selected>Tách đôi: bán đỏ · mua xanh</option><option value="side">Mua/bán</option><option value="volume">Theo khối lượng</option><option value="delta">Theo delta</option><option value="imbalance">Chỉ mất cân bằng</option><option value="candle">Theo nến</option></select></label>
+            <label class="row">Tô màu <select id="fpColor"><option value="navy" selected>Xanh đậm, POC viền vàng</option><option value="split">Tách đôi: bán đỏ · mua xanh</option><option value="side">Mua/bán</option><option value="volume">Theo khối lượng</option><option value="delta">Theo delta</option><option value="imbalance">Chỉ mất cân bằng</option><option value="candle">Theo nến</option></select></label>
             <label class="row" data-tip="Gộp bao nhiêu bước giá vào một dòng của footprint">Tầng giá <select id="rowSize"><option value="auto" selected>Tự động</option><option>1</option><option>2</option><option>5</option><option>10</option><option>20</option><option>50</option></select></label>
-            <label class="row" data-g="cvd-pro">Khung dưới <select id="paneMode"><option value="cvdOiVol" selected>CVD · Open Interest · Khối lượng</option><option value="deltaCvd">Delta + CVD</option><option value="delta">Delta</option><option value="cvd">CVD</option><option value="cvdpro">CVD Pro</option><option value="ofi">OFI (áp lực sổ lệnh)</option><option value="vpin">VPIN (dòng lệnh độc)</option><option value="groups">Delta theo nhóm người chơi</option></select></label>
-            <label class="row" data-tip="Khung Khối lượng: cột mua trên, bán dưới; hoặc một cột delta">Khung Khối lượng <select id="volStyle"><option value="split" selected>Mua trên · bán dưới</option><option value="delta">Delta</option></select></label>
+            <label class="row" data-tip="Thêm một khung dưới khung Khối lượng">Khung thêm <select id="paneMode"><option value="" selected>Không</option><option value="delta">Delta</option><option value="ofi">OFI (áp lực sổ lệnh)</option><option value="vpin">VPIN (dòng lệnh độc)</option><option value="groups">Delta theo nhóm người chơi</option></select></label>
+            <div class="li"><button id="drawClear">⌫ Xoá mọi hình đã vẽ của mã này</button></div>
           </div></div>
-      <button class="icon pin" data-pin="mainPanel" data-tip="Ghim khung: không kéo đổi chỗ được. Bấm lại để bỏ ghim">📌</button>
+      <button class="icon minb" data-min="mainPanel" data-tip="Thu nhỏ: khung nằm thành nút nhỏ trên thanh trên cùng, bấm để mở lại">─</button>
       <button class="icon max" data-max="mainPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">▢</button>
-      <button class="icon minb" data-min="mainPanel" data-tip="Đóng khung này (mở lại bằng nút Khung trên ribbon)">✕</button>
+      <button class="icon minb" data-min="mainPanel" data-tip="Đóng khung này (mở lại ở thanh trên cùng)">✕</button>
     </div>
     <div class="chart-body" id="chartBody">
-      <div class="toolrail" id="toolRail" role="toolbar" aria-label="Công cụ phân tích" aria-orientation="vertical"></div>
       <div class="chart-wrap"><canvas id="flow"></canvas><div class="railtoast" id="railToast" role="status" hidden></div>
         <div class="replaybar" id="replayBar" hidden></div></div>
     </div>
@@ -190,33 +165,17 @@
     <div class="dom-hint" id="chartHint"></div>
   </section>
 
-  <section class="panel liq-panel" id="liqPanel">
-    <div class="panel-head tbar">
-      <span class="title" data-g="liq-col">Thanh lý</span>
-      <div class="spacer"></div>
-      <div class="dropdown pdd"><button class="icon pset" data-tip="Cài đặt khung này">⚙</button><div class="menu right"><div class="mh">Cột Thanh lý</div><label class="row" data-g="liq-model">Đòn bẩy ước tính <select id="liqModel"><option value="all" selected>10x · 25x · 50x · 100x</option><option value="high">25x · 50x · 100x</option><option value="low">5x · 10x · 25x</option></select></label><p class="note">Thanh ngang: tiền thanh lý ước tính tại mỗi mức giá, xếp lớp theo đòn bẩy. Chấm: lệnh thanh lý thật sàn vừa báo trong 1 giờ.</p></div></div>
-      <button class="icon pin" data-pin="liqPanel" data-tip="Ghim khung: không kéo đổi chỗ được. Bấm lại để bỏ ghim">📌</button>
-      <button class="icon max" data-max="liqPanel" data-tip="Phóng to khung thanh lý">▢</button>
-      <button class="icon minb" data-min="liqPanel" data-tip="Đóng khung này (mở lại bằng nút Khung trên ribbon)">✕</button>
-    </div>
-    <div class="dom-wrap"><canvas id="liqcol"></canvas></div>
-    <div class="liqfoot" id="liqFoot"></div>
-  </section>
-
   <section class="panel dom-panel" id="domPanel">
     <div class="panel-head tbar">
       <span class="title" data-g="dom">Smart DOM</span>
-      <div class="ptabs2" id="domTabs" role="tablist"><button data-dt="book" class="on">Sổ lệnh</button><button data-dt="orders">Lệnh chờ <b id="domOrdN">0</b></button><button data-dt="pos">Vị thế</button></div>
       <div class="spacer"></div>
       <div class="dropdown pdd"><button class="icon pset" data-tip="Cài đặt khung này">⚙</button><div class="menu right" id="domSetMenu"><div class="mh">Smart DOM</div><label class="row" data-tip="Gộp nhiều bước giá vào một dòng">Gộp giá <select id="domMult"><option value="1">×1</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option><option value="50">×50</option></select></label><div class="li"><button id="domCenter">◎ Căn giữa giá hiện tại</button></div><div class="li"><button id="domClear">⌫ Xoá số đã khớp, đếm lại từ bây giờ</button></div><div class="mh">Cột</div><div id="domColMenu"></div></div></div>
-      <button class="icon pin" data-pin="domPanel" data-tip="Ghim khung: không kéo đổi chỗ được. Bấm lại để bỏ ghim">📌</button>
-      <button class="icon max" data-max="domPanel" data-tip="Phóng to sổ lệnh">▢</button>
-      <button class="icon minb" data-min="domPanel" data-tip="Đóng khung này (mở lại bằng nút Khung trên ribbon)">✕</button>
+      <button class="icon minb" data-min="domPanel" data-tip="Thu nhỏ: khung nằm thành nút nhỏ trên thanh trên cùng, bấm để mở lại">─</button>
+      <button class="icon max" data-max="domPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">▢</button>
+      <button class="icon minb" data-min="domPanel" data-tip="Đóng khung này (mở lại ở thanh trên cùng)">✕</button>
     </div>
     <div class="chips" id="domChips"></div>
-    <div class="dom-wrap"><canvas id="dom"></canvas><div class="plist" id="domList" hidden></div></div>
-    <div class="domfoot" id="domFoot"></div>
-    <div class="dhint">Bấm trái vào cột Bid: đặt chờ mua · cột Ask: đặt chờ bán · bấm phải: huỷ · kéo đường lệnh trên biểu đồ để sửa SL/TP</div>
+    <div class="dom-wrap"><canvas id="dom"></canvas></div>
   </section>
 
   <section class="panel tape-panel" id="tapePanel">
@@ -225,9 +184,9 @@
       <div class="ptabs2" id="tapeTabs" role="tablist"><button data-tt="all" class="on">Lệnh khớp</button><button data-tt="big" data-tip="Chỉ lệnh gốc thuộc top 0,5% lớn nhất">Lệnh lớn</button><button data-tt="absorb" data-g="absorption">Hấp thụ</button></div>
       <div class="spacer"></div>
       <div class="dropdown pdd"><button class="icon pset" data-tip="Cài đặt khung này">⚙</button><div class="menu right"><div class="mh">Smart Tape</div><label class="row" data-g="player-groups">Nhóm người chơi <select id="tapeGroup"><option value="">Mọi nhóm</option><option value="whale">Cá voi</option><option value="mid">Vừa</option><option value="retail">Nhỏ lẻ</option><option value="algo">Lệnh chia đều</option></select></label><label class="row" data-tip="Cửa sổ thời gian của cột KL khớp theo giá bên phải">KL khớp theo giá <select id="tapeWin"><option value="5">5 phút</option><option value="15">15 phút</option><option value="30" selected>30 phút</option><option value="60">60 phút</option></select></label><p class="note">Lăn chuột để xem lại, bấm đúp để về lệnh mới nhất. Rê chuột lên cột bên phải để xem tổng khối lượng tại mỗi giá.</p></div></div>
-      <button class="icon pin" data-pin="tapePanel" data-tip="Ghim khung: không kéo đổi chỗ được. Bấm lại để bỏ ghim">📌</button>
-      <button class="icon max" data-max="tapePanel" data-tip="Phóng to Smart Tape">▢</button>
-      <button class="icon minb" data-min="tapePanel" data-tip="Đóng khung này (mở lại bằng nút Khung trên ribbon)">✕</button>
+      <button class="icon minb" data-min="tapePanel" data-tip="Thu nhỏ: khung nằm thành nút nhỏ trên thanh trên cùng, bấm để mở lại">─</button>
+      <button class="icon max" data-max="tapePanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">▢</button>
+      <button class="icon minb" data-min="tapePanel" data-tip="Đóng khung này (mở lại ở thanh trên cùng)">✕</button>
     </div>
     <div class="chips" id="tapeChips">
       <button class="chip on" id="tapeSmart" data-tip="Ghép các lệnh nhỏ cùng thời điểm, cùng phía thành lệnh gốc. Tắt để xem băng thô của sàn">gộp lệnh gốc</button>
@@ -243,40 +202,11 @@
       <span class="title" data-g="wall-journal">Nhật ký tường</span>
       <div class="ptabs2" id="wallSeg"><button data-ws="log" class="on">Nhật ký</button><button data-ws="stats">Thống kê</button><button data-ws="live">Đang đứng</button></div>
       <div class="spacer"></div>
-      <button class="icon pin" data-pin="wallPanel" data-tip="Ghim khung: không kéo đổi chỗ được. Bấm lại để bỏ ghim">📌</button>
-      <button class="icon max" data-max="wallPanel" data-tip="Phóng to nhật ký tường">▢</button>
-      <button class="icon minb" data-min="wallPanel" data-tip="Đóng khung này (mở lại bằng nút Khung trên ribbon)">✕</button>
+      <button class="icon minb" data-min="wallPanel" data-tip="Thu nhỏ: khung nằm thành nút nhỏ trên thanh trên cùng, bấm để mở lại">─</button>
+      <button class="icon max" data-max="wallPanel" data-tip="Phóng to khung này (bấm lại hoặc Esc để thu nhỏ)">▢</button>
+      <button class="icon minb" data-min="wallPanel" data-tip="Đóng khung này (mở lại ở thanh trên cùng)">✕</button>
     </div>
     <div class="wallbody" id="wallBody"></div>
-  </section>
-
-  <section class="panel order-panel" id="orderPanel">
-    <div class="panel-head tbar">
-      <span class="title" data-g="paper-trading">Lệnh giả lập</span>
-      <small class="muted" id="ptAcct"></small>
-      <div class="spacer"></div>
-      <button class="icon pin" data-pin="orderPanel" data-tip="Ghim khung: không kéo đổi chỗ được. Bấm lại để bỏ ghim">📌</button>
-      <button class="icon max" data-max="orderPanel" data-tip="Phóng to khung lệnh giả lập">▢</button>
-      <button class="icon minb" data-min="orderPanel" data-tip="Đóng khung này (mở lại bằng nút Khung trên ribbon)">✕</button>
-    </div>
-    <div class="ptbody">
-      <div class="ptrow">
-        <div class="seg" id="ptType"><button data-pt="market" class="on">Market</button><button data-pt="limit">Limit</button></div>
-        <label class="field small" data-tip="Đòn bẩy (ký quỹ cô lập)">x <input type="number" id="ptLev" min="1" max="125" value="10" style="width:52px"></label>
-      </div>
-      <div class="ptgrid">
-        <label>Khối lượng <input type="number" id="ptQty" min="0" step="any" placeholder="0.01"></label>
-        <label id="ptPriceBox" hidden>Giá limit <input type="number" id="ptPrice" step="any"></label>
-        <label data-tip="Cắt lỗ: giá chạm thì đóng vị thế. Để trống nếu không dùng. Sau khi vào lệnh có thể kéo trên biểu đồ">SL <input type="number" id="ptSl" step="any" placeholder="tuỳ chọn"></label>
-        <label data-tip="Chốt lời: giá chạm thì đóng vị thế. Để trống nếu không dùng">TP <input type="number" id="ptTp" step="any" placeholder="tuỳ chọn"></label>
-      </div>
-      <div class="ptrow ptbtns"><button class="buy" id="ptBuy">MUA</button><button class="sell" id="ptSell">BÁN</button></div>
-      <div id="ptPos"></div>
-      <div id="ptOrders"></div>
-      <div id="ptFills"></div>
-      <div class="ptrow"><button class="tool" id="ptReset" data-tip="Đặt lại tài khoản giả lập về 10.000 USDT">Đặt lại tài khoản</button></div>
-      <p class="note">Tiền ảo, khớp theo sổ lệnh thật. Trên biểu đồ: kéo đường lệnh, SL, TP để sửa giá; bấm đúp lên đường để huỷ; Alt + bấm chuột để đặt nhanh lệnh limit tại giá đó.</p>
-    </div>
   </section>
 
 </main>
@@ -285,20 +215,18 @@
   <span class="sb-conn" id="sbConn"><i></i><b id="sbEx"></b> <span id="sbLat"></span></span>
   <span id="sbBook" data-tip="Khoảng cách trung bình giữa hai lần sổ lệnh cập nhật"></span>
   <span id="sbTrades" data-tip="Số lệnh khớp sàn báo trong 60 giây qua"></span>
+  <span id="cdTerm" class="sb-cd" data-tip="Thời gian còn lại tới lúc đóng nến của khung đang xem (giờ sàn). Chuyển màu khi sắp đóng"></span>
   <span class="sb-fp" id="sbFp"></span>
   <span class="sb-sig" id="signalbar"></span>
   <span class="spacer"></span>
-  <span class="sb-keys" id="sbKeys">Phím: B mua · S bán · F đóng · Alt+kéo: đo</span>
   <span class="sb-clock" id="sbClock" data-tip="Giờ Việt Nam (UTC+7)"></span>
 </footer>
 <div id="riskLockBar" class="risklock" hidden></div>
 <nav class="mnav" id="mnav" aria-label="Chọn khung">
   <button data-panel="mainPanel" class="on"><i>▦</i>Biểu đồ</button>
   <button data-panel="domPanel"><i>☰</i>DOM</button>
-  <button data-panel="liqPanel"><i>🔥</i>Thanh lý</button>
   <button data-panel="tapePanel"><i>≋</i>Tape</button>
   <button data-panel="wallPanel"><i>▤</i>Nhật ký</button>
-  <button data-panel="orderPanel"><i>⇅</i>Lệnh</button>
 </nav>
 
 <!-- ============ PHÂN TÍCH ============ -->
@@ -710,18 +638,21 @@
 </aside>
 
 <!-- ============ MÀU SẮC ============ -->
-<aside class="popover" id="themePanel" hidden>
-  <div class="drawer-head"><span class="title">Màu giao diện</span><div class="spacer"></div><button class="icon" id="themeClose" data-tip="Đóng">✕</button></div>
+<aside class="popover themedlg" id="themePanel" hidden role="dialog" aria-label="Màu sắc">
+  <div class="drawer-head"><span class="title">Cài đặt · Màu sắc</span><div class="spacer"></div><button class="icon" id="themeClose" data-tip="Đóng, không lưu thay đổi">✕</button></div>
   <div class="pop-body">
+    <div class="mh">Mẫu có sẵn</div>
     <div class="presets" id="themePresets"></div>
-    <div class="colors" id="themeColors"></div>
-    <p class="note">Màu được lưu trên trình duyệt này. Bấm một mẫu có sẵn để quay lại.</p>
+    <p class="note">Bấm ô màu để chọn màu khác, hoặc gõ mã màu. Biểu đồ đổi ngay để bro xem trước.</p>
+    <div class="cgroups" id="themeColors"></div>
   </div>
+  <div class="dlg-foot"><button class="tool" id="themeReset">Khôi phục mặc định</button><span class="spacer"></span><button class="tool" id="themeCancel">Hủy</button><button class="tool primary" id="themeSave">Lưu</button></div>
 </aside>
+<div class="palpop" id="themePal" hidden></div>
 
 <div class="copyright" aria-hidden="true">© 2026 Lai Long Desk</div>
 <div class="tip" id="tip" hidden></div>
 <div class="toast" id="toast" hidden></div>
-<script type="module" src="js/app.js?v=202611142030"></script>
+<script type="module" src="js/app.js?v=202611150124"></script>
 </body>
 </html>
