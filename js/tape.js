@@ -6,9 +6,9 @@
 // Ba chế độ: Lệnh khớp (mọi lệnh), Lệnh lớn (top 0,5%), Hấp thụ (iceberg giữ giá và nến hấp thụ).
 // Bên phải: khối lượng đã khớp tại mỗi mức giá trong 5 / 15 / 30 / 60 phút gần nhất, ô cam là giá hiện tại.
 
-import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202611150616";
-import { T, alpha, chrome, isLight } from "./theme.js?v=202611150616";
-import { GROUPS, playerGroup } from "./flowtools.js?v=202611150616";
+import { fmtVol, decimalsFor, pad2, MONO, fitCanvas, touchRows } from "./util.js?v=202611150629";
+import { T, alpha, chrome, isLight } from "./theme.js?v=202611150629";
+import { GROUPS, playerGroup } from "./flowtools.js?v=202611150629";
 
 const GROUP = Object.fromEntries(GROUPS.map(g => [g.id, g]));
 const UI = "'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif";

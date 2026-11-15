@@ -1,8 +1,8 @@
 // Ô "KL theo giá": khối lượng khớp theo từng mức giá, thang giá riêng phủ hết cột.
 // Mặc định đồng bộ với vùng đang xem trên biểu đồ; chip 4g · 1N · 1T xem khoảng thời gian cố định.
-import { T, alpha, isLight } from "./theme.js?v=202611150616";
-import { fitCanvas, fmtVol, decimalsFor, MONO } from "./util.js?v=202611150616";
-import { niceStep } from "./zones.js?v=202611150616";
+import { T, alpha, isLight } from "./theme.js?v=202611150629";
+import { fitCanvas, fmtVol, decimalsFor, MONO } from "./util.js?v=202611150629";
+import { niceStep } from "./zones.js?v=202611150629";
 
 export const PROF_MODES = [["chart", "Theo biểu đồ"], ["4h", "4g"], ["1d", "1N"], ["1w", "1T"]];
 // nến dùng cho từng khoảng: khung, số nến

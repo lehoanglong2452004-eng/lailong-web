@@ -1130,6 +1130,15 @@ body.not-terminal .mktbar, body.not-terminal .mindock { display: none; }
 .mindock[hidden] { display: none; }
 .mindock button { font: 500 11px var(--mono); padding: 2px 9px; border: 1px solid rgba(255,159,28,.45); border-radius: 10px; background: rgba(255,159,28,.08); color: var(--accent); }
 .mindock button:hover { background: rgba(255,159,28,.18); color: var(--hi); }
+/* máy tính: thanh trên cùng luôn một dòng, ⚙ và nút toàn màn hình giữ góc phải; nhiều khung thu nhỏ thì dải nút thu nhỏ cuộn ngang */
+@media (min-width: 901px) {
+  .menubar { flex-wrap: nowrap; }
+  .menubar > * { flex-shrink: 0; }
+  .menubar > .spacer { flex: 1 1 0; min-width: 0; }
+  .menubar > .mindock { flex: 0 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .menubar > .mindock::-webkit-scrollbar { display: none; }
+  .menubar > .evpill { flex-shrink: 1; min-width: 60px; }
+}
 /* thanh công cụ dọc bên trái: 6 công cụ vẽ, rồi kiểu biểu đồ, lớp, số biểu đồ, phát lại, cảnh báo */
 .siderail { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; background: var(--pro-head); border: 1px solid var(--pro-line); border-radius: 3px; z-index: 6; }
 #view-terminal.tiled > .siderail { position: absolute; left: 4px; top: 4px; bottom: 4px; width: 40px; }
